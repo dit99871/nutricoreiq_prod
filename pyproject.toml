@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "nutricoreiq"
+version = "0.1.0"
+description = ""
+authors = ["di <dit99871@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.13"
+fastapi = {extras = ["all"], version = "^0.115.11"}
+pydantic-settings = "^2.8.1"
+sqlalchemy = "^2.0.38"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.5"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
