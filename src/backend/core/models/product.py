@@ -10,7 +10,6 @@ class Product(IntIdPkMixin, Base):
     group: Mapped[str]
     count_of_water: Mapped[int]
     kcal: Mapped[int]
-    kjoule: Mapped[int]
     protein: Mapped[int]
     fats: Mapped[int]
     carbogydrate: Mapped[int]
