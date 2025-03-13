@@ -1,7 +1,8 @@
 from typing import Optional
 
 from pydantic import BaseModel, EmailStr
-from pydantic import ConfigDict
+
+from .base import BaseSchema
 
 
 class UserBase(BaseModel):
@@ -16,12 +17,10 @@ class UserCreate(UserBase):
     weight: float
 
 
-class UserRead(UserBase):
+class UserRead(UserBase, BaseSchema):
     id: int
-
-    model_config = ConfigDict(
-        from_attributes=True,
-    )
+    is_active: bool
+    is_superuser: bool
 
 
 class UserUpdate(BaseModel):
