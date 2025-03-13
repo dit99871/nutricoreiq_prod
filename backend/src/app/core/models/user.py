@@ -10,3 +10,4 @@ class User(IntIdPkMixin, Base):
     password: Mapped[str]
     gender: Mapped[str]
     age: Mapped[int]
+    weight: Mapped[float]
