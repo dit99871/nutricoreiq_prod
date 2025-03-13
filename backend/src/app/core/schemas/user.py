@@ -13,6 +13,7 @@ class UserCreate(UserBase):
     gender: str
     age: int
     password: str
+    weight: float
 
 
 class UserRead(UserBase):
@@ -29,6 +30,7 @@ class UserUpdate(BaseModel):
     password: Optional[str] = None
     gender: Optional[str] = None
     age: Optional[int] = None
+    weight: Optional[float] = None
 
 
 class UserResponse(BaseModel):
