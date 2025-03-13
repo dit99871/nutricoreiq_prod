@@ -1,69 +1,11 @@
-from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
 from .mixins.int_id_pk import IntIdPkMixin
 
 
 class Product(IntIdPkMixin, Base):
-    title: Mapped[str] = mapped_column(unique=True)
-    group: Mapped[str]
-    count_of_water: Mapped[int]
-    kcal: Mapped[int]
-    protein: Mapped[int]
-    fats: Mapped[int]
-    carbogydrate: Mapped[int]
-    cellulose: Mapped[int]
-    sugar: Mapped[int]
-    ca: Mapped[int]
-    fe: Mapped[int]
-    mg: Mapped[int]
-    p: Mapped[int]
-    k: Mapped[int]
-    na: Mapped[int]
-    zn: Mapped[int]
-    cu: Mapped[int]
-    mn: Mapped[int]
-    se: Mapped[int]
-    f: Mapped[int]
-    a: Mapped[int]
-    b1: Mapped[int]
-    b2: Mapped[int]
-    b3: Mapped[int]
-    b4: Mapped[int]
-    b5: Mapped[int]
-    b6: Mapped[int]
-    b9: Mapped[int]
-    b12: Mapped[int]
-    c: Mapped[int]
-    d: Mapped[int]
-    e: Mapped[int]
-    k: Mapped[int]
-    betaine: Mapped[int]
-    saturated_fats: Mapped[int]
-    monounsaturated_fats: Mapped[int]
-    polyunsaturated_fats: Mapped[int]
-    omega3: Mapped[int]
-    omega6: Mapped[int]
-    cholesterin: Mapped[int]
-    tryptophan: Mapped[int]
-    threonine: Mapped[int]
-    isoleucine: Mapped[int]
-    leucine: Mapped[int]
-    lysine: Mapped[int]
-    methionine: Mapped[int]
-    cystine: Mapped[int]
-    phenylalanine: Mapped[int]
-    tyrosine: Mapped[int]
-    valine: Mapped[int]
-    arginine: Mapped[int]
-    histidine: Mapped[int]
-    alanine: Mapped[int]
-    aspartic_acid: Mapped[int]
-    glutamine: Mapped[int]
-    glycine: Mapped[int]
-    proline: Mapped[int]
-    serine: Mapped[int]
-    alcohol: Mapped[int]
-    caffeine: Mapped[int]
-    theobromine: Mapped[int]
+    title: Mapped[str] = mapped_column(nullable=False)
+
+    group = relationship("ProductGroup", back_populates="products")
+    nutrients = relationship("ProductNutrient", back_populates="products")
