@@ -11,3 +11,6 @@ class User(IntIdPkMixin, Base):
     gender: Mapped[str]
     age: Mapped[int]
     weight: Mapped[float]
+    is_active: Mapped[bool] = mapped_column(default=True)
+    is_superuser: Mapped[bool] = mapped_column(default=False)
+    is_deleted: Mapped[bool] = mapped_column(default=False)
