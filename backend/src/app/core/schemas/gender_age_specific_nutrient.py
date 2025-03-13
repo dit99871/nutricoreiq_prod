@@ -15,6 +15,7 @@ class MaleAgeSpecificNutrientsCreate(GenderAgeSpecificNutrientsBase):
 class MaleAgeSpecificNutrientsRead(GenderAgeSpecificNutrientsBase, BaseSchema):
     id: int
 
+
 class FemaleAgeSpecificNutrientsCreate(GenderAgeSpecificNutrientsBase):
     pass
 
