@@ -1,14 +1,10 @@
-import logging
-
 import uvicorn
 from fastapi import FastAPI
 
 from core.config import settings
+from utils.logger import setup_logging
 
-logging.basicConfig(
-    level=settings.logging.log_level_value,
-    format=settings.logging.log_format,
-)
+setup_logging()
 
 app = FastAPI()
 
