@@ -11,6 +11,7 @@ fastapi = {extras = ["all"], version = "^0.115.11"}
 pydantic-settings = "^2.8.1"
 sqlalchemy = "^2.0.38"
 black = "^25.1.0"
+alembic = "^1.15.1"
 
 
 [tool.poetry.group.dev.dependencies]
