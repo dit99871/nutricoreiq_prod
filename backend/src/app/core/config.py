@@ -28,6 +28,9 @@ class LoggingConfig(BaseModel):
         "critical",
     ] = "info"
     log_format: str = LOG_DEFAULT_FORMAT
+    log_file: str = "app.log"  # Путь к файлу логов
+    log_file_max_size: int = 5 * 1024 * 1024  # 5 MB
+    log_file_backup_count: int = 3  # Количество backup файлов
 
     @property
     def log_level_value(self) -> int:
