@@ -1,37 +1,43 @@
-from typing import Optional
-
-from pydantic import BaseModel, EmailStr
-
-from .base import BaseSchema
+from pydantic import BaseModel, EmailStr, ConfigDict
+from datetime import datetime
 
 
 class UserBase(BaseModel):
     username: str
-
-
-class UserCreate(UserBase):
-    age: int
-    gender: str
     email: EmailStr
-    password: str
+    gender: str
+    age: int
     weight: float
 
 
-class UserRead(UserBase, BaseSchema):
+class UserCreate(UserBase):
+    password: str
+
+
+class UserUpdate(BaseModel):
+    username: str | None = None
+    email: EmailStr | None = None
+    gender: str | None = None
+    age: int | None = None
+    weight: float | None = None
+
+
+class UserRead(UserBase):
     id: int
     is_active: bool
     is_admin: bool
 
-
-class UserUpdate(BaseModel):
-    username: Optional[str] = None
-    email: Optional[EmailStr] = None
-    password: Optional[str] = None
-    gender: Optional[str] = None
-    age: Optional[int] = None
-    weight: Optional[float] = None
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
 
-class UserResponse(BaseModel):
-    status: str
-    user: UserRead
+class UserDelete(UserBase):
+    id: int
+    is_active: bool
+    is_admin: bool
+    deleted_at: datetime
+
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
