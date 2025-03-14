@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from core.models import User
+from core.models import DeletedUser, User
 from core.schemas import UserCreate, UserUpdate
 from utils.security import get_password_hash
 
@@ -47,10 +47,25 @@ async def update_user(db: AsyncSession, user_id: int, user: UserUpdate) -> User 
     return db_user
 
 
-async def delete_user(db: AsyncSession, user_id: int) -> User | None:
+async def delete_user(db: AsyncSession, user_id: int) -> DeletedUser | None:
     db_user = await get_user(db, user_id)
     if db_user:
-        db_user.is_active = False  # Мягкое удаление
+        # Создаем запись в таблице deleted_users
+        deleted_user = DeletedUser(
+            username=db_user.username,
+            email=db_user.email,
+            hashed_password=db_user.hashed_password,
+            gender=db_user.gender,
+            age=db_user.age,
+            weight=db_user.weight,
+            is_active=db_user.is_active,
+            is_admin=db_user.is_admin,
+        )
+        db.add(deleted_user)
         await db.commit()
-        await db.refresh(db_user)
-    return db_user
+        await db.refresh(deleted_user)
+
+        # Удаляем пользователя из таблицы users
+        await db.delete(db_user)
+        await db.commit()
+        return deleted_user
