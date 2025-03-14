@@ -1,23 +1,26 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.crud.user import get_user, create_user, update_user, delete_user
+from crud.user import get_user, create_user, update_user, delete_user
 from core.schemas.user import UserCreate, UserUpdate, UserRead, DeletedUser
 from core.models import db_helper
 
-router = APIRouter(prefix="/users", tags=["users"])
+router = APIRouter(tags=["user"])
 
 
 @router.post("/", response_model=UserRead)
 async def create_user_endpoint(
-    user: UserCreate, db: AsyncSession = Depends(db_helper.session_getter)
+    user: UserCreate, db: Annotated[AsyncSession, Depends(db_helper.session_getter)]
 ):
     return await create_user(db, user)
 
 
 @router.get("/{user_id}", response_model=UserRead)
 async def read_user_endpoint(
-    user_id: int, db: AsyncSession = Depends(db_helper.session_getter)
+    user_id: int, db: Annotated[AsyncSession, Depends(db_helper.session_getter)]
 ):
     db_user = await get_user(db, user_id)
     if db_user is None:
@@ -25,11 +28,13 @@ async def read_user_endpoint(
     return db_user
 
 
-@router.put("/{user_id}", response_model=UserRead)
+@router.put("/{user_email}", response_model=UserRead)
 async def update_user_endpoint(
-    user_id: int, user: UserUpdate, db: AsyncSession = Depends(db_helper.session_getter)
+    user_email: EmailStr,
+    user: UserUpdate,
+    db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
 ):
-    db_user = await update_user(db, user_id, user)
+    db_user = await update_user(db, user_email, user)
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
     return db_user
@@ -37,7 +42,7 @@ async def update_user_endpoint(
 
 @router.delete("/{user_id}", response_model=DeletedUser)
 async def delete_user_endpoint(
-    user_id: int, db: AsyncSession = Depends(db_helper.session_getter)
+    user_id: int, db: Annotated[AsyncSession, Depends(db_helper.session_getter)]
 ):
     deleted_user = await delete_user(db, user_id)
     if deleted_user is None:
