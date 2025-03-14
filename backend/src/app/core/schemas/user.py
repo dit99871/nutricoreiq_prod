@@ -41,3 +41,14 @@ class UserDelete(UserBase):
     model_config = ConfigDict(
         from_attributes=True,
     )
+
+
+class DeletedUser(UserBase):
+    id: int
+    is_active: bool
+    is_admin: bool
+    deleted_at: datetime
+
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
