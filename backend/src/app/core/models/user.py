@@ -26,6 +26,7 @@ class DeletedUser(IntIdPkMixin, Base):
     gender: Mapped[str]
     age: Mapped[int]
     weight: Mapped[float]
+
     is_active: Mapped[bool]
     is_admin: Mapped[bool]
     deleted_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
