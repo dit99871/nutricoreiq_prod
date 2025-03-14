@@ -2,7 +2,7 @@ services:
   rabbitmq:
     image: rabbitmq:3-management-alpine
     hostname: rabbitmq
-    container_name: rabbitmq
+    container_name: rabbitmq_iq
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -17,10 +17,10 @@ services:
     environment:
       POSTGRES_DB: nutricoreiq
       POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: 1596387413
       PGDATA: /var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -46,7 +46,7 @@ services:
   adminer:
     image: adminer
     ports:
-      - "8080:8080"
+      - "8090:8090"
 
   pgadmin:
     image: dpage/pgadmin4
