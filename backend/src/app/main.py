@@ -1,14 +1,14 @@
 import uvicorn
 from fastapi import FastAPI
 
-from api.v1 import user_router
+from api import router as api_router
 from core.config import settings
 from utils.logger import setup_logging
 
 setup_logging()
 
 app = FastAPI()
-app.include_router(user_router)
+app.include_router(api_router)
 
 
 @app.get("/")
