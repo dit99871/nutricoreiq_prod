@@ -7,10 +7,9 @@ from core.models.mixins.int_id_pk import IntIdPkMixin
 class User(IntIdPkMixin, Base):
     username: Mapped[str] = mapped_column(unique=True, index=True)
     email: Mapped[str] = mapped_column(unique=True, index=True)
-    password: Mapped[str]
+    hashed_password: Mapped[str]
     gender: Mapped[str]
     age: Mapped[int]
     weight: Mapped[float]
     is_active: Mapped[bool] = mapped_column(default=True)
-    is_superuser: Mapped[bool] = mapped_column(default=False)
-    is_deleted: Mapped[bool] = mapped_column(default=False)
+    is_admin: Mapped[bool] = mapped_column(default=False)

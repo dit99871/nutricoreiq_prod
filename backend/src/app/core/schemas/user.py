@@ -7,12 +7,12 @@ from .base import BaseSchema
 
 class UserBase(BaseModel):
     username: str
-    email: EmailStr
 
 
 class UserCreate(UserBase):
-    gender: str
     age: int
+    gender: str
+    email: EmailStr
     password: str
     weight: float
 
@@ -20,7 +20,7 @@ class UserCreate(UserBase):
 class UserRead(UserBase, BaseSchema):
     id: int
     is_active: bool
-    is_superuser: bool
+    is_admin: bool
 
 
 class UserUpdate(BaseModel):
