@@ -1,3 +1,4 @@
+from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -13,7 +14,7 @@ async def get_user(db: AsyncSession, user_id: int) -> User | None:
     return result.scalars().first()
 
 
-async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
+async def get_user_by_email(db: AsyncSession, email: EmailStr) -> User | None:
     result = await db.execute(
         select(User).filter(User.email == email, User.is_active == True)
     )
@@ -36,8 +37,10 @@ async def create_user(db: AsyncSession, user: UserCreate) -> User:
     return db_user
 
 
-async def update_user(db: AsyncSession, user_id: int, user: UserUpdate) -> User | None:
-    db_user = await get_user(db, user_id)
+async def update_user(
+    db: AsyncSession, user_email: EmailStr, user: UserUpdate
+) -> User | None:
+    db_user = await get_user_by_email(db, user_email)
     if db_user:
         for key, value in user.model_dump().items():
             if value is not None:
