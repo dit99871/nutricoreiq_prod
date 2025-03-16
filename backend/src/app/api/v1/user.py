@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from crud.user import get_user, create_user, update_user, delete_user
+from crud.user import get_user, create_user, update_user, delete_user, get_user_by_email
 from core.schemas.user import UserCreate, UserUpdate, UserRead, DeletedUser
 from core.models import db_helper
 
@@ -13,9 +13,14 @@ router = APIRouter(tags=["user"])
 
 @router.post("/", response_model=UserRead)
 async def create_user_endpoint(
-    user: UserCreate, db: Annotated[AsyncSession, Depends(db_helper.session_getter)]
+    user_in: UserCreate, db: Annotated[AsyncSession, Depends(db_helper.session_getter)]
 ):
-    return await create_user(db, user)
+    user = await get_user_by_email(db, user_in.email)
+    if user:
+        raise HTTPException(
+            status_code=400, detail="User with this email already exists"
+        )
+    return await create_user(db, user_in)
 
 
 @router.get("/{user_id}", response_model=UserRead)
