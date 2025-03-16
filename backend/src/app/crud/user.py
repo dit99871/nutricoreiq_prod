@@ -2,9 +2,9 @@ from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from core.models import DeletedUser, User
-from core.schemas import UserCreate, UserUpdate
-from utils.security import get_password_hash
+from app.core.models import DeletedUser, User
+from app.core.schemas import UserCreate, UserUpdate
+from app.utils.security import get_password_hash
 
 
 async def get_user(db: AsyncSession, user_id: int) -> User | None:

@@ -15,8 +15,8 @@ __all__ = (
 )
 
 # from .age_group import AgeGroup
-from .db_helper import db_helper
-from .base import Base
+from app.core.models.db_helper import db_helper
+from app.core.models.base import Base
 
 # from .gender_age_specific_nutrient import (
 #     FemaleAgeSpecificNutrient,
@@ -26,4 +26,4 @@ from .base import Base
 # from .gender_metabolism import FemaleMetabolism, MaleMetabolism
 # from .nutrient import Nutrient
 # from .product import Product
-from .user import User, DeletedUser
+from app.core.models.user import User, DeletedUser
