@@ -1,7 +1,9 @@
 import logging
+import os
 from pathlib import Path
 from typing import Literal
 
+from dotenv import load_dotenv
 from pydantic import BaseModel
 from pydantic import PostgresDsn
 from pydantic_settings import (
@@ -10,10 +12,19 @@ from pydantic_settings import (
 )
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+load_dotenv()
 LOG_DEFAULT_FORMAT = (
     "[%(asctime)s.%(msecs)03d] %(module)10s:%(lineno)-3d %(levelname)-7s - %(message)s"
 )
+
+
+class AuthenticateConfig(BaseModel):
+    secret_key: str = os.getenv("SECRET_KEY")
+    algorithm: str = os.getenv("ALGORITHM")
+    access_token_expires: int = 3600  # 1 hour
+    refresh_token_expires: int = 7 * 24 * 60 * 60  # 7 days
+    refresh_token_prefix: str = "refresh_"
+    access_token_prefix: str = "access_"
 
 
 class RunConfig(BaseModel):
@@ -41,6 +52,7 @@ class LoggingConfig(BaseModel):
 
 class ApiV1Prefix(BaseModel):
     prefix: str = "/v1"
+    auth: str = "/auth"
     user: str = "/user"
 
 
@@ -76,6 +88,7 @@ class Settings(BaseSettings):
     logging: LoggingConfig = LoggingConfig()
     api: ApiPrefix = ApiPrefix()
     db: DatabaseConfig
+    auth: AuthenticateConfig()
 
 
 settings = Settings()
