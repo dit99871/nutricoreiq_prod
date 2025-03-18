@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from pydantic import BaseModel, EmailStr
 
 
@@ -9,7 +11,7 @@ class Token(BaseModel):
 
 class TokenPayload(BaseModel):
     sub: EmailStr
-    exp: int
+    exp: timedelta
     role: str  # Добавляем роль пользователя
 
 
