@@ -25,7 +25,7 @@ class UserUpdate(BaseModel):
 class UserRead(UserBase):
     id: int
     is_active: bool
-    is_admin: bool
+    role: str
 
     model_config = ConfigDict(
         from_attributes=True,
@@ -33,17 +33,6 @@ class UserRead(UserBase):
 
 
 class UserDelete(UserBase):
-    id: int
-    is_active: bool
-    is_admin: bool
-    deleted_at: datetime
-
-    model_config = ConfigDict(
-        from_attributes=True,
-    )
-
-
-class DeletedUser(UserBase):
     id: int
     is_active: bool
     is_admin: bool
