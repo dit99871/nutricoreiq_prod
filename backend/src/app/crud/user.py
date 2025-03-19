@@ -6,10 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.exc import SQLAlchemyError
 
-from core.models import db_helper, DeletedUser, User
-from core.schemas import UserCreate, UserUpdate
-from utils.security import get_password_hash
-from utils.logger import get_logger
+from models import db_helper, DeletedUser, User
+from schemas import UserCreate, UserUpdate
+from core.utils.security import get_password_hash
+from core.logger import get_logger
 
 # Настройка логирования
 log = get_logger(__name__)
