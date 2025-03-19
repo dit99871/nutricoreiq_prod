@@ -1,5 +1,6 @@
 import uvicorn
 from fastapi import FastAPI
+from fastapi.responses import ORJSONResponse
 
 from api import router as api_router
 from core.config import settings
@@ -11,7 +12,7 @@ app = FastAPI()
 app.include_router(api_router)
 
 
-@app.get("/")
+@app.get("/", response_class=ORJSONResponse)
 def main():
     return {"message": "Hi, searching!"}
 
