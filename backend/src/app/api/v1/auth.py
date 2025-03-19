@@ -5,13 +5,13 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.config import settings
-from core.logger import get_logger
-from core.utils import (
+from core import (
     create_token,
     db_helper,
     get_password_hash,
     decode_token,
+    get_logger,
+    settings,
 )
 from crud.user import create_user, get_user_by_email
 from services.auth import authenticate_user
@@ -87,8 +87,7 @@ async def is_refresh_token(token: str):
             detail="Invalid refresh token",
         )
     email = payload.get("sub")
-    role = payload.get("role")
-    if not email or not role:
+    if not email:
         log.warning("Refresh token failed: Invalid refresh token payload")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -96,7 +95,6 @@ async def is_refresh_token(token: str):
         )
     access_token_payload = TokenPayload(
         sub=email,
-        role=role,
         exp=settings.auth.access_token_expires,
     )
     access_token = create_token(
