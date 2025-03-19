@@ -16,13 +16,13 @@ LOG_DEFAULT_FORMAT = (
 )
 
 
-class AuthenticateConfig(BaseModel):
+class AuthConfig(BaseModel):
     secret_key: str
     algorithm: str
-    access_token_expires: int = 3600  # 1 hour
-    refresh_token_expires: int = 7 * 24 * 60 * 60  # 7 days
-    refresh_token_prefix: str = "refresh_"
-    access_token_prefix: str = "access_"
+    access_token_expires: int  # 7 minutes
+    refresh_token_expires: int  # 7 days
+    private_key_path: Path = BASE_DIR / "certs" / "jwt-private.pem"
+    public_key_path: Path = BASE_DIR / "certs" / "jwt-public.pem"
 
 
 class RunConfig(BaseModel):
@@ -82,11 +82,11 @@ class Settings(BaseSettings):
         env_nested_delimiter="__",
         env_prefix="APP_CONFIG__",
     )
-    run: RunConfig = RunConfig()
+    run: RunConfig
     logging: LoggingConfig = LoggingConfig()
     api: ApiPrefix = ApiPrefix()
     db: DatabaseConfig
-    auth: AuthenticateConfig
+    auth: AuthConfig
 
 
 settings = Settings()
