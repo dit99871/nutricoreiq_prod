@@ -1,55 +1,39 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import EmailStr
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends
 
-from crud.user import get_user, create_user, update_user, delete_user, get_user_by_email
-from core.schemas.user import UserCreate, UserUpdate, UserRead, DeletedUser
-from core.models import db_helper
+from schemas.user import UserRead
+from services.auth import get_current_user
 
-router = APIRouter(tags=["user"])
+router = APIRouter(tags=["User"])
 
 
-@router.post("/", response_model=UserRead)
-async def create_user_endpoint(
-    user_in: UserCreate, db: Annotated[AsyncSession, Depends(db_helper.session_getter)]
+@router.get("/me/", response_model=UserRead)
+async def read_current_user(
+    current_user: Annotated[UserRead, Depends(get_current_user)],
 ):
-    user = await get_user_by_email(db, user_in.email)
-    if user:
-        raise HTTPException(
-            status_code=400, detail="User with this email already exists"
-        )
-    return await create_user(db, user_in)
+    return current_user
 
 
-@router.get("/{user_email}", response_model=UserRead)
-async def read_user_endpoint(
-    user_email: EmailStr, db: Annotated[AsyncSession, Depends(db_helper.session_getter)]
-):
-    db_user = await get_user_by_email(db, user_email)
-    if db_user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    return db_user
-
-
-@router.put("/{user_email}", response_model=UserRead)
-async def update_user_endpoint(
-    user_email: EmailStr,
-    user: UserUpdate,
-    db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-):
-    db_user = await update_user(db, user_email, user)
-    if db_user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    return db_user
-
-
-@router.delete("/{user_email}", response_model=DeletedUser)
-async def delete_user_endpoint(
-    user_email: EmailStr, db: Annotated[AsyncSession, Depends(db_helper.session_getter)]
-):
-    deleted_user = await delete_user(db, user_email)
-    if deleted_user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    return deleted_user
+#
+# @router.patch("/me/", response_model=UserRead)
+# async def update_current_user(
+#     user_update: UserUpdate,
+#     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+#     current_user: Annotated[UserRead, Depends(get_current_user)],
+# ):
+#     updated_user = await update_user(db, current_user.email, user_update)
+#     if not updated_user:
+#         raise HTTPException(status_code=400, detail="User not updated")
+#     return updated_user
+#
+#
+# @router.delete("/me/", response_model=UserDelete)
+# async def delete_current_user(
+#     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+#     current_user: Annotated[UserRead, Depends(get_current_user)],
+# ):
+#     deleted_user = await delete_user(db, current_user)
+#     if deleted_user is None:
+#         raise HTTPException(status_code=404, detail="User not found")
+#     return deleted_user
