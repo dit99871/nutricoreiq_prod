@@ -2,14 +2,14 @@ from datetime import datetime
 
 from sqlalchemy.orm import Mapped, mapped_column
 
-from core.models.base import Base
-from core.models.mixins.int_id_pk import IntIdPkMixin
+from models.base import Base
+from models.mixins.int_id_pk import IntIdPkMixin
 
 
 class User(IntIdPkMixin, Base):
     username: Mapped[str] = mapped_column(unique=True, index=True)
     email: Mapped[str] = mapped_column(unique=True, index=True)
-    hashed_password: Mapped[str]
+    hashed_password: Mapped[bytes]
     gender: Mapped[str]
     age: Mapped[int]
     weight: Mapped[float]
