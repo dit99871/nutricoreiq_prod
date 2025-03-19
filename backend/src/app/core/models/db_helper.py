@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
 )
 
-from app.core.config import settings
+from core.config import settings
 
 
 class DatabaseHelper:
@@ -19,6 +19,7 @@ class DatabaseHelper:
         pool_size: int = 5,
         max_overflow: int = 10,
     ) -> None:
+
         self.engine: AsyncEngine = create_async_engine(
             url=url,
             echo=echo,
