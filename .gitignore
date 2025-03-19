@@ -1037,4 +1037,5 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
-/backend/src/app/utils/certs/
+/backend/src/app/core/certs/
+/backend/src/app/core/certs/
