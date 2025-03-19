@@ -1,8 +1,8 @@
+from datetime import datetime
+
 from typing import Annotated, Optional
 from annotated_types import MaxLen, MinLen
-
 from pydantic import BaseModel, EmailStr, ConfigDict
-from datetime import datetime
 
 
 class UserBase(BaseModel):
