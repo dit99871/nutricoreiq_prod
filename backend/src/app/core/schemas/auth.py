@@ -1,20 +1,22 @@
 from datetime import timedelta
 
-from pydantic import BaseModel, EmailStr
+from pydantic import EmailStr
+
+from .base import BaseSchema
 
 
-class Token(BaseModel):
+class Token(BaseSchema):
     access_token: str
     refresh_token: str
     token_type: str
 
 
-class TokenPayload(BaseModel):
+class TokenPayload(BaseSchema):
     sub: EmailStr
     exp: timedelta
     role: str  # Добавляем роль пользователя
 
 
-class UserLogin(BaseModel):
+class UserLogin(BaseSchema):
     email: EmailStr
     password: str

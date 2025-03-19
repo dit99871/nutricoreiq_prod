@@ -2,10 +2,12 @@ from datetime import datetime
 
 from typing import Annotated, Optional
 from annotated_types import MaxLen, MinLen
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import EmailStr, ConfigDict
+
+from .base import BaseSchema
 
 
-class UserBase(BaseModel):
+class UserBase(BaseSchema):
     username: Annotated[str, MinLen(3), MaxLen(20)]
     email: EmailStr
     gender: str
@@ -14,12 +16,15 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    password: bytes
+    password: Annotated[str, MinLen(8), MaxLen(20)]
 
-    model_config = ConfigDict(strict=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        strict=True,
+    )
 
 
-class UserUpdate(BaseModel):
+class UserUpdate(BaseSchema):
     username: Annotated[str, MinLen(3), MaxLen(20)] = None
     email: Optional[EmailStr] = None
     gender: Optional[str] = None
@@ -32,17 +37,9 @@ class UserRead(UserBase):
     is_active: bool
     role: str
 
-    model_config = ConfigDict(
-        from_attributes=True,
-    )
-
 
 class UserDelete(UserBase):
     id: int
     is_active: bool
     role: str
     deleted_at: datetime
-
-    model_config = ConfigDict(
-        from_attributes=True,
-    )
