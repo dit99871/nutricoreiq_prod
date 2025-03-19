@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from sqlalchemy.orm import Mapped, mapped_column
 
 from models.base import Base
@@ -14,16 +12,6 @@ class User(IntIdPkMixin, Base):
     age: Mapped[int]
     weight: Mapped[float]
     is_active: Mapped[bool] = mapped_column(default=True)
-    is_admin: Mapped[bool] = mapped_column(default=False)
 
 
-class DeletedUser(IntIdPkMixin, Base):
-    username: Mapped[str]
-    email: Mapped[str]
-    hashed_password: Mapped[bytes]
-    gender: Mapped[str]
-    age: Mapped[int]
-    weight: Mapped[float]
-
-    is_active: Mapped[bool]
-    deleted_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+#     is_admin: Mapped[bool] = mapped_column(default=False)
