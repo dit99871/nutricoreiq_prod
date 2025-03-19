@@ -1,7 +1,7 @@
 __all__ = (
     # "AgeGroup",
     "Base",
-    "DeletedUser",
+    # "DeletedUser",
     # "FemaleAgeSpecificNutrient",
     # "MaleAgeSpecificNutrient",
     # "FemalePAL",
@@ -24,4 +24,4 @@ from models.base import Base
 # from .gender_metabolism import FemaleMetabolism, MaleMetabolism
 # from .nutrient import Nutrient
 # from .product import Product
-from models.user import User, DeletedUser
+from models.user import User

@@ -6,10 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.exc import SQLAlchemyError
 
-from models import db_helper, DeletedUser, User
-from schemas import UserCreate, UserUpdate
-from core.utils.security import get_password_hash
+from core.utils import db_helper, get_password_hash
 from core.logger import get_logger
+from models import DeletedUser, User
+from schemas import UserCreate, UserDelete, UserUpdate
 
 # Настройка логирования
 log = get_logger(__name__)
@@ -143,7 +143,9 @@ async def update_user(
 
 
 async def delete_user(
-    db: Annotated[AsyncSession, Depends(db_helper.session_getter)], user_email: EmailStr
+    db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+    user_email: EmailStr,
+    user: UserDelete,
 ) -> Optional[DeletedUser]:
     """Удаление пользователя."""
     try:
