@@ -2,7 +2,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 from typing import Optional
 
-from app.core.config import settings
+from core.config import settings
 
 
 def setup_logging():
@@ -13,8 +13,8 @@ def setup_logging():
     formatter = logging.Formatter(settings.logging.log_format)
 
     # Хэндлер для вывода в консоль
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(formatter)
+    # console_handler = logging.StreamHandler()
+    # console_handler.setFormatter(formatter)
 
     # Хэндлер для записи в файл с ротацией
     file_handler = RotatingFileHandler(
@@ -27,7 +27,7 @@ def setup_logging():
     # Настройка корневого логгера
     logging.basicConfig(
         level=settings.logging.log_level_value,
-        handlers=[console_handler, file_handler],
+        handlers=[file_handler],
     )
 
 

@@ -6,11 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.exc import SQLAlchemyError
 
-from app.core.models import DeletedUser, User
-from app.core.schemas import UserCreate, UserUpdate
-from app.utils.security import get_password_hash
-from app.utils.logger import get_logger
-from core.models import db_helper
+from core.models import db_helper, DeletedUser, User
+from core.schemas import UserCreate, UserUpdate
+from utils.security import get_password_hash
+from utils.logger import get_logger
 
 # Настройка логирования
 log = get_logger(__name__)
@@ -23,19 +22,21 @@ async def _get_user_by_filter(
     """Вспомогательная функция для получения пользователя по фильтру."""
     try:
         result = await db.execute(
-            select(User).filter(filter_condition, User.is_active == True)
+            select(User).filter(filter_condition, User.is_active is True)
         )
         return result.scalars().first()
     except SQLAlchemyError as e:
-        log.error(f"Database error getting user: {e}")
+        log.error("Database error getting user: %s", e)
         raise  # Перебрасываем исключение
     except Exception as e:
-        log.exception(f"Unexpected error getting user: {e}")
+        log.exception("Unexpected error getting user: %s", e)
         raise  # Пробрасываем исключение
 
 
-async def _handle_user_result(
-    user: Optional[User], success_message: str, not_found_message: str
+async def _log_user_result(
+    user: Optional[User],
+    success_message: str,
+    not_found_message: str,
 ) -> Optional[User]:
     """Обрабатывает результат запроса пользователя и логирует сообщение."""
     if user:
@@ -51,8 +52,10 @@ async def get_user_by_id(
 ) -> Optional[User]:
     """Получение пользователя по ID."""
     user = await _get_user_by_filter(db, User.id == user_id)
-    return await _handle_user_result(
-        user, f"User found with id: {user_id}", f"User not found with id: {user_id}"
+    return await _log_user_result(
+        user,
+        f"User found with id: {user_id}",
+        f"User not found with id: {user_id}",
     )
 
 
@@ -62,7 +65,7 @@ async def get_user_by_email(
 ) -> Optional[User]:
     """Получение пользователя по email."""
     user = await _get_user_by_filter(db, User.email == email)
-    return await _handle_user_result(
+    return await _log_user_result(
         user,
         f"User found with email: {email}",
         f"User not found with email: {email}",
@@ -74,10 +77,10 @@ async def get_user_by_name(
     user_name: str,
 ) -> Optional[User]:
     user = await _get_user_by_filter(db, User.username == user_name)
-    return await _handle_user_result(
+    return await _log_user_result(
         user,
         f"User found with user_name: {user_name}",
-        f"User not found with user_name: {user_name}"
+        f"User not found with user_name: {user_name}",
     )
 
 
@@ -99,14 +102,14 @@ async def create_user(
         db.add(db_user)
         await db.commit()
         await db.refresh(db_user)
-        log.info(f"User created with email: {user.email}")
+        log.info("User created with email: %s", user.email)
         return db_user
     except SQLAlchemyError as e:
-        log.error(f"Database error creating user with email {user.email}: {e}")
+        log.error("Database error creating user with email %s: %s", user.email, e)
         await db.rollback()
         return None
     except Exception as e:
-        log.exception(f"Unexpected error creating user with email {user.email}: {e}")
+        log.exception("Unexpected error creating user with email %s: %s", user.email, e)
         await db.rollback()
         return None
 
@@ -125,17 +128,16 @@ async def update_user(
                     setattr(db_user, key, value)
             await db.commit()
             await db.refresh(db_user)
-            log.info(f"User updated with email: {user_email}")
+            log.info("User updated with email: %s", user_email)
             return db_user
-        else:
-            log.warning(f"User not found for update with email: {user_email}")
-            return None
+        log.warning("User not found for update with email: %s", user_email)
+        return None
     except SQLAlchemyError as e:
-        log.error(f"Database error updating user with email {user_email}: {e}")
+        log.error("Database error updating user with email %s: %s", user_email, e)
         await db.rollback()
         return None
     except Exception as e:
-        log.exception(f"Unexpected error updating user with email {user_email}: {e}")
+        log.exception("Unexpected error updating user with email %s: %s", user_email, e)
         await db.rollback()
         return None
 
@@ -164,16 +166,15 @@ async def delete_user(
             # Удаляем пользователя из таблицы users
             await db.delete(db_user)
             await db.commit()
-            log.info(f"User deleted with email: {user_email}")
+            log.info("User deleted with email: %s", user_email)
             return deleted_user
-        else:
-            log.warning(f"User not found for deletion with email: {user_email}")
-            return None
+        log.warning("User not found for deletion with email: %s", user_email)
+        return None
     except SQLAlchemyError as e:
-        log.error(f"Database error deleting user with email {user_email}: {e}")
+        log.error("Database error deleting user with email %s: %s", user_email, e)
         await db.rollback()
         return None
     except Exception as e:
-        log.exception(f"Unexpected error deleting user with email {user_email}: {e}")
+        log.exception("Unexpected error deleting user with email %s: %s", user_email, e)
         await db.rollback()
         return None
