@@ -3,7 +3,8 @@ from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 
 from api import router as api_router
-from core import settings, setup_logging
+from core.config import settings
+from core.logger import setup_logging
 
 setup_logging()
 

@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Mapped, mapped_column
 
-from models.base import Base
-from models.mixins.int_id_pk import IntIdPkMixin
+from .mixins import IntIdPkMixin
+from .base import Base
 
 
 class User(IntIdPkMixin, Base):

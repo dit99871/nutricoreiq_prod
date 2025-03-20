@@ -4,7 +4,7 @@ from typing import Optional
 import bcrypt
 from jose import jwt, JWTError
 
-from core import settings
+from core.config import settings
 
 
 def get_password_hash(password: str) -> bytes:
