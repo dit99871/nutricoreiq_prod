@@ -17,6 +17,7 @@ class UserBase(BaseSchema):
 
 class UserCreate(UserBase):
     password: Annotated[str, MinLen(8), MaxLen(20)]
+    role: Optional[str] = None
 
     model_config = ConfigDict(
         from_attributes=True,
