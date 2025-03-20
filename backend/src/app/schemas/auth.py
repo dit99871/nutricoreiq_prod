@@ -14,7 +14,6 @@ class Token(BaseSchema):
 class TokenPayload(BaseSchema):
     sub: EmailStr
     exp: timedelta
-    # role: str  # Добавляем роль пользователя
 
 
 class UserLogin(BaseSchema):

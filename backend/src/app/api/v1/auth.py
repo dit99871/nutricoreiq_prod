@@ -8,7 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.utils import (
     create_token,
     db_helper,
-    get_password_hash,
     decode_token,
 )
 from core.config import settings
@@ -35,7 +34,6 @@ async def register_user(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered",
         )
-    user_in.password = get_password_hash(user_in.password)
     user = await create_user(db, user_in)
     if not user:
         log.error(

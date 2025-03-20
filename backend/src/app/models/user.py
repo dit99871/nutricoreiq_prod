@@ -12,6 +12,3 @@ class User(IntIdPkMixin, Base):
     age: Mapped[int]
     weight: Mapped[float]
     is_active: Mapped[bool] = mapped_column(default=True)
-
-
-#     is_admin: Mapped[bool] = mapped_column(default=False)
