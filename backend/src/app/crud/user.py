@@ -66,30 +66,32 @@ async def get_user_by_name(
 
 async def create_user(
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-    user: UserCreate,
+    user_in: UserCreate,
 ) -> Optional[User]:
     """Создание нового пользователя."""
     try:
-        hashed_password = get_password_hash(user.password)
+        hashed_password = get_password_hash(user_in.password)
         db_user = User(
-            username=user.username,
-            email=user.email,
+            username=user_in.username,
+            email=user_in.email,
             hashed_password=hashed_password,
-            gender=user.gender,
-            age=user.age,
-            weight=user.weight,
+            gender=user_in.gender,
+            age=user_in.age,
+            weight=user_in.weight,
         )
         db.add(db_user)
         await db.commit()
         await db.refresh(db_user)
-        log.info("User created with email: %s", user.email)
+        log.info("User created with email: %s", user_in.email)
         return db_user
     except SQLAlchemyError as e:
-        log.error("Database error creating user with email %s: %s", user.email, e)
+        log.error("Database error creating user_in with email %s: %s", user_in.email, e)
         await db.rollback()
         return None
     except Exception as e:
-        log.exception("Unexpected error creating user with email %s: %s", user.email, e)
+        log.exception(
+            "Unexpected error creating user_in with email %s: %s", user_in.email, e
+        )
         await db.rollback()
         return None
 
