@@ -14,8 +14,3 @@ class Token(BaseSchema):
 class TokenPayload(BaseSchema):
     sub: EmailStr
     exp: timedelta
-
-
-class UserLogin(BaseSchema):
-    email: EmailStr
-    password: str
