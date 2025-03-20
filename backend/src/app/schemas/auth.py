@@ -1,5 +1,3 @@
-from datetime import timedelta
-
 from pydantic import EmailStr
 
 from .base import BaseSchema
@@ -13,4 +11,4 @@ class Token(BaseSchema):
 
 class TokenPayload(BaseSchema):
     sub: EmailStr
-    exp: timedelta
+    exp: int
