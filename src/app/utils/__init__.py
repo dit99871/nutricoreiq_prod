@@ -4,7 +4,8 @@ from .auth import (
     get_password_hash,
     verify_password,
     create_jwt,
-    decode_token,
+    decode_jwt,
+    encode_jwt,
 )
 
 __all__ = (
@@ -13,5 +14,6 @@ __all__ = (
     "get_password_hash",
     "verify_password",
     "create_jwt",
-    "decode_token",
+    "decode_jwt",
+    "encode_jwt",
 )
