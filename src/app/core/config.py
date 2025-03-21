@@ -19,8 +19,8 @@ LOG_DEFAULT_FORMAT = (
 class AuthConfig(BaseModel):
     secret_key: str
     algorithm: str
-    access_token_expires: int  # 7 minutes
-    refresh_token_expires: int  # 7 days
+    access_token_expires: int = 7  # 7 minutes
+    refresh_token_expires: int = 7  # 7 days
     private_key_path: Path = BASE_DIR / "utils" / "certs" / "jwt-private.pem"
     public_key_path: Path = BASE_DIR / "utils" / "certs" / "jwt-public.pem"
 
