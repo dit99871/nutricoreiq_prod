@@ -7,7 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from models import DeletedUser, User
 from app.crud.user import create_user, delete_user, get_user_by_email, update_user
 from schemas import UserCreate, UserUpdate
-from core.utils.security import get_password_hash, verify_password
+from utils import get_password_hash, verify_password
 
 
 @pytest.mark.asyncio

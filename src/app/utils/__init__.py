@@ -1,9 +1,9 @@
 from .case_converter import camel_case_to_snake_case
 from .log_user_helper import log_user_result
-from .security import (
+from .auth import (
     get_password_hash,
     verify_password,
-    create_token,
+    create_jwt,
     decode_token,
 )
 
@@ -12,6 +12,6 @@ __all__ = (
     "log_user_result",
     "get_password_hash",
     "verify_password",
-    "create_token",
+    "create_jwt",
     "decode_token",
 )

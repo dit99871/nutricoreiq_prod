@@ -7,7 +7,6 @@ from fastapi.exceptions import HTTPException
 from jose import jwt, JWTError, ExpiredSignatureError
 
 from core.config import settings
-from core.exceptions import AppError
 from core.logger import get_logger
 
 log = get_logger(__name__)
@@ -26,7 +25,7 @@ def verify_password(password: str, hashed_password: bytes) -> bool:
     )
 
 
-def create_token(payload: dict, expires_delta: timedelta) -> str:
+def create_jwt(payload: dict, expires_delta: timedelta) -> str:
     try:
         to_encode = payload.copy()
         now = datetime.utcnow()
@@ -48,7 +47,7 @@ def create_token(payload: dict, expires_delta: timedelta) -> str:
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e),
         )
-    except AppError as e:
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e),
@@ -76,10 +75,10 @@ def decode_token(token: str) -> Optional[dict]:
     except JWTError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"JWT error decoding token: {e}",
+            detail=f"JWT error decoding token: {str(e)}",
         )
-    except AppError as e:
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Unexpected error decoding token: {e}",
+            detail=f"Unexpected error decoding token: {str(e)}",
         )

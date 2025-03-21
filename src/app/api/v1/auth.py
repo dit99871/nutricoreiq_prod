@@ -6,7 +6,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db import db_helper
-from utils import create_token
+from utils import create_jwt
 from core.config import settings
 from core.logger import get_logger
 from crud.user import create_user, get_user_by_email
@@ -71,11 +71,11 @@ async def login(
             form_data.username,
             form_data.password,
         )
-        access_token = create_token(
+        access_token = create_jwt(
             payload.model_dump(),
             timedelta(minutes=settings.auth.access_token_expires),
         )
-        refresh_token = create_token(
+        refresh_token = create_jwt(
             payload.model_dump(),
             timedelta(days=settings.auth.refresh_token_expires),
         )

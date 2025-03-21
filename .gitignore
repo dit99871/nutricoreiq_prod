@@ -128,7 +128,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-backend/src/app/.env
+src/app/.env
 .venv
 env/
 venv/
@@ -301,7 +301,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-backend/src/app/.env
+src/app/.env
 .venv
 env/
 venv/
@@ -474,7 +474,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-backend/src/app/.env
+src/app/.env
 .venv
 env/
 venv/
@@ -647,7 +647,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-backend/src/app/.env
+src/app/.env
 .venv
 env/
 venv/
@@ -820,7 +820,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-backend/src/app/.env
+src/app/.env
 .venv
 env/
 venv/
@@ -993,7 +993,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-backend/src/app/.env
+src/app/.env
 .venv
 env/
 venv/
@@ -1037,6 +1037,6 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
-/backend/src/app/core/certs/
-/backend/src/app/core/certs/
-/backend/src/app/utils/certs/
+/src/app/core/certs/
+/src/app/core/certs/
+/src/app/utils/certs/
