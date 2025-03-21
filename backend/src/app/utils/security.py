@@ -1,67 +1,85 @@
 from datetime import datetime, timedelta
 from typing import Optional
 
-from jose import jwt, JWTError
-from passlib.context import CryptContext
+import bcrypt
+from fastapi import status
+from fastapi.exceptions import HTTPException
+from jose import jwt, JWTError, ExpiredSignatureError
 
-from app.core.config import settings
+from core.config import settings
+from core.exceptions import AppError
+from core.logger import get_logger
 
-# Создаем контекст для хэширования паролей
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
-def get_password_hash(password: str) -> str:
-    """
-    Хэширует пароль с использованием алгоритма bcrypt.
-
-    :param password: Пароль в виде строки.
-    :return: Хэшированный пароль.
-    """
-    return pwd_context.hash(password)
+log = get_logger(__name__)
 
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """
-    Проверяет, соответствует ли пароль его хэшу.
-
-    :param plain_password: Пароль в виде строки.
-    :param hashed_password: Хэшированный пароль.
-    :return: True, если пароль верный, иначе False.
-    """
-    return pwd_context.verify(plain_password, hashed_password)
+def get_password_hash(password: str) -> bytes:
+    salt = bcrypt.gensalt()
+    pwd_bytes: bytes = password.encode()
+    return bcrypt.hashpw(pwd_bytes, salt)
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(
-        to_encode, settings.auth.secret_key, algorithm=settings.auth.algorithm
+def verify_password(password: str, hashed_password: bytes) -> bool:
+    return bcrypt.checkpw(
+        password=password.encode(),
+        hashed_password=hashed_password,
     )
-    return encoded_jwt
 
 
-def create_refresh_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    to_encode = data.copy()
-    if expires_delta:
+def create_token(payload: dict, expires_delta: timedelta) -> str:
+    try:
+        to_encode = payload.copy()
+        now = datetime.utcnow()
         expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(days=7)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(
-        to_encode, settings.auth.secret_key, algorithm=settings.auth.algorithm
-    )
-    return encoded_jwt
+        to_encode.update(
+            {
+                "exp": expire,
+                "iat": now,
+            }
+        )
+        encoded_jwt = jwt.encode(
+            to_encode,
+            settings.auth.private_key_path.read_text(),
+            algorithm=settings.auth.algorithm,
+        )
+        return encoded_jwt
+    except FileNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
+        )
+    except AppError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e),
+        )
 
 
 def decode_token(token: str) -> Optional[dict]:
     try:
         payload = jwt.decode(
-            token, settings.auth.secret_key, algorithms=[settings.auth.algorithm]
+            token,
+            settings.auth.public_key_path.read_text(),
+            algorithms=settings.auth.algorithm,
         )
         return payload
-    except JWTError:
-        return None
+    except FileNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"File not found {str(e)}",
+        )
+    except ExpiredSignatureError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Token has expired: {str(e)}.",
+        )
+    except JWTError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"JWT error decoding token: {e}",
+        )
+    except AppError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected error decoding token: {e}",
+        )

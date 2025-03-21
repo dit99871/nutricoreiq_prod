@@ -1,21 +1,21 @@
 from typing import Annotated, Optional
 
-from fastapi import Depends
+from fastapi import Depends, status
+from fastapi.exceptions import HTTPException
 from pydantic import EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.exc import SQLAlchemyError
 
 from core.logger import get_logger
-from core.utils import (
-    db_helper,
+from db import db_helper
+from utils import (
     get_password_hash,
     log_user_result,
 )
 from models.user import User
-from schemas.user import UserCreate  # UserDelete, UserUpdate
+from schemas.user import UserCreate
 
-# Настройка логирования
 log = get_logger(__name__)
 
 
@@ -26,15 +26,21 @@ async def _get_user_by_filter(
     """Вспомогательная функция для получения пользователя по фильтру."""
     try:
         result = await db.execute(
-            select(User).filter(filter_condition, User.is_active is True)
+            select(User).filter(filter_condition, User.is_active == True)
         )
         return result.scalars().first()
     except SQLAlchemyError as e:
         log.error("Database error getting user: %s", e)
-        raise  # Перебрасываем исключение
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"DB error getting user: {str(e)}",
+        )
     except Exception as e:
         log.exception("Unexpected error getting user: %s", e)
-        raise  # Пробрасываем исключение
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected error getting user {str(e)}",
+        )
 
 
 async def get_user_by_email(
@@ -42,26 +48,45 @@ async def get_user_by_email(
     email: EmailStr,
 ) -> Optional[User]:
     """Получение пользователя по email."""
-    user = await _get_user_by_filter(db, User.email == email)
-    return await log_user_result(
-        user,
-        log,
-        f"User found with email: {email}",
-        f"User not found with email: {email}",
-    )
+    try:
+        user = await _get_user_by_filter(db, User.email == email)
+        return log_user_result(
+            user,
+            log,
+            f"User found with email: {email}",
+            f"User not found with email: {email}",
+        )
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        log.exception("Unexpected error getting user by email: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected error getting user by email: {str(e)}",
+        )
 
 
 async def get_user_by_name(
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
     user_name: str,
 ) -> Optional[User]:
-    user = await _get_user_by_filter(db, User.username == user_name)
-    return await log_user_result(
-        user,
-        log,
-        f"User found with user_name: {user_name}",
-        f"User not found with user_name: {user_name}",
-    )
+    """Получение пользователя по имени."""
+    try:
+        user = await _get_user_by_filter(db, User.username == user_name)
+        return await log_user_result(
+            user,
+            log,
+            f"User found with user_name: {user_name}",
+            f"User not found with user_name: {user_name}",
+        )
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        log.exception("Unexpected error getting user by name: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected error getting user by name: {str(e)}",
+        )
 
 
 async def create_user(
@@ -87,16 +112,21 @@ async def create_user(
     except SQLAlchemyError as e:
         log.error("Database error creating user_in with email %s: %s", user_in.email, e)
         await db.rollback()
-        return None
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e),
+        )
     except Exception as e:
         log.exception(
             "Unexpected error creating user_in with email %s: %s", user_in.email, e
         )
         await db.rollback()
-        return None
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e),
+        )
 
 
-#
 # async def update_user(
 #     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
 #     user_email: EmailStr,
