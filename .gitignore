@@ -1039,3 +1039,4 @@ cython_debug/
 .pypirc
 /backend/src/app/core/certs/
 /backend/src/app/core/certs/
+/backend/src/app/utils/certs/
