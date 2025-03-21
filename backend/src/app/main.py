@@ -1,3 +1,6 @@
+from contextlib import asynccontextmanager
+import subprocess
+
 import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
@@ -8,7 +11,14 @@ from core.logger import setup_logging
 
 setup_logging()
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    subprocess.run(["docker-compose", "up", "-d"])
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 app.include_router(api_router)
 
 
