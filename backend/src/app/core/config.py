@@ -12,7 +12,7 @@ from pydantic_settings import (
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 LOG_DEFAULT_FORMAT = (
-    "[%(asctime)s.%(msecs)03d] %(module)10s:%(lineno)-3d %(levelname)-7s - %(message)s"
+    "[%(asctime)s.%(msecs)03d] %(module)15s:%(lineno)-4d %(levelname)-7s - %(message)s"
 )
 
 
@@ -21,8 +21,8 @@ class AuthConfig(BaseModel):
     algorithm: str
     access_token_expires: int  # 7 minutes
     refresh_token_expires: int  # 7 days
-    private_key_path: Path = BASE_DIR / "core" / "certs" / "jwt-private.pem"
-    public_key_path: Path = BASE_DIR / "core" / "certs" / "jwt-public.pem"
+    private_key_path: Path = BASE_DIR / "utils" / "certs" / "jwt-private.pem"
+    public_key_path: Path = BASE_DIR / "utils" / "certs" / "jwt-public.pem"
 
 
 class RunConfig(BaseModel):
