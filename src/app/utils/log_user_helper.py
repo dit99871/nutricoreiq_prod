@@ -1,7 +1,7 @@
 from logging import Logger
 
 
-async def log_user_result(
+def log_user_result(
     user,
     logger: Logger,
     success_message: str,
