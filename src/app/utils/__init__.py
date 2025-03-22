@@ -3,7 +3,6 @@ from .log_user_helper import log_user_result
 from .auth import (
     get_password_hash,
     verify_password,
-    create_jwt,
     decode_jwt,
     encode_jwt,
 )
@@ -13,7 +12,6 @@ __all__ = (
     "log_user_result",
     "get_password_hash",
     "verify_password",
-    "create_jwt",
     "decode_jwt",
     "encode_jwt",
 )
