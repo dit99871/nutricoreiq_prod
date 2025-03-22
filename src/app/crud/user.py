@@ -1,20 +1,20 @@
-from typing import Annotated, Optional
+from typing import Annotated
 
 from fastapi import Depends, status
 from fastapi.exceptions import HTTPException
 from pydantic import EmailStr
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.exc import SQLAlchemyError
 
 from core.logger import get_logger
 from db import db_helper
+from models.user import User
+from schemas.user import UserCreate
 from utils import (
     get_password_hash,
     log_user_result,
 )
-from models.user import User
-from schemas.user import UserCreate
 
 log = get_logger(__name__)
 
@@ -22,7 +22,7 @@ log = get_logger(__name__)
 async def _get_user_by_filter(
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
     filter_condition,
-) -> Optional[User]:
+) -> User | None:
     """Вспомогательная функция для получения пользователя по фильтру."""
     try:
         result = await db.execute(
@@ -46,7 +46,7 @@ async def _get_user_by_filter(
 async def get_user_by_email(
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
     email: EmailStr,
-) -> Optional[User]:
+) -> User | None:
     """Получение пользователя по email."""
     try:
         user = await _get_user_by_filter(db, User.email == email)
@@ -69,11 +69,11 @@ async def get_user_by_email(
 async def get_user_by_name(
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
     user_name: str,
-) -> Optional[User]:
+) -> User | None:
     """Получение пользователя по имени."""
     try:
         user = await _get_user_by_filter(db, User.username == user_name)
-        return await log_user_result(
+        return log_user_result(
             user,
             log,
             f"User found with user_name: {user_name}",
@@ -92,7 +92,7 @@ async def get_user_by_name(
 async def create_user(
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
     user_in: UserCreate,
-) -> Optional[User]:
+) -> User | None:
     """Создание нового пользователя."""
     try:
         hashed_password = get_password_hash(user_in.password)
