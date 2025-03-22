@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 import subprocess
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import ORJSONResponse
 
 from api import router as api_router
@@ -13,13 +13,29 @@ setup_logging()
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan_docker(app: FastAPI):
     subprocess.run(["docker-compose", "up", "-d"])
     yield
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan_docker)
 app.include_router(api_router)
+
+
+@app.exception_handler(HTTPException)
+def http_exception_handler(request: Request, exc: HTTPException):
+    return ORJSONResponse(
+        status_code=exc.status_code,
+        content={"message": exc.detail},
+    )
+
+
+@app.exception_handler(Exception)
+def generic_exception_handler(request: Request, exc: Exception):
+    return ORJSONResponse(
+        status_code=500,
+        content={"message": "Internal Server Error", "detail": str(exc)},
+    )
 
 
 @app.get("/", response_class=ORJSONResponse)
