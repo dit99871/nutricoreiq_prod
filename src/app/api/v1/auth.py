@@ -1,7 +1,10 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.security import (
+    OAuth2PasswordRequestForm,
+    HTTPBearer,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db import db_helper
@@ -15,21 +18,26 @@ from services.auth import (
     create_refresh_token,
 )
 from schemas.auth import Token
-from schemas.user import UserCreate, UserRead
+from schemas.user import UserSchema
 
-router = APIRouter(tags=["Authentication"])
+http_bearer = HTTPBearer(auto_error=False)
+
+router = APIRouter(
+    tags=["Authentication"],
+    dependencies=[Depends(http_bearer)],
+)
 log = get_logger(__name__)
 
 
 @router.post(
     "/register",
-    response_model=UserRead,
+    response_model=UserSchema,
     status_code=status.HTTP_201_CREATED,
 )
 async def register_user(
-    user_in: UserCreate,
+    user_in: UserSchema,
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-) -> User | None:
+) -> UserSchema | None:
     """
     Registers a new user in the system.
 
@@ -39,7 +47,7 @@ async def register_user(
     is successfully registered and returned.
 
     Args:
-        user_in (UserCreate): The data for creating a new user.
+        user_in (UserSchema): The data for creating a new user.
         db (Annotated[AsyncSession, Depends]): The async database session dependency.
 
     Returns:
@@ -72,7 +80,7 @@ async def register_user(
                 detail="Failed to create user",
             )
         log.info("User registered successfully: %s", user.email)
-        return user
+        return UserSchema.model_validate(user)
 
 
 @router.post("/login", response_model=Token)
