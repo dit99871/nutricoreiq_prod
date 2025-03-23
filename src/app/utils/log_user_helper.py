@@ -12,4 +12,3 @@ def log_user_result(
         logger.info(success_message)
     else:
         logger.warning(not_found_message)
-    return user
