@@ -12,7 +12,7 @@ from db import db_helper
 from models.user import User
 from utils import decode_jwt, encode_jwt, verify_password
 from crud.user import get_user_by_name
-from schemas.user import UserRead
+from schemas.user import UserSchema
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
 log = get_logger(__name__)
@@ -52,6 +52,13 @@ def get_current_auth_payload(token: str) -> str | None:
         log.error("Failed to decode token: payload is None")
         raise CREDENTIAL_EXCEPTION
 
+    token_type: str | None = payload.get(TOKEN_TYPE_FIELD)
+    if token_type is None:
+        log.error("Token type not found in token payload: %s", payload)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid token type {token_type!r} expected {ACCESS_TOKEN_TYPE!r}",
+        )
     name: str | None = payload.get("sub")
     if name is None:
         log.error("Name not found in token payload: %s", payload)
@@ -63,7 +70,7 @@ def get_current_auth_payload(token: str) -> str | None:
 async def get_current_auth_user(
     token: Annotated[str, Depends(oauth2_scheme)],
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-) -> UserRead:
+) -> UserSchema:
     """
     Retrieves the user associated with the given authentication token.
 
@@ -93,14 +100,14 @@ async def get_current_auth_user(
         raise CREDENTIAL_EXCEPTION
 
     log.info("User authenticated successfully: %s", name)
-    return UserRead.model_validate(user)
+    return UserSchema.model_validate(user)
 
 
 async def authenticate_user(
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
     username: str,
     password: str,
-) -> User | None:
+) -> UserSchema | None:
     """
     Authenticates a user with the given username and password.
 
@@ -140,7 +147,7 @@ async def authenticate_user(
             raise unauthed_exc
 
         log.info("User authenticated successfully: %s", username)
-        return user
+        return UserSchema.model_validate(user)
 
 
 def create_jwt(
