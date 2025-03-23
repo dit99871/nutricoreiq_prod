@@ -10,7 +10,7 @@ from sqlalchemy.future import select
 from core.logger import get_logger
 from db import db_helper
 from models.user import User
-from schemas.user import UserCreate
+from schemas.user import UserSchema
 from utils import (
     get_password_hash,
     log_user_result,
@@ -46,16 +46,17 @@ async def _get_user_by_filter(
 async def get_user_by_email(
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
     email: EmailStr,
-) -> User | None:
+) -> UserSchema | None:
     """Получение пользователя по email."""
     try:
         user = await _get_user_by_filter(db, User.email == email)
-        return log_user_result(
+        log_user_result(
             user,
             log,
             f"User found with email: {email}",
             f"User not found with email: {email}",
         )
+        return UserSchema.model_validate(user)
     except HTTPException as e:
         raise e
     except Exception as e:
@@ -69,16 +70,17 @@ async def get_user_by_email(
 async def get_user_by_name(
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
     user_name: str,
-) -> User | None:
+) -> UserSchema | None:
     """Получение пользователя по имени."""
     try:
         user = await _get_user_by_filter(db, User.username == user_name)
-        return log_user_result(
+        log_user_result(
             user,
             log,
             f"User found with user_name: {user_name}",
             f"User not found with user_name: {user_name}",
         )
+        return UserSchema.model_validate(user)
     except HTTPException as e:
         raise e
     except Exception as e:
@@ -91,8 +93,8 @@ async def get_user_by_name(
 
 async def create_user(
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-    user_in: UserCreate,
-) -> User | None:
+    user_in: UserSchema,
+) -> UserSchema | None:
     """Создание нового пользователя."""
     try:
         hashed_password = get_password_hash(user_in.password)
@@ -108,7 +110,7 @@ async def create_user(
         await db.commit()
         await db.refresh(db_user)
         log.info("User created with email: %s", user_in.email)
-        return db_user
+        return UserSchema.model_validate(db_user)
     except SQLAlchemyError as e:
         log.error("Database error creating user_in with email %s: %s", user_in.email, e)
         await db.rollback()
