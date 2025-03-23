@@ -13,7 +13,7 @@ from core.logger import get_logger
 log = get_logger(__name__)
 
 
-def get_password_hash(password: str) -> bytes:
+def get_password_hash(password: bytes) -> bytes:
     """
     Returns bytes object of hashed password.
 
@@ -23,8 +23,7 @@ def get_password_hash(password: str) -> bytes:
     :return: Hashed password as bytes.
     """
     salt = bcrypt.gensalt()
-    pwd_bytes: bytes = password.encode()
-    return bcrypt.hashpw(pwd_bytes, salt)
+    return bcrypt.hashpw(password, salt)
 
 
 def verify_password(
