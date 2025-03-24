@@ -2,17 +2,29 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
+from api.v1.auth import http_bearer
 from schemas.user import UserSchema
-from services.auth import get_current_auth_user
+from services.auth import (
+    get_current_auth_payload,
+    oauth2_scheme,
+)
+from services.user import get_current_auth_user
 
-router = APIRouter(tags=["User"])
+router = APIRouter(tags=["User"], dependencies=[Depends(http_bearer)])
 
 
-@router.get("/me", response_model=UserSchema)
+@router.get("/me")
 async def read_current_user(
-    current_user: Annotated[UserSchema, Depends(get_current_auth_user)],
-):
-    return current_user
+    token: Annotated[str, Depends(oauth2_scheme)],
+    user: Annotated[UserSchema, Depends(get_current_auth_user)],
+) -> dict:
+    payload: dict = get_current_auth_payload(token)
+    iat = payload.get("iat")
+    return {
+        "username": user.username,
+        "email": user.email,
+        "logged_in_at": iat,
+    }
 
 
 #
