@@ -1,7 +1,7 @@
 import datetime as dt
 from datetime import timedelta, datetime
 
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
 
 from core.config import settings
@@ -23,7 +23,9 @@ CREDENTIAL_EXCEPTION = HTTPException(
 )
 
 
-def get_current_auth_payload(token: str) -> dict | None:
+def get_current_token_payload(
+    token: str = Depends(oauth2_scheme),
+) -> dict | None:
     log.debug("Attempting to decode token: %s", token)
     payload: dict | None = decode_jwt(token)
     if payload is None:

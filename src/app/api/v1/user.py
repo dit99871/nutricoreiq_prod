@@ -4,10 +4,7 @@ from fastapi import APIRouter, Depends
 
 from api.v1.auth import http_bearer
 from schemas.user import UserSchema
-from services.auth import (
-    get_current_auth_payload,
-    oauth2_scheme,
-)
+from services.auth import get_current_token_payload, oauth2_scheme
 from services.user import get_current_auth_user
 
 router = APIRouter(tags=["User"], dependencies=[Depends(http_bearer)])
@@ -15,10 +12,10 @@ router = APIRouter(tags=["User"], dependencies=[Depends(http_bearer)])
 
 @router.get("/me")
 async def read_current_user(
-    token: Annotated[str, Depends(oauth2_scheme)],
     user: Annotated[UserSchema, Depends(get_current_auth_user)],
+    token: str = Depends(oauth2_scheme),
 ) -> dict:
-    payload: dict = get_current_auth_payload(token)
+    payload: dict = get_current_token_payload(token)
     iat = payload.get("iat")
     return {
         "username": user.username,
