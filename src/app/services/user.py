@@ -7,9 +7,11 @@ from core.logger import get_logger
 from db import db_helper
 from db.models import User
 from services.auth import (
+    ACCESS_TOKEN_TYPE,
     CREDENTIAL_EXCEPTION,
     get_current_auth_payload,
     oauth2_scheme,
+    TOKEN_TYPE_FIELD,
 )
 from utils.auth import verify_password
 from crud.user import get_user_by_name
@@ -24,6 +26,7 @@ async def get_current_auth_user(
     try:
         payload: dict = get_current_auth_payload(token)
         name: str | None = payload.get("sub")
+        token_type = payload.get(TOKEN_TYPE_FIELD)
         log.debug("Looking for user with name: %s", name)
         user = await get_user_by_name(db, name)
     except HTTPException as e:
@@ -32,6 +35,14 @@ async def get_current_auth_user(
         if user is None:
             log.error("User not found for name: %s", name)
             raise CREDENTIAL_EXCEPTION
+        if token_type != ACCESS_TOKEN_TYPE:
+            log.error(
+                "Invalid token type. Expected %s, got %s", ACCESS_TOKEN_TYPE, token_type
+            )
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Invalid token type. Expected {ACCESS_TOKEN_TYPE!r}, got {token_type!r}",
+            )
 
         log.info("User authenticated successfully: %s", name)
         return user
