@@ -1,18 +1,13 @@
 import datetime as dt
 from datetime import timedelta, datetime
-from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
+from fastapi import HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
 from core.logger import get_logger
-from db import db_helper
-from models.user import User
-from utils import decode_jwt, encode_jwt, verify_password
-from crud.user import get_user_by_name
-from schemas.user import UserSchema
+from db.models import User
+from utils.auth import decode_jwt, encode_jwt
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
 log = get_logger(__name__)
@@ -28,25 +23,8 @@ CREDENTIAL_EXCEPTION = HTTPException(
 )
 
 
-def get_current_auth_payload(token: str) -> str | None:
-    """
-    Decodes the given JWT token to extract the username.
-
-    This function attempts to decode the provided JWT token to extract the
-    username ('sub' field) from its payload. If decoding fails or the 'sub'
-    field is not present, it raises an HTTP 401 Unauthorized exception.
-
-    Args:
-        token (str): The JWT token to be decoded.
-
-    Returns:
-        str | None: The username extracted from the token payload.
-
-    Raises:
-        HTTPException: If the token cannot be decoded or the 'sub' field is missing.
-    """
+def get_current_auth_payload(token: str) -> dict | None:
     log.debug("Attempting to decode token: %s", token)
-
     payload: dict | None = decode_jwt(token)
     if payload is None:
         log.error("Failed to decode token: payload is None")
@@ -64,90 +42,7 @@ def get_current_auth_payload(token: str) -> str | None:
         log.error("Name not found in token payload: %s", payload)
         raise CREDENTIAL_EXCEPTION
 
-    return name
-
-
-async def get_current_auth_user(
-    token: Annotated[str, Depends(oauth2_scheme)],
-    db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-) -> User:
-    """
-    Retrieves the user associated with the given authentication token.
-
-    This function attempts to retrieve the user associated with the given
-    authentication token. If the token is invalid or the user is not found,
-    an HTTP 401 Unauthorized exception is raised.
-
-    Args:
-        token (Annotated[str, Depends]): The authentication token to be decoded.
-        db (Annotated[AsyncSession, Depends]): The async database session dependency.
-
-    Returns:
-        UserRead: The user object associated with the given token.
-
-    Raises:
-        HTTPException: If the token is invalid or the user is not found.
-    """
-    try:
-        name: str | None = get_current_auth_payload(token)
-
-        log.debug("Looking for user with name: %s", name)
-        user = await get_user_by_name(db, name)
-    except HTTPException as e:
-        raise e
-    if user is None:
-        log.error("User not found for name: %s", name)
-        raise CREDENTIAL_EXCEPTION
-
-    log.info("User authenticated successfully: %s", name)
-    return user
-
-
-async def authenticate_user(
-    db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-    username: str,
-    password: str,
-) -> User | None:
-    """
-    Authenticates a user with the given username and password.
-
-    This function attempts to authenticate a user by checking if the provided
-    username exists and if the password matches the stored hashed password.
-    If the user is found and the password is correct, the user object is returned.
-    Otherwise, an HTTP 401 Unauthorized exception is raised.
-
-    Args:
-        db (Annotated[AsyncSession, Depends]): The async database session dependency.
-        username (str): The username of the user to authenticate.
-        password (str): The password of the user to authenticate.
-
-    Returns:
-        User | None: The authenticated user object, or None if authentication fails.
-
-    Raises:
-        HTTPException: If the user is not found or the password is incorrect.
-    """
-    log.debug("Attempting to authenticate user: %s", username)
-    unauthed_exc = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid email or password",
-    )
-    try:
-        user = await get_user_by_name(db, username)
-    except HTTPException as e:
-        raise e
-    else:
-        if user is None:
-            log.error("User not found: %s", username)
-            raise unauthed_exc
-
-        log.debug("User found: %s. Verifying password.", username)
-        if not verify_password(password, user.hashed_password):
-            log.error("Invalid password for user: %s", username)
-            raise unauthed_exc
-
-        log.info("User authenticated successfully: %s", username)
-        return user
+    return payload
 
 
 def create_jwt(
