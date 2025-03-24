@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text  # Для выполнения SQL-запросов
 
-from models.base import Base
+from db.models import Base
 
 # Настройки подключения к тестовой базе данных PostgreSQL
 TEST_DATABASE_URL = "postgresql+asyncpg://user:1596387413@localhost:5433/test_db"
