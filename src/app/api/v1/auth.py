@@ -10,11 +10,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db import db_helper
 from core.logger import get_logger
 from crud.user import create_user, get_user_by_email
+from db.models import User
 from services.auth import (
     create_access_token,
     create_refresh_token,
 )
-from services.user import authenticate_user
+from services.user import (
+    authenticate_user,
+    get_current_auth_user_for_refresh,
+)
 from schemas.auth import Token
 from schemas.user import UserSchema
 
@@ -124,3 +128,15 @@ async def login(
         access_token=access_token,
         refresh_token=refresh_token,
     )
+
+
+@router.post(
+    "/refresh",
+    response_model=Token,
+    response_model_exclude_none=True,
+)
+def update_access_token(
+    user: User = Depends(get_current_auth_user_for_refresh),
+):
+    token = create_access_token(user)
+    return Token(access_token=token)
