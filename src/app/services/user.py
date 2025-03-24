@@ -9,8 +9,9 @@ from db.models import User
 from services.auth import (
     ACCESS_TOKEN_TYPE,
     CREDENTIAL_EXCEPTION,
-    get_current_auth_payload,
+    get_current_token_payload,
     oauth2_scheme,
+    REFRESH_TOKEN_TYPE,
     TOKEN_TYPE_FIELD,
 )
 from utils.auth import verify_password
@@ -19,14 +20,16 @@ from crud.user import get_user_by_name
 log = get_logger(__name__)
 
 
-async def get_current_auth_user(
-    token: Annotated[str, Depends(oauth2_scheme)],
-    db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+async def _get_user_from_token(
+    token: str,
+    db: AsyncSession,
+    expected_token_type: str,
 ) -> User:
     try:
-        payload: dict = get_current_auth_payload(token)
+        payload: dict = get_current_token_payload(token)
         name: str | None = payload.get("sub")
         token_type = payload.get(TOKEN_TYPE_FIELD)
+        # add check jti in blacklist
         log.debug("Looking for user with name: %s", name)
         user = await get_user_by_name(db, name)
     except HTTPException as e:
@@ -35,17 +38,39 @@ async def get_current_auth_user(
         if user is None:
             log.error("User not found for name: %s", name)
             raise CREDENTIAL_EXCEPTION
-        if token_type != ACCESS_TOKEN_TYPE:
+        if token_type != expected_token_type:
             log.error(
-                "Invalid token type. Expected %s, got %s", ACCESS_TOKEN_TYPE, token_type
+                "Invalid token type. Expected %s, got %s",
+                expected_token_type,
+                token_type,
             )
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Invalid token type. Expected {ACCESS_TOKEN_TYPE!r}, got {token_type!r}",
+                detail=f"Invalid token type. Expected {expected_token_type!r}, got {token_type!r}",
             )
 
         log.info("User authenticated successfully: %s", name)
         return user
+
+
+async def get_current_auth_user(
+    token: Annotated[str, Depends(oauth2_scheme)],
+    db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+) -> User:
+    try:
+        return await _get_user_from_token(token, db, ACCESS_TOKEN_TYPE)
+    except HTTPException as e:
+        raise e
+
+
+async def get_current_auth_user_for_refresh(
+    token: Annotated[str, Depends(oauth2_scheme)],
+    db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+) -> User:
+    try:
+        return await _get_user_from_token(token, db, REFRESH_TOKEN_TYPE)
+    except HTTPException as e:
+        raise e
 
 
 async def authenticate_user(
