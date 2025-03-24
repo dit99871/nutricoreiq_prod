@@ -11,10 +11,10 @@ from db import db_helper
 from core.logger import get_logger
 from crud.user import create_user, get_user_by_email
 from services.auth import (
-    authenticate_user,
     create_access_token,
     create_refresh_token,
 )
+from services.user import authenticate_user
 from schemas.auth import Token
 from schemas.user import UserSchema
 

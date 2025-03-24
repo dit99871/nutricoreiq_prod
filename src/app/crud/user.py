@@ -9,12 +9,10 @@ from sqlalchemy.future import select
 
 from core.logger import get_logger
 from db import db_helper
-from models.user import User
+from db.models import User
 from schemas.user import UserSchema
-from utils import (
-    get_password_hash,
-    log_user_result,
-)
+from utils.auth import get_password_hash
+from utils.user import log_user_result
 
 log = get_logger(__name__)
 
