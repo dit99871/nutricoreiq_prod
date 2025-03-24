@@ -14,7 +14,7 @@ setup_logging()
 
 @asynccontextmanager
 async def lifespan_docker(app: FastAPI):
-    subprocess.run(["docker-compose", "up", "-d"])
+    subprocess.run(["docker-compose", "up", "-d"], check=True)
     yield
 
 
