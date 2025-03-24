@@ -2,15 +2,15 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from schemas.user import UserRead
+from schemas.user import UserSchema
 from services.auth import get_current_auth_user
 
 router = APIRouter(tags=["User"])
 
 
-@router.get("/me", response_model=UserRead)
+@router.get("/me", response_model=UserSchema)
 async def read_current_user(
-    current_user: Annotated[UserRead, Depends(get_current_auth_user)],
+    current_user: Annotated[UserSchema, Depends(get_current_auth_user)],
 ):
     return current_user
 

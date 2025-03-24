@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated
 from annotated_types import MaxLen, MinLen
 from pydantic import EmailStr, ConfigDict
 
@@ -15,6 +15,6 @@ class UserSchema(UserBase):
     gender: str
     age: int
     weight: float
-    role: Optional[str] = None
+    role: str = "user"
 
-    model_config = ConfigDict(strict=True)
+    # model_config = ConfigDict(strict=True)

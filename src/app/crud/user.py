@@ -46,7 +46,7 @@ async def _get_user_by_filter(
 async def get_user_by_email(
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
     email: EmailStr,
-) -> UserSchema | None:
+) -> User | None:
     """Получение пользователя по email."""
     try:
         user = await _get_user_by_filter(db, User.email == email)
@@ -56,7 +56,7 @@ async def get_user_by_email(
             f"User found with email: {email}",
             f"User not found with email: {email}",
         )
-        return UserSchema.model_validate(user)
+        return user
     except HTTPException as e:
         raise e
     except Exception as e:
@@ -70,7 +70,7 @@ async def get_user_by_email(
 async def get_user_by_name(
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
     user_name: str,
-) -> UserSchema | None:
+) -> User | None:
     """Получение пользователя по имени."""
     try:
         user = await _get_user_by_filter(db, User.username == user_name)
@@ -80,7 +80,7 @@ async def get_user_by_name(
             f"User found with user_name: {user_name}",
             f"User not found with user_name: {user_name}",
         )
-        return UserSchema.model_validate(user)
+        return user
     except HTTPException as e:
         raise e
     except Exception as e:
@@ -94,23 +94,22 @@ async def get_user_by_name(
 async def create_user(
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
     user_in: UserSchema,
-) -> UserSchema | None:
+) -> User | None:
     """Создание нового пользователя."""
     try:
-        hashed_password = get_password_hash(user_in.password)
+        hashed_password = get_password_hash(user_in.hashed_password)
         db_user = User(
-            username=user_in.username,
-            email=user_in.email,
+            **user_in.model_dump(
+                exclude={"hashed_password"},
+                # exclude_defaults=True,
+            ),
             hashed_password=hashed_password,
-            gender=user_in.gender,
-            age=user_in.age,
-            weight=user_in.weight,
         )
         db.add(db_user)
         await db.commit()
         await db.refresh(db_user)
         log.info("User created with email: %s", user_in.email)
-        return UserSchema.model_validate(db_user)
+        return db_user
     except SQLAlchemyError as e:
         log.error("Database error creating user_in with email %s: %s", user_in.email, e)
         await db.rollback()

@@ -70,7 +70,7 @@ def get_current_auth_payload(token: str) -> str | None:
 async def get_current_auth_user(
     token: Annotated[str, Depends(oauth2_scheme)],
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-) -> UserSchema:
+) -> User:
     """
     Retrieves the user associated with the given authentication token.
 
@@ -100,14 +100,14 @@ async def get_current_auth_user(
         raise CREDENTIAL_EXCEPTION
 
     log.info("User authenticated successfully: %s", name)
-    return UserSchema.model_validate(user)
+    return user
 
 
 async def authenticate_user(
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
     username: str,
     password: str,
-) -> UserSchema | None:
+) -> User | None:
     """
     Authenticates a user with the given username and password.
 
@@ -147,7 +147,7 @@ async def authenticate_user(
             raise unauthed_exc
 
         log.info("User authenticated successfully: %s", username)
-        return UserSchema.model_validate(user)
+        return user
 
 
 def create_jwt(

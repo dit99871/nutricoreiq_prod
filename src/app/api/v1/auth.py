@@ -8,10 +8,8 @@ from fastapi.security import (
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db import db_helper
-
 from core.logger import get_logger
 from crud.user import create_user, get_user_by_email
-from models.user import User
 from services.auth import (
     authenticate_user,
     create_access_token,
