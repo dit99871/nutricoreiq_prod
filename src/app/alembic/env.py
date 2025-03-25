@@ -11,6 +11,7 @@ from core.config import settings
 from db.models import (
     Base,
     User,
+    Nutrient,
     ProductNutrient,
     Product,
     ProductGroup,
