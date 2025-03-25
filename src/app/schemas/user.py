@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Literal
 from annotated_types import MaxLen, MinLen
 from pydantic import EmailStr, ConfigDict
 
@@ -10,11 +10,15 @@ class UserBase(BaseSchema):
     email: EmailStr
 
 
-class UserSchema(UserBase):
-    hashed_password: bytes
-    gender: str
+class UserCreate(UserBase):
+    password: Annotated[str, MinLen(8)]
+    gender: Literal["female", "male"]
     age: int
     weight: float
-    role: str = "user"
+    height: int
 
     # model_config = ConfigDict(strict=True)
+
+
+class UserResponse(UserBase):
+    hashed_password: bytes | None = None
