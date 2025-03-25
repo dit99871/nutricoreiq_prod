@@ -11,5 +11,7 @@ class User(IntIdPkMixin, Base):
     gender: Mapped[str]
     age: Mapped[int]
     weight: Mapped[float]
+    height: Mapped[int]
     is_active: Mapped[bool] = mapped_column(default=True)
     role: Mapped[str] = mapped_column(default="user")
+    created_at: Mapped[str]
