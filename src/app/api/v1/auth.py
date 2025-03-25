@@ -10,7 +10,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db import db_helper
 from core.logger import get_logger
 from crud.user import create_user, get_user_by_email
-from db.models import User
 from services.auth import (
     create_access_token,
     create_refresh_token,
@@ -20,7 +19,7 @@ from services.user import (
     get_current_auth_user_for_refresh,
 )
 from schemas.auth import Token
-from schemas.user import UserSchema
+from schemas.user import UserCreate, UserResponse
 
 http_bearer = HTTPBearer(auto_error=False)
 
@@ -33,31 +32,13 @@ log = get_logger(__name__)
 
 @router.post(
     "/register",
-    response_model=UserSchema,
+    response_model=UserCreate,
     status_code=status.HTTP_201_CREATED,
 )
 async def register_user(
-    user_in: UserSchema,
+    user_in: UserCreate,
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-) -> UserSchema | None:
-    """
-    Registers a new user in the system.
-
-    This endpoint creates a new user using the provided user data. If the email
-    is already registered, it raises an HTTP 400 error. If user creation fails
-    due to a database error, it raises an HTTP 500 error. Otherwise, the user
-    is successfully registered and returned.
-
-    Args:
-        user_in (UserSchema): The data for creating a new user.
-        db (Annotated[AsyncSession, Depends]): The async database session dependency.
-
-    Returns:
-        User | None: The created user object, or None if registration fails.
-
-    Raises:
-        HTTPException: If the email is already registered or if there's a database error.
-    """
+) -> UserCreate | None:
     log.info("Attempting to register user with email: %s", user_in.email)
     try:
         db_user = await get_user_by_email(db, user_in.email)
@@ -77,12 +58,13 @@ async def register_user(
             log.error(
                 "Registration failed: Database error creating user: %s", user_in.email
             )
+            await db.rollback()
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to create user",
             )
         log.info("User registered successfully: %s", user.email)
-        return UserSchema.model_validate(user)
+        return user
 
 
 @router.post("/login", response_model=Token)
@@ -136,7 +118,7 @@ async def login(
     response_model_exclude_none=True,
 )
 def update_access_token(
-    user: User = Depends(get_current_auth_user_for_refresh),
+    user: UserResponse = Depends(get_current_auth_user_for_refresh),
 ):
     token = create_access_token(user)
     return Token(access_token=token)

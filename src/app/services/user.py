@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.logger import get_logger
 from db import db_helper
 from db.models import User
+from schemas.user import UserResponse
 from services.auth import (
     ACCESS_TOKEN_TYPE,
     CREDENTIAL_EXCEPTION,
@@ -24,7 +25,7 @@ async def _get_user_from_token(
     token: str,
     db: AsyncSession,
     expected_token_type: str,
-) -> User:
+) -> UserResponse:
     try:
         payload: dict = get_current_token_payload(token)
         name: str | None = payload.get("sub")
@@ -50,13 +51,13 @@ async def _get_user_from_token(
             )
 
         log.info("User authenticated successfully: %s", name)
-        return user
+        return UserResponse.model_validate(user)
 
 
 async def get_current_auth_user(
     token: Annotated[str, Depends(oauth2_scheme)],
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-) -> User:
+) -> UserResponse:
     try:
         return await _get_user_from_token(token, db, ACCESS_TOKEN_TYPE)
     except HTTPException as e:
@@ -66,7 +67,7 @@ async def get_current_auth_user(
 async def get_current_auth_user_for_refresh(
     token: Annotated[str, Depends(oauth2_scheme)],
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-) -> User:
+) -> UserResponse:
     try:
         return await _get_user_from_token(token, db, REFRESH_TOKEN_TYPE)
     except HTTPException as e:
@@ -77,7 +78,7 @@ async def authenticate_user(
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
     username: str,
     password: str,
-) -> User | None:
+) -> UserResponse | None:
     """
     Authenticates a user with the given username and password.
 
@@ -117,4 +118,4 @@ async def authenticate_user(
             raise unauthed_exc
 
         log.info("User authenticated successfully: %s", username)
-        return user
+        return UserResponse.model_validate(user)

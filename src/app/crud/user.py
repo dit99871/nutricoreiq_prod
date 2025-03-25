@@ -1,3 +1,4 @@
+import datetime as dt
 from typing import Annotated
 
 from fastapi import Depends, status
@@ -10,7 +11,7 @@ from sqlalchemy.future import select
 from core.logger import get_logger
 from db import db_helper
 from db.models import User
-from schemas.user import UserSchema
+from schemas.user import UserCreate, UserResponse
 from utils.auth import get_password_hash
 from utils.user import log_user_result
 
@@ -21,7 +22,6 @@ async def _get_user_by_filter(
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
     filter_condition,
 ) -> User | None:
-    """Вспомогательная функция для получения пользователя по фильтру."""
     try:
         result = await db.execute(
             select(User).filter(filter_condition, User.is_active == True)
@@ -44,17 +44,16 @@ async def _get_user_by_filter(
 async def get_user_by_email(
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
     email: EmailStr,
-) -> User | None:
-    """Получение пользователя по email."""
+) -> UserResponse | None:
     try:
-        user = await _get_user_by_filter(db, User.email == email)
+        user: User = await _get_user_by_filter(db, User.email == email)
         log_user_result(
             user,
             log,
             f"User found with email: {email}",
             f"User not found with email: {email}",
         )
-        return user
+        return UserResponse.model_validate(user) if user is not None else None
     except HTTPException as e:
         raise e
     except Exception as e:
@@ -68,8 +67,7 @@ async def get_user_by_email(
 async def get_user_by_name(
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
     user_name: str,
-) -> User | None:
-    """Получение пользователя по имени."""
+) -> UserResponse | None:
     try:
         user = await _get_user_by_filter(db, User.username == user_name)
         log_user_result(
@@ -78,7 +76,7 @@ async def get_user_by_name(
             f"User found with user_name: {user_name}",
             f"User not found with user_name: {user_name}",
         )
-        return user
+        return UserResponse.model_validate(user)
     except HTTPException as e:
         raise e
     except Exception as e:
@@ -91,23 +89,23 @@ async def get_user_by_name(
 
 async def create_user(
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-    user_in: UserSchema,
-) -> User | None:
-    """Создание нового пользователя."""
+    user_in: UserCreate,
+) -> UserCreate | None:
     try:
-        hashed_password = get_password_hash(user_in.hashed_password)
+        hashed_password = get_password_hash(user_in.password)
         db_user = User(
             **user_in.model_dump(
-                exclude={"hashed_password"},
+                exclude={"password"},
                 # exclude_defaults=True,
             ),
             hashed_password=hashed_password,
+            created_at=dt.datetime.now(dt.UTC).isoformat(),
         )
         db.add(db_user)
         await db.commit()
         await db.refresh(db_user)
         log.info("User created with email: %s", user_in.email)
-        return db_user
+        return user_in
     except SQLAlchemyError as e:
         log.error("Database error creating user_in with email %s: %s", user_in.email, e)
         await db.rollback()

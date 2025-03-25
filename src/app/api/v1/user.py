@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 from api.v1.auth import http_bearer
-from schemas.user import UserSchema
+from schemas.user import UserResponse
 from services.auth import get_current_token_payload, oauth2_scheme
 from services.user import get_current_auth_user
 
@@ -12,7 +12,7 @@ router = APIRouter(tags=["User"], dependencies=[Depends(http_bearer)])
 
 @router.get("/me")
 async def read_current_user(
-    user: Annotated[UserSchema, Depends(get_current_auth_user)],
+    user: Annotated[UserResponse, Depends(get_current_auth_user)],
     token: str = Depends(oauth2_scheme),
 ) -> dict:
     payload: dict = get_current_token_payload(token)

@@ -7,6 +7,7 @@ from fastapi.security import OAuth2PasswordBearer
 from core.config import settings
 from core.logger import get_logger
 from db.models import User
+from schemas.user import UserResponse
 from utils.auth import decode_jwt, encode_jwt
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
@@ -89,7 +90,7 @@ def create_jwt(
         raise e
 
 
-def create_access_token(user: User) -> str:
+def create_access_token(user: UserResponse) -> str:
     """
     Creates a JWT token based on the provided user.
 
@@ -121,7 +122,7 @@ def create_access_token(user: User) -> str:
         raise e
 
 
-def create_refresh_token(user: User) -> str:
+def create_refresh_token(user: UserResponse) -> str:
     """
     Creates a refresh JWT token for the provided user.
 
