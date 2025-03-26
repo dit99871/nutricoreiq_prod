@@ -1,46 +1,39 @@
 from contextlib import asynccontextmanager
 import subprocess
+from datetime import datetime
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import ORJSONResponse
+from fastapi.responses import ORJSONResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 
 from api import router as api_router
 from core.config import settings
+from core.exception_handlers import (
+    http_exception_handler,
+    generic_exception_handler,
+)
 from core.logger import setup_logging
+from lifespan import docker_lifespan
+from utils.templates import templates
 
 setup_logging()
 
-
-@asynccontextmanager
-async def lifespan_docker(app: FastAPI):
-    subprocess.run(["docker-compose", "up", "-d"], check=True)
-    yield
-
-
-app = FastAPI(lifespan=lifespan_docker)
+app = FastAPI(lifespan=docker_lifespan)
 app.include_router(api_router)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+app.add_exception_handler(HTTPException, http_exception_handler)
+app.add_exception_handler(Exception, generic_exception_handler)
 
 
-@app.exception_handler(HTTPException)
-def http_exception_handler(request: Request, exc: HTTPException):
-    return ORJSONResponse(
-        status_code=exc.status_code,
-        content={"message": exc.detail},
+@app.get("/", name="home", response_class=HTMLResponse)
+def index_page(request: Request):
+    return templates.TemplateResponse(
+        name="index.html",
+        request=request,
+        context={"current_year": datetime.now().year},
     )
-
-
-@app.exception_handler(Exception)
-def generic_exception_handler(request: Request, exc: Exception):
-    return ORJSONResponse(
-        status_code=500,
-        content={"message": "Internal Server Error", "detail": str(exc)},
-    )
-
-
-@app.get("/", response_class=ORJSONResponse)
-def main():
-    return {"message": "Hi, searching!"}
 
 
 if __name__ == "__main__":
