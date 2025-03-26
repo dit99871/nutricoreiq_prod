@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}NutriCoreIQ{% endblock %}
+
+{% block extra_head %}
+<!-- Добавляем CSRF-токен в meta-теги -->
+<meta name="csrf-token" content="{{ csrf_token }}">
+<!-- Дополнительные стили для этой страницы -->
+<style>
+    .analysis-card {
+        background-color: white;
+        border-radius: 12px;
+    }
+
+    .form-label {
+        color: var(--earth);
+        font-weight: 500;
+    }
+
+    .submit-btn {
+        background-color: var(--clay);
+        border: none;
+        transition: all 0.3s ease;
+    }
+
+    .submit-btn:hover {
+        background-color: #c86a53;
+        transform: translateY(-1px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-3 mt-lg-5">
+    <div class="col-12 col-md-10 col-lg-8 col-xl-6">
+        <div class="analysis-card shadow-sm p-4 p-md-5">
+            <!-- Форма с CSRF-защитой -->
+            <form id="analysisForm" method="post" novalidate>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                <!-- Поля формы -->
+                <div class="mb-4">
+                    <label for="userQuery" class="form-label">Введите название продукта:</label>
+                    <textarea class="form-control bg-nature-light"
+                              id="userQuery"
+                              name="query"
+                              rows="1"
+                              required></textarea>
+                </div>
+
+                <button type="submit" class="btn submit-btn text-white py-2">
+                    <i class="bi bi-lightning-charge-fill"></i> Проанализировать
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Автоматическая вставка CSRF-токена в AJAX-запросы
+(function() {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+    if (csrfToken) {
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-Token': csrfToken
+            }
+        });
+    }
+
+    // Валидация формы с проверкой CSRF
+    document.getElementById('analysisForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        if (!this.checkValidity()) {
+            e.stopPropagation();
+            this.classList.add('was-validated');
+            return;
+        }
+
+        const formData = new FormData(this);
+
+        try {
+            const response = await fetch('/analyze', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-Token': csrfToken
+                },
+                body: formData
+            });
+
+            if (!response.ok) throw new Error('Ошибка сети');
+            const result = await response.json();
+            // Обработка результата...
+
+        } catch (error) {
+            console.error('Ошибка:', error);
+        }
+    });
+})();
+</script>
+{% endblock %}
