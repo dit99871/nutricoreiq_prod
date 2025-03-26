@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <link rel="icon" href="/static/img/logo.ico" type="image/x-icon">
+    <title>{% block title %}NutriCoreIQ{% endblock %}</title>
+
+    <!-- Защитные мета-теги -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline' 'unsafe-eval'; style-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-src 'self';">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains">
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Натуральная цветовая палитра -->
+    <style>
+        :root {
+            --earth: #8B5A2B;        /* Теплый коричневый */
+            --sage: #8A9B6E;        /* Приглушенный зеленый */
+            --moss: #4A7C59;        /* Темно-зеленый */
+            --sand: #D7C0A9;         /* Светлый бежевый */
+            --clay: #D77A61;         /* Терракотовый */
+            --sky: #A7C4C2;          /* Мягкий голубой */
+            --stone: #6C757D;        /* Серый */
+        }
+
+        body {
+            background-color: #F8F5F2;  /* Очень светлый кремовый */
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        .navbar {
+            background-color: white;
+            border-bottom: 1px solid var(--sand);
+        }
+
+        .btn-primary {
+            background-color: var(--moss);
+            border-color: var(--moss);
+        }
+
+        .btn-primary:hover {
+            background-color: #3a6650;
+            border-color: #3a6650;
+        }
+
+        .btn-outline-primary {
+            border-color: var(--moss);
+            color: var(--moss);
+        }
+
+        .btn-outline-primary:hover {
+            background-color: var(--moss);
+            color: white;
+        }
+
+        .footer {
+            background-color: var(--sand);
+            color: var(--earth);
+            border-top: 1px solid rgba(139, 90, 43, 0.1);
+        }
+
+        .card {
+            border: 1px solid rgba(139, 90, 43, 0.15);
+            box-shadow: 0 2px 8px rgba(139, 90, 43, 0.05);
+        }
+
+        .form-control:focus {
+            border-color: var(--sky);
+            box-shadow: 0 0 0 0.25rem rgba(167, 196, 194, 0.25);
+        }
+
+        .text-nature {
+            color: var(--moss);
+        }
+
+        .bg-nature-light {
+            background-color: rgba(138, 155, 110, 0.1);
+        }
+    </style>
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- Шапка -->
+    <header class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <img src="/static/img/logo.jpeg" alt="NutriCoreIQ" height="40">
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="mainNav">
+                <div class="ms-auto d-flex gap-2">
+                    <a href="/login" class="btn btn-outline-primary">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                        <span class="d-none d-sm-inline ms-1">Войти</span>
+                    </a>
+                    <a href="/register" class="btn btn-primary">
+                        <i class="bi bi-person-plus"></i>
+                        <span class="d-none d-sm-inline ms-1">Регистрация</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Основной контент -->
+    <main class="flex-grow-1 py-4">
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Подвал -->
+    <footer class="footer py-4 mt-auto">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-4 mb-3 mb-lg-0">
+                    <div class="d-flex align-items-center">
+                        <img src="/static/img/logo-icon.jpeg" alt="" height="30" class="me-2">
+                        <span class="small">© {{ current_year }} NutriCoreIQ</span>
+                    </div>
+                </div>
+                <div class="col-lg-8">
+                    <div class="d-flex flex-column flex-lg-row justify-content-lg-end gap-3">
+                        <a href="/about" class="text-decoration-none small">О проекте</a>
+                        <a href="/privacy" class="text-decoration-none small">Конфиденциальность</a>
+                        <a href="/contacts" class="text-decoration-none small">Контакты</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- CSRF Token JS -->
+    <script>
+        function getCSRFToken() {
+            return document.querySelector('meta[name="csrf-token"]').content;
+        }
+
+        // Для AJAX-запросов
+        document.addEventListener('DOMContentLoaded', function() {
+            const csrfToken = "{{ csrf_token }}";
+            if (csrfToken) {
+                const meta = document.createElement('meta');
+                meta.name = "csrf-token";
+                meta.content = csrfToken;
+                document.head.appendChild(meta);
+            }
+        });
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>
