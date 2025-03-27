@@ -6,24 +6,17 @@
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <div class="card shadow-sm p-4">
-                <h1 class="text-center text-nature">Добро пожаловать в NutriCoreIQ!</h1>
-                <p class="text-center">
+            <div class="card shadow-sm p-4" style="background-color: #f5f5dc; border-color: #d4a373;">
+                <h1 class="text-center" style="color: #8b5e3b;">Добро пожаловать в NutriCoreIQ!</h1>
+                <p class="text-center text-muted">
                     Инновационный сервис анализа питания и рекомендаций для здорового образа жизни.
                 </p>
-
-                {% if current_user is defined and current_user.is_authenticated %}
-                    <p class="text-center">Вы вошли как <strong>{{ current_user.username | e }}</strong>.</p>
-                    <div class="text-center mt-4">
-                        <a href="/dashboard" class="btn btn-primary">Перейти в личный кабинет</a>
-                        <a href="/logout" class="btn btn-outline-danger">Выйти</a>
-                    </div>
-                {% else %}
-                    <div class="text-center mt-4">
-                        <a href="/login" class="btn btn-outline-primary">Войти</a>
-                        <a href="/register" class="btn btn-primary">Регистрация</a>
-                    </div>
-                {% endif %}
+                <form action="/product" method="GET" class="d-flex justify-content-center mt-3">
+                    <input type="text" name="query" class="form-control" placeholder="Введите название продукта" style="border-color: #d4a373;">
+                    <button type="submit" class="btn btn-success ms-2" style="background-color: #8b5e3b; border-color: #8b5e3b; color: white;">
+                        Проанализировать
+                    </button>
+                </form>
             </div>
         </div>
     </div>
