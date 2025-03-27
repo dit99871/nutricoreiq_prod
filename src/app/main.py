@@ -1,10 +1,9 @@
-from contextlib import asynccontextmanager
-import subprocess
+import secrets
 from datetime import datetime
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import ORJSONResponse, HTMLResponse
+from fastapi import FastAPI, HTTPException, Request, Depends
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from api import router as api_router
@@ -15,6 +14,8 @@ from core.exception_handlers import (
 )
 from core.logger import setup_logging
 from lifespan import docker_lifespan
+from services.user import get_current_auth_user
+from utils.security import generate_csrf_token
 from utils.templates import templates
 
 setup_logging()
@@ -28,11 +29,20 @@ app.add_exception_handler(Exception, generic_exception_handler)
 
 
 @app.get("/", name="home", response_class=HTMLResponse)
-def index_page(request: Request):
+def start_page(
+    request: Request,
+    current_user=Depends(get_current_auth_user),
+):
+    csp_nonce = secrets.token_urlsafe(16)
     return templates.TemplateResponse(
         name="index.html",
         request=request,
-        context={"current_year": datetime.now().year},
+        context={
+            "current_year": datetime.now().year,
+            "user": current_user,
+            "csrf_token": generate_csrf_token(),
+            "csp_nonce": csp_nonce,
+        },
     )
 
 

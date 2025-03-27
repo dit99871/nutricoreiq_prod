@@ -25,7 +25,7 @@ async def _get_user_from_token(
     token: str,
     db: AsyncSession,
     expected_token_type: str,
-) -> UserResponse:
+) -> UserResponse | None:
     try:
         payload: dict = get_current_token_payload(token)
         name: str | None = payload.get("sub")
@@ -57,7 +57,9 @@ async def _get_user_from_token(
 async def get_current_auth_user(
     token: Annotated[str, Depends(oauth2_scheme)],
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-) -> UserResponse:
+) -> UserResponse | None:
+    if token is None:
+        return None
     try:
         return await _get_user_from_token(token, db, ACCESS_TOKEN_TYPE)
     except HTTPException as e:
