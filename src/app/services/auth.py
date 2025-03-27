@@ -10,7 +10,7 @@ from db.models import User
 from schemas.user import UserResponse
 from utils.auth import decode_jwt, encode_jwt
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login", auto_error=False)
 log = get_logger(__name__)
 
 TOKEN_TYPE_FIELD = "type"
