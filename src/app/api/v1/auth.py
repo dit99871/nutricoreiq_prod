@@ -1,6 +1,12 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+    Response,
+)
 from fastapi.security import (
     OAuth2PasswordRequestForm,
     HTTPBearer,
@@ -67,32 +73,12 @@ async def register_user(
         return user
 
 
-@router.post("/login", response_model=Token)
+@router.post("/login")
 async def login(
+    response: Response,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-) -> Token | None:
-    """
-    Authenticates a user with the provided username and password.
-
-    This endpoint authenticates a user based on the provided username and
-    password. If the authentication is successful, it returns a Token object
-    containing the access token and the refresh token. The access token should
-    be used to access protected endpoints, while the refresh token is used to
-    obtain a new access token when the current one expires.
-
-    Args:
-        form_data (OAuth2PasswordRequestForm): The form data containing the
-            username and password of the user to authenticate.
-        db (Annotated[AsyncSession, Depends]): The async database session
-            dependency.
-
-    Returns:
-        Token | None: The authentication tokens, or None if authentication fails.
-
-    Raises:
-        HTTPException: If the authentication fails.
-    """
+) -> dict[str, str]:
     log.info("Attempting login for user: %s", form_data.username)
     try:
         user = await authenticate_user(
@@ -106,10 +92,15 @@ async def login(
     except HTTPException as e:
         raise e
     log.info("User logged in successfully: %s", form_data.username)
-    return Token(
-        access_token=access_token,
-        refresh_token=refresh_token,
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=True,
+        samesite="strict",
     )
+
+    return {"access_token": access_token}
 
 
 @router.post(
@@ -121,4 +112,4 @@ def update_access_token(
     user: UserResponse = Depends(get_current_auth_user_for_refresh),
 ):
     token = create_access_token(user)
-    return Token(access_token=token)
+    return {"access_token": token}
