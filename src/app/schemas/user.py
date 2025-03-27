@@ -12,13 +12,16 @@ class UserBase(BaseSchema):
 
 class UserCreate(UserBase):
     password: Annotated[str, MinLen(8)]
+
+
+class UserResponse(UserBase):
+    hashed_password: bytes | None = None
+
+
+class UserProfile(UserBase):
     gender: Literal["female", "male"]
     age: int
     weight: float
     height: int
 
-    # model_config = ConfigDict(strict=True)
-
-
-class UserResponse(UserBase):
-    hashed_password: bytes | None = None
+    model_config = ConfigDict(strict=True)
