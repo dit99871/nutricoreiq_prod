@@ -1,0 +1,66 @@
+:root {
+    --earth: #8B5A2B;
+    --sage: #8A9B6E;
+    --moss: #4A7C59;
+    --sand: #D7C0A9;
+    --clay: #D77A61;
+    --sky: #A7C4C2;
+    --stone: #6C757D;
+
+    --bg-light: #A9C8B9;
+    --text-light: #333;
+    --bg-dark: #1E1E1E;
+    --text-dark: #EAEAEA;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    background-color: var(--bg-light);
+    color: var(--text-light);
+    transition: background-color 0.3s, color 0.3s;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+}
+
+body.dark-mode {
+    background-color: var(--bg-dark);
+    color: var(--text-dark);
+}
+
+.navbar {
+    background-color: var(--sand);
+    border-bottom: 2px solid var(--sand);
+}
+
+main {
+    flex-grow: 1;
+}
+
+.footer {
+    background-color: var(--sand);
+    color: var(--earth);
+    border-top: 1px solid rgba(139, 90, 43, 0.2);
+    width: 100%;
+    padding: 20px 0;
+}
+
+.btn-primary {
+    background-color: var(--moss);
+    border-color: var(--moss);
+}
+
+.btn-outline-primary {
+    border-color: var(--moss);
+    color: var(--moss);
+}
+
+.theme-toggle {
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-size: 1.2rem;
+}
