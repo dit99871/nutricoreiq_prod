@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
+from fastapi.responses import ORJSONResponse
 
 from api.v1.auth import http_bearer
 from schemas.user import UserResponse
@@ -10,7 +11,7 @@ from services.user import get_current_auth_user
 router = APIRouter(tags=["User"], dependencies=[Depends(http_bearer)])
 
 
-@router.get("/me")
+@router.get("/me", response_class=ORJSONResponse)
 async def read_current_user(
     user: Annotated[UserResponse, Depends(get_current_auth_user)],
     token: str = Depends(oauth2_scheme),

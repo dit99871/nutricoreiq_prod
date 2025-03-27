@@ -76,7 +76,7 @@ async def get_user_by_name(
             f"User found with user_name: {user_name}",
             f"User not found with user_name: {user_name}",
         )
-        return UserResponse.model_validate(user)
+        return UserResponse.model_validate(user) if user is not None else None
     except HTTPException as e:
         raise e
     except Exception as e:

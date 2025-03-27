@@ -61,6 +61,8 @@ def decode_jwt(token: str) -> dict | None:
     :raises HTTPException: If the public key file is not found, the token
                            has expired, or a JWT error occurs during decoding.
     """
+    if token is None:
+        return None
     try:
         decoded = jwt.decode(
             token,
