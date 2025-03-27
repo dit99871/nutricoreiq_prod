@@ -15,7 +15,7 @@ from core.exception_handlers import (
 from core.logger import setup_logging
 from lifespan import docker_lifespan
 from services.user import get_current_auth_user
-from utils.security import generate_csrf_token
+from utils.security import generate_csrf_token, generate_csp_nonce
 from utils.templates import templates
 
 setup_logging()
@@ -33,7 +33,6 @@ def start_page(
     request: Request,
     current_user=Depends(get_current_auth_user),
 ):
-    csp_nonce = secrets.token_urlsafe(16)
     return templates.TemplateResponse(
         name="index.html",
         request=request,
@@ -41,7 +40,7 @@ def start_page(
             "current_year": datetime.now().year,
             "user": current_user,
             "csrf_token": generate_csrf_token(),
-            "csp_nonce": csp_nonce,
+            "csp_nonce": generate_csp_nonce(),
         },
     )
 
