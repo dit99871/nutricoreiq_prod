@@ -15,6 +15,16 @@ class UserCreate(UserBase):
 
 
 class UserResponse(UserBase):
+    """
+    Represents the response schema for a user.
+
+    Inherits from UserBase and includes an optional hashed_password field.
+    This class is used to structure the user data returned in responses.
+
+    Attributes:
+        hashed_password (bytes | None): The hashed password of the user, which is optional in responses.
+    """
+
     hashed_password: bytes | None = None
 
 
