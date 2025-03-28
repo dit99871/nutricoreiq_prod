@@ -5,12 +5,14 @@ from fastapi import (
     Depends,
     HTTPException,
     status,
-    Response,
+    Request,
 )
+from fastapi.responses import ORJSONResponse
 from fastapi.security import (
     OAuth2PasswordRequestForm,
     HTTPBearer,
 )
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db import db_helper
@@ -24,8 +26,8 @@ from services.user import (
     authenticate_user,
     get_current_auth_user_for_refresh,
 )
-from schemas.auth import Token
 from schemas.user import UserCreate, UserResponse
+from utils.auth import create_response
 
 http_bearer = HTTPBearer(auto_error=False)
 
@@ -75,41 +77,56 @@ async def register_user(
 
 @router.post("/login")
 async def login(
-    response: Response,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-) -> dict[str, str]:
+) -> ORJSONResponse:
     log.info("Attempting login for user: %s", form_data.username)
+
     try:
-        user = await authenticate_user(
-            db,
-            form_data.username,
-            form_data.password,
-        )
+        user = await authenticate_user(db, form_data.username, form_data.password)
         access_token = create_access_token(user)
-        refresh_token = create_refresh_token(user)
+        refresh_token = await create_refresh_token(user)
+
+        response = create_response(
+            access_token=access_token,
+            refresh_token=refresh_token,
+        )
+
+        log.info("User logged in successfully: %s", form_data.username)
+        return response
 
     except HTTPException as e:
+        log.error("Login failed for user %s: %s", form_data.username, str(e))
         raise e
-    log.info("User logged in successfully: %s", form_data.username)
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        httponly=True,
-        secure=True,
-        samesite="strict",
-    )
-
-    return {"access_token": access_token}
+    except SQLAlchemyError as e:
+        log.error("Query error as: %s", str(e))
+        raise HTTPException(
+            status_code=status.HTTP_418_IM_A_TEAPOT,
+            detail=f"Query error: {e!r}"
+        )
 
 
 @router.post(
     "/refresh",
-    response_model=Token,
     response_model_exclude_none=True,
 )
-def update_access_token(
+async def refresh_tokens(
+    request: Request,
     user: UserResponse = Depends(get_current_auth_user_for_refresh),
-):
-    token = create_access_token(user)
-    return {"access_token": token}
+) -> ORJSONResponse:
+    refresh_token = request.cookies.get("refresh_token")
+    if not refresh_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No refresh token found",
+        )
+
+    access_token = create_access_token(user)
+    refresh_token = await create_refresh_token(user)
+
+    response = create_response(
+        access_token=access_token,
+        refresh_token=refresh_token,
+    )
+
+    return response
