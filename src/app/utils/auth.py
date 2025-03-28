@@ -3,8 +3,9 @@ import datetime as dt
 from datetime import datetime, timedelta
 
 import bcrypt
-from fastapi import Response, status
+from fastapi import status
 from fastapi.exceptions import HTTPException
+from fastapi.responses import ORJSONResponse
 from jose import jwt, JWTError, ExpiredSignatureError
 
 from core.config import settings
@@ -147,18 +148,23 @@ def encode_jwt(
         )
 
 
-def set_cookie_token(
-    response: Response,
-    token: str,
-    token_name: str,
-    expires_delta: timedelta | None = None,
-):
+def create_response(
+    access_token: str,
+    refresh_token: str,
+) -> ORJSONResponse:
+    response = ORJSONResponse(
+        content={
+            "access_token": access_token,
+            "token_type": "bearer",
+        },
+    )
     response.set_cookie(
-        key=token_name,
-        value=token,
+        key="refresh_token",
+        value=refresh_token,
         httponly=True,
-        secure=True,
-        samesite="strict",
-        expires=expires_delta.total_seconds() if expires_delta else None,
+        secure=False,  # switch on production
+        samesite="lax",
         # Можно добавить domain, path и другие параметры при необходимости
     )
+
+    return response
