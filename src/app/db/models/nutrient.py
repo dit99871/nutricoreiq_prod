@@ -7,4 +7,6 @@ from .mixins.int_id_pk import IntIdPkMixin
 class Nutrient(IntIdPkMixin, Base):
     name: Mapped[str] = mapped_column(unique=True)
 
-    products: Mapped[list["ProductNutrient"]] = relationship(back_populates="nutrient")
+    product_associations: Mapped[list["ProductNutrient"]] = relationship(
+        back_populates="nutrient"
+    )
