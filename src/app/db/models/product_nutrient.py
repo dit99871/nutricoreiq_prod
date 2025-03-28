@@ -16,5 +16,5 @@ class ProductNutrient(IntIdPkMixin, Base):
         primary_key=True,
     )
 
-    product = relationship("Product", back_populates="nutrients")
-    nutrient = relationship("Nutrient", back_populates="products")
+    product: Mapped["Product"] = relationship(back_populates="nutrients")
+    nutrient: Mapped["Nutrient"] = relationship(back_populates="products")

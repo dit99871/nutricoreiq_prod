@@ -1,3 +1,4 @@
+from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
@@ -6,6 +7,7 @@ from .mixins.int_id_pk import IntIdPkMixin
 
 class Product(IntIdPkMixin, Base):
     title: Mapped[str] = mapped_column(nullable=False)
+    group_id: Mapped[int] = mapped_column(ForeignKey("product_groups.id"))
 
     group = relationship("ProductGroup", back_populates="products")
     nutrients = relationship("ProductNutrient", back_populates="products")
