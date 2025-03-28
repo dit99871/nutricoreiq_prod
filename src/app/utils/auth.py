@@ -3,7 +3,7 @@ import datetime as dt
 from datetime import datetime, timedelta
 
 import bcrypt
-from fastapi import status
+from fastapi import Response, status
 from fastapi.exceptions import HTTPException
 from jose import jwt, JWTError, ExpiredSignatureError
 
@@ -145,3 +145,20 @@ def encode_jwt(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"JWT error encoding token: {str(e)}",
         )
+
+
+def set_cookie_token(
+    response: Response,
+    token: str,
+    token_name: str,
+    expires_delta: timedelta | None = None,
+):
+    response.set_cookie(
+        key=token_name,
+        value=token,
+        httponly=True,
+        secure=True,
+        samesite="strict",
+        expires=expires_delta.total_seconds() if expires_delta else None,
+        # Можно добавить domain, path и другие параметры при необходимости
+    )
