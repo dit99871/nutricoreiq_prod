@@ -1,9 +1,8 @@
-import secrets
 from datetime import datetime
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request, Depends
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, ORJSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from api import router as api_router
@@ -20,9 +19,16 @@ from utils.templates import templates
 
 setup_logging()
 
-app = FastAPI(lifespan=docker_lifespan)
+app = FastAPI(
+    lifespan=docker_lifespan,
+    default_response_class=ORJSONResponse,
+)
 app.include_router(api_router)
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount(
+    "/static",
+    StaticFiles(directory="static"),
+    name="static",
+)
 
 app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(Exception, generic_exception_handler)
