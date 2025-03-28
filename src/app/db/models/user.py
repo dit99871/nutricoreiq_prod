@@ -21,7 +21,7 @@ class User(IntIdPkMixin, Base):
     height: Mapped[int | None] = mapped_column(nullable=True)
     is_active: Mapped[bool] = mapped_column(default=True)
     role: Mapped[str] = mapped_column(default="user")
-    created_at: Mapped[datetime] = mapped_column(default=datetime.now(dt.UTC))
+    created_at: Mapped[str] = mapped_column(default=datetime.now(dt.UTC).isoformat())
 
     refresh_tokens: Mapped[list["UserRefreshToken"]] = relationship(
         back_populates="users",
