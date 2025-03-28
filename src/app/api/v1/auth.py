@@ -101,8 +101,7 @@ async def login(
     except SQLAlchemyError as e:
         log.error("Query error as: %s", str(e))
         raise HTTPException(
-            status_code=status.HTTP_418_IM_A_TEAPOT,
-            detail=f"Query error: {e!r}"
+            status_code=status.HTTP_418_IM_A_TEAPOT, detail=f"Query error: {e!r}"
         )
 
 
