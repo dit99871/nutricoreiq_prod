@@ -23,7 +23,7 @@ class User(IntIdPkMixin, Base):
     role: Mapped[str] = mapped_column(default="user")
     created_at: Mapped[str] = mapped_column(default=datetime.now(dt.UTC).isoformat())
 
-    refresh_tokens: Mapped[list["UserRefreshToken"]] = relationship(
+    user_refresh_tokens: Mapped[list["UserRefreshToken"]] = relationship(
         back_populates="users",
         cascade="all, delete",
     )
