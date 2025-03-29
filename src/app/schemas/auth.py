@@ -9,6 +9,6 @@ class Token(BaseSchema):
 
 class RefreshTokenSchema(BaseSchema):
     user_id: int
-    hashed_refresh_token: bytes
+    refresh_token: str
     expires_at: str
     created_at: str

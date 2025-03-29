@@ -1,9 +1,9 @@
 from datetime import datetime
 
-import uvicorn
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.responses import HTMLResponse, ORJSONResponse
 from fastapi.staticfiles import StaticFiles
+import uvicorn
 
 from api import router as api_router
 from core.config import settings

@@ -1,4 +1,3 @@
-import datetime as dt
 from typing import Annotated
 
 from fastapi import Depends, status
@@ -99,7 +98,6 @@ async def create_user(
                 # exclude_defaults=True,
             ),
             hashed_password=hashed_password,
-            created_at=dt.datetime.now(dt.UTC).isoformat(),
         )
         db.add(db_user)
         await db.commit()

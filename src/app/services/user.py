@@ -111,7 +111,7 @@ async def authenticate_user(
         raise e
     else:
         if user is None:
-            log.error("User not found: %s", username)
+            log.error("User not found in db for authentication: %s", username)
             raise unauthed_exc
 
         log.debug("User found: %s. Verifying password.", username)
