@@ -30,6 +30,11 @@ class RunConfig(BaseModel):
     port: int
 
 
+class RedisConfig(BaseModel):
+    url: str
+    password: str
+
+
 class LoggingConfig(BaseModel):
     log_level: Literal[
         "debug",
@@ -87,6 +92,7 @@ class Settings(BaseSettings):
     api: ApiPrefix = ApiPrefix()
     db: DatabaseConfig
     auth: AuthConfig
+    redis: RedisConfig
 
 
 settings = Settings()
