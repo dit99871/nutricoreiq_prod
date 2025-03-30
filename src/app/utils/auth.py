@@ -155,6 +155,11 @@ def create_response(
     refresh_token: str,
 ) -> ORJSONResponse:
     response = ORJSONResponse(
+        status_code=status.HTTP_200_OK,
+        headers={
+            "Cache-Control": "no-store",
+            "Pragma": "no-cache",
+        },
         content={
             "access_token": access_token,
             "token_type": "bearer",
