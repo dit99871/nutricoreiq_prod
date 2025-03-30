@@ -19,8 +19,9 @@ from db import db_helper
 from core.logger import get_logger
 from crud.user import create_user, get_user_by_email
 from services.auth import (
-    create_access_token,
-    create_refresh_token,
+    create_access_jwt,
+    create_refresh_jwt,
+    get_current_token_payload,
 )
 from services.user import (
     authenticate_user,
@@ -83,9 +84,13 @@ async def login(
     log.info("Attempting login for user: %s", form_data.username)
 
     try:
-        user = await authenticate_user(db, form_data.username, form_data.password)
-        access_token = create_access_token(user)
-        refresh_token = await create_refresh_token(user)
+        user = await authenticate_user(
+            db,
+            form_data.username,
+            form_data.password,
+        )
+        access_token = create_access_jwt(user)
+        refresh_token = await create_refresh_jwt(user, db)
 
         response = create_response(
             access_token=access_token,
@@ -98,11 +103,6 @@ async def login(
     except HTTPException as e:
         log.error("Login failed for user %s: %s", form_data.username, str(e))
         raise e
-    except SQLAlchemyError as e:
-        log.error("Query error as: %s", str(e))
-        raise HTTPException(
-            status_code=status.HTTP_418_IM_A_TEAPOT, detail=f"Query error: {e!r}"
-        )
 
 
 @router.post(
@@ -112,20 +112,32 @@ async def login(
 async def refresh_tokens(
     request: Request,
     user: UserResponse = Depends(get_current_auth_user_for_refresh),
+    db: AsyncSession = Depends(db_helper.session_getter),
 ) -> ORJSONResponse:
     refresh_token = request.cookies.get("refresh_token")
     if not refresh_token:
+        log.error("Refresh token not found in cookies for user: %s", user.username)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="No refresh token found",
         )
+    payload = get_current_token_payload(refresh_token)
 
-    access_token = create_access_token(user)
-    refresh_token = await create_refresh_token(user)
+    try:
+        access_token = create_access_jwt(user)
+        refresh_token = await create_refresh_jwt(user, db)
 
-    response = create_response(
-        access_token=access_token,
-        refresh_token=refresh_token,
-    )
+        response = create_response(
+            access_token=access_token,
+            refresh_token=refresh_token,
+        )
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        log.exception("Unexpected error refreshing tokens: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Unexpected error refreshing tokens: {e!r}",
+        )
 
     return response
