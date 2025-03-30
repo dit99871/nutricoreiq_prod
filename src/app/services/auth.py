@@ -3,11 +3,14 @@ from datetime import timedelta, datetime
 
 from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
+from redis import Redis, RedisError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
 from core.logger import get_logger
 from db.models import User
 from schemas.user import UserResponse
+from services.redis_service import get_redis_service
 from utils.auth import decode_jwt, encode_jwt
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login", auto_error=False)
@@ -80,7 +83,7 @@ def create_jwt(
     }
     jwt_payload.update(token_data)
     try:
-        encoded = encode_jwt(
+        encoded: str = encode_jwt(
             payload=jwt_payload,
             expire_minutes=expire_minutes,
             expire_timedelta=expire_timedelta,
@@ -90,7 +93,7 @@ def create_jwt(
         raise e
 
 
-def create_access_token(user: UserResponse) -> str:
+def create_access_jwt(user: UserResponse) -> str:
     """
     Creates a JWT token based on the provided user.
 
@@ -122,30 +125,42 @@ def create_access_token(user: UserResponse) -> str:
         raise e
 
 
-def create_refresh_token(user: UserResponse) -> str:
-    """
-    Creates a refresh JWT token for the provided user.
-
-    This function generates a refresh token with a payload containing the user's
-    username. The token is signed using the private key and is configured to
-    expire after the number of days specified in the `settings.auth.refresh_token_expire`
-    configuration.
-
-    Args:
-        user (User): The user object for whom the refresh token is being created.
-
-    Returns:
-        str: The encoded refresh JWT token as a string.
-    """
+async def create_refresh_jwt(
+    user: UserResponse,
+    db: AsyncSession,
+    redis: Redis = Depends(get_redis_service),
+) -> str:
     jwt_payload = {
         "sub": user.username,
     }
+    jwt_expires = timedelta(days=settings.auth.refresh_token_expires)
     try:
         jwt = create_jwt(
             token_type=REFRESH_TOKEN_TYPE,
             token_data=jwt_payload,
-            expire_timedelta=timedelta(days=settings.auth.refresh_token_expires),
+            expire_timedelta=jwt_expires,
         )
+        await redis.set(
+            f"refresh_token:{user.id}:{jwt}",
+            "valid",
+            ex=jwt_expires,
+        )
+
         return jwt
+
     except HTTPException as e:
         raise e
+
+    except RedisError as e:
+        log.error("Redis error creating refresh token: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e),
+        )
+
+    except Exception as e:
+        log.exception("Unexpected error creating refresh token: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e),
+        )
