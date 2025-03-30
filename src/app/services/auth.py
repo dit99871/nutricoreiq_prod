@@ -3,7 +3,7 @@ from datetime import timedelta, datetime
 
 from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
-from redis import Redis, RedisError
+from redis.asyncio import Redis, RedisError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings

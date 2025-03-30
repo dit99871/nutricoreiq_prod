@@ -12,7 +12,6 @@ from fastapi.security import (
     OAuth2PasswordRequestForm,
     HTTPBearer,
 )
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db import db_helper
