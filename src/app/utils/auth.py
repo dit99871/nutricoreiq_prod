@@ -65,23 +65,26 @@ def decode_jwt(token: str) -> dict | None:
     if token is None:
         return None
     try:
-        decoded = jwt.decode(
+        decoded: dict = jwt.decode(
             token,
             settings.auth.public_key_path.read_text(),
             algorithms=settings.auth.algorithm,
         )
         return decoded
     except FileNotFoundError as e:
+        log.error("File with public key not found: %s", e)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"File with public key not found {str(e)}",
         )
     except ExpiredSignatureError as e:
+        log.error("Token has expired: %s", e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Token has expired: {str(e)}.",
         )
     except JWTError as e:
+        log.error("JWT error decoding token: %s", e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"JWT error decoding token: {str(e)}",
@@ -154,6 +157,24 @@ def create_response(
     access_token: str,
     refresh_token: str,
 ) -> ORJSONResponse:
+    """
+    Creates a response with the given access token and refresh token.
+
+    This function creates an instance of `ORJSONResponse` with the given access
+    token and refresh token. It sets the status code to HTTP 200 OK, the
+    Cache-Control header to "no-store", the Pragma header to "no-cache", and
+    the Content-Type header to "application/json". It sets the "access_token"
+    key in the response body to the given access token, and the "token_type"
+    key to "bearer". It also sets the Set-Cookie header with the given refresh
+    token, the "refresh_token" key in the cookie, the "httponly" and "secure"
+    flags set to True, and the "sameSite" flag set to "lax". The "domain" and
+    "path" parameters are not set by default but can be set if needed.
+
+    :param access_token: The access token to be set in the response.
+    :param refresh_token: The refresh token to be set in the response.
+    :return: The `ORJSONResponse` instance with the given access token and
+             refresh token.
+    """
     response = ORJSONResponse(
         status_code=status.HTTP_200_OK,
         headers={
