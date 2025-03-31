@@ -32,6 +32,7 @@ class RunConfig(BaseModel):
 
 class RedisConfig(BaseModel):
     url: str
+    salt: str
     password: str
 
 
