@@ -40,6 +40,23 @@ async def _get_user_by_filter(
         )
 
 
+async def get_user_by_id(
+    db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+    user_id: int,
+) -> UserResponse | None:
+    try:
+        user = await _get_user_by_filter(db, User.id == user_id)
+        log_user_result(
+            user,
+            log,
+            f"User found with user_name: {user_id}",
+            f"User not found with user_name: {user_id}",
+        )
+        return UserResponse.model_validate(user) if user is not None else None
+    except HTTPException as e:
+        raise e
+
+
 async def get_user_by_email(
     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
     email: EmailStr,
@@ -55,12 +72,6 @@ async def get_user_by_email(
         return UserResponse.model_validate(user) if user is not None else None
     except HTTPException as e:
         raise e
-    except Exception as e:
-        log.exception("Unexpected error getting user by email: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Unexpected error getting user by email: {str(e)}",
-        )
 
 
 async def get_user_by_name(
@@ -78,12 +89,6 @@ async def get_user_by_name(
         return UserResponse.model_validate(user) if user is not None else None
     except HTTPException as e:
         raise e
-    except Exception as e:
-        log.exception("Unexpected error getting user by name: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Unexpected error getting user by name: {str(e)}",
-        )
 
 
 async def create_user(
