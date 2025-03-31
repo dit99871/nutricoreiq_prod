@@ -18,7 +18,7 @@ from services.auth import (
 from utils.auth import verify_password
 from crud.user import get_user_by_name
 
-log = get_logger(__name__)
+log = get_logger("user_service")
 
 
 async def _get_user_from_token(

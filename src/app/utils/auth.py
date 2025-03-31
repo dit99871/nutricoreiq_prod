@@ -11,7 +11,7 @@ from jose import jwt, JWTError, ExpiredSignatureError
 from core.config import settings
 from core.logger import get_logger
 
-log = get_logger(__name__)
+log = get_logger("auth_utils")
 
 
 def get_password_hash(password: str) -> bytes:
