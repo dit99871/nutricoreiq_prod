@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
@@ -12,46 +13,13 @@ from services.auth import (
     CREDENTIAL_EXCEPTION,
     get_current_token_payload,
     oauth2_scheme,
-    REFRESH_TOKEN_TYPE,
     TOKEN_TYPE_FIELD,
 )
-from utils.auth import verify_password
-from crud.user import get_user_by_name
+from utils.auth import verify_password, decode_jwt
+from crud.user import get_user_by_name, get_user_by_id
+from utils.redis import validate_refresh_jwt
 
 log = get_logger("user_service")
-
-
-async def _get_user_from_token(
-    token: str,
-    db: AsyncSession,
-    expected_token_type: str,
-) -> UserResponse | None:
-    try:
-        payload: dict = get_current_token_payload(token)
-        name: str | None = payload.get("sub")
-        token_type = payload.get(TOKEN_TYPE_FIELD)
-        # add check jti in blacklist
-        log.debug("Looking for user with name: %s", name)
-        user = await get_user_by_name(db, name)
-    except HTTPException as e:
-        raise e
-    else:
-        if user is None:
-            log.error("User not found for name: %s", name)
-            raise CREDENTIAL_EXCEPTION
-        if token_type != expected_token_type:
-            log.error(
-                "Invalid token type. Expected %s, got %s",
-                expected_token_type,
-                token_type,
-            )
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Invalid token type. Expected {expected_token_type!r}, got {token_type!r}",
-            )
-
-        log.info("User authenticated successfully: %s", name)
-        return UserResponse.model_validate(user)
 
 
 async def get_current_auth_user(
@@ -61,17 +29,50 @@ async def get_current_auth_user(
     if token is None:
         return None
     try:
-        return await _get_user_from_token(token, db, ACCESS_TOKEN_TYPE)
+        payload: dict = get_current_token_payload(token)
+        user_id: int | None = payload.get("sub")
+        log.debug("Looking for user with user_id: %s", user_id)
+        user = await get_user_by_id(db, user_id)
     except HTTPException as e:
         raise e
+    else:
+        if user is None:
+            log.error("User not found for user_id: %s", user_id)
+            raise CREDENTIAL_EXCEPTION
+
+        log.info("User authenticated successfully: %s", user_id)
+        return UserResponse.model_validate(user)
 
 
 async def get_current_auth_user_for_refresh(
-    token: Annotated[str, Depends(oauth2_scheme)],
-    db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+    token: str,
+    session: AsyncSession,
+    redis: Redis,
 ) -> UserResponse:
     try:
-        return await _get_user_from_token(token, db, REFRESH_TOKEN_TYPE)
+        payload = decode_jwt(token)
+        if payload is None:
+            log.error("Failed to decode refresh token")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Failed to decode refresh token",
+            )
+
+        user_id: int | None = payload.get("sub")
+        if user_id is None:
+            log.error("User id not found in refresh token")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User id not found in refresh token",
+            )
+        if not await validate_refresh_jwt(user_id, token, redis):
+            log.error("Refresh token is invalid or has expired")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Refresh token is invalid or has expired",
+            )
+        user = await get_user_by_id(session, user_id)
+        return user
     except HTTPException as e:
         raise e
 
