@@ -1,4 +1,5 @@
 import datetime as dt
+from uuid import uuid4
 from datetime import datetime
 
 from sqlalchemy.orm import (
@@ -12,6 +13,7 @@ from .base import Base
 
 
 class User(IntIdPkMixin, Base):
+    uid: Mapped[str] = mapped_column(default=str(uuid4()))
     username: Mapped[str] = mapped_column(unique=True, index=True)
     email: Mapped[str] = mapped_column(unique=True, index=True)
     hashed_password: Mapped[bytes]
