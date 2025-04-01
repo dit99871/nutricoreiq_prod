@@ -1,28 +1,26 @@
-from typing import Annotated
-
-from fastapi import Depends, status
+from fastapi import status
 from fastapi.exceptions import HTTPException
 from pydantic import EmailStr
+from sqlalchemy import update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from core.logger import get_logger
-from db import db_helper
 from db.models import User
-from schemas.user import UserCreate, UserResponse
+from schemas.user import UserCreate, UserResponse, UserProfile
 from utils.auth import get_password_hash
 from utils.user import log_user_result
 
-log = get_logger(__name__)
+log = get_logger("user_crud")
 
 
 async def _get_user_by_filter(
-    db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+    session: AsyncSession,
     filter_condition,
 ) -> User | None:
     try:
-        result = await db.execute(
+        result = await session.execute(
             select(User).filter(filter_condition, User.is_active == True)
         )
         return result.scalars().first()
@@ -40,17 +38,17 @@ async def _get_user_by_filter(
         )
 
 
-async def get_user_by_id(
-    db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-    user_id: int,
+async def get_user_by_uid(
+    session: AsyncSession,
+    uid: str,
 ) -> UserResponse | None:
     try:
-        user = await _get_user_by_filter(db, User.id == user_id)
+        user = await _get_user_by_filter(session, User.uid == uid)
         log_user_result(
             user,
             log,
-            f"User found with user_name: {user_id}",
-            f"User not found with user_name: {user_id}",
+            f"User found with uid: {uid}",
+            f"User not found with uid: {uid}",
         )
         return UserResponse.model_validate(user) if user is not None else None
     except HTTPException as e:
@@ -58,11 +56,11 @@ async def get_user_by_id(
 
 
 async def get_user_by_email(
-    db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+    session: AsyncSession,
     email: EmailStr,
 ) -> UserResponse | None:
     try:
-        user: User = await _get_user_by_filter(db, User.email == email)
+        user: User = await _get_user_by_filter(session, User.email == email)
         log_user_result(
             user,
             log,
@@ -75,11 +73,11 @@ async def get_user_by_email(
 
 
 async def get_user_by_name(
-    db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+    session: AsyncSession,
     user_name: str,
 ) -> UserResponse | None:
     try:
-        user = await _get_user_by_filter(db, User.username == user_name)
+        user = await _get_user_by_filter(session, User.username == user_name)
         log_user_result(
             user,
             log,
@@ -92,7 +90,7 @@ async def get_user_by_name(
 
 
 async def create_user(
-    db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+    session: AsyncSession,
     user_in: UserCreate,
 ) -> UserCreate | None:
     try:
@@ -100,59 +98,77 @@ async def create_user(
         db_user = User(
             **user_in.model_dump(
                 exclude={"password"},
-                # exclude_defaults=True,
+                exclude_defaults=True,
             ),
             hashed_password=hashed_password,
         )
-        db.add(db_user)
-        await db.commit()
-        await db.refresh(db_user)
+        session.add(db_user)
+        await session.commit()
+        await session.refresh(db_user)
         log.info("User created with email: %s", user_in.email)
+
         return user_in
+
     except SQLAlchemyError as e:
         log.error("Database error creating user_in with email %s: %s", user_in.email, e)
-        await db.rollback()
+        await session.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e),
         )
+
     except Exception as e:
         log.exception(
             "Unexpected error creating user_in with email %s: %s", user_in.email, e
         )
-        await db.rollback()
+        await session.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e),
         )
 
 
-# async def update_user(
-#     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-#     user_email: EmailStr,
-#     user: UserUpdate,
-# ) -> Optional[User]:
-#     """Обновление данных пользователя."""
-#     try:
-#         db_user = await get_user_by_email(db, user_email)
-#         if db_user:
-#             for key, value in user.model_dump().items():
-#                 if value is not None:
-#                     setattr(db_user, key, value)
-#             await db.commit()
-#             await db.refresh(db_user)
-#             log.info("User updated with email: %s", user_email)
-#             return db_user
-#         log.warning("User not found for update with email: %s", user_email)
-#         return None
-#     except SQLAlchemyError as e:
-#         log.error("Database error updating user with email %s: %s", user_email, e)
-#         await db.rollback()
-#         return None
-#     except Exception as e:
-#         log.exception("Unexpected error updating user with email %s: %s", user_email, e)
-#         await db.rollback()
-#         return None
+async def update_user_profile(
+    data_in: UserProfile,
+    current_user: UserResponse,
+    session: AsyncSession,
+):
+    update_data = data_in.model_dump()
+    try:
+        stmt = (
+            update(User)
+            .where(User.id == current_user.id)
+            .values(**update_data)
+            .returning(User)
+        )
+
+        result = await session.execute(stmt)
+        updated_user = result.scalar_one_or_none()
+
+        if not updated_user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not updated"
+            )
+
+        await session.commit()
+        log.info("User updated with name: %s", current_user.username)
+
+        return
+
+    except SQLAlchemyError as e:
+        log.error(
+            "Database error updating user with name %s: %s", current_user.username, e
+        )
+        await session.rollback()
+        return None
+    except Exception as e:
+        log.exception(
+            "Unexpected error updating user with name %s: %s", current_user.username, e
+        )
+        await session.rollback()
+        return None
+
+
 #
 #
 # async def delete_user(
