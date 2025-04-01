@@ -50,8 +50,8 @@
                 <div class="ms-auto d-flex align-items-center gap-3">
                     {% if user %}
                         <p class="text-center">Вы вошли как <strong>{{ user.username | e }}</strong>.</p>
-                        <a href="/dashboard" class="btn btn-primary">Личный кабинет</a>
-                        <a href="/logout" class="btn btn-outline-danger">Выйти</a>
+                        <a href="/api/v1/user/dashboard" class="btn btn-primary">Личный кабинет</a>
+                        <a href="/api/v1/user/logout" class="btn btn-outline-danger">Выйти</a>
                     {% else %}
                         <!-- Кнопка для открытия модального окна -->
                         <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#loginModal">
@@ -135,7 +135,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="registerForm" method="POST">
+                    <form id="registerForm" method="POST" action="api/v1/auth/register">
                         <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
                         <div class="mb-3">
                             <label for="regUsername" class="form-label">Логин</label>
