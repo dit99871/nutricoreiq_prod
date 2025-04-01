@@ -12,7 +12,7 @@ from pydantic_settings import (
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 LOG_DEFAULT_FORMAT = (
-    "[%(asctime)s.%(msecs)03d] %(name)32s:%(lineno)-4d %(levelname)-7s - %(message)s"
+    "[%(asctime)s.%(msecs)03d] %(name)24s:%(lineno)-4d %(levelname)-7s - %(message)s"
 )
 
 
