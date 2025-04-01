@@ -3,18 +3,18 @@ from datetime import timedelta, datetime
 
 from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
-from redis.asyncio import Redis, RedisError
-from sqlalchemy.ext.asyncio import AsyncSession
+from redis.asyncio import Redis
 
 from core.config import settings
 from core.logger import get_logger
+from core.redis import get_redis
 from db.models import User
 from schemas.user import UserResponse
-from services.redis_service import get_redis_service
+from services.redis import add_refresh_to_redis
 from utils.auth import decode_jwt, encode_jwt
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login", auto_error=False)
-log = get_logger(__name__)
+log = get_logger("auth_service")
 
 TOKEN_TYPE_FIELD = "type"
 ACCESS_TOKEN_TYPE = "access"
@@ -37,15 +37,15 @@ def get_current_token_payload(
         raise CREDENTIAL_EXCEPTION
 
     token_type: str | None = payload.get(TOKEN_TYPE_FIELD)
-    if token_type is None:
-        log.error("Token type not found in token payload: %s", payload)
+    if token_type is None or token_type != ACCESS_TOKEN_TYPE:
+        log.error("No match for token type in token payload: %s", payload)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Invalid token type {token_type!r} expected {ACCESS_TOKEN_TYPE!r}",
         )
-    name: str | None = payload.get("sub")
-    if name is None:
-        log.error("Name not found in token payload: %s", payload)
+    uid: str | None = payload.get("sub")
+    if uid is None:
+        log.error("User uid not found in token payload: %s", payload)
         raise CREDENTIAL_EXCEPTION
 
     return payload
@@ -110,7 +110,7 @@ def create_access_jwt(user: UserResponse) -> str:
         str: The JWT token.
     """
     jwt_payload = {
-        "sub": user.username,
+        "sub": user.uid,
         "username": user.username,
         "email": user.email,
     }
@@ -127,11 +127,9 @@ def create_access_jwt(user: UserResponse) -> str:
 
 async def create_refresh_jwt(
     user: UserResponse,
-    db: AsyncSession,
-    redis: Redis = Depends(get_redis_service),
 ) -> str:
     jwt_payload = {
-        "sub": user.username,
+        "sub": user.uid,
     }
     jwt_expires = timedelta(days=settings.auth.refresh_token_expires)
     try:
@@ -140,23 +138,17 @@ async def create_refresh_jwt(
             token_data=jwt_payload,
             expire_timedelta=jwt_expires,
         )
-        await redis.set(
-            f"refresh_token:{user.id}:{jwt}",
-            "valid",
-            ex=jwt_expires,
+
+        await add_refresh_to_redis(
+            uid=user.uid,
+            jwt=jwt,
+            exp=jwt_expires,
         )
 
         return jwt
 
     except HTTPException as e:
         raise e
-
-    except RedisError as e:
-        log.error("Redis error creating refresh token: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e),
-        )
 
     except Exception as e:
         log.exception("Unexpected error creating refresh token: %s", e)

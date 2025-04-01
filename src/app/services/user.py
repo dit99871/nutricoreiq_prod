@@ -9,14 +9,12 @@ from db import db_helper
 from db.models import User
 from schemas.user import UserResponse
 from services.auth import (
-    ACCESS_TOKEN_TYPE,
     CREDENTIAL_EXCEPTION,
     get_current_token_payload,
     oauth2_scheme,
-    TOKEN_TYPE_FIELD,
 )
 from utils.auth import verify_password, decode_jwt
-from crud.user import get_user_by_name, get_user_by_id
+from crud.user import get_user_by_name, get_user_by_uid
 from utils.redis import validate_refresh_jwt
 
 log = get_logger("user_service")
@@ -24,23 +22,33 @@ log = get_logger("user_service")
 
 async def get_current_auth_user(
     token: Annotated[str, Depends(oauth2_scheme)],
-    db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+    session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
 ) -> UserResponse | None:
+    """
+    Authenticates a user given a JWT token and returns the user object.
+
+    If the token is invalid, has expired, or the user is not found, raises an
+    HTTPException with a 401 status code.
+
+    :param token: The JWT token to authenticate with.
+    :param session: The database session to use for the query.
+    :return: The authenticated user object, or None if authentication fails.
+    """
     if token is None:
         return None
     try:
         payload: dict = get_current_token_payload(token)
-        user_id: int | None = payload.get("sub")
-        log.debug("Looking for user with user_id: %s", user_id)
-        user = await get_user_by_id(db, user_id)
+        uid: str | None = payload.get("sub")
+        log.debug("Looking for user with uid: %s", uid)
+        user = await get_user_by_uid(session, uid)
     except HTTPException as e:
         raise e
     else:
         if user is None:
-            log.error("User not found for user_id: %s", user_id)
+            log.error("User not found for uid: %s", uid)
             raise CREDENTIAL_EXCEPTION
 
-        log.info("User authenticated successfully: %s", user_id)
+        log.info("User authenticated successfully: %s", user.username)
         return UserResponse.model_validate(user)
 
 
@@ -49,6 +57,17 @@ async def get_current_auth_user_for_refresh(
     session: AsyncSession,
     redis: Redis,
 ) -> UserResponse:
+    """
+    Authenticates a user given a refresh token and returns the user object.
+
+    If the token is invalid, has expired, or the user is not found, raises an
+    HTTPException with a 401 status code.
+
+    :param token: The refresh token to authenticate with.
+    :param session: The database session to use for the query.
+    :param redis: The Redis client to use for the query.
+    :return: The authenticated user object.
+    """
     try:
         payload = decode_jwt(token)
         if payload is None:
@@ -58,27 +77,27 @@ async def get_current_auth_user_for_refresh(
                 detail="Failed to decode refresh token",
             )
 
-        user_id: int | None = payload.get("sub")
-        if user_id is None:
+        uid: str | None = payload.get("sub")
+        if uid is None:
             log.error("User id not found in refresh token")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User id not found in refresh token",
             )
-        if not await validate_refresh_jwt(user_id, token, redis):
+        if not await validate_refresh_jwt(uid, token, redis):
             log.error("Refresh token is invalid or has expired")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Refresh token is invalid or has expired",
             )
-        user = await get_user_by_id(session, user_id)
+        user = await get_user_by_uid(session, uid)
         return user
     except HTTPException as e:
         raise e
 
 
 async def authenticate_user(
-    db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+    session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
     username: str,
     password: str,
 ) -> UserResponse | None:
@@ -91,7 +110,7 @@ async def authenticate_user(
     Otherwise, an HTTP 401 Unauthorized exception is raised.
 
     Args:
-        db (Annotated[AsyncSession, Depends]): The async database session dependency.
+        session (Annotated[AsyncSession, Depends]): The async database session dependency.
         username (str): The username of the user to authenticate.
         password (str): The password of the user to authenticate.
 
@@ -107,7 +126,7 @@ async def authenticate_user(
         detail="Invalid email or password",
     )
     try:
-        user = await get_user_by_name(db, username)
+        user = await get_user_by_name(session, username)
     except HTTPException as e:
         raise e
     else:

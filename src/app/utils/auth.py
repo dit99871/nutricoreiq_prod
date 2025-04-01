@@ -7,11 +7,9 @@ from fastapi import status
 from fastapi.exceptions import HTTPException
 from fastapi.responses import ORJSONResponse
 from jose import jwt, JWTError, ExpiredSignatureError
-from redis.asyncio import Redis
 
 from core.config import settings
 from core.logger import get_logger
-from utils.security import generate_hash_token
 
 log = get_logger("auth_utils")
 
@@ -198,23 +196,3 @@ def create_response(
     )
 
     return response
-
-
-async def is_token_blacklisted(
-    redis: Redis,
-    token: str,
-) -> bool:
-    """
-    Checks whether a given token is blacklisted.
-
-    This function takes a given token, hashes it with a salt, and checks whether
-    the hashed token exists in the Redis "blacklist:refresh" key. If the hashed
-    token is found, it returns True, indicating that the token is blacklisted.
-    Otherwise, it returns False.
-
-    :param redis: The Redis instance to be used for checking the blacklist.
-    :param token: The token to be checked against the blacklist.
-    :return: A boolean indicating whether the token is blacklisted.
-    """
-    hashed_token = generate_hash_token(token)
-    return await redis.exists(f"blacklist:refresh:{hashed_token}") == 1

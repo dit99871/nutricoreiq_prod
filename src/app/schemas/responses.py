@@ -10,7 +10,6 @@ class SuccessResponse(BaseSchema):
 
 
 class ErrorDetail(BaseSchema):
-    """Детализация ошибки"""
     code: str
     message: str
     details: dict[str, Any] | None = None
