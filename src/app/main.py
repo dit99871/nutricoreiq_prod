@@ -37,14 +37,14 @@ app.add_exception_handler(Exception, generic_exception_handler)
 @app.get("/", name="home", response_class=HTMLResponse)
 def start_page(
     request: Request,
-    current_user=Depends(get_current_auth_user),
+    current_user: str | None = Depends(get_current_auth_user),
 ):
     return templates.TemplateResponse(
         name="index.html",
         request=request,
         context={
             "current_year": datetime.now().year,
-            "user": current_user,
+            "user": current_user or None,
             "csrf_token": generate_csrf_token(),
             "csp_nonce": generate_csp_nonce(),
         },
