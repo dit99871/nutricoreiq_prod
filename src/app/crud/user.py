@@ -1,16 +1,14 @@
 from fastapi import status
 from fastapi.exceptions import HTTPException
 from pydantic import EmailStr
-from sqlalchemy import update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from core.logger import get_logger
 from db.models import User
-from schemas.user import UserCreate, UserResponse, UserProfile
+from schemas.user import UserCreate, UserResponse
 from utils.auth import get_password_hash
-from utils.user import log_user_result
 
 log = get_logger("user_crud")
 
@@ -18,18 +16,27 @@ log = get_logger("user_crud")
 async def _get_user_by_filter(
     session: AsyncSession,
     filter_condition,
-) -> User | None:
+) -> UserResponse:
     try:
-        result = await session.execute(
-            select(User).filter(filter_condition, User.is_active == True)
-        )
-        return result.scalars().first()
+        stmt = select(User).filter(filter_condition, User.is_active == True)
+        result = await session.execute(stmt)
+        user = result.scalar_one_or_none()
+        if user is None:
+            log.error("User not found in db")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User not found in db",
+            )
+
+        return UserResponse.model_validate(user)
+
     except SQLAlchemyError as e:
         log.error("Database error getting user: %s", e)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"DB error getting user: {str(e)}",
         )
+
     except Exception as e:
         log.exception("Unexpected error getting user: %s", e)
         raise HTTPException(
@@ -44,13 +51,8 @@ async def get_user_by_uid(
 ) -> UserResponse | None:
     try:
         user = await _get_user_by_filter(session, User.uid == uid)
-        log_user_result(
-            user,
-            log,
-            f"User found with uid: {uid}",
-            f"User not found with uid: {uid}",
-        )
-        return UserResponse.model_validate(user) if user is not None else None
+        return user
+
     except HTTPException as e:
         raise e
 
@@ -60,14 +62,9 @@ async def get_user_by_email(
     email: EmailStr,
 ) -> UserResponse | None:
     try:
-        user: User = await _get_user_by_filter(session, User.email == email)
-        log_user_result(
-            user,
-            log,
-            f"User found with email: {email}",
-            f"User not found with email: {email}",
-        )
-        return UserResponse.model_validate(user) if user is not None else None
+        user = await _get_user_by_filter(session, User.email == email)
+        return user
+
     except HTTPException as e:
         raise e
 
@@ -78,13 +75,8 @@ async def get_user_by_name(
 ) -> UserResponse | None:
     try:
         user = await _get_user_by_filter(session, User.username == user_name)
-        log_user_result(
-            user,
-            log,
-            f"User found with user_name: {user_name}",
-            f"User not found with user_name: {user_name}",
-        )
-        return UserResponse.model_validate(user) if user is not None else None
+        return user
+
     except HTTPException as e:
         raise e
 
@@ -126,47 +118,6 @@ async def create_user(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e),
         )
-
-
-async def update_user_profile(
-    data_in: UserProfile,
-    current_user: UserResponse,
-    session: AsyncSession,
-):
-    update_data = data_in.model_dump()
-    try:
-        stmt = (
-            update(User)
-            .where(User.id == current_user.id)
-            .values(**update_data)
-            .returning(User)
-        )
-
-        result = await session.execute(stmt)
-        updated_user = result.scalar_one_or_none()
-
-        if not updated_user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="User not updated"
-            )
-
-        await session.commit()
-        log.info("User updated with name: %s", current_user.username)
-
-        return
-
-    except SQLAlchemyError as e:
-        log.error(
-            "Database error updating user with name %s: %s", current_user.username, e
-        )
-        await session.rollback()
-        return None
-    except Exception as e:
-        log.exception(
-            "Unexpected error updating user with name %s: %s", current_user.username, e
-        )
-        await session.rollback()
-        return None
 
 
 #

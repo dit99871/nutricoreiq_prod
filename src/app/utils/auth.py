@@ -198,7 +198,6 @@ def create_response(
         expires: dt.datetime,
         response_in=response,
     ):
-        value = f"Bearer {value}" if key == "access_token" else value
         response_in.set_cookie(
             key=key,
             value=value,
