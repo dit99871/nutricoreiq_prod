@@ -1,6 +1,5 @@
-import uuid
 import datetime as dt
-from datetime import datetime, timedelta
+import uuid
 
 import bcrypt
 from fastapi import status
@@ -96,7 +95,7 @@ def encode_jwt(
     private_key: str = settings.auth.private_key_path.read_text(),
     algorithm: str = settings.auth.algorithm,
     expire_minutes: int = settings.auth.access_token_expires,
-    expire_timedelta: timedelta | None = None,
+    expire_timedelta: dt.timedelta | None = None,
 ) -> str:
     """
     Encodes a given payload as a JWT token using the private key.
@@ -120,12 +119,12 @@ def encode_jwt(
     :return: The encoded JWT token as a string.
     """
     to_encode = payload.copy()
-    now = datetime.now(dt.UTC)
+    now = dt.datetime.now(dt.UTC)
 
     expire = (
         now + expire_timedelta
         if expire_timedelta
-        else now + timedelta(minutes=expire_minutes)
+        else now + dt.timedelta(minutes=expire_minutes)
     )
     to_encode.update(
         exp=expire,
@@ -182,17 +181,42 @@ def create_response(
             "Pragma": "no-cache",
         },
         content={
-            "access_token": access_token,
-            "token_type": "bearer",
+            "message": "Login successful",
         },
     )
-    response.set_cookie(
+
+    expires_refresh_token = dt.datetime.now(dt.UTC) + dt.timedelta(
+        days=settings.auth.refresh_token_expires
+    )
+    expires_access_token = dt.datetime.now(dt.UTC) + dt.timedelta(
+        minutes=settings.auth.access_token_expires
+    )
+
+    def _set_cookies(
+        key: str,
+        value: str,
+        expires: dt.datetime,
+        response_in=response,
+    ):
+        value = f"Bearer {value}" if key == "access_token" else value
+        response_in.set_cookie(
+            key=key,
+            value=value,
+            httponly=True,
+            secure=False,  # switch on production
+            samesite="lax",  # than use csrf tokens else "strict"
+            expires=expires,
+        )
+
+    _set_cookies(
+        key="access_token",
+        value=access_token,
+        expires=expires_access_token,
+    )
+    _set_cookies(
         key="refresh_token",
         value=refresh_token,
-        httponly=True,
-        secure=False,  # switch on production
-        samesite="lax",
-        # Можно добавить domain, path и другие параметры при необходимости
+        expires=expires_refresh_token,
     )
 
     return response
