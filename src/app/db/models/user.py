@@ -20,7 +20,7 @@ class User(IntIdPkMixin, Base):
     gender: Mapped[str | None] = mapped_column(nullable=True)
     age: Mapped[int | None] = mapped_column(nullable=True)
     weight: Mapped[float | None] = mapped_column(nullable=True)
-    height: Mapped[int | None] = mapped_column(nullable=True)
+    height: Mapped[float | None] = mapped_column(nullable=True)
     is_active: Mapped[bool] = mapped_column(default=True)
     role: Mapped[str] = mapped_column(default="user")
     created_at: Mapped[str] = mapped_column(default=datetime.now(dt.UTC).isoformat())
