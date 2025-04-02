@@ -1,11 +1,66 @@
+//    // Обработчик формы обновления профиля
+//    const form = document.getElementById('updateProfileForm');
+//    if (form) {
+//        const errorDiv = document.getElementById('formErrors');
+//        const successDiv = document.getElementById('formSuccess');
+//        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+//
+//        form.addEventListener('submit', async function(e) {
+//            e.preventDefault();
+//
+//            errorDiv.classList.add('d-none');
+//            successDiv.classList.add('d-none');
+//
+//            const submitButton = form.querySelector('button[type="submit"]');
+//            const originalButtonText = submitButton.textContent;
+//            submitButton.disabled = true;
+//            submitButton.textContent = "Сохранение...";
+//
+//            const formData = new FormData(form);
+//            const data = Object.fromEntries(formData.entries());
+//
+//            try {
+//                // Отправляем данные как JSON
+//                const result = await secureFetch(form.action, {
+//                    method: 'POST',
+//                    headers: {
+////                        "Authorization": `Bearer ${access_token}`,
+//                        'Content-Type': 'application/json',
+//                        'X-CSRF-Token': csrfToken,
+//                    },
+//                    body: JSON.stringify(data),
+//                    credentials: 'include'
+//                });
+//
+//                successDiv.textContent = 'Профиль успешно обновлен!';
+//                successDiv.classList.remove('d-none');
+//
+//                // Обновляем данные на странице через 2 секунды
+//                setTimeout(() => {
+//                    window.location.href = '/api/v1/user/dashboard';
+//                }, 2000);
+//
+//            } catch (error) {
+//                errorDiv.textContent = error.message;
+//                errorDiv.classList.remove('d-none');
+//                console.error('Error:', error);
+//            } finally {
+//                submitButton.disabled = false;
+//                submitButton.textContent = originalButtonText;
+//            }
+//        });
+//    }
+
+
 document.addEventListener("DOMContentLoaded", function () {
     // Функция для безопасного выполнения fetch-запросов с CSRF-токеном
     async function secureFetch(url, options = {}) {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
 
         const headers = {
             ...(options.headers || {}),
-            ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
+            ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+//            ...(accessToken ? {'Authorization': `Bearer ${accessToken}`} : {}),
         };
 
         try {
@@ -16,7 +71,8 @@ document.addEventListener("DOMContentLoaded", function () {
             });
 
             if (!response.ok) {
-                const error = await response.json().catch(() => ({}));
+                const error = await response.json().catch(() => ({ message: 'Unknown error' }));
+                console.error('Error response:', text);
                 throw new Error(error.detail || error.message || `HTTP error! status: ${response.status}`);
             }
 
@@ -34,8 +90,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
         authSection.innerHTML = `
             <p class="mb-0 me-3">Вы вошли как <strong>${escapeHtml(user.username)}</strong></p>
-            <a href="/dashboard" class="btn btn-primary">Личный кабинет</a>
-            <a href="/logout" class="btn btn-outline-danger">Выйти</a>
+            <a href="/api/v1/user/dashboard" class="btn btn-primary">Личный кабинет</a>
+            <a href="/api/v1/user/logout" class="btn btn-outline-danger">Выйти</a>
             <button class="theme-toggle" id="themeToggle" title="Переключить тему">
                 ${document.body.classList.contains('dark-mode') ? '☀️' : '🌙'}
             </button>
@@ -118,7 +174,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 const userData = await secureFetch("/api/v1/user/me", {
                     headers: {
                         "Authorization": `Bearer ${access_token}`,
-                        "Accept": "application/json"
+                        "Accept": "application/json",
+                        "Content-Type": "application/json"
                     }
                 });
 
