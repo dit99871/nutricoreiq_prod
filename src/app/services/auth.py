@@ -1,13 +1,11 @@
 import datetime as dt
 from datetime import timedelta, datetime
 
-from fastapi import HTTPException, status, Depends
+from fastapi import HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
-from redis.asyncio import Redis
 
 from core.config import settings
 from core.logger import get_logger
-from core.redis import get_redis
 from db.models import User
 from schemas.user import UserResponse
 from services.redis import add_refresh_to_redis
@@ -27,8 +25,13 @@ CREDENTIAL_EXCEPTION = HTTPException(
 )
 
 
+async def get_token_from_cookies(request: Request):
+    token = request.cookies.get("access_token")
+    return token
+
+
 def get_current_token_payload(
-    token: str = Depends(oauth2_scheme),
+    token: str,
 ) -> dict | None:
     log.debug("Attempting to decode token: %s", token)
     payload: dict | None = decode_jwt(token)
