@@ -12,30 +12,32 @@ from fastapi.security import (
     OAuth2PasswordRequestForm,
     HTTPBearer,
 )
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db import db_helper
 from core.logger import get_logger
+from core.redis import get_redis
 from crud.user import create_user, get_user_by_email
 from services.auth import (
     create_access_jwt,
     create_refresh_jwt,
-    get_current_token_payload,
 )
 from services.user import (
     authenticate_user,
-    get_current_auth_user_for_refresh,
+    get_current_auth_user_for_refresh, get_current_auth_user,
 )
 from schemas.user import UserCreate, UserResponse
 from utils.auth import create_response
 
+log = get_logger("auth_api")
 http_bearer = HTTPBearer(auto_error=False)
 
 router = APIRouter(
     tags=["Authentication"],
+    default_response_class=ORJSONResponse,
     dependencies=[Depends(http_bearer)],
 )
-log = get_logger(__name__)
 
 
 @router.post(
@@ -45,11 +47,11 @@ log = get_logger(__name__)
 )
 async def register_user(
     user_in: UserCreate,
-    db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+    session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
 ) -> UserCreate | None:
     log.info("Attempting to register user with email: %s", user_in.email)
     try:
-        db_user = await get_user_by_email(db, user_in.email)
+        db_user = await get_user_by_email(session, user_in.email)
     except HTTPException as e:
         raise e
     else:
@@ -61,12 +63,12 @@ async def register_user(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Email already registered",
             )
-        user = await create_user(db, user_in)
+        user = await create_user(session, user_in)
         if not user:
             log.error(
                 "Registration failed: Database error creating user: %s", user_in.email
             )
-            await db.rollback()
+            await session.rollback()
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to create user",
@@ -78,22 +80,22 @@ async def register_user(
 @router.post("/login")
 async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-) -> ORJSONResponse:
+    session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+):
     log.info("Attempting login for user: %s", form_data.username)
 
     try:
         user = await authenticate_user(
-            db,
+            session,
             form_data.username,
             form_data.password,
         )
-        access_token = create_access_jwt(user)
-        refresh_token = await create_refresh_jwt(user, db)
+        access_jwt = create_access_jwt(user)
+        refresh_jwt = await create_refresh_jwt(user)
 
         response = create_response(
-            access_token=access_token,
-            refresh_token=refresh_token,
+            access_token=access_jwt,
+            refresh_token=refresh_jwt,
         )
 
         log.info("User logged in successfully: %s", form_data.username)
@@ -103,35 +105,44 @@ async def login(
         log.error("Login failed for user %s: %s", form_data.username, str(e))
         raise e
 
+    except Exception as e:
+        log.exception("Unexpected error logging in: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Unexpected error logging in: {e!r}",
+        )
+
 
 @router.post(
     "/refresh",
     response_model_exclude_none=True,
 )
-async def refresh_tokens(
+async def refresh_token(
     request: Request,
-    user: UserResponse = Depends(get_current_auth_user_for_refresh),
-    db: AsyncSession = Depends(db_helper.session_getter),
-) -> ORJSONResponse:
-    refresh_token = request.cookies.get("refresh_token")
-    if not refresh_token:
-        log.error("Refresh token not found in cookies for user: %s", user.username)
+    session: AsyncSession = Depends(db_helper.session_getter),
+    redis: Redis = Depends(get_redis),
+):
+    refresh_jwt = request.cookies.get("refresh_token")
+    if not refresh_jwt:
+        log.error("Refresh token not found in cookies")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="No refresh token found",
+            detail="No refresh token found in cookies",
         )
-    payload = get_current_token_payload(refresh_token)
 
     try:
-        access_token = create_access_jwt(user)
-        refresh_token = await create_refresh_jwt(user, db)
+        user = await get_current_auth_user_for_refresh(refresh_jwt, session, redis)
+        access_jwt = create_access_jwt(user)
+        refresh_jwt = await create_refresh_jwt(user)
 
         response = create_response(
-            access_token=access_token,
-            refresh_token=refresh_token,
+            access_token=access_jwt,
+            refresh_token=refresh_jwt,
         )
+
     except HTTPException as e:
         raise e
+
     except Exception as e:
         log.exception("Unexpected error refreshing tokens: %s", e)
         raise HTTPException(
@@ -140,3 +151,10 @@ async def refresh_tokens(
         )
 
     return response
+
+
+@router.get("/verify")
+async def verify_auth(
+    user: UserResponse = Depends(get_current_auth_user)
+):
+    return {"status": "authenticated", "user": user.username}
