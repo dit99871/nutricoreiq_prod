@@ -1,8 +1,8 @@
 """Initial create models
 
-Revision ID: cd9db5091239
+Revision ID: 60d81f8c9e2d
 Revises:
-Create Date: 2025-04-03 08:05:41.680066
+Create Date: 2025-04-03 10:12:38.054996
 
 """
 
@@ -12,7 +12,7 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision: str = "cd9db5091239"
+revision: str = "60d81f8c9e2d"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -22,9 +22,9 @@ def upgrade() -> None:
     """Upgrade schema."""
     op.create_table(
         "nutrients",
-        sa.PrimaryKeyConstraint("id", name=op.f("pk_nutrients")),
-        sa.Column("name", sa.String(), nullable=False),
         sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("name", sa.String(), nullable=False),
+        sa.PrimaryKeyConstraint("id", name=op.f("pk_nutrients")),
         sa.UniqueConstraint("name", name=op.f("uq_nutrients_name")),
     )
     op.create_table(
@@ -40,7 +40,11 @@ def upgrade() -> None:
         sa.Column("username", sa.String(), nullable=False),
         sa.Column("email", sa.String(), nullable=False),
         sa.Column("hashed_password", sa.LargeBinary(), nullable=False),
-        sa.Column("gender", sa.String(), nullable=True),
+        sa.Column(
+            "gender",
+            sa.Enum("female", "male", native_enum=False),
+            nullable=True,
+        ),
         sa.Column("age", sa.Integer(), nullable=True),
         sa.Column("weight", sa.Float(), nullable=True),
         sa.Column("height", sa.Float(), nullable=True),
