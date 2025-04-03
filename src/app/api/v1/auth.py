@@ -25,7 +25,8 @@ from services.auth import (
 )
 from services.user import (
     authenticate_user,
-    get_current_auth_user_for_refresh, get_current_auth_user,
+    get_current_auth_user_for_refresh,
+    get_current_auth_user,
 )
 from schemas.user import UserCreate, UserResponse
 from utils.auth import create_response
@@ -153,8 +154,6 @@ async def refresh_token(
     return response
 
 
-@router.get("/verify")
-async def verify_auth(
-    user: UserResponse = Depends(get_current_auth_user)
-):
-    return {"status": "authenticated", "user": user.username}
+@router.post("/password/change")
+async def change_password():
+    pass

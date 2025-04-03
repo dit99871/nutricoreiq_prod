@@ -7,9 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from api.v1.auth import http_bearer
 from crud.profile import update_user_profile, get_user_profile
 from db import db_helper
-from schemas.user import UserProfile, UserResponse
+from schemas.user import UserProfile, UserResponse, UserAccount
 from services.user import get_current_auth_user
-from utils.security import generate_csrf_token, generate_csp_nonce
+from utils.security import generate_csp_nonce
 from utils.templates import templates
 
 router = APIRouter(
@@ -17,12 +17,6 @@ router = APIRouter(
     default_response_class=ORJSONResponse,
     dependencies=[Depends(http_bearer)],
 )
-
-# router.mount(
-#     "/static",
-#     StaticFiles(directory="static"),
-#     name="static",
-# )
 
 
 @router.get("/me", response_class=ORJSONResponse)
@@ -35,37 +29,48 @@ async def read_current_user(
     }
 
 
-@router.get("/profile", response_model=UserProfile)
-async def get_profile(
+@router.get(
+    "/profile/data",
+    response_model=UserAccount,
+    response_model_exclude_unset=True,
+)
+async def get_account(
     request: Request,
     current_user: Annotated[UserResponse, Depends(get_current_auth_user)],
     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
 ):
     try:
         user = await get_user_profile(session, current_user.id)
-        return user
+        return templates.TemplateResponse(
+            name="profile.html",
+            request=request,
+            context={
+                "user": user,
+                "csp_nonce": generate_csp_nonce(),
+            },
+        )
     except HTTPException as e:
         raise e
 
 
-# @router.get("/dashboard")
-# async def get_dashboad(
-#     request: Request,
+#
+# @router.get(
+#     "/profile/update",
+#     response_model_exclude_unset=True,
+# )
+# async def get_account_to_update(
 #     current_user: Annotated[UserResponse, Depends(get_current_auth_user)],
+#     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
 # ):
-#     return templates.TemplateResponse(
-#         name="dashboard.html",
-#         request=request,
-#         context={
-#             "user": current_user,
-#             "csrf_token": generate_csrf_token(),
-#             "csp_nonce": generate_csp_nonce(),
-#         },
-#     )
+#     try:
+#         user = await get_user_profile(session, current_user.id)
+#         return user
+#     except HTTPException as e:
+#         raise e
 
 
-@router.post("/dashboard", response_class=ORJSONResponse)
-async def update_current_user(
+@router.post("/profile/update", response_class=ORJSONResponse)
+async def update_profile(
     data_in: UserProfile,
     current_user: Annotated[UserResponse, Depends(get_current_auth_user)],
     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
