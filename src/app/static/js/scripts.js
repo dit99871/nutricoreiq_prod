@@ -1,60 +1,5 @@
-//    // Обработчик формы обновления профиля
-//    const form = document.getElementById('updateProfileForm');
-//    if (form) {
-//        const errorDiv = document.getElementById('formErrors');
-//        const successDiv = document.getElementById('formSuccess');
-//        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-//
-//        form.addEventListener('submit', async function(e) {
-//            e.preventDefault();
-//
-//            errorDiv.classList.add('d-none');
-//            successDiv.classList.add('d-none');
-//
-//            const submitButton = form.querySelector('button[type="submit"]');
-//            const originalButtonText = submitButton.textContent;
-//            submitButton.disabled = true;
-//            submitButton.textContent = "Сохранение...";
-//
-//            const formData = new FormData(form);
-//            const data = Object.fromEntries(formData.entries());
-//
-//            try {
-//                // Отправляем данные как JSON
-//                const result = await secureFetch(form.action, {
-//                    method: 'POST',
-//                    headers: {
-////                        "Authorization": `Bearer ${access_token}`,
-//                        'Content-Type': 'application/json',
-//                        'X-CSRF-Token': csrfToken,
-//                    },
-//                    body: JSON.stringify(data),
-//                    credentials: 'include'
-//                });
-//
-//                successDiv.textContent = 'Профиль успешно обновлен!';
-//                successDiv.classList.remove('d-none');
-//
-//                // Обновляем данные на странице через 2 секунды
-//                setTimeout(() => {
-//                    window.location.href = '/api/v1/user/dashboard';
-//                }, 2000);
-//
-//            } catch (error) {
-//                errorDiv.textContent = error.message;
-//                errorDiv.classList.remove('d-none');
-//                console.error('Error:', error);
-//            } finally {
-//                submitButton.disabled = false;
-//                submitButton.textContent = originalButtonText;
-//            }
-//        });
-//    }
-
 document.addEventListener("DOMContentLoaded", function () {
-    let access_token = null;
-
-    // 1. Инициализация переключателей пароля (должна быть в начале)
+    // 1. Инициализация переключателей пароля
     function initPasswordToggles() {
         document.querySelectorAll('.toggle-password').forEach(button => {
             button.addEventListener('click', function() {
@@ -96,7 +41,6 @@ document.addEventListener("DOMContentLoaded", function () {
             const response = await fetch(url, {
                 ...options,
                 headers,
-//                credentials: 'include'
             });
 
             if (!response.ok) {
@@ -110,7 +54,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // 4. Обработчик формы входа (должен быть перед другими обработчиками)
+    // 4. Обработчик формы входа
     const loginForm = document.getElementById("loginForm");
     if (loginForm) {
         loginForm.addEventListener("submit", async function(event) {
@@ -122,7 +66,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
             try {
                 const formData = new FormData(loginForm);
-                // 1. Логин (получаем куки)
                 const loginResponse = await secureFetch("/api/v1/auth/login", {
                     method: "POST",
                     body: new URLSearchParams({
@@ -134,26 +77,23 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                 });
 
-                access_token = loginResponse.access_token;
-
-                // 2. Получаем данные пользователя
-                console.log("Requesting user data...");
+                // Получаем данные пользователя после успешного входа
                 const userData = await secureFetch("/api/v1/user/me", {
                     headers: {
-                        "Authorization": `Bearer ${access_token}`,
                         "Accept": "application/json",
                         "Content-Type": "application/json"
                     }
                 });
-                console.log("User data received:", userData);
+
+                // Обновляем UI
                 updateUIForAuthenticatedUser(userData);
 
-                // 3. Закрываем модальное окно
+                // Закрываем модальное окно
                 const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
                 if (modal) modal.hide();
                 loginForm.reset();
 
-                // 4. Если на странице профиля - обновляем данные
+                // Если на странице профиля - обновляем данные
                 if (window.location.pathname.includes('/profile')) {
                     await loadProfileData();
                 }
@@ -172,7 +112,91 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // 5. Функции для работы с профилем
+    // 5. Обработчик формы регистрации
+    const registerForm = document.getElementById("registerForm");
+    if (registerForm) {
+        registerForm.addEventListener("submit", async function(event) {
+            event.preventDefault();
+            const submitButton = registerForm.querySelector("button[type='submit']");
+            const originalText = submitButton.textContent;
+            submitButton.disabled = true;
+            submitButton.textContent = "Регистрация...";
+
+            const errorElement = document.getElementById("registerError");
+            errorElement.textContent = "";
+            errorElement.classList.add("d-none");
+
+            // Проверка пароля
+            const password = registerForm.querySelector("#regPassword").value;
+            const confirmPassword = registerForm.querySelector("#regConfirmPassword").value;
+
+            if (password !== confirmPassword) {
+                errorElement.textContent = "Пароли не совпадают";
+                errorElement.classList.remove("d-none");
+                submitButton.disabled = false;
+                submitButton.textContent = originalText;
+                return;
+            }
+
+            if (password.length < 8) {
+                errorElement.textContent = "Пароль должен содержать минимум 8 символов";
+                errorElement.classList.remove("d-none");
+                submitButton.disabled = false;
+                submitButton.textContent = originalText;
+                return;
+            }
+
+            try {
+                const formData = new FormData(registerForm);
+                const data = {
+                    username: formData.get("username"),
+                    email: formData.get("email"),
+                    password: formData.get("password")
+                };
+
+                // Получаем CSRF токен из мета-тега
+                const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+                const response = await secureFetch(registerForm.action, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRF-Token": csrfToken
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                // Успешная регистрация - закрываем модальное окно
+                const modal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
+                if (modal) modal.hide();
+
+                // Показываем сообщение об успехе
+                alert("Регистрация прошла успешно! Теперь вы можете войти в систему.");
+
+                // Очищаем форму
+                registerForm.reset();
+
+                // Автоматически открываем форму входа
+                const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+                loginModal.show();
+
+            } catch (error) {
+                console.error("Ошибка регистрации:", error);
+                errorElement.textContent = error.message || "Ошибка при регистрации";
+                errorElement.classList.remove("d-none");
+
+                if (error.errors) {
+                    const errorMessages = Object.values(error.errors).join("\n");
+                    errorElement.textContent = errorMessages;
+                }
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = originalText;
+            }
+        });
+    }
+
+    // 6. Функции для работы с профилем
     async function loadProfileData() {
         try {
             const profileData = await secureFetch('/api/v1/user/profile');
@@ -181,7 +205,7 @@ document.addEventListener("DOMContentLoaded", function () {
             console.error('Ошибка загрузки профиля:', error);
             showError('Не удалось загрузить данные профиля');
             if (error.message.includes('401')) {
-                window.location.href = '/login';
+                window.location.href = '/api/v1/auth/login';
             }
         }
     }
@@ -202,7 +226,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // 6. Обновление UI после аутентификации
+    // 7. Обновление UI после аутентификации
     function updateUIForAuthenticatedUser(user) {
         const authSection = document.querySelector('.navbar-collapse .ms-auto');
         if (!authSection) return;
@@ -219,7 +243,7 @@ document.addEventListener("DOMContentLoaded", function () {
         initTheme();
     }
 
-    // 7. Выход из системы
+    // 8. Выход из системы
     document.querySelector('a[href*="/logout"]')?.addEventListener('click', async function(e) {
         e.preventDefault();
         try {
@@ -230,7 +254,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    // 8. Вспомогательные функции
+    // 9. Вспомогательные функции
     function escapeHtml(unsafe) {
         return unsafe
             .replace(/&/g, "&amp;")
@@ -248,7 +272,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // 9. Инициализация при загрузке
+    // 10. Инициализация при загрузке
     const savedTheme = localStorage.getItem("theme") ||
         (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
     document.body.classList.toggle("dark-mode", savedTheme === "dark");
