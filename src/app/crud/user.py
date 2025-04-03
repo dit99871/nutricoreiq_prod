@@ -21,14 +21,14 @@ async def _get_user_by_filter(
         stmt = select(User).filter(filter_condition, User.is_active == True)
         result = await session.execute(stmt)
         user = result.scalar_one_or_none()
-        if user is None:
-            log.error("User not found in db")
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User not found in db",
-            )
+        # if user is None:
+        #     log.error("User not found in db")
+        #     raise HTTPException(
+        #         status_code=status.HTTP_404_NOT_FOUND,
+        #         detail=f"User not found in db",
+        #     )
 
-        return UserResponse.model_validate(user)
+        return UserResponse.model_validate(user) if user else None
 
     except SQLAlchemyError as e:
         log.error("Database error getting user: %s", e)
@@ -51,6 +51,12 @@ async def get_user_by_uid(
 ) -> UserResponse | None:
     try:
         user = await _get_user_by_filter(session, User.uid == uid)
+        if user is None:
+            log.error("User not found in db by uid")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User not found in db by uid",
+            )
         return user
 
     except HTTPException as e:
@@ -75,6 +81,12 @@ async def get_user_by_name(
 ) -> UserResponse | None:
     try:
         user = await _get_user_by_filter(session, User.username == user_name)
+        if user is None:
+            log.error("User not found in db by name")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"User not found in db by name",
+            )
         return user
 
     except HTTPException as e:
@@ -90,7 +102,7 @@ async def create_user(
         db_user = User(
             **user_in.model_dump(
                 exclude={"password"},
-                exclude_defaults=True,
+                # exclude_defaults=True,
             ),
             hashed_password=hashed_password,
         )
