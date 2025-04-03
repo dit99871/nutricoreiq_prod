@@ -50,7 +50,7 @@
                 <div class="ms-auto d-flex align-items-center gap-3">
                     {% if user %}
                         <p class="mb-0 me-3">Вы вошли как <strong>{{ user.username | e }}</strong></p>
-                        <a href="/api/v1/user/profile" class="btn btn-primary">Личный кабинет</a>
+                        <a href="/api/v1/user/profile/data" class="btn btn-primary">Личный кабинет</a>
                         <a href="/api/v1/user/logout" class="btn btn-outline-danger">Выйти</a>
                     {% else %}
                         <!-- Кнопка для открытия модального окна -->

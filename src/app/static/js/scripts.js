@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
-    // 1. Инициализация переключателей пароля
+    // 1. Инициализация переключателей пароля (сохранено без изменений)
     function initPasswordToggles() {
         document.querySelectorAll('.toggle-password').forEach(button => {
             button.addEventListener('click', function() {
@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // 2. Инициализация темы
+    // 2. Инициализация темы (сохранено без изменений)
     function initTheme() {
         const themeToggle = document.getElementById("themeToggle");
         if (themeToggle) {
@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // 3. Secure Fetch функция
+    // 3. Secure Fetch функция (сохранено без изменений)
     async function secureFetch(url, options = {}) {
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
         const headers = {
@@ -54,7 +54,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // 4. Обработчик формы входа
+    // 4. Обработчик формы входа (сохранено без изменений)
     const loginForm = document.getElementById("loginForm");
     if (loginForm) {
         loginForm.addEventListener("submit", async function(event) {
@@ -77,23 +77,13 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                 });
 
-                // Получаем данные пользователя после успешного входа
-                const userData = await secureFetch("/api/v1/user/me", {
-                    headers: {
-                        "Accept": "application/json",
-                        "Content-Type": "application/json"
-                    }
-                });
-
-                // Обновляем UI
+                const userData = await secureFetch("/api/v1/user/me");
                 updateUIForAuthenticatedUser(userData);
 
-                // Закрываем модальное окно
                 const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
                 if (modal) modal.hide();
                 loginForm.reset();
 
-                // Если на странице профиля - обновляем данные
                 if (window.location.pathname.includes('/profile')) {
                     await loadProfileData();
                 }
@@ -112,7 +102,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // 5. Обработчик формы регистрации
+    // 5. Обработчик формы регистрации (сохранено без изменений)
     const registerForm = document.getElementById("registerForm");
     if (registerForm) {
         registerForm.addEventListener("submit", async function(event) {
@@ -126,7 +116,6 @@ document.addEventListener("DOMContentLoaded", function () {
             errorElement.textContent = "";
             errorElement.classList.add("d-none");
 
-            // Проверка пароля
             const password = registerForm.querySelector("#regPassword").value;
             const confirmPassword = registerForm.querySelector("#regConfirmPassword").value;
 
@@ -154,7 +143,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     password: formData.get("password")
                 };
 
-                // Получаем CSRF токен из мета-тега
                 const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
                 const response = await secureFetch(registerForm.action, {
@@ -166,17 +154,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     body: JSON.stringify(data)
                 });
 
-                // Успешная регистрация - закрываем модальное окно
                 const modal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
                 if (modal) modal.hide();
 
-                // Показываем сообщение об успехе
                 alert("Регистрация прошла успешно! Теперь вы можете войти в систему.");
-
-                // Очищаем форму
                 registerForm.reset();
 
-                // Автоматически открываем форму входа
                 const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
                 loginModal.show();
 
@@ -196,10 +179,10 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // 6. Функции для работы с профилем
+    // 6. Функции для работы с профилем (обновлено)
     async function loadProfileData() {
         try {
-            const profileData = await secureFetch('/api/v1/user/profile');
+            const profileData = await secureFetch('/api/v1/user/profile/data');
             updateProfileUI(profileData);
         } catch (error) {
             console.error('Ошибка загрузки профиля:', error);
@@ -215,35 +198,59 @@ document.addEventListener("DOMContentLoaded", function () {
             document.getElementById('gender-field').textContent =
                 profileData.gender === 'male' ? 'Мужской' : 'Женский';
         }
-        if (profileData.age) {
+        if (profileData.age !== undefined && profileData.age !== null) {
             document.getElementById('age-field').textContent = profileData.age;
+        } else {
+            document.getElementById('age-field').textContent = 'Не указан';
         }
-        if (profileData.height) {
+        if (profileData.height !== undefined && profileData.height !== null) {
             document.getElementById('height-field').textContent = `${profileData.height} см`;
+        } else {
+            document.getElementById('height-field').textContent = 'Не указан';
         }
-        if (profileData.weight) {
+        if (profileData.weight !== undefined && profileData.weight !== null) {
             document.getElementById('weight-field').textContent = `${profileData.weight} кг`;
+        } else {
+            document.getElementById('weight-field').textContent = 'Не указан';
+        }
+        if (profileData.created_at) {
+            try {
+                const date = new Date(profileData.created_at);
+                document.getElementById('registration-date-field').textContent =
+                    date.toLocaleDateString('ru-RU') + ' ' + date.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
+            } catch (e) {
+                document.getElementById('registration-date-field').textContent = profileData.created_at;
+            }
         }
     }
 
-    // 7. Обновление UI после аутентификации
+    // 7. Обновление UI после аутентификации (обновлено с обработчиками модалок)
     function updateUIForAuthenticatedUser(user) {
         const authSection = document.querySelector('.navbar-collapse .ms-auto');
         if (!authSection) return;
 
         authSection.innerHTML = `
             <p class="mb-0 me-3">Вы вошли как <strong>${escapeHtml(user.username)}</strong></p>
-            <a href="/api/v1/user/profile" class="btn btn-primary">Личный кабинет</a>
+            <button id="profileBtn" class="btn btn-primary">Личный кабинет</button>
             <a href="/api/v1/user/logout" class="btn btn-outline-danger">Выйти</a>
             <button class="theme-toggle" id="themeToggle" title="Переключить тему">
                 ${document.body.classList.contains('dark-mode') ? '☀️' : '🌙'}
             </button>
         `;
 
+        // Инициализация обработчиков для новых кнопок
+        document.getElementById('profileBtn')?.addEventListener('click', function() {
+            if (window.location.pathname.includes('/api/v1/user/profile/data')) {
+                loadProfileData();
+            } else {
+                window.location.href = '/api/v1/user/profile/data';
+            }
+        });
+
         initTheme();
     }
 
-    // 8. Выход из системы
+    // 8. Выход из системы (сохранено без изменений)
     document.querySelector('a[href*="/logout"]')?.addEventListener('click', async function(e) {
         e.preventDefault();
         try {
@@ -254,7 +261,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
-    // 9. Вспомогательные функции
+    // 9. Вспомогательные функции (сохранено + добавлено)
     function escapeHtml(unsafe) {
         return unsafe
             .replace(/&/g, "&amp;")
@@ -272,7 +279,16 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // 10. Инициализация при загрузке
+    function showSuccess(message) {
+        const successElement = document.getElementById('profile-success');
+        if (successElement) {
+            successElement.textContent = message;
+            successElement.classList.remove('d-none');
+            setTimeout(() => successElement.classList.add('d-none'), 5000);
+        }
+    }
+
+    // 10. Инициализация при загрузке (обновлено)
     const savedTheme = localStorage.getItem("theme") ||
         (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
     document.body.classList.toggle("dark-mode", savedTheme === "dark");
@@ -280,7 +296,238 @@ document.addEventListener("DOMContentLoaded", function () {
     initTheme();
     initPasswordToggles();
 
-    if (window.location.pathname.includes('/profile')) {
+    // Инициализация модальных окон для редактирования профиля
+    function initProfileModals() {
+        // Обработчик для кнопки "Редактировать профиль"
+        document.querySelector('a[href="/api/v1/user/profile/update"]')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            showEditProfileModal();
+        });
+
+        // Обработчик для кнопки "Сменить пароль"
+        document.querySelector('a[href="/api/v1/user/password/change"]')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            showChangePasswordModal();
+        });
+    }
+
+    // Модальное окно редактирования профиля
+    async function showEditProfileModal() {
+        try {
+            const profileData = await secureFetch('/api/v1/user/profile/data');
+
+            const modalHtml = `
+                <div class="modal fade" id="editProfileModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Редактировать профиль</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="editProfileForm">
+                                    <div class="mb-3">
+                                        <label class="form-label">Пол</label>
+                                        <select class="form-select" name="gender" id="editGender">
+                                            <option value="">Не указан</option>
+                                            <option value="male" ${profileData.gender === 'male' ? 'selected' : ''}>Мужской</option>
+                                            <option value="female" ${profileData.gender === 'female' ? 'selected' : ''}>Женский</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Возраст</label>
+                                        <input type="number" class="form-control" name="age" id="editAge"
+                                               value="${profileData.age || ''}" min="1" max="120">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Рост (см)</label>
+                                        <input type="number" class="form-control" name="height" id="editHeight"
+                                               value="${profileData.height || ''}" min="50" max="250">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Вес (кг)</label>
+                                        <input type="number" class="form-control" name="weight" id="editWeight"
+                                               value="${profileData.weight || ''}" min="20" max="300">
+                                    </div>
+                                    <div id="editProfileError" class="alert alert-danger d-none"></div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                <button type="button" class="btn btn-primary" id="saveProfileBtn">Сохранить</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            let modalElement = document.getElementById('editProfileModal');
+            if (!modalElement) {
+                modalElement = document.createElement('div');
+                document.body.appendChild(modalElement);
+            }
+            modalElement.innerHTML = modalHtml;
+
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+
+            document.getElementById('saveProfileBtn').addEventListener('click', async function() {
+                const btn = this;
+                const originalText = btn.textContent;
+                btn.disabled = true;
+                btn.textContent = "Сохранение...";
+
+                try {
+                    const formData = {
+                        gender: document.getElementById('editGender').value || null,
+                        age: document.getElementById('editAge').value ? parseInt(document.getElementById('editAge').value) : null,
+                        height: document.getElementById('editHeight').value ? parseInt(document.getElementById('editHeight').value) : null,
+                        weight: document.getElementById('editWeight').value ? parseInt(document.getElementById('editWeight').value) : null
+                    };
+
+                    const response = await secureFetch('/api/v1/user/profile/update', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    updateProfileUI(response);
+                    modal.hide();
+                    showSuccess('Данные профиля успешно обновлены');
+
+                } catch (error) {
+                    console.error('Ошибка обновления профиля:', error);
+                    const errorElement = document.getElementById('editProfileError');
+                    errorElement.textContent = error.message;
+                    errorElement.classList.remove('d-none');
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                }
+            });
+
+        } catch (error) {
+            console.error('Ошибка загрузки данных профиля:', error);
+            showError('Не удалось загрузить данные для редактирования');
+        }
+    }
+
+    // Модальное окно смены пароля
+    function showChangePasswordModal() {
+        const modalHtml = `
+            <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Смена пароля</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="changePasswordForm">
+                                <div class="mb-3">
+                                    <label class="form-label">Текущий пароль</label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" name="current_password" id="currentPassword" required>
+                                        <button class="btn btn-outline-secondary toggle-password" type="button" data-target="currentPassword">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Новый пароль</label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" name="new_password" id="newPassword" required minlength="8">
+                                        <button class="btn btn-outline-secondary toggle-password" type="button" data-target="newPassword">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-text">Минимум 8 символов</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Подтвердите новый пароль</label>
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" name="confirm_password" id="confirmPassword" required minlength="8">
+                                        <button class="btn btn-outline-secondary toggle-password" type="button" data-target="confirmPassword">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="changePasswordError" class="alert alert-danger d-none"></div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                            <button type="button" class="btn btn-primary" id="savePasswordBtn">Сохранить</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        let modalElement = document.getElementById('changePasswordModal');
+        if (!modalElement) {
+            modalElement = document.createElement('div');
+            document.body.appendChild(modalElement);
+        }
+        modalElement.innerHTML = modalHtml;
+
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+        initPasswordToggles();
+
+        document.getElementById('savePasswordBtn').addEventListener('click', async function() {
+            const btn = this;
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = "Сохранение...";
+
+            try {
+                const form = document.getElementById('changePasswordForm');
+                const newPassword = form.new_password.value;
+                const confirmPassword = form.confirm_password.value;
+
+                if (newPassword !== confirmPassword) {
+                    throw new Error('Новый пароль и подтверждение не совпадают');
+                }
+
+                if (newPassword.length < 8) {
+                    throw new Error('Пароль должен содержать минимум 8 символов');
+                }
+
+                await secureFetch('/api/v1/user/password/change', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        current_password: form.current_password.value,
+                        new_password: newPassword
+                    })
+                });
+
+                modal.hide();
+                showSuccess('Пароль успешно изменен');
+                form.reset();
+
+            } catch (error) {
+                console.error('Ошибка смены пароля:', error);
+                const errorElement = document.getElementById('changePasswordError');
+                errorElement.textContent = error.message;
+                errorElement.classList.remove('d-none');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        });
+    }
+
+    // Инициализация модальных окон
+    initProfileModals();
+
+    // Загрузка данных профиля если на странице профиля
+    if (window.location.pathname.includes('/api/v1/user/profile/data')) {
         loadProfileData();
     }
 });

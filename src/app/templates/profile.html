@@ -36,11 +36,15 @@
                 <h4>Физические параметры</h4>
                 <div class="detail-item">
                     <strong>Рост:</strong>
-                    <span id="height-field">{{ user.height|default('Не указан', true) }} см</span>
+                    <span id="height-field">
+                        {% if user.height is not none %}{{ user.height }} см{% else %}Не указан{% endif %}
+                    </span>
                 </div>
                 <div class="detail-item">
                     <strong>Вес:</strong>
-                    <span id="weight-field">{{ user.weight|default('Не указан', true) }} кг</span>
+                    <span id="weight-field">
+                        {% if user.weight is not none %}{{ user.weight }} кг{% else %}Не указан{% endif %}
+                    </span>
                 </div>
             </div>
 
@@ -48,7 +52,13 @@
                 <h4>Статистика</h4>
                 <div class="detail-item">
                     <strong>Дата регистрации:</strong>
-                    <span>{{ user.created_at if user.created_at else 'Неизвестно' }}</span>
+                    <span>
+                        {% if user.created_at %}
+                            {{ user.created_at[:10]|replace('-', '.') }} {{ user.created_at[11:16] }}
+                        {% else %}
+                            Неизвестно
+                        {% endif %}
+                    </span>
                 </div>
             </div>
         </div>

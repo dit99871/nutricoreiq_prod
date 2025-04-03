@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db.models import User
-from schemas.user import UserResponse, UserProfile, UserBase
+from schemas.user import UserResponse, UserProfile, UserAccount
 
 log = get_logger("profile_crud")
 
@@ -13,7 +13,7 @@ log = get_logger("profile_crud")
 async def get_user_profile(
     session: AsyncSession,
     user_id: int,
-) -> UserBase:
+) -> UserAccount:
     stmt = select(User).filter(
         User.id == user_id,
         User.is_active == True,
@@ -27,7 +27,7 @@ async def get_user_profile(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"User not found in db for user_id {user_id}",
             )
-        return UserBase.model_validate(user, from_attributes=True)
+        return UserAccount.model_construct(**user.__dict__)
 
     except SQLAlchemyError as e:
         log.error("Database error getting user: %s", e)
