@@ -15,7 +15,6 @@ from db.models import (
     ProductNutrient,
     Product,
     ProductGroup,
-    UserRefreshToken,
 )
 
 # this is the Alembic Config object, which provides
