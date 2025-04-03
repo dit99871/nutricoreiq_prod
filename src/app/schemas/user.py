@@ -6,26 +6,26 @@ from .base import BaseSchema
 
 
 class UserBase(BaseSchema):
-    username: str = Field(..., min_length=3, max_length=20)
+    username: Annotated[str, MinLen(3), MaxLen(20)]
     email: EmailStr
-    hashed_password: Optional[bytes]
-    gender: Optional[str] = Field(pattern="^(female|male)?$")
-    age: Optional[int]
-    weight: Optional[float]
-    height: Optional[float]
-    created_at: str
 
 
 class UserCreate(UserBase):
     password: Annotated[str, MinLen(8)]
 
 
-class UserResponse(BaseSchema):
+class UserResponse(UserBase):
     id: int
     uid: str
-    username: Annotated[str, MinLen(3), MaxLen(20)]
-    email: EmailStr
     hashed_password: bytes | None = None
+
+
+class UserAccount(UserBase):
+    gender: Literal["female", "male"] | None
+    age: int | None
+    weight: float | None
+    height: float | None
+    created_at: str
 
 
 class UserProfile(BaseSchema):
