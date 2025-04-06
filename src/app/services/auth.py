@@ -8,8 +8,11 @@ from core.config import settings
 from core.logger import get_logger
 from db.models import User
 from schemas.user import UserResponse
-from services.redis import add_refresh_to_redis
-from utils.auth import decode_jwt, encode_jwt
+from services.redis import (
+    add_refresh_to_redis,
+    revoke_all_refresh_tokens,
+)
+from utils.auth import decode_jwt, encode_jwt, create_response
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login", auto_error=False)
 log = get_logger("auth_service")
@@ -159,3 +162,16 @@ async def create_refresh_jwt(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e),
         )
+
+
+async def update_password(user: UserResponse):
+    await revoke_all_refresh_tokens(user.uid)
+    access_jwt = create_access_jwt(user)
+    refresh_jwt = await create_refresh_jwt(user)
+
+    response = create_response(
+        access_token=access_jwt,
+        refresh_token=refresh_jwt,
+    )
+
+    return response
