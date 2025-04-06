@@ -6,8 +6,11 @@
 
 {% block content %}
 <div class="container">
+    <!-- Сообщения об ошибках и успехе -->
     <div id="profile-error" class="alert alert-danger mt-3 d-none"></div>
     <div id="profile-success" class="alert alert-success mt-3 d-none"></div>
+
+    <!-- Основная карточка профиля -->
     <div class="profile-card">
         <div class="profile-header">
             <div class="profile-avatar">
@@ -20,6 +23,7 @@
         </div>
 
         <div class="profile-details">
+            <!-- Блок основной информации -->
             <div class="detail-card">
                 <h4>Основная информация</h4>
                 <div class="detail-item">
@@ -32,6 +36,7 @@
                 </div>
             </div>
 
+            <!-- Блок физических параметров -->
             <div class="detail-card">
                 <h4>Физические параметры</h4>
                 <div class="detail-item">
@@ -48,11 +53,12 @@
                 </div>
             </div>
 
+            <!-- Блок статистики -->
             <div class="detail-card">
                 <h4>Статистика</h4>
                 <div class="detail-item">
                     <strong>Дата регистрации:</strong>
-                    <span>
+                    <span id="registration-date-field">
                         {% if user.created_at %}
                             {{ user.created_at[:10]|replace('-', '.') }} {{ user.created_at[11:16] }}
                         {% else %}
@@ -63,20 +69,121 @@
             </div>
         </div>
 
+        <!-- Кнопки действий -->
         <div class="action-buttons">
-            <a href="/api/v1/user/profile/data" id="edit-profile-btn" class="btn btn-primary">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">
                 <i class="bi bi-pencil"></i> Редактировать профиль
-            </a>
-            <a href="/api/v1/user/password/change" class="btn btn-outline-secondary">
+            </button>
+            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
                 <i class="bi bi-shield-lock"></i> Сменить пароль
-            </a>
+            </button>
         </div>
     </div>
+</div>
 
-    <!-- Дополнительные разделы могут быть добавлены здесь -->
+<!-- Модальное окно редактирования профиля -->
+<div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editProfileModalLabel">Редактировать профиль</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editProfileForm">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                    
+                    <div class="mb-3">
+                        <label for="editGender" class="form-label">Пол</label>
+                        <select class="form-select" id="editGender" name="gender">
+                            <option value="">Не указан</option>
+                            <option value="male" {% if user.gender == 'male' %}selected{% endif %}>Мужской</option>
+                            <option value="female" {% if user.gender == 'female' %}selected{% endif %}>Женский</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editAge" class="form-label">Возраст</label>
+                        <input type="number" class="form-control" id="editAge" name="age" 
+                               value="{{ user.age or '' }}" min="1" max="120">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editHeight" class="form-label">Рост (см)</label>
+                        <input type="number" class="form-control" id="editHeight" name="height"
+                               value="{{ user.height or '' }}" min="50" max="250">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editWeight" class="form-label">Вес (кг)</label>
+                        <input type="number" class="form-control" id="editWeight" name="weight"
+                               value="{{ user.weight or '' }}" min="20" max="300">
+                    </div>
+                    
+                    <div id="editProfileError" class="alert alert-danger d-none"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="saveProfileBtn">Сохранить изменения</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно смены пароля -->
+<div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="changePasswordModalLabel">Смена пароля</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <form id="changePasswordForm">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                    
+                    <div class="mb-3">
+                        <label for="currentPassword" class="form-label">Текущий пароль</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="currentPassword" name="current_password" required>
+                            <button class="btn btn-outline-secondary toggle-password" type="button" data-target="currentPassword">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label">Новый пароль</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="newPassword" name="new_password" required minlength="8">
+                            <button class="btn btn-outline-secondary toggle-password" type="button" data-target="newPassword">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">Минимум 8 символов</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label">Подтвердите новый пароль</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="confirmPassword" name="confirm_password" required minlength="8">
+                            <button class="btn btn-outline-secondary toggle-password" type="button" data-target="confirmPassword">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="changePasswordError" class="alert alert-danger d-none"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="savePasswordBtn">Изменить пароль</button>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
-{% block scripts %}
-<script nonce="{{ csp_nonce }}"></script>
-{% endblock %}
+{% block scripts %}{% endblock %}
