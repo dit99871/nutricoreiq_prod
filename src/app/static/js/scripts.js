@@ -1,4 +1,10 @@
 document.addEventListener("DOMContentLoaded", function() {
+    // Проверка загрузки Bootstrap
+    if (typeof bootstrap === 'undefined') {
+        console.error('Bootstrap не загружен!');
+        return;
+    }
+
     // 1. Инициализация переключателей пароля
     function initPasswordToggles() {
         document.addEventListener('click', function(e) {
@@ -48,12 +54,11 @@ document.addEventListener("DOMContentLoaded", function() {
         updateThemeButtons(savedTheme === "dark");
     }
 
-    // 3. Secure Fetch функция
+    // 3. Универсальная fetch-функция
     async function secureFetch(url, options = {}) {
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
         const headers = {
             'Accept': 'application/json',
-            'Content-Type': 'application/json',
             ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
             ...(options.headers || {})
         };
@@ -65,20 +70,210 @@ document.addEventListener("DOMContentLoaded", function() {
                 credentials: 'include'
             });
 
-            if (!response.ok) {
-                const error = await response.json().catch(() => ({
-                    message: `Ошибка HTTP: ${response.status}`
-                }));
-                throw new Error(error.detail || error.message || 'Ошибка сервера');
+            const contentType = response.headers.get('content-type');
+            let data;
+
+            if (contentType && contentType.includes('application/json')) {
+                data = await response.json();
+            } else {
+                const text = await response.text();
+                throw new Error(text || 'Неверный формат ответа');
             }
-            return await response.json();
+
+            if (!response.ok) {
+                const errorDetail = data.detail || data.message || 'Неизвестная ошибка';
+                throw new Error(JSON.stringify({
+                    status: response.status,
+                    message: errorDetail,
+                    errors: data.detail
+                }));
+            }
+            return data;
         } catch (error) {
             console.error('Ошибка запроса:', error);
             throw error;
         }
     }
 
-    // 4. Обработчик формы входа
+    // 4. Функции для работы с UI
+    function showError(message, elementId) {
+        const errorElement = document.getElementById(elementId);
+        if (errorElement) {
+            errorElement.textContent = message;
+            errorElement.classList.remove('d-none');
+        }
+    }
+
+    function showSuccess(message) {
+        const successElement = document.getElementById('profile-success');
+        if (successElement) {
+            successElement.textContent = message;
+            successElement.classList.remove('d-none');
+            setTimeout(() => successElement.classList.add('d-none'), 5000);
+        }
+    }
+
+    function clearFormErrors(formId) {
+        const form = document.getElementById(formId);
+        if (form) {
+            form.querySelectorAll('.invalid-feedback').forEach(el => {
+                el.textContent = '';
+                el.classList.add('d-none');
+            });
+            form.querySelectorAll('.is-invalid').forEach(el => {
+                el.classList.remove('is-invalid');
+            });
+        }
+    }
+
+    // 5. Обработчики модальных окон профиля
+    function initProfileModals() {
+        // Редактирование профиля
+        const editProfileModal = document.getElementById('editProfileModal');
+        if (editProfileModal) {
+            const editForm = document.getElementById('editProfileForm');
+            const saveBtn = document.getElementById('saveProfileBtn');
+
+            function populateEditForm() {
+                const getValue = (id) => {
+                    const el = document.getElementById(id);
+                    return el?.dataset.rawValue || '';
+                };
+
+                document.getElementById('editGender').value = getValue('gender-field');
+                document.getElementById('editAge').value = getValue('age-field');
+                document.getElementById('editHeight').value = getValue('height-field');
+                document.getElementById('editWeight').value = getValue('weight-field');
+            }
+
+            saveBtn?.addEventListener('click', async function() {
+                const btn = this;
+                btn.disabled = true;
+                const originalText = btn.textContent;
+                btn.textContent = "Сохранение...";
+
+                clearFormErrors('editProfileForm');
+                document.getElementById('profile-error').classList.add('d-none');
+                document.getElementById('profile-success').classList.add('d-none');
+
+                try {
+                    const formData = new FormData(editForm);
+                    const csrfToken = document.querySelector('input[name="_csrf_token"]').value;
+
+                    // Преобразование FormData в JSON с типами данных
+                    const jsonData = {};
+                    formData.forEach((value, key) => {
+                        if (['age', 'height', 'weight'].includes(key)) {
+                            jsonData[key] = value ? Number(value) : null;
+                        } else {
+                            jsonData[key] = value || null;
+                        }
+                    });
+
+                    const response = await fetch('/api/v1/user/profile/update', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-Token': csrfToken
+                        },
+                        body: JSON.stringify(jsonData),
+                        credentials: 'include'
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        let errorMessage = 'Ошибка обновления профиля';
+                        const errors = {};
+
+                        if (data.detail) {
+                            if (Array.isArray(data.detail)) {
+                                data.detail.forEach(err => {
+                                    const field = err.loc[1];
+                                    errors[field] = err.msg;
+                                });
+                            } else {
+                                errorMessage = data.detail;
+                            }
+                        }
+                        throw new Error(JSON.stringify(errors) || errorMessage);
+                    }
+
+                    showSuccess('Профиль успешно обновлен');
+                    setTimeout(() => window.location.reload(), 1000);
+
+                } catch (error) {
+                    console.error('Ошибка обновления:', error);
+
+                    try {
+                        const errors = JSON.parse(error.message);
+                        Object.entries(errors).forEach(([field, message]) => {
+                            const input = document.getElementById(`edit${field.charAt(0).toUpperCase() + field.slice(1)}`);
+                            const errorElement = document.getElementById(`edit${field.charAt(0).toUpperCase() + field.slice(1)}Error`);
+
+                            if (input && errorElement) {
+                                input.classList.add('is-invalid');
+                                errorElement.textContent = message;
+                                errorElement.classList.remove('d-none');
+                            }
+                        });
+                    } catch (e) {
+                        showError(error.message || 'Ошибка при обновлении профиля', 'editProfileError');
+                    }
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                }
+            });
+
+            editProfileModal.addEventListener('show.bs.modal', populateEditForm);
+        }
+
+        // Смена пароля
+        const changePasswordModal = document.getElementById('changePasswordModal');
+        if (changePasswordModal) {
+            const changePasswordForm = document.getElementById('changePasswordForm');
+            const savePasswordBtn = document.getElementById('savePasswordBtn');
+
+            savePasswordBtn?.addEventListener('click', async function() {
+                const btn = this;
+                const originalText = btn.textContent;
+                btn.disabled = true;
+                btn.textContent = "Сохранение...";
+                clearFormErrors('changePasswordForm');
+
+                try {
+                    const newPassword = document.getElementById('newPassword').value;
+                    const confirmPassword = document.getElementById('confirmPassword').value;
+
+                    if (newPassword !== confirmPassword) {
+                        throw new Error('Новый пароль и подтверждение не совпадают');
+                    }
+
+                    await secureFetch('/api/v1/auth/password/change', {
+                        method: "POST",
+                        body: JSON.stringify({
+                            current_password: document.getElementById('currentPassword').value,
+                            new_password: newPassword
+                        })
+                    });
+
+                    bootstrap.Modal.getInstance(changePasswordModal).hide();
+                    changePasswordForm.reset();
+                    showSuccess('Пароль успешно изменён');
+
+                } catch (error) {
+                    console.error('Ошибка смены пароля:', error);
+                    showError(error.message || 'Ошибка при смене пароля', 'changePasswordError');
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                }
+            });
+        }
+    }
+
+    // 6. Обработчик формы входа
     function initLoginForm() {
         const loginForm = document.getElementById("loginForm");
         if (!loginForm) return;
@@ -118,10 +313,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 if (modal) modal.hide();
                 loginForm.reset();
 
-                if (window.location.pathname.includes('/api/v1/user/profile/data')) {
-                    await loadProfileData();
-                }
-
             } catch (error) {
                 console.error("Ошибка входа:", error);
                 if (errorElement) {
@@ -136,7 +327,7 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // 5. Обработчик формы регистрации
+    // 7. Обработчик формы регистрации
     function initRegisterForm() {
         const registerForm = document.getElementById("registerForm");
         if (!registerForm) return;
@@ -212,48 +403,7 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 
-    // 6. Функции для работы с профилем
-    async function loadProfileData() {
-        try {
-            const profileData = await secureFetch('/api/v1/user/profile/data');
-            updateProfileUI(profileData);
-        } catch (error) {
-            console.error('Ошибка загрузки профиля:', error);
-            showError('Не удалось загрузить данные профиля');
-            if (error.message.includes('401')) {
-                window.location.href = '/api/v1/auth/login';
-            }
-        }
-    }
-
-    function updateProfileUI(profileData) {
-        const fields = {
-            'gender-field': profileData.gender ?
-                (profileData.gender === 'male' ? 'Мужской' : 'Женский') : 'Не указан',
-            'age-field': profileData.age ?? 'Не указан',
-            'height-field': profileData.height ? `${profileData.height} см` : 'Не указан',
-            'weight-field': profileData.weight ? `${profileData.weight} кг` : 'Не указан',
-            'registration-date-field': formatRegistrationDate(profileData.created_at)
-        };
-
-        for (const [id, value] of Object.entries(fields)) {
-            const element = document.getElementById(id);
-            if (element) element.textContent = value;
-        }
-    }
-
-    function formatRegistrationDate(dateString) {
-        if (!dateString) return 'Не указана';
-        try {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('ru-RU') + ' ' +
-                   date.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
-        } catch (e) {
-            return dateString;
-        }
-    }
-
-    // 7. Обновление UI после аутентификации
+    // 8. Обновление UI после аутентификации
     function updateUIForAuthenticatedUser(user) {
         const authSection = document.querySelector('.navbar-collapse .ms-auto');
         if (!authSection) return;
@@ -284,88 +434,7 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
 
-        // Инициализируем тему для новой кнопки
         initTheme();
-    }
-
-    // 8. Обработчики модальных окон профиля
-    function initProfileModals() {
-        // Обработчик сохранения профиля
-        document.getElementById('saveProfileBtn')?.addEventListener('click', async function() {
-            const btn = this;
-            const originalText = btn.textContent;
-            btn.disabled = true;
-            btn.textContent = "Сохранение...";
-
-            try {
-                const formData = {
-                    gender: document.getElementById('editGender').value || null,
-                    age: document.getElementById('editAge').value ? parseInt(document.getElementById('editAge').value) : null,
-                    height: document.getElementById('editHeight').value ? parseInt(document.getElementById('editHeight').value) : null,
-                    weight: document.getElementById('editWeight').value ? parseInt(document.getElementById('editWeight').value) : null
-                };
-
-                const response = await secureFetch('/api/v1/user/profile/update', {
-                    method: 'POST',
-                    body: JSON.stringify(formData)
-                });
-
-                updateProfileUI(response);
-                bootstrap.Modal.getInstance(document.getElementById('editProfileModal')).hide();
-                showSuccess('Данные профиля успешно обновлены');
-
-            } catch (error) {
-                console.error('Ошибка обновления профиля:', error);
-                const errorElement = document.getElementById('editProfileError');
-                errorElement.textContent = error.message || 'Ошибка при обновлении профиля';
-                errorElement.classList.remove('d-none');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = originalText;
-            }
-        });
-
-        // Обработчик смены пароля
-        document.getElementById('savePasswordBtn')?.addEventListener('click', async function() {
-            const btn = this;
-            const originalText = btn.textContent;
-            btn.disabled = true;
-            btn.textContent = "Сохранение...";
-
-            try {
-                const newPassword = document.getElementById('newPassword').value;
-                const confirmPassword = document.getElementById('confirmPassword').value;
-
-                if (newPassword !== confirmPassword) {
-                    throw new Error('Новый пароль и подтверждение не совпадают');
-                }
-
-                if (newPassword.length < 8) {
-                    throw new Error('Пароль должен содержать минимум 8 символов');
-                }
-
-                await secureFetch('/api/v1/user/password/change', {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        current_password: document.getElementById('currentPassword').value,
-                        new_password: newPassword
-                    })
-                });
-
-                bootstrap.Modal.getInstance(document.getElementById('changePasswordModal')).hide();
-                showSuccess('Пароль успешно изменён');
-                document.getElementById('changePasswordForm').reset();
-
-            } catch (error) {
-                console.error('Ошибка смены пароля:', error);
-                const errorElement = document.getElementById('changePasswordError');
-                errorElement.textContent = error.message || 'Ошибка при смене пароля';
-                errorElement.classList.remove('d-none');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = originalText;
-            }
-        });
     }
 
     // 9. Вспомогательные функции
@@ -378,41 +447,13 @@ document.addEventListener("DOMContentLoaded", function() {
             .replace(/'/g, "&#039;");
     }
 
-    function showError(message) {
-        const errorElement = document.getElementById('profile-error');
-        if (errorElement) {
-            errorElement.textContent = message;
-            errorElement.classList.remove('d-none');
-        }
-    }
-
-    function showSuccess(message) {
-        const successElement = document.getElementById('profile-success');
-        if (successElement) {
-            successElement.textContent = message;
-            successElement.classList.remove('d-none');
-            setTimeout(() => successElement.classList.add('d-none'), 5000);
-        }
-    }
-
     // 10. Основная инициализация
     function initAll() {
-        // Проверка загрузки Bootstrap
-        if (typeof bootstrap === 'undefined') {
-            console.error('Bootstrap не загружен!');
-            return;
-        }
-
         initTheme();
         initPasswordToggles();
         initLoginForm();
         initRegisterForm();
         initProfileModals();
-
-        // Если мы на странице профиля - загружаем данные
-        if (window.location.pathname.includes('/api/v1/user/profile')) {
-            loadProfileData();
-        }
     }
 
     // Запускаем инициализацию
