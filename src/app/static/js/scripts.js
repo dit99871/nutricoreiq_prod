@@ -411,7 +411,7 @@ document.addEventListener("DOMContentLoaded", function() {
         authSection.innerHTML = `
             <div class="d-flex align-items-center">
                 <p class="mb-0 me-3">Вы вошли как <strong>${escapeHtml(user.username)}</strong></p>
-                <a href="/api/v1/user/profile/data" class="btn btn-primary me-2">Личный кабинет</a>
+                <a href="/api/v1/user/profile/data" class="btn btn-primary me-2">Профиль</a>
                 <button id="logoutBtn" class="btn btn-outline-danger me-2">Выйти</button>
                 <button class="btn btn-outline-secondary theme-toggle" id="themeToggle" title="Переключить тему">
                     ${document.body.classList.contains('dark-mode') ? '☀️' : '🌙'}
@@ -424,14 +424,15 @@ document.addEventListener("DOMContentLoaded", function() {
             this.disabled = true;
             this.textContent = "Выход...";
 
-            try {
-                await secureFetch("/api/v1/user/logout", { method: "POST" });
-                window.location.href = "/";
-            } catch (error) {
-                console.error("Ошибка выхода:", error);
-                this.disabled = false;
-                this.textContent = "Выйти";
-            }
+            window.location.href = "/api/v1/auth/logout";
+//            try {
+//                await secureFetch("/", { method: "POST" });
+//                location.reload();
+//            } catch (error) {
+//                console.error("Ошибка выхода:", error);
+//                this.disabled = false;
+//                this.textContent = "Выйти";
+//            }
         });
 
         initTheme();
