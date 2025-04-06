@@ -31,7 +31,7 @@ from services.user import (
     get_current_auth_user,
 )
 from schemas.user import UserCreate, UserResponse
-from utils.auth import create_response
+from utils.auth import create_response, add_tokens_to_response
 
 log = get_logger("auth_api")
 http_bearer = HTTPBearer(auto_error=False)
@@ -93,13 +93,7 @@ async def login(
             form_data.username,
             form_data.password,
         )
-        access_jwt = create_access_jwt(user)
-        refresh_jwt = await create_refresh_jwt(user)
-
-        response = create_response(
-            access_token=access_jwt,
-            refresh_token=refresh_jwt,
-        )
+        response = await add_tokens_to_response(user)
 
         log.info("User logged in successfully: %s", form_data.username)
         return response
