@@ -33,6 +33,5 @@ class UserProfile(BaseSchema):
     age: int = Field(gt=0)
     weight: float = Field(gt=0)
     height: float = Field(gt=0)
-    created_at: str
 
     model_config = ConfigDict(strict=True)

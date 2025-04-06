@@ -15,7 +15,7 @@ from services.auth import (
 )
 from utils.auth import verify_password, decode_jwt
 from crud.user import get_user_by_name, get_user_by_uid
-from utils.redis import validate_refresh_jwt
+from services.redis import validate_refresh_jwt
 
 log = get_logger("user_service")
 
@@ -48,7 +48,6 @@ async def get_current_auth_user(
             log.error("User not found for uid: %s", uid)
             raise CREDENTIAL_EXCEPTION
 
-        log.info("User authenticated successfully: %s", user.username)
         return user
 
 

@@ -21,16 +21,11 @@ async def _get_user_by_filter(
         stmt = select(User).filter(filter_condition, User.is_active == True)
         result = await session.execute(stmt)
         user = result.scalar_one_or_none()
-        # if user is None:
-        #     log.error("User not found in db")
-        #     raise HTTPException(
-        #         status_code=status.HTTP_404_NOT_FOUND,
-        #         detail=f"User not found in db",
-        #     )
         if user is not None:
             log.info("Got user from db by uid: %s", user.username)
         else:
             log.error("User not found from db by uid")
+
         return UserResponse.model_validate(user) if user else None
 
     except SQLAlchemyError as e:

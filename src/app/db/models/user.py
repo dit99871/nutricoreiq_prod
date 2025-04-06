@@ -1,10 +1,8 @@
 import datetime as dt
-from enum import Enum
 from typing import Literal
 from uuid import uuid4
 from datetime import datetime
 
-from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import (
     Mapped,
     mapped_column,
@@ -12,20 +10,6 @@ from sqlalchemy.orm import (
 
 from .mixins import IntIdPkMixin
 from .base import Base
-
-
-# class Role(str, Enum):
-#     __abstract__ = True
-#
-#     USER = "user"
-#     ADMIN = "admin"
-#
-#
-# class Gender(str, Enum):
-#     __abstract__ = True
-#
-#     FEMALE = "female"
-#     MALE = "male"
 
 
 class User(IntIdPkMixin, Base):
