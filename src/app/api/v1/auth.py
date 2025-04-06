@@ -7,7 +7,7 @@ from fastapi import (
     status,
     Request,
 )
-from fastapi.responses import ORJSONResponse
+from fastapi.responses import ORJSONResponse, RedirectResponse
 from fastapi.security import (
     OAuth2PasswordRequestForm,
     HTTPBearer,
@@ -22,7 +22,9 @@ from crud.user import create_user, get_user_by_email
 from services.auth import (
     create_access_jwt,
     create_refresh_jwt,
+    update_password,
 )
+from services.redis import revoke_refresh_token
 from services.user import (
     authenticate_user,
     get_current_auth_user_for_refresh,
@@ -114,6 +116,27 @@ async def login(
         )
 
 
+@router.get("/logout")
+async def logout(
+    request: Request,
+    user: Annotated[UserResponse, Depends(get_current_auth_user)],
+    redis: Redis = Depends(get_redis),
+):
+    refresh_jwt = request.cookies.get("refresh_token")
+    if not refresh_jwt:
+        log.error("Refresh token not found in cookies")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No refresh token in cookies",
+        )
+    await revoke_refresh_token(user.uid, refresh_jwt, redis)
+    response = RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+    response.delete_cookie("refresh_token")
+    response.delete_cookie("access_token")
+
+    return response
+
+
 @router.post(
     "/refresh",
     response_model_exclude_none=True,
@@ -155,5 +178,7 @@ async def refresh_token(
 
 
 @router.post("/password/change")
-async def change_password():
-    pass
+async def change_password(
+    user: Annotated[UserResponse, Depends(get_current_auth_user)],
+):
+    return await update_password(user)
