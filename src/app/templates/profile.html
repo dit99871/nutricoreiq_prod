@@ -2,7 +2,12 @@
 
 {% block title %}Личный кабинет | NutriCoreIQ{% endblock %}
 
-{% block extra_head %}{% endblock %}
+{% block user_buttons %}
+    <!-- Кастомные кнопки для страницы профиля -->
+    <p class="mb-0 me-3">Вы вошли как <strong>{{ user.username | e }}</strong></p>
+    <a href="/" class="btn btn-outline-primary">Главная</a>
+    <a href="/api/v1/auth/logout" class="btn btn-outline-danger">Выйти</a>
+{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -28,7 +33,15 @@
                 <h4>Основная информация</h4>
                 <div class="detail-item">
                     <strong>Пол:</strong>
-                    <span id="gender-field">{{ user.gender|default('Не указан', true) }}</span>
+                    <span id="gender-field">
+                        {% if user.gender == 'male' %}
+                            Мужской
+                        {% elif user.gender == 'female' %}
+                            Женский
+                        {% else %}
+                            Не указан
+                        {% endif %}
+                    </span>
                 </div>
                 <div class="detail-item">
                     <strong>Возраст:</strong>
@@ -100,6 +113,7 @@
                             <option value="male" {% if user.gender == 'male' %}selected{% endif %}>Мужской</option>
                             <option value="female" {% if user.gender == 'female' %}selected{% endif %}>Женский</option>
                         </select>
+                        <div id="editGenderError" class="invalid-feedback d-none"></div>
                     </div>
                     
                     <div class="mb-3">
@@ -186,4 +200,4 @@
 </div>
 {% endblock %}
 
-{% block scripts %}{% endblock %}
+<!--{% block scripts %}{% endblock %}-->
