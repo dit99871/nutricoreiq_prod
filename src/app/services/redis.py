@@ -1,7 +1,8 @@
 import datetime as dt
+import time
 
-from redis.asyncio import Redis, RedisError
-from fastapi import Depends, HTTPException, status
+from redis.asyncio import RedisError, Redis
+from fastapi import HTTPException, status, Depends
 
 from core.logger import get_logger
 from core.redis import get_redis
@@ -18,8 +19,15 @@ async def add_refresh_to_redis(
     try:
         async for redis in get_redis():
             token_hash = generate_hash_token(jwt)
+            # Check the number of tokens for the uid
+            keys = await redis.keys(f"refresh_token:{uid}:*")
+            if len(keys) >= 4:
+                # Find the oldest token and delete it
+                oldest_key = min(keys, key=lambda k: int(k.rsplit(":", 1)[-1]))
+                await redis.delete(oldest_key)
+            timestamp = time.time_ns()  # Get current timestamp
             await redis.set(
-                f"refresh_token:{uid}:{token_hash}",
+                f"refresh_token:{uid}:{token_hash}:{timestamp}",
                 "valid",
                 ex=exp,
             )
@@ -32,24 +40,45 @@ async def add_refresh_to_redis(
         )
 
 
-async def add_to_blacklist(
+async def validate_refresh_jwt(
+    uid: str,
+    refresh_token: str,
     redis: Redis,
-    token: str,
-    user_id: int,
-    expire_at: dt.datetime,
-):
-    remaining_time = (expire_at - dt.datetime.now(dt.UTC)).total_seconds()
+) -> bool:
     try:
-        if remaining_time > 0:
-            token_hash = generate_hash_token(token)
-            await redis.set(
-                f"blacklist:refresh:{token_hash}",
-                user_id,
-                ex=int(remaining_time),
-            )
+        token_hash = generate_hash_token(refresh_token)
+        token_key = f"refresh_token:{uid}:{token_hash}:*"
+
+        return await redis.exists(token_key) == 1
+
+    except HTTPException as e:
+        raise e
+
+
+async def revoke_refresh_token(
+    uid: str,
+    refresh_token: str,
+    redis: Redis,
+) -> None:
+    token_hash = generate_hash_token(refresh_token)
+    token_key = f"refresh_token:{uid}:{token_hash}"
+    await redis.delete(token_key)
+    log.info("Refresh token revoked")
+
+
+async def revoke_all_refresh_tokens(
+    uid: str,
+) -> None:
+    # Находим все refresh токены пользователя и удаляем их
+    try:
+        async for redis in get_redis():
+            keys = await redis.keys(f"refresh_token:{uid}:*")
+            if keys:
+                await redis.delete(*keys)
+                log.info("All refresh tokens revoked")
     except RedisError as e:
-        log.error("Redis error adding refresh token to blacklist: %s", e)
+        log.error("Redis error revoking refresh tokens: %s", e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Redis error adding refresh token to blacklist: {str(e)}",
+            detail=f"Redis error revoking refresh tokens: {str(e)}",
         )
