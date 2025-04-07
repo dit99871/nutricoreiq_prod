@@ -11,7 +11,7 @@ from schemas.user import UserResponse
 from services.auth import (
     CREDENTIAL_EXCEPTION,
     get_current_token_payload,
-    get_token_from_cookies,
+    get_access_token_from_cookies,
 )
 from utils.auth import verify_password, decode_jwt
 from crud.user import get_user_by_name, get_user_by_uid
@@ -21,7 +21,7 @@ log = get_logger("user_service")
 
 
 async def get_current_auth_user(
-    token: Annotated[str, Depends(get_token_from_cookies)],
+    token: Annotated[str, Depends(get_access_token_from_cookies)],
     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
 ) -> UserResponse | None:
     """

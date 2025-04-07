@@ -1,4 +1,5 @@
-from typing import Any
+from typing import Any, Literal
+from pydantic import Field, constr
 
 from .base import BaseSchema
 
@@ -10,11 +11,13 @@ class SuccessResponse(BaseSchema):
 
 
 class ErrorDetail(BaseSchema):
-    code: str
-    message: str
-    details: dict[str, Any] | None = None
+    code: constr(min_length=3, max_length=32)  # пример: "auth/invalid-credentials"
+    message: constr(max_length=255)
+    details: dict[str, Any] | None = Field(
+        default=None, examples=[{"field": "email", "message": "Invalid email format"}]
+    )
 
 
 class ErrorResponse(BaseSchema):
-    status: str = "error"
+    status: Literal["error"] = "error"
     error: ErrorDetail

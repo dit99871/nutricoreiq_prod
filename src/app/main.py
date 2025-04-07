@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from fastapi import FastAPI, HTTPException, Request, Depends
-from fastapi.middlewares import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, ORJSONResponse
 from fastapi.staticfiles import StaticFiles
 import uvicorn
@@ -30,6 +30,7 @@ app.add_middleware(
     allow_credentials=settings.cors.allow_credentials,
     allow_methods=settings.cors.allow_methods,
     allow_headers=settings.cors.allow_headers,
+    max_age=600,
 )
 app.include_router(api_router)
 app.mount(
@@ -48,11 +49,11 @@ def start_page(
     current_user: str | None = Depends(get_current_auth_user),
 ):
     return templates.TemplateResponse(
-        name="index.html",
         request=request,
+        name="index.html",
         context={
             "current_year": datetime.now().year,
-            "user": current_user or None,
+            "user": current_user,
             "csrf_token": generate_csrf_token(),
             "csp_nonce": generate_csp_nonce(),
         },

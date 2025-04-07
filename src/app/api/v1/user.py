@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from api.v1.auth import http_bearer
 from crud.profile import update_user_profile, get_user_profile
 from db import db_helper
+from schemas.responses import ErrorResponse, SuccessResponse
 from schemas.user import UserProfile, UserResponse, UserAccount
 from services.user import get_current_auth_user
 from utils.security import generate_csp_nonce
@@ -51,22 +52,6 @@ async def get_account(
         )
     except HTTPException as e:
         raise e
-
-
-#
-# @router.get(
-#     "/profile/update",
-#     response_model_exclude_unset=True,
-# )
-# async def get_account_to_update(
-#     current_user: Annotated[UserResponse, Depends(get_current_auth_user)],
-#     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-# ):
-#     try:
-#         user = await get_user_profile(session, current_user.id)
-#         return user
-#     except HTTPException as e:
-#         raise e
 
 
 @router.post("/profile/update", response_class=ORJSONResponse)
