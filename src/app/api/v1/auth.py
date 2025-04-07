@@ -32,12 +32,10 @@ from schemas.user import UserCreate, UserResponse
 from utils.auth import create_response
 
 log = get_logger("auth_api")
-http_bearer = HTTPBearer(auto_error=False)
 
 router = APIRouter(
     tags=["Authentication"],
     default_response_class=ORJSONResponse,
-    dependencies=[Depends(http_bearer)],
 )
 
 

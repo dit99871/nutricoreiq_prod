@@ -4,7 +4,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import ORJSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.v1.auth import http_bearer
 from crud.profile import update_user_profile, get_user_profile
 from db import db_helper
 from schemas.user import UserProfile, UserResponse, UserAccount
@@ -15,7 +14,6 @@ from utils.templates import templates
 router = APIRouter(
     tags=["User"],
     default_response_class=ORJSONResponse,
-    dependencies=[Depends(http_bearer)],
 )
 
 
