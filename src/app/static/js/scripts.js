@@ -411,7 +411,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
         authSection.innerHTML = `
             <div class="d-flex align-items-center">
-                <p class="mb-0 me-3">Вы вошли как <strong>${escapeHtml(user.username)}</strong></p>
                 <a href="/api/v1/user/profile/data" class="btn btn-primary me-2">Профиль</a>
                 <button id="logoutBtn" class="btn btn-outline-danger me-2">Выйти</button>
                 <button class="btn btn-outline-secondary theme-toggle" id="themeToggle" title="Переключить тему">
