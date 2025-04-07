@@ -6,7 +6,6 @@ from fastapi.security import OAuth2PasswordBearer
 
 from core.config import settings
 from core.logger import get_logger
-from db.models import User
 from schemas.user import UserResponse
 from services.redis import (
     add_refresh_to_redis,
@@ -29,6 +28,16 @@ CREDENTIAL_EXCEPTION = HTTPException(
 
 
 async def get_access_token_from_cookies(request: Request):
+    """
+    Retrieves the access token from the cookies of an HTTP request.
+
+    This asynchronous function extracts the access token from the cookies
+    present in the given HTTP request. If the "access_token" cookie is not
+    found, it returns None.
+
+    :param request: The HTTP request object containing the cookies.
+    :return: The access token as a string if present, otherwise None.
+    """
     token = request.cookies.get("access_token")
     return token
 
@@ -36,6 +45,19 @@ async def get_access_token_from_cookies(request: Request):
 def get_current_token_payload(
     token: str,
 ) -> dict | None:
+    """
+    Retrieves the payload of a JWT token.
+
+    This function takes a JWT token as an argument, decodes it, and returns
+    the payload as a dictionary. If the token is invalid or has expired, it
+    raises an HTTPException with a 401 status code and an appropriate error
+    message.
+
+    :param token: The JWT token string to be decoded.
+    :return: The decoded payload as a dictionary, or None if the token is
+             invalid.
+    :raises HTTPException: If the token is invalid or has expired.
+    """
     log.debug("Attempting to decode token: %s", token)
     payload: dict | None = decode_jwt(token)
     if payload is None:
@@ -64,24 +86,23 @@ def create_jwt(
     expire_timedelta: timedelta | None = None,
 ) -> str:
     """
-    Generates a JSON Web Token (JWT) with the specified token type and data.
+    Creates a JWT token with the given payload and expiration duration.
 
-    This function creates a JWT with a payload containing the specified token
-    type and additional token data. The token is encoded using a private key,
-    and it includes an issued-at timestamp. The token's expiration can be set
-    either by specifying the number of minutes it should be valid or by providing
-    a specific timedelta.
+    This function takes the given payload, adds the current time as the "iat"
+    claim, and creates a JWT token with the given expiration duration. If the
+    `expire_minutes` parameter is provided, it is used as the expiration
+    duration. If the `expire_timedelta` parameter is provided, it is used
+    instead of the expiration minutes. If there is an HTTP error during
+    encoding, it raises an HTTPException with an appropriate status code and
+    error message.
 
-    Args:
-        token_type (str): The type of the token (e.g., access, refresh).
-        token_data (dict): Additional data to include in the token's payload.
-        expire_minutes (int, optional): The number of minutes until the token expires.
-            Defaults to the value specified in settings.auth.access_token_expires.
-        expire_timedelta (timedelta | None, optional): A specific timedelta for the
-            token's expiration, which takes precedence over expire_minutes if provided.
-
-    Returns:
-        str: The encoded JWT as a string.
+    :param token_type: The type of the token to be created.
+    :param token_data: The payload to be added to the token.
+    :param expire_minutes: The number of minutes before the token expires.
+    :param expire_timedelta: The timedelta object representing the expiration
+                             time of the token.
+    :return: The encoded JWT token as a string.
+    :raises HTTPException: If there is an HTTP error during encoding.
     """
     jwt_payload = {
         TOKEN_TYPE_FIELD: token_type,
@@ -101,19 +122,15 @@ def create_jwt(
 
 def create_access_jwt(user: UserResponse) -> str:
     """
-    Creates a JWT token based on the provided user.
+    Creates an access token for the given user.
 
-    This function creates a JWT token based on the user's username and email,
-    with a payload containing the user's username and email. The token is signed
-    with the private key specified in the `settings.auth.private_key_path` environment
-    variable, and will expire after the amount of time specified in the
-    `settings.auth.access_token_expire` environment variable.
+    This function takes a user object and creates an access token with the
+    user's UID, username, and email as the payload. The token is set to expire
+    after the duration specified in the configuration.
 
-    Args:
-        user (User): The user object containing the username and email.
-
-    Returns:
-        str: The JWT token.
+    :param user: The user object for which to create the token.
+    :return: The encoded JWT token as a string.
+    :raises HTTPException: If there is an HTTP error during encoding.
     """
     jwt_payload = {
         "sub": user.uid,
@@ -134,6 +151,19 @@ def create_access_jwt(user: UserResponse) -> str:
 async def create_refresh_jwt(
     user: UserResponse,
 ) -> str:
+    """
+    Creates a refresh token for the given user.
+
+    This function takes a user object and creates a refresh token with the
+    user's UID as the payload. The token is set to expire after the duration
+    specified in the configuration. The function adds the token to Redis
+    and returns the encoded JWT token as a string.
+
+    :param user: The user object for which to create the token.
+    :return: The encoded JWT token as a string.
+    :raises HTTPException: If there is an HTTP error during encoding or adding
+                           to Redis.
+    """
     jwt_payload = {
         "sub": user.uid,
     }
@@ -165,12 +195,32 @@ async def create_refresh_jwt(
 
 
 async def update_password(user: UserResponse):
+    """
+    Revoke all refresh tokens for the user and generate new tokens.
+
+    This function is used when the user's password has been changed. It revokes all
+    refresh tokens for the user and generates new tokens. The function returns the
+    new tokens as part of a response.
+
+    :param user: The user object for which to revoke all refresh tokens and
+                 generate new tokens.
+    :return: A response containing the new access and refresh tokens.
+    """
     await revoke_all_refresh_tokens(user.uid)
 
     return await add_tokens_to_response(user)
 
 
 async def add_tokens_to_response(user: UserResponse):
+    """
+    Adds an access token and refresh token to a response for the given user.
+
+    This function creates an access token and a refresh token for the given user
+    object and adds them to a response object. It returns the response object.
+
+    :param user: The user object for which to add tokens to the response.
+    :return: The response object with the access token and refresh token added.
+    """
     access_jwt = create_access_jwt(user)
     refresh_jwt = await create_refresh_jwt(user)
 
