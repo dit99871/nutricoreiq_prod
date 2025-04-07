@@ -50,6 +50,20 @@ async def register_user(
     user_in: UserCreate,
     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
 ) -> UserCreate | None:
+    """
+    Registers a new user in the system.
+
+    This endpoint accepts a `UserCreate` object containing user registration
+    details and creates a new user account if the email is not already registered.
+    If the user is successfully created, it returns the created `UserCreate`
+    object. If the email is already registered, it raises a 400 HTTP exception.
+    In case of a database error, it raises a 500 HTTP exception.
+
+    :param user_in: The user data for registration.
+    :param session: The current database session.
+    :return: The created `UserCreate` object or raises an HTTP exception.
+    :raises HTTPException: If the email is already registered or if a database error occurs.
+    """
     log.info("Attempting to register user with email: %s", user_in.email)
     try:
         db_user = await get_user_by_email(session, user_in.email)
@@ -83,6 +97,18 @@ async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
 ):
+    """
+    Logs a user in and returns a response containing an access and refresh token.
+
+    Given a valid username and password, logs the user in and returns a response
+    containing an access and refresh token.
+
+    :param form_data: The username and password to log in with.
+    :param session: The current database session.
+    :return: A response containing an access and refresh token.
+    :raises HTTPException: If the user is not found, or if the password is incorrect.
+    :raises HTTPException: If an unexpected error occurs while logging in.
+    """
     log.info("Attempting login for user: %s", form_data.username)
 
     try:
@@ -114,6 +140,20 @@ async def logout(
     user: Annotated[UserResponse, Depends(get_current_auth_user)],
     redis: Redis = Depends(get_redis),
 ):
+    """
+    Logs out a user and invalidates their refresh token.
+
+    This endpoint logs out a user, invalidates their refresh token, and clears
+    the access and refresh tokens from the request cookies.
+
+    :param request: The current request object.
+    :param user: The authenticated user object.
+    :param redis: The Redis client to use for invalidating the refresh token.
+    :return: A RedirectResponse to the root URL, with the access and refresh
+             tokens cleared from the cookies.
+    :raises HTTPException: If the refresh token is not found in the request
+                           cookies.
+    """
     refresh_jwt = request.cookies.get("refresh_token")
     if not refresh_jwt:
         log.error("Refresh token not found in cookies")
@@ -138,6 +178,24 @@ async def refresh_token(
     session: AsyncSession = Depends(db_helper.session_getter),
     redis: Redis = Depends(get_redis),
 ):
+    """
+    Refreshes the access and refresh tokens for a given user.
+
+    This endpoint takes a refresh token from the request cookies and returns a
+    response containing a new access and refresh token if the refresh token is
+    valid. If the refresh token is invalid or has expired, it raises a 401
+    HTTP exception.
+
+    :param request: The current request object.
+    :param session: The current database session.
+    :param redis: The Redis client to use for validating the refresh token.
+    :return: A response containing the new access and refresh tokens.
+    :raises HTTPException: If the refresh token is not found in the request
+                           cookies, or if the refresh token is invalid or has
+                           expired.
+    :raises HTTPException: If an unexpected error occurs while refreshing the
+                           tokens.
+    """
     refresh_jwt = request.cookies.get("refresh_token")
     if not refresh_jwt:
         log.error("Refresh token not found in cookies")
@@ -173,4 +231,13 @@ async def refresh_token(
 async def change_password(
     user: Annotated[UserResponse, Depends(get_current_auth_user)],
 ):
+    """
+    Changes the password for the current user.
+
+    This endpoint takes no input and will change the password for the current
+    user. The new password is randomly generated. The response will contain
+    the new access and refresh tokens.
+
+    :return: A response containing the new access and refresh tokens.
+    """
     return await update_password(user)
