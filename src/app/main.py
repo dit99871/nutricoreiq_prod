@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from fastapi import FastAPI, HTTPException, Request, Depends
+from fastapi.middlewares import CORSMiddleware
 from fastapi.responses import HTMLResponse, ORJSONResponse
 from fastapi.staticfiles import StaticFiles
 import uvicorn
@@ -22,6 +23,13 @@ setup_logging()
 app = FastAPI(
     lifespan=docker_lifespan,
     default_response_class=ORJSONResponse,
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors.allow_origins,
+    allow_credentials=settings.cors.allow_credentials,
+    allow_methods=settings.cors.allow_methods,
+    allow_headers=settings.cors.allow_headers,
 )
 app.include_router(api_router)
 app.mount(
