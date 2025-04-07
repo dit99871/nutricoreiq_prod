@@ -159,3 +159,7 @@ main {
     .dark-mode .modal-footer {
         border-color: #495057;
     }
+
+.z-3 {
+    z-index: 1030; /* Выше чем модальные окна (обычно 1050) */
+}
