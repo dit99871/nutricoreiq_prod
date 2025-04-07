@@ -14,6 +14,14 @@ async def get_user_profile(
     session: AsyncSession,
     user_id: int,
 ) -> UserAccount:
+    """
+    Fetches a user's profile information from the database.
+
+    :param session: The current database session.
+    :param user_id: The ID of the user to fetch the profile for.
+    :return: The user's profile information.
+    :raises HTTPException: If the user is not found in the database.
+    """
     stmt = select(User).filter(
         User.id == user_id,
         User.is_active == True,
@@ -49,6 +57,19 @@ async def update_user_profile(
     current_user: UserResponse,
     session: AsyncSession,
 ):
+    """
+    Updates the current user's profile in the database.
+
+    This function updates the profile of the authenticated user based on the provided
+    `UserProfile` data. The function attempts to update the user's profile information
+    in the database and commits the changes.
+
+    :param data_in: A `UserProfile` instance containing the new profile data.
+    :param current_user: The authenticated user whose profile is to be updated.
+    :param session: The current database session.
+    :raises HTTPException: If the user is not found or an error occurs during the update.
+    :return: None if update is successful, otherwise raises an exception.
+    """
     update_data = data_in.model_dump()
     try:
         stmt = (
