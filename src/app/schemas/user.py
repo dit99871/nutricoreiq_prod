@@ -1,6 +1,6 @@
 from annotated_types import MinLen, MaxLen
 from pydantic import ConfigDict, EmailStr, Field
-from typing import Annotated, Literal, Optional
+from typing import Annotated, Literal
 
 from .base import BaseSchema
 
