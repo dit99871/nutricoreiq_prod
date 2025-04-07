@@ -30,6 +30,13 @@ class RunConfig(BaseModel):
     port: int
 
 
+class CORSConfig(BaseModel):
+    allow_origins: list[str]
+    allow_methods: list[str]
+    allow_headers: list[str]
+    allow_credentials: bool
+
+
 class RedisConfig(BaseModel):
     url: str
     salt: str
@@ -94,6 +101,7 @@ class Settings(BaseSettings):
     db: DatabaseConfig
     auth: AuthConfig
     redis: RedisConfig
+    cors: CORSConfig
 
 
 settings = Settings()
