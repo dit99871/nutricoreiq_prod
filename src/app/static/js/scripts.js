@@ -104,12 +104,12 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
-    function showSuccess(message) {
-        const successElement = document.getElementById('profile-success');
+    function showSuccess(message, elementId) {
+        const successElement = document.getElementById(elementId);
         if (successElement) {
             successElement.textContent = message;
             successElement.classList.remove('d-none');
-            setTimeout(() => successElement.classList.add('d-none'), 5000);
+            setTimeout(() => successElement.classList.add('d-none'), 3000);
         }
     }
 
@@ -199,7 +199,7 @@ document.addEventListener("DOMContentLoaded", function() {
                         throw new Error(JSON.stringify(errors) || errorMessage);
                     }
 
-                    showSuccess('Профиль успешно обновлен');
+                    showSuccess('Профиль успешно обновлен', 'profile-success');
                     setTimeout(() => window.location.reload(), 1000);
 
                 } catch (error) {
@@ -287,11 +287,8 @@ document.addEventListener("DOMContentLoaded", function() {
             submitButton.textContent = "Вход...";
             submitButton.setAttribute('aria-busy', 'true');
 
-            const errorElement = document.getElementById("loginError");
-            if (errorElement) {
-                errorElement.textContent = '';
-                errorElement.classList.add('d-none');
-            }
+            // Сброс ошибок
+            showError('', 'loginError');
 
             try {
                 const formData = new FormData(loginForm);
@@ -310,15 +307,18 @@ document.addEventListener("DOMContentLoaded", function() {
                 updateUIForAuthenticatedUser(userData);
 
                 const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
-                if (modal) modal.hide();
+                if (modal) {
+                    modal.hide();
+                    modal._element.addEventListener('hidden.bs.modal', () => {
+                        showSuccess(`Добро пожаловать, ${userData.username}!`, 'globalSuccess');
+                    }, {once: true});
+                }
+
                 loginForm.reset();
 
             } catch (error) {
                 console.error("Ошибка входа:", error);
-                if (errorElement) {
-                    errorElement.textContent = error.message || "Неверное имя пользователя или пароль";
-                    errorElement.classList.remove('d-none');
-                }
+                showError(error.message || "Неверное имя пользователя или пароль", 'loginError');
             } finally {
                 submitButton.disabled = false;
                 submitButton.textContent = originalText;
@@ -339,24 +339,21 @@ document.addEventListener("DOMContentLoaded", function() {
             submitButton.disabled = true;
             submitButton.textContent = "Регистрация...";
 
-            const errorElement = document.getElementById("registerError");
-            errorElement.textContent = "";
-            errorElement.classList.add("d-none");
+            // Сброс предыдущих ошибок
+            showError('', 'registerError');
 
             const password = registerForm.querySelector("#regPassword").value;
             const confirmPassword = registerForm.querySelector("#regConfirmPassword").value;
 
             if (password !== confirmPassword) {
-                errorElement.textContent = "Пароли не совпадают";
-                errorElement.classList.remove("d-none");
+                showError("Пароли не совпадают", 'registerError');
                 submitButton.disabled = false;
                 submitButton.textContent = originalText;
                 return;
             }
 
             if (password.length < 8) {
-                errorElement.textContent = "Пароль должен содержать минимум 8 символов";
-                errorElement.classList.remove("d-none");
+                showError("Пароль должен содержать минимум 8 символов", 'registerError');
                 submitButton.disabled = false;
                 submitButton.textContent = originalText;
                 return;
@@ -379,23 +376,27 @@ document.addEventListener("DOMContentLoaded", function() {
                 });
 
                 const modal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
-                if (modal) modal.hide();
+                if (modal) {
+                    modal.hide();
+                    modal._element.addEventListener('hidden.bs.modal', () => {
+                        showSuccess("Регистрация прошла успешно! Теперь вы можете войти в систему.", 'globalSuccess');
+                    }, {once: true});
+                }
 
-                alert("Регистрация прошла успешно! Теперь вы можете войти в систему.");
                 registerForm.reset();
 
                 const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
-                loginModal.show();
+                setTimeout(() => loginModal.show(), 3500);
 
             } catch (error) {
                 console.error("Ошибка регистрации:", error);
-                errorElement.textContent = error.message || "Ошибка при регистрации";
-                errorElement.classList.remove("d-none");
+                let errorMessage = error.message || "Ошибка при регистрации";
 
                 if (error.errors) {
-                    const errorMessages = Object.values(error.errors).join("\n");
-                    errorElement.textContent = errorMessages;
+                    errorMessage = Object.values(error.errors).join("\n");
                 }
+
+                showError(errorMessage, 'registerError');
             } finally {
                 submitButton.disabled = false;
                 submitButton.textContent = originalText;
@@ -423,16 +424,7 @@ document.addEventListener("DOMContentLoaded", function() {
             e.preventDefault();
             this.disabled = true;
             this.textContent = "Выход...";
-
             window.location.href = "/api/v1/auth/logout";
-//            try {
-//                await secureFetch("/", { method: "POST" });
-//                location.reload();
-//            } catch (error) {
-//                console.error("Ошибка выхода:", error);
-//                this.disabled = false;
-//                this.textContent = "Выйти";
-//            }
         });
 
         initTheme();
