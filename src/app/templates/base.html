@@ -72,6 +72,17 @@
         </div>
     </header>
 
+    <!-- Глобальные уведомления -->
+    <div id="globalSuccess" class="alert alert-success d-none position-fixed top-0 start-50 translate-middle-x mt-3 z-3" style="max-width: 600px;" role="alert">
+        <span class="me-2">✓</span>
+        <span id="globalSuccessText"></span>
+    </div>
+
+    <div id="globalError" class="alert alert-danger d-none position-fixed top-0 start-50 translate-middle-x mt-3 z-3" style="max-width: 600px;" role="alert">
+        <span class="me-2">⚠</span>
+        <span id="globalErrorText"></span>
+    </div>
+
     <!-- Основной контент -->
     <main class="container d-flex flex-column flex-grow-1 py-4">
         {% block content %}{% endblock %}
@@ -122,6 +133,7 @@
                                 </button>
                             </div>
                         </div>
+                        <div id="loginError" class="text-danger d-none mb-3"></div>
                         <button type="submit" class="btn btn-primary w-100">Войти</button>
                     </form>
                 </div>
@@ -166,7 +178,7 @@
                                 </button>
                             </div>
                         </div>
-                        <div id="registerError" class="text-danger"></div>
+                        <div id="registerError" class="text-danger d-none mb-3"></div>
                         <button type="submit" class="btn btn-primary w-100">Зарегистрироваться</button>
                     </form>
                 </div>
