@@ -9,8 +9,6 @@ from jose import jwt, JWTError, ExpiredSignatureError
 
 from core.config import settings
 from core.logger import get_logger
-from schemas.user import UserResponse
-from services.auth import create_access_jwt, create_refresh_jwt
 
 log = get_logger("auth_utils")
 
@@ -218,18 +216,6 @@ def create_response(
         key="refresh_token",
         value=refresh_token,
         expires=expires_refresh_token,
-    )
-
-    return response
-
-
-async def add_tokens_to_response(user: UserResponse):
-    access_jwt = create_access_jwt(user)
-    refresh_jwt = await create_refresh_jwt(user)
-
-    response = create_response(
-        access_token=access_jwt,
-        refresh_token=refresh_jwt,
     )
 
     return response
