@@ -17,6 +17,26 @@ async def _get_user_by_filter(
     session: AsyncSession,
     filter_condition,
 ) -> UserResponse:
+    """
+    Helper function to get a user from the database using a filter condition.
+
+    Given a `filter_condition` argument, constructs a SQLAlchemy query to fetch a user
+    from the database. The query will only return active users.
+
+    On success, returns a `UserResponse` object containing the user's data. If the user
+    is not found, returns `None`.
+
+    If a database error occurs, raises an `HTTPException` with a 404 status code and
+    a detail string containing the error message. If an unexpected error occurs,
+    raises an `HTTPException` with a 500 status code and a detail string containing the
+    error message.
+
+    :param session: The current database session.
+    :param filter_condition: The filter condition to use in the query.
+    :return: A `UserResponse` object containing the user's data, or `None` if the user
+        is not found.
+    :raises HTTPException: If a database error or unexpected error occurs.
+    """
     try:
         stmt = select(User).filter(filter_condition, User.is_active == True)
         result = await session.execute(stmt)
@@ -47,6 +67,24 @@ async def get_user_by_uid(
     session: AsyncSession,
     uid: str,
 ) -> UserResponse | None:
+    """
+    Fetches a user from the database by their UID.
+
+    Given a `uid` argument, constructs a SQLAlchemy query to fetch a user from the
+    database. The query will only return active users.
+
+    On success, returns a `UserResponse` object containing the user's data. If the user
+    is not found, raises an `HTTPException` with a 404 status code and a detail string
+    containing the error message. If an unexpected error occurs, raises an
+    `HTTPException` with a 500 status code and a detail string containing the error
+    message.
+
+    :param session: The current database session.
+    :param uid: The user's UID.
+    :return: A `UserResponse` object containing the user's data, or `None` if the user
+        is not found.
+    :raises HTTPException: If the user is not found, or if an unexpected error occurs.
+    """
     try:
         user = await _get_user_by_filter(session, User.uid == uid)
         if user is None:
@@ -65,6 +103,24 @@ async def get_user_by_email(
     session: AsyncSession,
     email: EmailStr,
 ) -> UserResponse | None:
+    """
+    Fetches a user from the database by their email address.
+
+    Given an `email` argument, constructs a SQLAlchemy query to fetch a user from the
+    database. The query will only return active users.
+
+    On success, returns a `UserResponse` object containing the user's data. If the user
+    is not found, raises an `HTTPException` with a 404 status code and a detail string
+    containing the error message. If an unexpected error occurs, raises an
+    `HTTPException` with a 500 status code and a detail string containing the error
+    message.
+
+    :param session: The current database session.
+    :param email: The user's email address.
+    :return: A `UserResponse` object containing the user's data, or `None` if the user
+        is not found.
+    :raises HTTPException: If the user is not found, or if an unexpected error occurs.
+    """
     try:
         user = await _get_user_by_filter(session, User.email == email)
         return user
@@ -77,6 +133,24 @@ async def get_user_by_name(
     session: AsyncSession,
     user_name: str,
 ) -> UserResponse | None:
+    """
+    Fetches a user from the database by their username.
+
+    Given a `user_name` argument, constructs a SQLAlchemy query to fetch a user from the
+    database. The query will only return active users.
+
+    On success, returns a `UserResponse` object containing the user's data. If the user
+    is not found, raises an `HTTPException` with a 404 status code and a detail string
+    containing the error message. If an unexpected error occurs, raises an
+    `HTTPException` with a 500 status code and a detail string containing the error
+    message.
+
+    :param session: The current database session.
+    :param user_name: The user's username.
+    :return: A `UserResponse` object containing the user's data, or `None` if the user
+        is not found.
+    :raises HTTPException: If the user is not found, or if an unexpected error occurs.
+    """
     try:
         user = await _get_user_by_filter(session, User.username == user_name)
         if user is None:
@@ -95,6 +169,25 @@ async def create_user(
     session: AsyncSession,
     user_in: UserCreate,
 ) -> UserCreate | None:
+    """
+    Creates a new user in the database.
+
+    Given a `UserCreate` object as input, this function creates a new user in the
+    database. The function first hashes the password using a secure password hashing
+    algorithm, then creates a new `User` object with the input data and the hashed
+    password. The object is then added to the database and committed.
+
+    On success, returns the `UserCreate` object that was passed in. If the user is not
+    found, raises an `HTTPException` with a 500 status code and a detail string
+    containing the error message. If an unexpected error occurs, raises an
+    `HTTPException` with a 500 status code and a detail string containing the error
+    message.
+
+    :param session: The current database session.
+    :param user_in: The user data to create.
+    :return: The created user, or `None` if an error occurs.
+    :raises HTTPException: If an error occurs during the creation of the user.
+    """
     try:
         hashed_password = get_password_hash(user_in.password)
         db_user = User(
