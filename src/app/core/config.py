@@ -64,6 +64,7 @@ class LoggingConfig(BaseModel):
 class ApiV1Prefix(BaseModel):
     prefix: str = "/v1"
     auth: str = "/auth"
+    product: str = "/product"
     user: str = "/user"
 
 
