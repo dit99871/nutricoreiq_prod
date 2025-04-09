@@ -8,5 +8,5 @@ class Nutrient(IntIdPkMixin, Base):
     name: Mapped[str] = mapped_column(unique=True)
 
     product_associations: Mapped[list["ProductNutrient"]] = relationship(
-        back_populates="nutrient"
+        back_populates="nutrients"
     )

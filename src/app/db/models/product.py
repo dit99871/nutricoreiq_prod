@@ -9,7 +9,7 @@ class Product(IntIdPkMixin, Base):
     title: Mapped[str] = mapped_column(nullable=False)
     group_id: Mapped[int] = mapped_column(ForeignKey("product_groups.id"))
 
-    group: Mapped["ProductGroup"] = relationship(back_populates="products")
+    product_groups: Mapped["ProductGroup"] = relationship(back_populates="products")
     nutrient_associations: Mapped[list["ProductNutrient"]] = relationship(
-        back_populates="product"
+        back_populates="products"
     )
