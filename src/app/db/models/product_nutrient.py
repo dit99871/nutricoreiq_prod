@@ -6,7 +6,7 @@ from .mixins.int_id_pk import IntIdPkMixin
 
 
 class ProductNutrient(IntIdPkMixin, Base):
-    amount: Mapped[float] = mapped_column(nullable=False)
+    amount: Mapped[float] = mapped_column(nullable=True)
     product_id: Mapped[int] = mapped_column(
         ForeignKey("products.id"),
         primary_key=True,
