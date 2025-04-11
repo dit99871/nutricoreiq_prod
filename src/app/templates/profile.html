@@ -60,7 +60,7 @@
                 <div class="detail-item">
                     <strong>Вес:</strong>
                     <span id="weight-field">
-                        {% if user.weight is not none %}{{ user.weight }} кг{% else %}Не указан{% endif %}
+                        {% if user.weight %}{{ user.weight }} кг{% else %}Не указан{% endif %}
                     </span>
                 </div>
             </div>
@@ -69,13 +69,15 @@
             <div class="detail-card">
                 <h4>Статистика</h4>
                 <div class="detail-item">
+                    <strong>Уровень физической активности:</strong>
+                    <span id="kfa-field">
+                        {% if user.kfa %}{{ user.kfa }}-й уровень{% else %}Неизвестно{% endif %}
+                    </span>
+                </div>
+                <div class="detail-item">
                     <strong>Дата регистрации:</strong>
                     <span id="registration-date-field">
-                        {% if user.created_at %}
-                            {{ user.created_at }}
-                        {% else %}
-                            Неизвестно
-                        {% endif %}
+                        {% if user.created_at %}{{ user.created_at }}{% else %}Неизвестно{% endif %}
                     </span>
                 </div>
             </div>
@@ -131,6 +133,18 @@
                         <label for="editWeight" class="form-label">Вес (кг)</label>
                         <input type="number" class="form-control" id="editWeight" name="weight"
                                value="{{ user.weight or '' }}" min="20" max="300">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editKfa" class="form-label">Уровень физической активности</label>
+                        <select class="form-select" id="editKfa" name="kfa">
+                            <option value="">Не указан</option>
+                            <option value="1" {% if user.kfa == '1' %}selected{% endif %}>1-й уровень</option>
+                            <option value="2" {% if user.kfa == '2' %}selected{% endif %}>2-й уровень</option>
+                            <option value="3" {% if user.kfa == '3' %}selected{% endif %}>3-й уровень</option>
+                            <option value="4" {% if user.kfa == '4' %}selected{% endif %}>4-й уровень</option>
+                            <option value="5" {% if user.kfa == '5' %}selected{% endif %}>5-й уровень</option>
+                        </select>
                     </div>
                     
                     <div id="editProfileError" class="alert alert-danger d-none"></div>

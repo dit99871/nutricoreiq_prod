@@ -144,6 +144,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 document.getElementById('editAge').value = getValue('age-field');
                 document.getElementById('editHeight').value = getValue('height-field');
                 document.getElementById('editWeight').value = getValue('weight-field');
+                document.getElementById('editKfa').value = getValue('kfa-field');
             }
 
             saveBtn?.addEventListener('click', async function() {
@@ -199,8 +200,10 @@ document.addEventListener("DOMContentLoaded", function() {
                         throw new Error(JSON.stringify(errors) || errorMessage);
                     }
 
+//                    setTimeout(() => window.location.reload(), 1000);
+                    bootstrap.Modal.getInstance(editProfileModal).hide();
+                    editForm.reset()
                     showSuccess('Профиль успешно обновлен', 'profile-success');
-                    setTimeout(() => window.location.reload(), 1000);
 
                 } catch (error) {
                     console.error('Ошибка обновления:', error);
