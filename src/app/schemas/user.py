@@ -34,6 +34,6 @@ class UserProfile(BaseSchema):
     age: int = Field(gt=0)
     weight: float = Field(gt=0)
     height: float = Field(gt=0)
-    kfa: int = Field(gt=0, lt=6)
+    kfa: str = Literal["1", "2", "3", "4", "5"]
 
     model_config = ConfigDict(strict=True)
