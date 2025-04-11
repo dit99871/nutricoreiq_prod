@@ -16,81 +16,81 @@
 
     <!-- Основная карточка профиля -->
     <div class="profile-card">
-        <div class="profile-header">
-            <div class="profile-avatar">
-                {{ user.username[0]|upper }}
-            </div>
-            <div class="profile-info">
-                <h2>{{ user.username }}</h2>
-                <p class="text-muted">{{ user.email }}</p>
-            </div>
-        </div>
-
-        <div class="profile-details">
-            <!-- Блок основной информации -->
-            <div class="detail-card">
-                <h4>Основная информация</h4>
-                <div class="detail-item">
-                    <strong>Пол:</strong>
-                    <span id="gender-field">
-                        {% if user.gender == 'male' %}
-                            Мужской
-                        {% elif user.gender == 'female' %}
-                            Женский
-                        {% else %}
-                            Не указан
-                        {% endif %}
-                    </span>
+        <div class="profile-header d-flex justify-content-between align-items-start">
+            <div class="d-flex align-items-center">
+                <div class="profile-avatar">
+                    {{ user.username[0]|upper }}
                 </div>
-                <div class="detail-item">
-                    <strong>Возраст:</strong>
-                    <span id="age-field">{{ user.age|default('', true) }}</span>
+                <div class="profile-info">
+                    <h2>{{ user.username }}</h2>
+                    <p class="text-muted">{{ user.email }}</p>
                 </div>
             </div>
 
-            <!-- Блок физических параметров -->
-            <div class="detail-card">
-                <h4>Физические параметры</h4>
-                <div class="detail-item">
-                    <strong>Рост:</strong>
-                    <span id="height-field">
-                        {{ user.height|default('', true) }}
-                    </span>
-                </div>
-                <div class="detail-item">
-                    <strong>Вес:</strong>
-                    <span id="weight-field">
-                        {{ user.age|default('', true) }}
-                    </span>
-                </div>
-            </div>
-
-            <!-- Блок статистики -->
-            <div class="detail-card">
-                <h4>Статистика</h4>
-                <div class="detail-item">
-                    <strong>Уровень физической активности:</strong>
-                    <span id="kfa-field">
-                        {{ user.kfa|default('Не указан', true) }}
-                    </span>
-                </div>
-                <div class="detail-item">
-                    <strong>Дата регистрации:</strong>
-                    <span id="registration-date-field">
-                        {{ user.created_at|default('Неизвестно', true) }}
-                    </span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Кнопки действий -->
         <div class="action-buttons">
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+            <button type="button" class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#editProfileModal">
                 <i class="bi bi-pencil"></i> Редактировать профиль
             </button>
             <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
                 <i class="bi bi-shield-lock"></i> Сменить пароль
             </button>
+        </div>
+    </div>
+
+    <div class="profile-details">
+        <!-- Блок основной информации -->
+        <div class="detail-card">
+            <h4>Основная информация</h4>
+            <div class="detail-item">
+                <strong>Пол:</strong>
+                <span id="gender-field">
+                    {% if user.gender == 'male' %}
+                        Мужской
+                    {% elif user.gender == 'female' %}
+                        Женский
+                    {% else %}
+                        Не указан
+                    {% endif %}
+                </span>
+            </div>
+            <div class="detail-item">
+                <strong>Возраст:</strong>
+                <span id="age-field">{{ user.age|default('', true) }}</span>
+            </div>
+        </div>
+
+        <!-- Блок физических параметров -->
+        <div class="detail-card">
+            <h4>Физические параметры</h4>
+            <div class="detail-item">
+                <strong>Рост:</strong>
+                <span id="height-field">
+                    {{ user.height|default('', true) }}
+                </span>
+            </div>
+            <div class="detail-item">
+                <strong>Вес:</strong>
+                <span id="weight-field">
+                    {{ user.age|default('', true) }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Блок статистики -->
+        <div class="detail-card">
+            <h4>Статистика</h4>
+            <div class="detail-item">
+                <strong>Уровень физической активности:</strong>
+                <span id="kfa-field">
+                    {{ user.kfa|default('Не указан', true) }}
+                </span>
+            </div>
+            <div class="detail-item">
+                <strong>Дата регистрации:</strong>
+                <span id="registration-date-field">
+                    {{ user.created_at|default('Неизвестно', true) }}
+                </span>
+            </div>
         </div>
     </div>
 </div>
@@ -127,16 +127,15 @@
                     <div class="mb-3">
                         <label for="editAge" class="form-label">Возраст</label>
                         <input type="number" class="form-control" id="editAge" name="age" 
-                               value="{{ user.age if user.age is not none }}" min="14" max="120"
+                               value="{{ user.age if user.age is not none }}" min="18" max="120"
                                placeholder="Введите свой возраст">
                     </div>
                     
                     <div class="mb-3">
                         <label for="editHeight" class="form-label">Рост (см)</label>
                         <input type="number" class="form-control" id="editHeight" name="height"
-                               value="{{ user.height if user.height is not none }}"
+                               value="{{ user.height if user.height is not none }}" min="50" max="250">
                                placeholder="Введите свой рост"
-                               min="50" max="250">
                     </div>
                     
                     <div class="mb-3">
