@@ -20,6 +20,7 @@ class User(IntIdPkMixin, Base):
     age: Mapped[int | None] = mapped_column(nullable=True)
     weight: Mapped[float | None] = mapped_column(nullable=True)
     height: Mapped[float | None] = mapped_column(nullable=True)
+    kfa: Mapped[Literal["1", "2", "3", "4", "5"]] = mapped_column(nullable=True)
 
     is_active: Mapped[bool] = mapped_column(default=True)
     role: Mapped[str] = mapped_column(default="user")
