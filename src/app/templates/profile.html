@@ -82,7 +82,7 @@
             <div class="detail-item">
                 <strong>Уровень физической активности:</strong>
                 <span id="kfa-field">
-                    {{ user.kfa|default('Не указан', true) }}
+                    {% if user.kfa %}{{ user.kfa }}-й уровень{% else %}Не указан{% endif %}
                 </span>
             </div>
             <div class="detail-item">
