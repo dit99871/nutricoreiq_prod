@@ -44,7 +44,7 @@
                 </div>
                 <div class="detail-item">
                     <strong>Возраст:</strong>
-                    <span id="age-field">{{ user.age|default('Не указан', true) }}</span>
+                    <span id="age-field">{{ user.age|default('', true) }}</span>
                 </div>
             </div>
 
@@ -54,13 +54,13 @@
                 <div class="detail-item">
                     <strong>Рост:</strong>
                     <span id="height-field">
-                        {% if user.height is not none %}{{ user.height }} см{% else %}Не указан{% endif %}
+                        {{ user.height|default('', true) }}
                     </span>
                 </div>
                 <div class="detail-item">
                     <strong>Вес:</strong>
                     <span id="weight-field">
-                        {% if user.weight %}{{ user.weight }} кг{% else %}Не указан{% endif %}
+                        {{ user.age|default('', true) }}
                     </span>
                 </div>
             </div>
@@ -71,13 +71,13 @@
                 <div class="detail-item">
                     <strong>Уровень физической активности:</strong>
                     <span id="kfa-field">
-                        {% if user.kfa %}{{ user.kfa }}-й уровень{% else %}Неизвестно{% endif %}
+                        {{ user.kfa|default('Не указан', true) }}
                     </span>
                 </div>
                 <div class="detail-item">
                     <strong>Дата регистрации:</strong>
                     <span id="registration-date-field">
-                        {% if user.created_at %}{{ user.created_at }}{% else %}Неизвестно{% endif %}
+                        {{ user.created_at|default('Неизвестно', true) }}
                     </span>
                 </div>
             </div>
@@ -110,7 +110,14 @@
                     <div class="mb-3">
                         <label for="editGender" class="form-label">Пол</label>
                         <select class="form-select" id="editGender" name="gender">
-                            <option value="">Не указан</option>
+                            <option value="">{% if user.gender == 'male' %}
+                                                Мужской
+                                             {% elif user.gender == 'female' %}
+                                                Женский
+                                             {% else %}
+                                                Не указан
+                                             {% endif %}
+                            </option>
                             <option value="male" {% if user.gender == 'male' %}selected{% endif %}>Мужской</option>
                             <option value="female" {% if user.gender == 'female' %}selected{% endif %}>Женский</option>
                         </select>
@@ -120,30 +127,34 @@
                     <div class="mb-3">
                         <label for="editAge" class="form-label">Возраст</label>
                         <input type="number" class="form-control" id="editAge" name="age" 
-                               value="{{ user.age or '' }}" min="1" max="120">
+                               value="{{ user.age if user.age is not none }}" min="14" max="120"
+                               placeholder="Введите свой возраст">
                     </div>
                     
                     <div class="mb-3">
                         <label for="editHeight" class="form-label">Рост (см)</label>
                         <input type="number" class="form-control" id="editHeight" name="height"
-                               value="{{ user.height or '' }}" min="50" max="250">
+                               value="{{ user.height if user.height is not none }}"
+                               placeholder="Введите свой рост"
+                               min="50" max="250">
                     </div>
                     
                     <div class="mb-3">
                         <label for="editWeight" class="form-label">Вес (кг)</label>
                         <input type="number" class="form-control" id="editWeight" name="weight"
-                               value="{{ user.weight or '' }}" min="20" max="300">
+                               value="{{ user.weight if user.weight is not none }}" min="20" max="300"
+                               placeholder="Введите свой вес">
                     </div>
 
                     <div class="mb-3">
                         <label for="editKfa" class="form-label">Уровень физической активности</label>
                         <select class="form-select" id="editKfa" name="kfa">
-                            <option value="">Не указан</option>
-                            <option value="1" {% if user.kfa == '1' %}selected{% endif %}>1-й уровень</option>
-                            <option value="2" {% if user.kfa == '2' %}selected{% endif %}>2-й уровень</option>
-                            <option value="3" {% if user.kfa == '3' %}selected{% endif %}>3-й уровень</option>
-                            <option value="4" {% if user.kfa == '4' %}selected{% endif %}>4-й уровень</option>
-                            <option value="5" {% if user.kfa == '5' %}selected{% endif %}>5-й уровень</option>
+                            <option value="">{% if user.kfa %}{{ user.kfa }}-й уровень{% else %}Не указан{% endif %}</option>
+                            {% for k in [1,2,3,4,5] %}
+                            <option value="{{ k }}" {{ 'selected' if user.kfa == k|string }}>
+                                {{ k }}-й уровень
+                            </option>
+                            {% endfor %}
                         </select>
                     </div>
                     

@@ -134,19 +134,6 @@ document.addEventListener("DOMContentLoaded", function() {
             const editForm = document.getElementById('editProfileForm');
             const saveBtn = document.getElementById('saveProfileBtn');
 
-            function populateEditForm() {
-                const getValue = (id) => {
-                    const el = document.getElementById(id);
-                    return el?.dataset.rawValue || '';
-                };
-
-                document.getElementById('editGender').value = getValue('gender-field');
-                document.getElementById('editAge').value = getValue('age-field');
-                document.getElementById('editHeight').value = getValue('height-field');
-                document.getElementById('editWeight').value = getValue('weight-field');
-                document.getElementById('editKfa').value = getValue('kfa-field');
-            }
-
             saveBtn?.addEventListener('click', async function() {
                 const btn = this;
                 btn.disabled = true;
