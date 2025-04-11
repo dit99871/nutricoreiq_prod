@@ -25,6 +25,7 @@ class UserAccount(UserBase):
     age: int | None
     weight: float | None
     height: float | None
+    kfa: int | None
     created_at: str
 
 
@@ -33,5 +34,6 @@ class UserProfile(BaseSchema):
     age: int = Field(gt=0)
     weight: float = Field(gt=0)
     height: float = Field(gt=0)
+    kfa: int = Field(gt=0, lt=6)
 
     model_config = ConfigDict(strict=True)
