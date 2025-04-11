@@ -72,7 +72,7 @@
                     <strong>Дата регистрации:</strong>
                     <span id="registration-date-field">
                         {% if user.created_at %}
-                            {{ user.created_at[:10]|replace('-', '.') }} {{ user.created_at[11:16] }}
+                            {{ user.created_at }}
                         {% else %}
                             Неизвестно
                         {% endif %}
