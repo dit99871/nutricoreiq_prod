@@ -26,6 +26,7 @@ class NutrientCategory(Enum):
 
 class Nutrient(IntIdPkMixin, Base):
     name: Mapped[str] = mapped_column(unique=True)
+    unit: Mapped[str]
     category: Mapped[NutrientCategory] = mapped_column(default=NutrientCategory.OTHER)
 
     product_associations: Mapped[list["ProductNutrient"]] = relationship(
