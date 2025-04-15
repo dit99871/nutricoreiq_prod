@@ -14,7 +14,7 @@ from core.exception_handlers import (
 )
 from core.logger import setup_logging
 from lifespan import docker_lifespan
-from services.user import get_current_auth_user
+from services.auth import get_current_auth_user
 from utils.security import generate_csrf_token, generate_csp_nonce
 from utils.templates import templates
 

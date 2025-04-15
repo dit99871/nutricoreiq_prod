@@ -21,13 +21,11 @@ from services.auth import (
     create_access_jwt,
     create_refresh_jwt,
     update_password,
-)
-from services.redis import revoke_refresh_token
-from services.user import (
-    authenticate_user,
     get_current_auth_user,
     get_current_auth_user_for_refresh,
+    authenticate_user,
 )
+from services.redis import revoke_refresh_token
 from schemas.user import UserCreate, UserResponse
 from utils.auth import create_response
 
