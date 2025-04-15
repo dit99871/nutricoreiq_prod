@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.title }} | NutriCoreIQ{% endblock %}
+
+{% block extra_head %}
+<style nonce="{{ csp_nonce }}"></style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <h1 class="text-center mb-5" style="color: var(--moss);">{{ product.title }}</h1>
+
+            <!-- Белки -->
+            {% if product.proteins.total %}
+            <div class="nutrient-section">
+                <h2 class="section-title">
+                    Белки <span class="nutrient-value">{{ product.proteins.total | default(0) | round(1) }} г</span>
+                </h2>
+
+                {% if product.proteins.amino_acids %}
+                <div class="subgroup">
+                    <div class="nutrient-row">
+                        <span class="nutrient-label">Заменимые аминокислоты</span>
+                        <span class="nutrient-value">{{ product.proteins.amino_acids.nonessential | round(1) }} г</span>
+                    </div>
+                    <div class="nutrient-row">
+                        <span class="nutrient-label">Незаменимые аминокислоты</span>
+                        <span class="nutrient-value">{{ product.proteins.amino_acids.essential | round(1) }} г</span>
+                    </div>
+                    {% if product.proteins.amino_acids.cond_essential %}
+                    <div class="nutrient-row">
+                        <span class="nutrient-label">Условнонезаменимые</span>
+                        <span class="nutrient-value">{{ product.proteins.amino_acids.cond_essential | round(1) }} г</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Жиры -->
+            {% if product.fats %}
+            <div class="nutrient-section">
+                <h2 class="section-title">
+                    Жиры <span class="nutrient-value">{{ product.fats.total | default(0) | round(1) }} г</span>
+                </h2>
+
+                <div class="subgroup">
+                    {% if product.fats.saturated %}
+                    <div class="nutrient-row">
+                        <span class="nutrient-label">Насыщенные</span>
+                        <span class="nutrient-value">{{ product.fats.saturated | round(1) }} г</span>
+                    </div>
+                    {% endif %}
+
+                    {% if product.fats.monounsaturated %}
+                    <div class="nutrient-row">
+                        <span class="nutrient-label">Мононенасыщенные</span>
+                        <span class="nutrient-value">{{ product.fats.monounsaturated | round(1) }} г</span>
+                    </div>
+                    {% endif %}
+
+                    {% if product.fats.polyunsaturated %}
+                    <div class="nutrient-row">
+                        <span class="nutrient-label">Полиненасыщенные</span>
+                        <div class="subgroup">
+                            {% if product.fats.polyunsaturated.omega3 %}
+                            <div class="nutrient-row">
+                                <span class="nutrient-label">Омега-3</span>
+                                <span class="nutrient-value">{{ product.fats.polyunsaturated.omega3 | round(1) }} г</span>
+                            </div>
+                            {% endif %}
+                            {% if product.fats.polyunsaturated.omega6 %}
+                            <div class="nutrient-row">
+                                <span class="nutrient-label">Омега-6</span>
+                                <span class="nutrient-value">{{ product.fats.polyunsaturated.omega6 | round(1) }} г</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if product.fats.cholesterol %}
+                    <div class="nutrient-row">
+                        <span class="nutrient-label">Холестерин</span>
+                        <span class="nutrient-value">{{ product.fats.cholesterol | round(1) }} мг</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Углеводы -->
+            {% if product.carbs %}
+            <div class="nutrient-section">
+                <h2 class="section-title">
+                    Углеводы <span class="nutrient-value">{{ product.carbs.total | default(0) | round(1) }} г</span>
+                </h2>
+
+                <div class="subgroup">
+                    {% if product.carbs.fiber %}
+                    <div class="nutrient-row">
+                        <span class="nutrient-label">Клетчатка</span>
+                        <span class="nutrient-value">{{ product.carbs.fiber | round(1) }} г</span>
+                    </div>
+                    {% endif %}
+
+                    {% if product.carbs.sugar %}
+                    <div class="nutrient-row">
+                        <span class="nutrient-label">Сахара</span>
+                        <span class="nutrient-value">{{ product.carbs.sugar | round(1) }} г</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Витамины -->
+            {% if product.vitamins %}
+            <div class="nutrient-section">
+                <h2 class="section-title">Витамины</h2>
+                <div class="vitamin-grid">
+                    {% for vitamin in product.vitamins %}
+                    <div class="micro-card">
+                        <div class="fw-bold mb-1" style="color: var(--moss);">{{ vitamin.name }}</div>
+                        <div style="color: var(--clay);">
+                            {{ vitamin.amount }}{{ vitamin.unit }}
+                            {% if vitamin.rda %}<span class="text-muted small">({{ vitamin.rda }}%)</span>{% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Витаминоподобные вещества -->
+            {% if product.vitamin_like %}
+            <div class="nutrient-section">
+                <h2 class="section-title">Витаминоподобные вещества</h2>
+                <div class="vitamin-grid">
+                    {% for substance in product.vitamin_like %}
+                    <div class="micro-card">
+                        <div class="fw-bold mb-1" style="color: var(--sage);">{{ substance.name }}</div>
+                        <div style="color: var(--stone);">
+                            {{ substance.amount }}{{ substance.unit }}
+                            {% if substance.rda %}<span class="text-muted small">({{ substance.rda }}%)</span>{% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Минералы -->
+            {% if product.minerals %}
+            <div class="nutrient-section">
+                <h2 class="section-title">Минералы</h2>
+
+                {% if product.minerals.macro %}
+                <div class="subgroup">
+                    <h5 class="mb-3" style="color: var(--earth);">Макроэлементы</h5>
+                    {% for mineral in product.minerals.macro %}
+                    <div class="nutrient-row">
+                        <span class="nutrient-label">{{ mineral.name }}</span>
+                        <span class="nutrient-value">{{ mineral.amount }}{{ mineral.unit }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if product.minerals.micro %}
+                <div class="subgroup mt-4">
+                    <h5 class="mb-3" style="color: var(--earth);">Микроэлементы</h5>
+                    {% for mineral in product.minerals.micro %}
+                    <div class="nutrient-row">
+                        <span class="nutrient-label">{{ mineral.name }}</span>
+                        <span class="nutrient-value">{{ mineral.amount }}{{ mineral.unit }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Другие компоненты -->
+            {% if product.others %}
+            <div class="nutrient-section">
+                <h2 class="section-title">Другие биоактивные компоненты</h2>
+                <div class="row g-3">
+                    {% for item in product.others %}
+                    <div class="col-md-6">
+                        <div class="nutrient-row align-items-center">
+                            <span class="nutrient-label">{{ item.name }}</span>
+                            <span class="nutrient-value">
+                                {{ item.amount }}{{ item.unit }}
+                                {% if item.rda %}<span class="text-muted small">({{ item.rda }}%)</span>{% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
