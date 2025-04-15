@@ -1,17 +1,28 @@
 import datetime as dt
 from datetime import timedelta, datetime
+from typing import Annotated
 
-from fastapi import HTTPException, status, Request
+from fastapi import HTTPException, status, Request, Depends
 from fastapi.security import OAuth2PasswordBearer
+from redis.asyncio import Redis
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.config import settings
 from core.logger import get_logger
+from crud.user import get_user_by_uid, get_user_by_name
+from db import db_helper
 from schemas.user import UserResponse
 from services.redis import (
     add_refresh_to_redis,
     revoke_all_refresh_tokens,
+    validate_refresh_jwt,
 )
-from utils.auth import decode_jwt, encode_jwt, create_response
+from utils.auth import (
+    decode_jwt,
+    encode_jwt,
+    create_response,
+    verify_password,
+)
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login", auto_error=False)
 log = get_logger("auth_service")
@@ -230,3 +241,125 @@ async def add_tokens_to_response(user: UserResponse):
     )
 
     return response
+
+
+async def get_current_auth_user(
+    token: Annotated[str, Depends(get_access_token_from_cookies)],
+    session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+) -> UserResponse | None:
+    """
+    Authenticates a user given a JWT token and returns the user object.
+
+    If the token is invalid, has expired, or the user is not found, raises an
+    HTTPException with a 401 status code.
+
+    :param token: The JWT token to authenticate with.
+    :param session: The database session to use for the query.
+    :return: The authenticated user object, or None if authentication fails.
+    """
+    if token is None:
+        return None
+    try:
+        payload: dict = get_current_token_payload(token)
+        uid: str | None = payload.get("sub")
+        log.debug("Looking for user with uid: %s", uid)
+        user = await get_user_by_uid(session, uid)
+    except HTTPException as e:
+        raise e
+    else:
+        if user is None:
+            log.error("User not found for uid: %s", uid)
+            raise CREDENTIAL_EXCEPTION
+
+        return user
+
+
+async def get_current_auth_user_for_refresh(
+    token: str,
+    session: AsyncSession,
+    redis: Redis,
+) -> UserResponse:
+    """
+    Authenticates a user given a refresh token and returns the user object.
+
+    If the token is invalid, has expired, or the user is not found, raises an
+    HTTPException with a 401 status code.
+
+    :param token: The refresh token to authenticate with.
+    :param session: The database session to use for the query.
+    :param redis: The Redis client to use for the query.
+    :return: The authenticated user object.
+    """
+    try:
+        payload = decode_jwt(token)
+        if payload is None:
+            log.error("Failed to decode refresh token")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Failed to decode refresh token",
+            )
+
+        uid: str | None = payload.get("sub")
+        if uid is None:
+            log.error("User id not found in refresh token")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User id not found in refresh token",
+            )
+        if not await validate_refresh_jwt(uid, token, redis):
+            log.error("Refresh token is invalid or has expired")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Refresh token is invalid or has expired",
+            )
+        user = await get_user_by_uid(session, uid)
+        return user
+    except HTTPException as e:
+        raise e
+
+
+async def authenticate_user(
+    session: AsyncSession,
+    username: str,
+    password: str,
+) -> UserResponse | None:
+    """
+    Authenticates a user with the given username and password.
+
+    This function attempts to authenticate a user by checking if the provided
+    username exists and if the password matches the stored hashed password.
+    If the user is found and the password is correct, the user object is returned.
+    Otherwise, an HTTP 401 Unauthorized exception is raised.
+
+    Args:
+        session (Annotated[AsyncSession, Depends]): The async database session dependency.
+        username (str): The username of the user to authenticate.
+        password (str): The password of the user to authenticate.
+
+    Returns:
+        User | None: The authenticated user object, or None if authentication fails.
+
+    Raises:
+        HTTPException: If the user is not found or the password is incorrect.
+    """
+    log.debug("Attempting to authenticate user: %s", username)
+    unauthed_exc = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid email or password",
+    )
+    try:
+        user = await get_user_by_name(session, username)
+    except HTTPException as e:
+        raise e
+    else:
+        if user is None:
+            log.error("User not found in db for authentication: %s", username)
+            raise unauthed_exc
+
+        log.debug("User found: %s. Verifying password.", username)
+        if not verify_password(password, user.hashed_password):
+            log.error("Invalid password for user: %s", username)
+            raise unauthed_exc
+
+        log.info("User authenticated successfully: %s", username)
+        return UserResponse.model_validate(user)
