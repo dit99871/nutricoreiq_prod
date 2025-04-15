@@ -177,3 +177,57 @@ main {
         margin: 5px 0;
     }
 }
+
+.nutrient-section {
+        background: rgba(var(--sand-rgb), 0.15);
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid var(--sage);
+    }
+
+    .section-title {
+        color: var(--moss);
+        border-bottom: 2px solid var(--sage);
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+        font-weight: 600;
+    }
+
+    .subgroup {
+        margin-left: 1.5rem;
+        padding-left: 1rem;
+        border-left: 2px solid var(--sky);
+    }
+
+    .nutrient-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px dashed rgba(var(--earth-rgb), 0.2);
+    }
+
+    .nutrient-label {
+        color: var(--earth);
+        flex: 1;
+    }
+
+    .nutrient-value {
+        color: var(--clay);
+        min-width: 100px;
+        text-align: right;
+        font-weight: 500;
+    }
+
+    .vitamin-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .micro-card {
+        background: rgba(var(--sky-rgb), 0.1);
+        padding: 1rem;
+        border-radius: 8px;
+        text-align: center;
+    }
