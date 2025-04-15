@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from crud.profile import update_user_profile, get_user_profile
 from db import db_helper
 from schemas.user import UserProfile, UserResponse, UserAccount
-from services.user import get_current_auth_user
+from services.auth import get_current_auth_user
 from utils.security import generate_csp_nonce
 from utils.templates import templates
 
@@ -63,8 +63,8 @@ async def get_account(
             name="profile.html",
             request=request,
             context={
-                "user": user,
                 "csp_nonce": generate_csp_nonce(),
+                "user": user,
             },
         )
     except HTTPException as e:
