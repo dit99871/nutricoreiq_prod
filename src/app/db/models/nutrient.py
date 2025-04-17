@@ -7,21 +7,21 @@ from .mixins.int_id_pk import IntIdPkMixin
 
 
 class NutrientCategory(Enum):
-    MACRO = "macro"
-    ENERGY_VALUE = "energy_value"
-    NONESSENTIAL_AMINO = "nonessentional_amino"
-    ESSENTIAL_AMINO = "essential_amino"
-    COND_ESSENTIAL_AMINO = "cond_essential_amino"
-    SATURATED_FATS = "saturated_fats"
-    MONOUNSATURATED_FATS = "monounsaturated_fats"
-    POLYUNSATURATED_FATS = "polyunsaturated_fats"
-    FATS = "fats"
-    CARBS = "carbs"
-    VITAMINS = "vitamins"
-    VITAMIN_LIKE = "vitamin_like"
-    MINERALS_MACRO = "minerals_macro"
-    MINERALS_MICRO = "minerals_micro"
-    OTHER = "other"
+    MACRO = "MACRO"
+    ENERGY_VALUE = "ENERGY_VALUE"
+    NONESSENTIAL_AMINO = "NONESSENTIAL_AMINO"
+    ESSENTIAL_AMINO = "ESSENTIAL_AMINO"
+    COND_ESSENTIAL_AMINO = "COND_ESSENTIAL_AMINO"
+    SATURATED_FATS = "SATURATED_FATS"
+    MONOUNSATURATED_FATS = "MONOUNSATURATED_FATS"
+    POLYUNSATURATED_FATS = "POLYUNSATURATED_FATS"
+    FATS = "FATS"
+    CARBS = "CARBS"
+    VITAMINS = "VITAMINS"
+    VITAMIN_LIKE = "VITAMIN_LIKE"
+    MINERALS_MACRO = "MINERALS_MACRO"
+    MINERALS_MICRO = "MINERALS_MICRO"
+    OTHER = "OTHER"
 
 
 class Nutrient(IntIdPkMixin, Base):
