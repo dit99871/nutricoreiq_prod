@@ -4,6 +4,15 @@ from schemas.product import NutrientBase, ProductDetailResponse
 
 
 def map_to_schema(product: Product) -> ProductDetailResponse:
+    """
+    Maps a `Product` object to a `ProductDetailResponse` object.
+
+    Iterates over the product's nutrient associations and maps the nutrient
+    amounts to the corresponding fields in the response object.
+
+    :param product: The product to map.
+    :return: The mapped response object.
+    """
     response = ProductDetailResponse(
         id=product.id,
         title=product.title,
@@ -12,8 +21,8 @@ def map_to_schema(product: Product) -> ProductDetailResponse:
 
     for assoc in product.nutrient_associations:
         nutrient = assoc.nutrients
-        amount = assoc.amount or 0.0
-        unit = nutrient.unit or "г"
+        amount = assoc.amount
+        unit = nutrient.unit
 
         # Обработка белков и аминокислот
         if nutrient.category == NutrientCategory.MACRO:
@@ -31,7 +40,8 @@ def map_to_schema(product: Product) -> ProductDetailResponse:
 
         # Обработка жиров
         elif nutrient.category == NutrientCategory.FATS:
-            response.fats.total = amount
+            if "жиры" in nutrient.name.lower():
+                response.fats.total = amount
 
         elif nutrient.category == NutrientCategory.SATURATED_FATS:
             if "холестерин" in nutrient.name.lower():
@@ -43,66 +53,49 @@ def map_to_schema(product: Product) -> ProductDetailResponse:
             response.fats.breakdown.monounsaturated += amount
 
         elif nutrient.category == NutrientCategory.POLYUNSATURATED_FATS:
-            if "омега-3" in nutrient.name.lower():
-                response.fats.breakdown.polyunsaturated.omega3 += amount
+            if "полиненасыщенные" in nutrient.name.lower():
+                response.fats.breakdown.polyunsaturated.total = amount
+            elif "омега-3" in nutrient.name.lower():
+                response.fats.breakdown.polyunsaturated.omega3 = amount
             elif "омега-6" in nutrient.name.lower():
-                response.fats.breakdown.polyunsaturated.omega6 += amount
+                response.fats.breakdown.polyunsaturated.omega6 = amount
 
         # Обработка углеводов
         elif nutrient.category == NutrientCategory.CARBS:
-            response.carbs.total = amount
-            if "клетчатка" in nutrient.name.lower():
+            if "углеводы" in nutrient.name.lower():
+                response.carbs.total = amount
+            elif "клетчатка" in nutrient.name.lower():
                 response.carbs.breakdown.fiber = amount
             elif "сахар" in nutrient.name.lower():
                 response.carbs.breakdown.sugar = amount
 
         # Витамины
         elif nutrient.category == NutrientCategory.VITAMINS:
-            response.vitamins.items.append(
-                NutrientBase(
-                    name=nutrient.name,
-                    amount=amount,
-                    unit=unit
-                )
+            response.vitamins.vits.append(
+                NutrientBase(name=nutrient.name, amount=amount, unit=unit)
             )
 
         # Витаминоподобные
         elif nutrient.category == NutrientCategory.VITAMIN_LIKE:
-            response.vitamin_like.items.append(
-                NutrientBase(
-                    name=nutrient.name,
-                    amount=amount,
-                    unit=unit
-                )
+            response.vitamin_like.vitslk.append(
+                NutrientBase(name=nutrient.name, amount=amount, unit=unit)
             )
 
         # Минералы
         elif nutrient.category == NutrientCategory.MINERALS_MACRO:
             response.minerals.macro.append(
-                NutrientBase(
-                    name=nutrient.name,
-                    amount=amount,
-                    unit=unit
-                )
+                NutrientBase(name=nutrient.name, amount=amount, unit=unit)
             )
 
         elif nutrient.category == NutrientCategory.MINERALS_MICRO:
             response.minerals.micro.append(
-                NutrientBase(
-                    name=nutrient.name,
-                    amount=amount,
-                    unit=unit
-                )
+                NutrientBase(name=nutrient.name, amount=amount, unit=unit)
             )
 
         # Прочие нутриенты
         elif nutrient.category == NutrientCategory.OTHER:
-            response.other.items.append(
-                NutrientBase(
-                    name=nutrient.name,
-                    amount=amount,
-                    unit=unit
-                )
+            response.other.oths.append(
+                NutrientBase(name=nutrient.name, amount=amount, unit=unit)
             )
 
     return response
