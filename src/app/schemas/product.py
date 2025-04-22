@@ -15,6 +15,7 @@ class AminoAcids(BaseSchema):
 
 
 class PolyunsaturatedFats(BaseSchema):
+    total: float = 0.0
     omega3: float = 0.0
     omega6: float = 0.0
 
@@ -48,11 +49,11 @@ class CarbsSchema(BaseSchema):
 
 
 class VitaminsSchema(BaseSchema):
-    items: list[NutrientBase] = []
+    vits: list[NutrientBase] = []
 
 
 class VitaminLikeSchema(BaseSchema):
-    items: list[NutrientBase] = []
+    vitslk: list[NutrientBase] = []
 
 
 class MineralsSchema(BaseSchema):
@@ -61,7 +62,7 @@ class MineralsSchema(BaseSchema):
 
 
 class OtherSchema(BaseSchema):
-    items: list[NutrientBase] = []
+    oths: list[NutrientBase] = []
 
 
 # Главная схема продукта
