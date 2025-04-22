@@ -231,3 +231,30 @@ main {
         border-radius: 8px;
         text-align: center;
     }
+
+    .text-moss { color: var(--moss); }
+    .text-sage { color: var(--sage); }
+    .text-earth { color: var(--earth); }
+    .subcategory-title {
+        color: var(--stone);
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+    .micro-card {
+        background: rgba(var(--sky-rgb), 0.1);
+        padding: 1rem;
+        border-radius: 8px;
+        transition: transform 0.2s;
+    }
+    .micro-card:hover {
+        transform: translateY(-2px);
+    }
+    .main-title {
+        text-transform: capitalize;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+    }
+    .value-unit {
+        font-size: 0.9em;
+        color: var(--stone);
+    }
