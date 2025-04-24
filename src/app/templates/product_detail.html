@@ -127,6 +127,15 @@
             </div>
             {% endif %}
 
+            <!-- Вода -->
+            {% if product.water %}
+            <div class="nutrient-section">
+                <h2 class="section-title">
+                    Вода <span class="nutrient-value">{{ product.water.total | default(0) | round(2) }} г</span>
+                </h2>
+            </div>
+            {% endif %}
+
             <!-- Витамины -->
             {% if product.vitamins %}
             <div class="nutrient-section">
