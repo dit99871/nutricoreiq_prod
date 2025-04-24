@@ -48,6 +48,10 @@ class CarbsSchema(BaseSchema):
     breakdown: CarbsDetail = CarbsDetail()
 
 
+class WaterSchema(BaseSchema):
+    total: float = 0.0
+
+
 class VitaminsSchema(BaseSchema):
     vits: list[NutrientBase] = []
 
@@ -74,6 +78,7 @@ class ProductDetailResponse(BaseSchema):
     proteins: ProteinsSchema = ProteinsSchema()
     fats: FatsSchema = FatsSchema()
     carbs: CarbsSchema = CarbsSchema()
+    water: WaterSchema = WaterSchema()
 
     vitamins: VitaminsSchema = VitaminsSchema()
     vitamin_like: VitaminLikeSchema = VitaminLikeSchema()
