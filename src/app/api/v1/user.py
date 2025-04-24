@@ -40,7 +40,7 @@ async def read_current_user(
     response_model=UserAccount,
     response_model_exclude_unset=True,
 )
-async def get_account(
+async def get_profile(
     request: Request,
     current_user: Annotated[UserResponse, Depends(get_current_auth_user)],
     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
@@ -65,6 +65,9 @@ async def get_account(
             context={
                 "csp_nonce": generate_csp_nonce(),
                 "user": user,
+                "is_filled": all(
+                    (user.gender, user.age, user.weight, user.height, user.kfa)
+                ),
             },
         )
     except HTTPException as e:
