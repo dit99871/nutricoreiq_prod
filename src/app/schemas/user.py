@@ -25,7 +25,8 @@ class UserAccount(UserBase):
     age: int | None
     weight: float | None
     height: float | None
-    kfa: int | None
+    kfa: str | None
+    goal: str = Literal["Снижение веса", "Увеличение веса", "Поддержание веса"] | None
     created_at: str
 
 
@@ -35,5 +36,6 @@ class UserProfile(BaseSchema):
     weight: float = Field(gt=0)
     height: float = Field(gt=0)
     kfa: str = Literal["1", "2", "3", "4", "5"]
+    goal: str = Literal["Снижение веса", "Увеличение веса", "Поддержание веса"]
 
     model_config = ConfigDict(strict=True)
