@@ -24,11 +24,18 @@ def map_to_schema(product: Product) -> ProductDetailResponse:
         amount = assoc.amount
         unit = nutrient.unit
 
-        # Обработка белков и аминокислот
+        # Обработка макронутриентов
         if nutrient.category == NutrientCategory.MACRO:
             if "белки" in nutrient.name.lower():
                 response.proteins.total = amount
+            elif "жиры" in nutrient.name.lower():
+                response.fats.total = amount
+            elif "углеводы" in nutrient.name.lower():
+                response.carbs.total = amount
+            elif "вода" in nutrient.name.lower():
+                response.water.total = amount
 
+        # Обработка аминокислот
         elif nutrient.category == NutrientCategory.ESSENTIAL_AMINO:
             response.proteins.amino_acids.essential += amount
 
@@ -39,10 +46,6 @@ def map_to_schema(product: Product) -> ProductDetailResponse:
             response.proteins.amino_acids.nonessential += amount
 
         # Обработка жиров
-        elif nutrient.category == NutrientCategory.FATS:
-            if "жиры" in nutrient.name.lower():
-                response.fats.total = amount
-
         elif nutrient.category == NutrientCategory.SATURATED_FATS:
             if "холестерин" in nutrient.name.lower():
                 response.fats.breakdown.cholesterol = amount
@@ -62,9 +65,7 @@ def map_to_schema(product: Product) -> ProductDetailResponse:
 
         # Обработка углеводов
         elif nutrient.category == NutrientCategory.CARBS:
-            if "углеводы" in nutrient.name.lower():
-                response.carbs.total = amount
-            elif "клетчатка" in nutrient.name.lower():
+            if "клетчатка" in nutrient.name.lower():
                 response.carbs.breakdown.fiber = amount
             elif "сахар" in nutrient.name.lower():
                 response.carbs.breakdown.sugar = amount
