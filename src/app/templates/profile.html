@@ -71,14 +71,20 @@
             <div class="detail-item">
                 <strong>Вес:</strong>
                 <span id="weight-field">
-                    {{ user.age|default('', true) }}
+                    {{ user.weight|default('', true) }}
                 </span>
             </div>
         </div>
 
-        <!-- Блок статистики -->
+        <!-- Блок аналитики -->
         <div class="detail-card">
-            <h4>Статистика</h4>
+            <h4>Аналитика</h4>
+            <div class="detail-item">
+                <strong>Ваша цель:</strong>
+                <span id="goal-field">
+                    {% if user.goal %}{{ user.goal }}{% else %}Не указана{% endif %}
+                </span>
+            </div>
             <div class="detail-item">
                 <strong>Уровень физической активности:</strong>
                 <span id="kfa-field">
@@ -143,6 +149,18 @@
                         <input type="number" class="form-control" id="editWeight" name="weight"
                                value="{{ user.weight if user.weight is not none }}" min="20" max="300"
                                placeholder="Введите свой вес">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editGoal" class="form-label">Ваша цель</label>
+                        <select class="form-select" id="editGoal" name="goal">
+                            <option value="">{% if user.goal %}{{ user.goal }}{% else %}Не указана{% endif %}</option>
+                            {% for g in ["Снижение веса", "Увеличение веса", "Поддержание веса"] %}
+                            <option value="{{ g }}" {{ 'selected' if user.goal == g }}>
+                                {{ g }}
+                            </option>
+                            {% endfor %}
+                        </select>
                     </div>
 
                     <div class="mb-3">
