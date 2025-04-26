@@ -258,3 +258,180 @@ main {
         font-size: 0.9em;
         color: var(--stone);
     }
+
+/* Добавить к существующим стилям */
+.search-container {
+    position: relative;
+    max-width: 600px;
+    margin: 2rem auto;
+}
+
+#searchResults {
+    position: absolute;
+    width: 100%;
+    background: var(--sand);
+    border: 2px solid var(--sage);
+    border-radius: 8px;
+    margin-top: 0.5rem;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.suggestions-list {
+    padding: 0.5rem;
+}
+
+.suggestion-item {
+    padding: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-bottom: 1px solid rgba(var(--sage-rgb), 0.2);
+}
+
+.suggestion-item:hover {
+    background: rgba(var(--moss-rgb), 0.1);
+}
+
+.suggestion-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.suggestion-calories {
+    color: var(--clay);
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
+}
+
+.confirmation-dialog {
+    padding: 1.5rem;
+    text-align: center;
+    color: var(--earth);
+}
+
+.dialog-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.btn-confirm {
+    background: var(--moss);
+    color: white;
+}
+
+.btn-cancel {
+    border: 1px solid var(--moss);
+    color: var(--moss);
+}
+
+/* Dark mode */
+.dark-mode #searchResults {
+    background: rgba(var(--stone-rgb), 0.1);
+    border-color: var(--stone);
+}
+
+.dark-mode .suggestion-item {
+    border-color: rgba(var(--stone-rgb), 0.3);
+}
+
+.dark-mode .suggestion-item:hover {
+    background: rgba(var(--sky-rgb), 0.1);
+}
+
+/* Добавить к существующим стилям */
+.search-card {
+    background-color: var(--sand) !important;
+    border: 2px solid var(--sage);
+    border-radius: 12px;
+}
+
+.main-title {
+    color: var(--earth);
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 1rem;
+}
+
+.tagline {
+    color: var(--stone);
+    font-size: 1.1rem;
+}
+
+.search-input {
+    border: 2px solid var(--sage);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.search-input:focus {
+    border-color: var(--moss);
+    box-shadow: 0 0 0 3px rgba(var(--moss-rgb), 0.2);
+}
+
+.search-btn {
+    background-color: var(--moss);
+    border-color: var(--moss);
+    padding: 0.75rem 2rem;
+    transition: transform 0.2s ease;
+}
+
+.search-btn:hover {
+    background-color: var(--sage);
+    border-color: var(--sage);
+    transform: translateY(-1px);
+}
+
+/* Темная тема */
+.dark-mode .search-card {
+    background-color: rgba(var(--stone-rgb), 0.1) !important;
+    border-color: var(--stone);
+}
+
+.dark-mode .search-input {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: var(--stone);
+    color: var(--text-dark);
+}
+
+.dark-mode .search-input::placeholder {
+    color: var(--stone);
+}
+
+.dark-mode .search-btn {
+    background-color: var(--sage);
+    border-color: var(--sage);
+}
+
+#searchResults {
+    position: absolute;
+    width: 100%;
+    top: calc(100% + 0.5rem);
+    z-index: 1060;
+    background: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+    color: var(--bs-body-color); /* Добавляем наследование цвета текста */
+    border-radius: 0.375rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    display: none;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.suggestion-item {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--bs-border-color);
+    background: inherit; /* Наследуем фон родителя */
+    color: inherit; /* Наследуем цвет текста */
+}
+
+.suggestion-item:hover {
+    background-color: var(--bs-tertiary-bg);
+}
