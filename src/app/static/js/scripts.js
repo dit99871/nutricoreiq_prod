@@ -429,13 +429,129 @@ document.addEventListener("DOMContentLoaded", function() {
             .replace(/'/g, "&#039;");
     }
 
-    // 10. Основная инициализация
+        // 10. Поиск продуктов
+    function initProductSearch() {
+        const searchForm = document.getElementById('searchProductForm');
+        const searchInput = document.getElementById('productQuery');
+        const searchResults = document.getElementById('searchResults');
+        const searchError = document.getElementById('searchError');
+        let abortController = null;
+
+        if (!searchForm || !searchInput) return;
+
+        const debouncedSearch = _.debounce(async (query) => {
+            if (query.length < 2) {
+                searchResults.innerHTML = '';
+                return;
+            }
+
+            try {
+                abortController?.abort();
+                abortController = new AbortController();
+
+                const response = await secureFetch(
+                    `/api/v1/products/search?query=${encodeURIComponent(query)}`,
+                    { signal: abortController.signal }
+                );
+
+                updateResults(response);
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    showError('Ошибка поиска: ' + error.message, 'searchError');
+                }
+            }
+        }, 300);
+
+        const updateResults = (data) => {
+            searchResults.innerHTML = '';
+
+            if (data.exact_match) {
+                window.location.href = `/products/${data.exact_match.id}`;
+                return;
+            }
+
+            if (data.suggestions?.length) {
+                const list = document.createElement('div');
+                list.className = 'suggestions-list';
+
+                data.suggestions.forEach(product => {
+                    const item = document.createElement('div');
+                    item.className = 'suggestion-item';
+                    item.innerHTML = `
+                        <div class="suggestion-content">
+                            <div class="suggestion-title">${escapeHtml(product.title)}</div>
+                            ${product.brand ?
+                                `<div class="suggestion-brand">${escapeHtml(product.brand)}</div>` : ''}
+                        </div>
+                    `;
+                    item.addEventListener('click', () => {
+                        window.location.href = `/products/${product.id}`;
+                    });
+                    list.appendChild(item);
+                });
+
+                searchResults.appendChild(list);
+            } else if (data.needs_confirmation) {
+                showConfirmationDialog();
+            }
+        };
+
+        const showConfirmationDialog = () => {
+            searchResults.innerHTML = `
+                <div class="confirmation-dialog">
+                    <p>Продукт не найден. Добавить в список на модерацию?</p>
+                    <div class="dialog-actions">
+                        <button class="btn btn-primary btn-confirm">Да</button>
+                        <button class="btn btn-outline-secondary btn-cancel">Нет</button>
+                    </div>
+                </div>
+            `;
+
+            searchResults.querySelector('.btn-confirm').addEventListener('click', async () => {
+                try {
+                    await secureFetch('/api/v1/products/pending', {
+                        method: 'POST',
+                        body: JSON.stringify({ name: searchInput.value.trim() })
+                    });
+                    showSuccess('Продукт отправлен на модерацию', 'globalSuccess');
+                    searchInput.value = '';
+                    searchResults.innerHTML = '';
+                } catch (error) {
+                    showError(error.message, 'searchError');
+                }
+            });
+
+            searchResults.querySelector('.btn-cancel').addEventListener('click', () => {
+                searchResults.innerHTML = '';
+            });
+        };
+
+        // Закрытие результатов при клике вне области
+        document.addEventListener('click', (e) => {
+            if (!searchForm.contains(e.target)) {
+                searchResults.innerHTML = '';
+            }
+        });
+
+        searchInput.addEventListener('input', (e) => {
+            searchError.classList.add('d-none');
+            debouncedSearch(e.target.value.trim());
+        });
+
+        searchForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            debouncedSearch(searchInput.value.trim());
+        });
+    }
+
+    // 11. Основная инициализация
     function initAll() {
         initTheme();
         initPasswordToggles();
         initLoginForm();
         initRegisterForm();
         initProfileModals();
+        initProductSearch();
     }
 
     // Запускаем инициализацию
