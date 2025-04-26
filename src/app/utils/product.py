@@ -35,6 +35,9 @@ def map_to_schema(product: Product) -> ProductDetailResponse:
             elif "вода" in nutrient.name.lower():
                 response.water.total = amount
 
+        elif nutrient.category == NutrientCategory.ENERGY_VALUE:
+            response.energy_value = amount
+
         # Обработка аминокислот
         elif nutrient.category == NutrientCategory.ESSENTIAL_AMINO:
             response.proteins.amino_acids.essential += amount
