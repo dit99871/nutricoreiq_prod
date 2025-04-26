@@ -127,11 +127,20 @@
             </div>
             {% endif %}
 
+            <!-- Энергетическая ценность -->
+            {% if product.energy_value %}
+            <div class="nutrient-section">
+                <h2 class="section-title">
+                    Энергетическая ценность <span class="nutrient-value">{{ product.energy_value | default(0) | round(2) }} ккал</span>
+                </h2>
+            </div>
+            {% endif %}
+
             <!-- Вода -->
             {% if product.water %}
             <div class="nutrient-section">
                 <h2 class="section-title">
-                    Вода <span class="nutrient-value">{{ product.water.total | default(0) | round(2) }} г</span>
+                    Вода <span class="nutrient-value">{{ product.water | default(0) | round(2) }} г</span>
                 </h2>
             </div>
             {% endif %}
