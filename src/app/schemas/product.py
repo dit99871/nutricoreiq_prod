@@ -48,10 +48,6 @@ class CarbsSchema(BaseSchema):
     breakdown: CarbsDetail = CarbsDetail()
 
 
-class WaterSchema(BaseSchema):
-    total: float = 0.0
-
-
 class VitaminsSchema(BaseSchema):
     vits: list[NutrientBase] = []
 
@@ -78,9 +74,27 @@ class ProductDetailResponse(BaseSchema):
     proteins: ProteinsSchema = ProteinsSchema()
     fats: FatsSchema = FatsSchema()
     carbs: CarbsSchema = CarbsSchema()
-    water: WaterSchema = WaterSchema()
+    energy_value: float = 0.0
+    water: float = 0.0
 
     vitamins: VitaminsSchema = VitaminsSchema()
     vitamin_like: VitaminLikeSchema = VitaminLikeSchema()
     minerals: MineralsSchema = MineralsSchema()
     other: OtherSchema = OtherSchema()
+
+
+class ProductSuggestion(BaseSchema):
+    id: int
+    title: str
+    group_name: str
+
+
+class PendingProductCreate(BaseSchema):
+    name: str
+
+
+class UnifiedProductResponse(BaseSchema):
+    exact_match: ProductDetailResponse | None = None
+    suggestions: list[ProductSuggestion] = []
+    needs_confirmation: bool = False
+    pending_added: bool = False
