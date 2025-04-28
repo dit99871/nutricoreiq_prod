@@ -1,6 +1,9 @@
+from core.logger import get_logger
 from db.models import Product
 from db.models.nutrient import NutrientCategory
 from schemas.product import NutrientBase, ProductDetailResponse
+
+log = get_logger("product_utils")
 
 
 def map_to_schema(product: Product) -> ProductDetailResponse:
@@ -18,7 +21,7 @@ def map_to_schema(product: Product) -> ProductDetailResponse:
         title=product.title,
         group_name=product.product_groups.name,
     )
-
+    log.info("Mapping product %s to schema", product.title)
     for assoc in product.nutrient_associations:
         nutrient = assoc.nutrients
         amount = assoc.amount
@@ -33,7 +36,7 @@ def map_to_schema(product: Product) -> ProductDetailResponse:
             elif "углеводы" in nutrient.name.lower():
                 response.carbs.total = amount
             elif "вода" in nutrient.name.lower():
-                response.water.total = amount
+                response.water = amount
 
         elif nutrient.category == NutrientCategory.ENERGY_VALUE:
             response.energy_value = amount
