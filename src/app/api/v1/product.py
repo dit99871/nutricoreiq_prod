@@ -4,12 +4,15 @@ from fastapi import APIRouter, Depends, Request, Query, HTTPException, status
 from fastapi.responses import ORJSONResponse, HTMLResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from services.pending_product import check_pending_exists, create_pending_product
+from core.logger import get_logger
 from db import db_helper
-from schemas.product import UnifiedProductResponse, PendingProductCreate
+from services.pending_product import check_pending_exists, create_pending_product
 from services.product import handle_product_search, handle_product_details
+from schemas.product import UnifiedProductResponse, PendingProductCreate
 from utils.security import generate_csp_nonce
 from utils.templates import templates
+
+log = get_logger("product_api")
 
 router = APIRouter(
     tags=["Product"],
@@ -17,7 +20,6 @@ router = APIRouter(
 )
 
 
-# routers/products.py
 @router.get("/search", response_model=UnifiedProductResponse)
 async def search_products(
     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
@@ -49,7 +51,7 @@ async def get_product_details(
     Retrieves the details of a product.
 
     This endpoint retrieves the details of a product and renders its information
-    using a HTML template.
+    using an HTML template.
 
     :param request: The incoming request object.
     :param product_id: The ID of the product to retrieve.
@@ -57,6 +59,7 @@ async def get_product_details(
     :return: A rendered HTML template with the product details.
     """
     product_data = await handle_product_details(session, product_id)
+    log.info("Rendering template")
     return templates.TemplateResponse(
         request=request,
         name="product_detail.html",
