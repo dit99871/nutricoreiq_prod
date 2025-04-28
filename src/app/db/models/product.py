@@ -12,14 +12,21 @@ class Product(IntIdPkMixin, Base):
 
     search_vector: Mapped[TSVECTOR] = mapped_column(TSVECTOR())
 
-    product_groups: Mapped["ProductGroup"] = relationship(back_populates="products")
+    product_groups: Mapped["ProductGroup"] = relationship(
+        back_populates="products", lazy="joined"
+    )
     nutrient_associations: Mapped[list["ProductNutrient"]] = relationship(
-        back_populates="products"
+        back_populates="products",
+        lazy="selectin",
     )
 
     # Индексы
     __table_args__ = (
-        Index("idx_product_search_vector", search_vector, postgresql_using="gin"),
+        Index(
+            "idx_product_search_vector",
+            search_vector,
+            postgresql_using="gin",
+        ),
         Index(
             "idx_product_title_trgm",
             title,
