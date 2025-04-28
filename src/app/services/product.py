@@ -1,8 +1,9 @@
 from fastapi import HTTPException, status
 from sqlalchemy import select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 
+from core.logger import get_logger
 from db.models import Product, PendingProduct, ProductNutrient
 from schemas.product import (
     ProductDetailResponse,
@@ -10,6 +11,8 @@ from schemas.product import (
     UnifiedProductResponse,
 )
 from utils.product import map_to_schema
+
+log = get_logger("product_services")
 
 
 async def handle_product_search(
@@ -24,22 +27,31 @@ async def handle_product_search(
         # Точное совпадение с явной загрузкой
         exact_match = await session.execute(
             select(Product)
-            .options(joinedload(Product.product_groups))
+            .options(
+                selectinload(Product.product_groups),
+                selectinload(Product.nutrient_associations).selectinload(
+                    ProductNutrient.nutrients
+                ),
+            )
             .where(func.lower(Product.title) == query)
         )
         product = exact_match.unique().scalar_one_or_none()
 
         if product:
+            log.info("Точное совпадение: %s", product.title)
             response.exact_match = map_to_schema(product)
             return response
 
         # Поиск предложений
         if not confirmed:
+            log.info("Поиск предложений: %s", query)
             suggestions = await session.execute(
                 select(Product)
                 .options(
-                    joinedload(Product.product_groups),
-                    joinedload(Product.nutrient_associations),
+                    selectinload(Product.product_groups),
+                    selectinload(Product.nutrient_associations).selectinload(
+                        ProductNutrient.nutrients
+                    ),
                 )
                 .where(
                     or_(
@@ -60,6 +72,7 @@ async def handle_product_search(
             suggestions = suggestions.unique().scalars().all()
 
             if suggestions:
+                log.info("Загрузка предложений: %s", query)
                 response.suggestions = [
                     ProductSuggestion(
                         id=p.id, title=p.title, group_name=p.product_groups.name
@@ -74,14 +87,19 @@ async def handle_product_search(
                 select(PendingProduct).where(func.lower(PendingProduct.name) == query)
             )
             if not exists.scalar():
+                log.info("Добавление в очередь: %s", query)
                 new_pending = PendingProduct(name=query)
                 session.add(new_pending)
                 await session.commit()
                 response.pending_added = True
 
     except Exception as e:
+        log.error("Произошла ошибка во время поиска продукта: %s", e)
         await session.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e),
+        )
 
     return response
 
@@ -89,22 +107,31 @@ async def handle_product_search(
 async def handle_product_details(
     session: AsyncSession, product_id: int
 ) -> ProductDetailResponse:
-    product = await session.execute(
-        select(Product)
-        .options(
-            joinedload(Product.product_groups),
-            joinedload(Product.nutrient_associations).joinedload(
-                ProductNutrient.nutrients
-            ),
+    try:
+        log.info("Start product detail handler")
+        product = await session.execute(
+            select(Product)
+            .options(
+                joinedload(Product.product_groups),
+                joinedload(Product.nutrient_associations).joinedload(
+                    ProductNutrient.nutrients
+                ),
+            )
+            .where(Product.id == product_id)
         )
-        .where(Product.id == product_id)
-    )
-    product = product.scalar()
+        product = product.scalar()
 
-    if not product:
+        if not product:
+            log.error("Product not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Продукт не найден",
+            )
+
+        return map_to_schema(product)
+
+    except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Продукт не найден",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e),
         )
-
-    return map_to_schema(product)
