@@ -30,4 +30,4 @@ def calculate_tdee(user: UserAccount) -> float:
     :param user: A User object
     :return: The calculated TDEE
     """
-    return calculate_bmr(user) * user.kfa
+    return calculate_bmr(user) * int(user.kfa)
