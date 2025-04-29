@@ -4,98 +4,126 @@
 
 {% block user_buttons %}
     <!-- Кастомные кнопки для страницы профиля -->
-    <a href="/" class="btn btn-outline-primary">Главная</a>
+    <a href="/" class="btn btn-outline">Главная</a>
     <a href="/api/v1/auth/logout" class="btn btn-outline-danger">Выйти</a>
 {% endblock %}
 
+
 {% block content %}
 <div class="container">
-    <!-- Сообщения об ошибках и успехе -->
-    <div id="profile-error" class="alert alert-danger mt-3 d-none"></div>
-    <div id="profile-success" class="alert alert-success mt-3 d-none"></div>
+    <!-- Уведомления -->
+    <div id="profile-error" class="alert alert-danger d-none"></div>
+    <div id="profile-success" class="alert alert-success d-none"></div>
 
     <!-- Основная карточка профиля -->
     <div class="profile-card">
-        <div class="profile-header d-flex justify-content-between align-items-start">
-            <div class="d-flex align-items-center">
+        <!-- Заголовок профиля -->
+        <div class="profile-header">
+            <div class="d-flex flex-column flex-md-row align-items-md-center gap-4">
+                <!-- Аватар -->
                 <div class="profile-avatar">
                     {{ user.username[0]|upper }}
                 </div>
-                <div class="profile-info">
-                    <h2>{{ user.username }}</h2>
-                    <p class="text-muted">{{ user.email }}</p>
+
+                <!-- Информация -->
+                <div class="profile-info flex-grow-1">
+                    <h1 class="mb-2">{{ user.username }}</h1>
+                    <p class="lead text-muted mb-0">{{ user.email }}</p>
+                </div>
+
+                <!-- Кнопки действий -->
+                <div class="action-buttons mt-3 mt-md-0">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                        <i class="bi bi-pencil"></i> Редактировать
+                    </button>
+                    <button type="button" class="btn btn-outline" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                        <i class="bi bi-shield-lock"></i> Сменить пароль
+                    </button>
                 </div>
             </div>
-
-        <div class="action-buttons">
-            <button type="button" class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#editProfileModal">
-                <i class="bi bi-pencil"></i> Редактировать профиль
-            </button>
-            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
-                <i class="bi bi-shield-lock"></i> Сменить пароль
-            </button>
-        </div>
-    </div>
-
-    <div class="profile-details">
-        <!-- Блок основной информации -->
-        <div class="detail-card">
-            <h4>Основная информация</h4>
-            <div class="detail-item">
-                <strong>Пол:</strong>
-                <span id="gender-field">
-                    {% if user.gender == 'male' %}
-                        Мужской
-                    {% elif user.gender == 'female' %}
-                        Женский
-                    {% else %}
-                        Не указан
-                    {% endif %}
-                </span>
-            </div>
-            <div class="detail-item">
-                <strong>Возраст:</strong>
-                <span id="age-field">{{ user.age|default('', true) }}</span>
-            </div>
         </div>
 
-        <!-- Блок физических параметров -->
-        <div class="detail-card">
-            <h4>Физические параметры</h4>
-            <div class="detail-item">
-                <strong>Рост:</strong>
-                <span id="height-field">
-                    {{ user.height|default('', true) }}
-                </span>
-            </div>
-            <div class="detail-item">
-                <strong>Вес:</strong>
-                <span id="weight-field">
-                    {{ user.weight|default('', true) }}
-                </span>
-            </div>
-        </div>
+        <!-- Детали профиля -->
+        <div class="profile-details mt-5">
+            <div class="row g-4">
+                <!-- Основная информация -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="detail-card h-100">
+                        <h3 class="mb-4 text-moss"><i class="bi bi-person"></i> Основное</h3>
+                        <div class="detail-item">
+                            <div class="d-flex justify-content-between">
+                                <span>Пол:</span>
+                                <span id="gender-field" class="fw-medium">
+                                    {% if user.gender == 'male' %}Мужской
+                                    {% elif user.gender == 'female' %}Женский
+                                    {% else %}Не указан{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="detail-item mt-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Возраст:</span>
+                                <span id="age-field" class="fw-medium">
+                                    {{ user.age|default('—', true) }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-        <!-- Блок аналитики -->
-        <div class="detail-card">
-            <h4>Аналитика</h4>
-            <div class="detail-item">
-                <strong>Ваша цель:</strong>
-                <span id="goal-field">
-                    {% if user.goal %}{{ user.goal }}{% else %}Не указана{% endif %}
-                </span>
-            </div>
-            <div class="detail-item">
-                <strong>Уровень физической активности:</strong>
-                <span id="kfa-field">
-                    {% if user.kfa %}{{ user.kfa }}-й уровень{% else %}Не указан{% endif %}
-                </span>
-            </div>
-            <div class="detail-item">
-                <strong>Дата регистрации:</strong>
-                <span id="registration-date-field">
-                    {{ user.created_at|default('Неизвестно', true) }}
-                </span>
+                <!-- Физические параметры -->
+                <div class="col-md-6 col-lg-4">
+                    <div class="detail-card h-100">
+                        <h3 class="mb-4 text-sage"><i class="bi bi-rulers"></i> Параметры</h3>
+                        <div class="detail-item">
+                            <div class="d-flex justify-content-between">
+                                <span>Рост (см):</span>
+                                <span id="height-field" class="fw-medium">
+                                    {{ user.height|default('—', true) }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="detail-item mt-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Вес (кг):</span>
+                                <span id="weight-field" class="fw-medium">
+                                    {{ user.weight|default('—', true) }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Аналитика -->
+                <div class="col-lg-4">
+                    <div class="detail-card h-100">
+                        <h3 class="mb-4 text-clay"><i class="bi bi-graph-up"></i> Аналитика</h3>
+                        <div class="detail-item">
+                            <div class="d-flex justify-content-between">
+                                <span>Цель:</span>
+                                <span id="goal-field" class="fw-medium">
+                                    {% if user.goal %}{{ user.goal }}{% else %}—{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="detail-item mt-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Активность:</span>
+                                <span id="kfa-field" class="fw-medium">
+                                    {% if user.kfa %}{{ user.kfa }} уровень{% else %}—{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="detail-item mt-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Регистрация:</span>
+                                <span id="registration-date-field" class="fw-medium">
+                                    {{ user.created_at|default('—', true) }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -112,7 +140,7 @@
             <div class="modal-body">
                 <form id="editProfileForm">
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
-                    
+
                     <div class="mb-3">
                         <label for="editGender" class="form-label">Пол</label>
                         <select class="form-select" id="editGender" name="gender">
@@ -129,21 +157,21 @@
                         </select>
                         <div id="editGenderError" class="invalid-feedback d-none"></div>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label for="editAge" class="form-label">Возраст</label>
-                        <input type="number" class="form-control" id="editAge" name="age" 
+                        <input type="number" class="form-control" id="editAge" name="age"
                                value="{{ user.age if user.age is not none }}" min="18" max="120"
                                placeholder="Введите свой возраст">
                     </div>
-                    
+
                     <div class="mb-3">
                         <label for="editHeight" class="form-label">Рост (см)</label>
                         <input type="number" class="form-control" id="editHeight" name="height"
                                value="{{ user.height if user.height is not none }}" min="50" max="250"
                                placeholder="Введите свой рост">
                     </div>
-                    
+
                     <div class="mb-3">
                         <label for="editWeight" class="form-label">Вес (кг)</label>
                         <input type="number" class="form-control" id="editWeight" name="weight"
@@ -174,13 +202,13 @@
                             {% endfor %}
                         </select>
                     </div>
-                    
+
                     <div id="editProfileError" class="alert alert-danger d-none"></div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" class="btn btn-primary" id="saveProfileBtn">Сохранить изменения</button>
+                <button type="button" class="btn btn-register" id="saveProfileBtn">Сохранить изменения</button>
             </div>
         </div>
     </div>
@@ -197,44 +225,44 @@
             <div class="modal-body">
                 <form id="changePasswordForm">
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
-                    
+
                     <div class="mb-3">
                         <label for="currentPassword" class="form-label">Текущий пароль</label>
                         <div class="input-group">
                             <input type="password" class="form-control" id="currentPassword" name="current_password" required>
-                            <button class="btn btn-outline-secondary toggle-password" type="button" data-target="currentPassword">
-                                <i class="bi bi-eye"></i>
+                            <button type="button" class="toggle-password" data-target="password">
+                                    👁️
                             </button>
                         </div>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label for="newPassword" class="form-label">Новый пароль</label>
                         <div class="input-group">
                             <input type="password" class="form-control" id="newPassword" name="new_password" required minlength="8">
-                            <button class="btn btn-outline-secondary toggle-password" type="button" data-target="newPassword">
-                                <i class="bi bi-eye"></i>
+                            <button type="button" class="toggle-password" data-target="password">
+                                    👁️
                             </button>
                         </div>
                         <div class="form-text">Минимум 8 символов</div>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label for="confirmPassword" class="form-label">Подтвердите новый пароль</label>
                         <div class="input-group">
                             <input type="password" class="form-control" id="confirmPassword" name="confirm_password" required minlength="8">
-                            <button class="btn btn-outline-secondary toggle-password" type="button" data-target="confirmPassword">
-                                <i class="bi bi-eye"></i>
+                            <button type="button" class="toggle-password" data-target="password">
+                                    👁️
                             </button>
                         </div>
                     </div>
-                    
+
                     <div id="changePasswordError" class="alert alert-danger d-none"></div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" class="btn btn-primary" id="savePasswordBtn">Изменить пароль</button>
+                <button type="button" class="btn btn-register" id="savePasswordBtn">Изменить пароль</button>
             </div>
         </div>
     </div>
