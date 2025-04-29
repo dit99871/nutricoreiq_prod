@@ -5,21 +5,36 @@ document.addEventListener("DOMContentLoaded", function() {
         return;
     }
 
-    // 1. Инициализация переключателей пароля
-    function initPasswordToggles() {
-        document.addEventListener('click', function(e) {
+    // 1. Инициализация темы (объединенная версия)
+    const initTheme = () => {
+        const savedTheme = localStorage.getItem('theme') ||
+            (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.body.classList.toggle('dark-mode', savedTheme === 'dark');
+
+        const updateThemeButtons = (isDark) => {
+            document.querySelectorAll('.theme-toggle').forEach(btn => {
+                btn.innerHTML = isDark ? '☀️' : '🌙';
+                btn.setAttribute('title', isDark ? 'Светлая тема' : 'Темная тема');
+                btn.setAttribute('aria-label', isDark ? 'Переключить на светлую тему' : 'Переключить на темную тему');
+            });
+        };
+
+        updateThemeButtons(savedTheme === 'dark');
+    };
+
+    // 2. Переключатели пароля (улучшенная версия)
+    const initPasswordToggles = () => {
+        document.addEventListener('click', e => {
             const toggleBtn = e.target.closest('.toggle-password');
             if (toggleBtn) {
-                const targetId = toggleBtn.getAttribute('data-target');
-                const input = document.getElementById(targetId);
+                const input = document.getElementById(toggleBtn.dataset.target);
                 if (input) {
                     const isVisible = input.type === 'password';
                     input.type = isVisible ? 'text' : 'password';
 
                     const icon = toggleBtn.querySelector('i');
                     if (icon) {
-                        icon.classList.toggle('bi-eye', isVisible);
-                        icon.classList.toggle('bi-eye-slash', !isVisible);
+                        icon.className = isVisible ? 'bi bi-eye' : 'bi bi-eye-slash';
                     }
 
                     toggleBtn.setAttribute('aria-pressed', isVisible);
@@ -28,39 +43,15 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
             }
         });
-    }
+    };
 
-    // 2. Инициализация темы
-    function initTheme() {
-        const savedTheme = localStorage.getItem("theme") ||
-            (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-        document.body.classList.toggle("dark-mode", savedTheme === "dark");
-
-        function updateThemeButtons(isDark) {
-            document.querySelectorAll('.theme-toggle').forEach(btn => {
-                btn.innerHTML = isDark ? '☀️' : '🌙';
-                btn.setAttribute('title', isDark ? 'Светлая тема' : 'Темная тема');
-            });
-        }
-
-        document.addEventListener('click', function(e) {
-            if (e.target.closest('.theme-toggle')) {
-                const isDark = document.body.classList.toggle("dark-mode");
-                localStorage.setItem("theme", isDark ? "dark" : "light");
-                updateThemeButtons(isDark);
-            }
-        });
-
-        updateThemeButtons(savedTheme === "dark");
-    }
-
-    // 3. Универсальная fetch-функция
-    async function secureFetch(url, options = {}) {
+    // 3. Универсальный fetch
+    const secureFetch = async (url, options = {}) => {
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
         const headers = {
             'Accept': 'application/json',
             ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
-            ...(options.headers || {})
+            ...options.headers || {}
         };
 
         try {
@@ -95,25 +86,25 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
-    // 4. Функции для работы с UI
-    function showError(message, elementId) {
-        const errorElement = document.getElementById(elementId);
-        if (errorElement) {
-            errorElement.textContent = message;
-            errorElement.classList.remove('d-none');
+    // 4. Функции для работы с UI (объединенная версия)
+    const showError = (containerId, message) => {
+        const container = document.getElementById(containerId);
+        if (container) {
+            container.textContent = message;
+            container.classList.remove('d-none');
         }
-    }
+    };
 
-    function showSuccess(message, elementId) {
+    const showSuccess = (message, elementId = 'globalSuccess') => {
         const successElement = document.getElementById(elementId);
         if (successElement) {
-            successElement.textContent = message;
+            successElement.querySelector('span').textContent = message;
             successElement.classList.remove('d-none');
             setTimeout(() => successElement.classList.add('d-none'), 3000);
         }
-    }
+    };
 
-    function clearFormErrors(formId) {
+    const clearFormErrors = (formId) => {
         const form = document.getElementById(formId);
         if (form) {
             form.querySelectorAll('.invalid-feedback').forEach(el => {
@@ -124,10 +115,128 @@ document.addEventListener("DOMContentLoaded", function() {
                 el.classList.remove('is-invalid');
             });
         }
-    }
+    };
 
-    // 5. Обработчики модальных окон профиля
-    function initProfileModals() {
+    // 5. Обработчики форм (объединенная версия)
+    const initLoginForm = () => {
+        const form = document.getElementById('loginForm');
+        if (!form) return;
+
+        form.addEventListener('submit', async e => {
+            e.preventDefault();
+            const btn = form.querySelector('button[type="submit"]');
+            const originalText = btn.textContent;
+
+            btn.disabled = true;
+            btn.textContent = "Вход...";
+            btn.setAttribute('aria-busy', 'true');
+
+            clearFormErrors('loginForm');
+            showError('', 'loginError');
+
+            try {
+                const formData = new FormData(form);
+                await secureFetch('/api/v1/auth/login', {
+                    method: 'POST',
+                    body: new URLSearchParams(formData),
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    }
+                });
+
+                const userData = await secureFetch("/api/v1/user/me");
+                updateUIForAuthenticatedUser(userData);
+
+                const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+                if (modal) {
+                    modal.hide();
+                    modal._element.addEventListener('hidden.bs.modal', () => {
+                        showSuccess(`Добро пожаловать, ${userData.username}!`);
+                    }, {once: true});
+                }
+
+                window.location.reload();
+            } catch (error) {
+                console.error("Ошибка входа:", error);
+                showError('loginError', error.message || "Неверное имя пользователя или пароль");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+                btn.removeAttribute('aria-busy');
+            }
+        });
+    };
+
+    const initRegisterForm = () => {
+        const form = document.getElementById('registerForm');
+        if (!form) return;
+
+        form.addEventListener('submit', async e => {
+            e.preventDefault();
+            const btn = form.querySelector('button[type="submit"]');
+            const originalText = btn.textContent;
+
+            btn.disabled = true;
+            btn.textContent = "Регистрация...";
+
+            clearFormErrors('registerForm');
+            showError('', 'registerError');
+
+            const password = form.password.value;
+            const confirmPassword = form.confirm_password.value;
+
+            if (password !== confirmPassword) {
+                showError('registerError', 'Пароли не совпадают');
+                btn.disabled = false;
+                btn.textContent = originalText;
+                return;
+            }
+
+            if (password.length < 8) {
+                showError('registerError', 'Пароль должен содержать минимум 8 символов');
+                btn.disabled = false;
+                btn.textContent = originalText;
+                return;
+            }
+
+            try {
+                await secureFetch(form.action, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        username: form.username.value,
+                        email: form.email.value,
+                        password: password
+                    })
+                });
+
+                const modal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
+                if (modal) {
+                    modal.hide();
+                    modal._element.addEventListener('hidden.bs.modal', () => {
+                        showSuccess("Регистрация прошла успешно! Теперь вы можете войти в систему.");
+                    }, {once: true});
+                }
+
+                const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+                setTimeout(() => loginModal.show(), 3500);
+            } catch (error) {
+                console.error("Ошибка регистрации:", error);
+                let errorMessage = error.message || "Ошибка при регистрации";
+
+                if (error.errors) {
+                    errorMessage = Object.values(error.errors).join("\n");
+                }
+
+                showError('registerError', errorMessage);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        });
+    };
+
+    // 6. Обработчики модальных окон профиля (из оригинала)
+    const initProfileModals = () => {
         // Редактирование профиля
         const editProfileModal = document.getElementById('editProfileModal');
         if (editProfileModal) {
@@ -187,9 +296,8 @@ document.addEventListener("DOMContentLoaded", function() {
                         throw new Error(JSON.stringify(errors) || errorMessage);
                     }
 
-//                    setTimeout(() => window.location.reload(), 1000);
                     bootstrap.Modal.getInstance(editProfileModal).hide();
-                    editForm.reset()
+                    editForm.reset();
                     showSuccess('Профиль успешно обновлен', 'profile-success');
 
                 } catch (error) {
@@ -215,8 +323,6 @@ document.addEventListener("DOMContentLoaded", function() {
                     btn.textContent = originalText;
                 }
             });
-
-            editProfileModal.addEventListener('show.bs.modal', populateEditForm);
         }
 
         // Смена пароля
@@ -261,141 +367,92 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
             });
         }
-    }
+    };
 
-    // 6. Обработчик формы входа
-    function initLoginForm() {
-        const loginForm = document.getElementById("loginForm");
-        if (!loginForm) return;
+    // 7. Поиск продуктов (объединенная версия)
+    const initProductSearch = () => {
+        const searchInput = document.getElementById('productQuery');
+        const searchResults = document.getElementById('searchResults');
+        if (!searchInput || !searchResults) return;
 
-        loginForm.addEventListener("submit", async function(event) {
-            event.preventDefault();
-            const submitButton = loginForm.querySelector("button[type='submit']");
-            const originalText = submitButton.textContent;
+        let currentFocus = -1;
+        let abortController = null;
 
-            submitButton.disabled = true;
-            submitButton.textContent = "Вход...";
-            submitButton.setAttribute('aria-busy', 'true');
-
-            // Сброс ошибок
-            showError('', 'loginError');
+        const performSearch = async query => {
+            abortController?.abort();
+            abortController = new AbortController();
 
             try {
-                const formData = new FormData(loginForm);
-                const response = await secureFetch("/api/v1/auth/login", {
-                    method: "POST",
-                    body: new URLSearchParams({
-                        username: formData.get("username"),
-                        password: formData.get("password")
-                    }),
-                    headers: {
-                        "Content-Type": "application/x-www-form-urlencoded"
-                    }
+                const data = await secureFetch(`/api/v1/products/search?query=${encodeURIComponent(query)}`, {
+                    signal: abortController.signal
                 });
 
-                const userData = await secureFetch("/api/v1/user/me");
-                updateUIForAuthenticatedUser(userData);
-
-                const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
-                if (modal) {
-                    modal.hide();
-                    modal._element.addEventListener('hidden.bs.modal', () => {
-                        showSuccess(`Добро пожаловать, ${userData.username}!`, 'globalSuccess');
-                    }, {once: true});
+                if (data.exact_match) {
+                    window.location.href = `/products/${data.exact_match.id}`;
+                    return;
                 }
 
-                loginForm.reset();
-
+                renderResults(data.suggestions || []);
             } catch (error) {
-                console.error("Ошибка входа:", error);
-                showError(error.message || "Неверное имя пользователя или пароль", 'loginError');
-            } finally {
-                submitButton.disabled = false;
-                submitButton.textContent = originalText;
-                submitButton.removeAttribute('aria-busy');
+                if (error.name !== 'AbortError') {
+                    showError('searchError', 'Ошибка поиска: ' + error.message);
+                }
             }
-        });
-    }
+        };
 
-    // 7. Обработчик формы регистрации
-    function initRegisterForm() {
-        const registerForm = document.getElementById("registerForm");
-        if (!registerForm) return;
-
-        registerForm.addEventListener("submit", async function(event) {
-            event.preventDefault();
-            const submitButton = registerForm.querySelector("button[type='submit']");
-            const originalText = submitButton.textContent;
-            submitButton.disabled = true;
-            submitButton.textContent = "Регистрация...";
-
-            // Сброс предыдущих ошибок
-            showError('', 'registerError');
-
-            const password = registerForm.querySelector("#regPassword").value;
-            const confirmPassword = registerForm.querySelector("#regConfirmPassword").value;
-
-            if (password !== confirmPassword) {
-                showError("Пароли не совпадают", 'registerError');
-                submitButton.disabled = false;
-                submitButton.textContent = originalText;
+        const renderResults = items => {
+            if (items.length === 0) {
+                searchResults.innerHTML = '';
                 return;
             }
 
-            if (password.length < 8) {
-                showError("Пароль должен содержать минимум 8 символов", 'registerError');
-                submitButton.disabled = false;
-                submitButton.textContent = originalText;
-                return;
-            }
+            searchResults.innerHTML = items.map(item => `
+                <div class="suggestion-item" data-id="${item.id}">
+                    <div class="suggestion-content">
+                        <div class="suggestion-title">${escapeHtml(item.title)}</div>
+                        ${item.brand ? `<div class="suggestion-brand">${escapeHtml(item.brand)}</div>` : ''}
+                    </div>
+                </div>
+            `).join('');
 
-            try {
-                const formData = new FormData(registerForm);
-                const data = {
-                    username: formData.get("username"),
-                    email: formData.get("email"),
-                    password: formData.get("password")
-                };
+            searchResults.classList.add('active');
 
-                await secureFetch(registerForm.action, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify(data)
+            // Добавляем обработчики кликов
+            searchResults.querySelectorAll('.suggestion-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    window.location.href = `/products/${item.dataset.id}`;
                 });
+            });
+        };
 
-                const modal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
-                if (modal) {
-                    modal.hide();
-                    modal._element.addEventListener('hidden.bs.modal', () => {
-                        showSuccess("Регистрация прошла успешно! Теперь вы можете войти в систему.", 'globalSuccess');
-                    }, {once: true});
-                }
+        // Навигация по подсказкам
+        searchInput.addEventListener('keydown', e => {
+            const items = searchResults.querySelectorAll('.suggestion-item');
+            if (['ArrowDown', 'ArrowUp', 'Enter'].includes(e.key)) {
+                e.preventDefault();
+                if (e.key === 'ArrowDown') currentFocus = (currentFocus + 1) % items.length;
+                if (e.key === 'ArrowUp') currentFocus = (currentFocus - 1 + items.length) % items.length;
+                if (e.key === 'Enter' && items[currentFocus]) items[currentFocus].click();
 
-                registerForm.reset();
-
-                const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
-                setTimeout(() => loginModal.show(), 3500);
-
-            } catch (error) {
-                console.error("Ошибка регистрации:", error);
-                let errorMessage = error.message || "Ошибка при регистрации";
-
-                if (error.errors) {
-                    errorMessage = Object.values(error.errors).join("\n");
-                }
-
-                showError(errorMessage, 'registerError');
-            } finally {
-                submitButton.disabled = false;
-                submitButton.textContent = originalText;
+                items.forEach((item, i) => item.classList.toggle('active', i === currentFocus));
             }
         });
-    }
 
-    // 8. Обновление UI после аутентификации
-    function updateUIForAuthenticatedUser(user) {
+        // Закрытие результатов при клике вне области
+        document.addEventListener('click', (e) => {
+            if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                searchResults.innerHTML = '';
+                currentFocus = -1;
+            }
+        });
+
+        searchInput.addEventListener('input', _.debounce(e => {
+            if (e.target.value.length > 1) performSearch(e.target.value);
+        }, 300));
+    };
+
+    // 8. Обновление UI после аутентификации (из оригинала)
+    const updateUIForAuthenticatedUser = (user) => {
         const authSection = document.querySelector('.navbar-collapse .ms-auto');
         if (!authSection) return;
 
@@ -417,142 +474,41 @@ document.addEventListener("DOMContentLoaded", function() {
         });
 
         initTheme();
-    }
+    };
 
-    // 9. Вспомогательные функции
-    function escapeHtml(unsafe) {
+    // 9. Вспомогательные функции (из оригинала)
+    const escapeHtml = (unsafe) => {
         return unsafe
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
-    }
+    };
 
-        // 10. Поиск продуктов
-    function initProductSearch() {
-        const searchForm = document.getElementById('searchProductForm');
-        const searchInput = document.getElementById('productQuery');
-        const searchResults = document.getElementById('searchResults');
-        const searchError = document.getElementById('searchError');
-        let abortController = null;
+    // 10. Обработчик переключения темы (из переработанного)
+    document.addEventListener('click', e => {
+        if (e.target.closest('.theme-toggle')) {
+            const isDark = document.body.classList.toggle('dark-mode');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
 
-        if (!searchForm || !searchInput) return;
-
-        const debouncedSearch = _.debounce(async (query) => {
-            if (query.length < 2) {
-                searchResults.innerHTML = '';
-                return;
-            }
-
-            try {
-                abortController?.abort();
-                abortController = new AbortController();
-
-                const response = await secureFetch(
-                    `/api/v1/products/search?query=${encodeURIComponent(query)}`,
-                    { signal: abortController.signal }
-                );
-
-                updateResults(response);
-            } catch (error) {
-                if (error.name !== 'AbortError') {
-                    showError('Ошибка поиска: ' + error.message, 'searchError');
-                }
-            }
-        }, 300);
-
-        const updateResults = (data) => {
-            searchResults.innerHTML = '';
-
-            if (data.exact_match) {
-                window.location.href = `/products/${data.exact_match.id}`;
-                return;
-            }
-
-            if (data.suggestions?.length) {
-                const list = document.createElement('div');
-                list.className = 'suggestions-list';
-
-                data.suggestions.forEach(product => {
-                    const item = document.createElement('div');
-                    item.className = 'suggestion-item';
-                    item.innerHTML = `
-                        <div class="suggestion-content">
-                            <div class="suggestion-title">${escapeHtml(product.title)}</div>
-                            ${product.brand ?
-                                `<div class="suggestion-brand">${escapeHtml(product.brand)}</div>` : ''}
-                        </div>
-                    `;
-                    item.addEventListener('click', () => {
-                        window.location.href = `/products/${product.id}`;
-                    });
-                    list.appendChild(item);
-                });
-
-                searchResults.appendChild(list);
-            } else if (data.needs_confirmation) {
-                showConfirmationDialog();
-            }
-        };
-
-        const showConfirmationDialog = () => {
-            searchResults.innerHTML = `
-                <div class="confirmation-dialog">
-                    <p>Продукт не найден. Добавить в список на модерацию?</p>
-                    <div class="dialog-actions">
-                        <button class="btn btn-primary btn-confirm">Да</button>
-                        <button class="btn btn-outline-secondary btn-cancel">Нет</button>
-                    </div>
-                </div>
-            `;
-
-            searchResults.querySelector('.btn-confirm').addEventListener('click', async () => {
-                try {
-                    await secureFetch('/api/v1/products/pending', {
-                        method: 'POST',
-                        body: JSON.stringify({ name: searchInput.value.trim() })
-                    });
-                    showSuccess('Продукт отправлен на модерацию', 'globalSuccess');
-                    searchInput.value = '';
-                    searchResults.innerHTML = '';
-                } catch (error) {
-                    showError(error.message, 'searchError');
-                }
+            document.querySelectorAll('.theme-toggle').forEach(btn => {
+                btn.innerHTML = isDark ? '☀️' : '🌙';
+                btn.setAttribute('title', isDark ? 'Светлая тема' : 'Темная тема');
+                btn.setAttribute('aria-label', isDark ? 'Переключить на светлую тему' : 'Переключить на темную тему');
             });
-
-            searchResults.querySelector('.btn-cancel').addEventListener('click', () => {
-                searchResults.innerHTML = '';
-            });
-        };
-
-        // Закрытие результатов при клике вне области
-        document.addEventListener('click', (e) => {
-            if (!searchForm.contains(e.target)) {
-                searchResults.innerHTML = '';
-            }
-        });
-
-        searchInput.addEventListener('input', (e) => {
-            searchError.classList.add('d-none');
-            debouncedSearch(e.target.value.trim());
-        });
-
-        searchForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            debouncedSearch(searchInput.value.trim());
-        });
-    }
+        }
+    });
 
     // 11. Основная инициализация
-    function initAll() {
+    const initAll = () => {
         initTheme();
         initPasswordToggles();
         initLoginForm();
         initRegisterForm();
         initProfileModals();
         initProductSearch();
-    }
+    };
 
     // Запускаем инициализацию
     initAll();
