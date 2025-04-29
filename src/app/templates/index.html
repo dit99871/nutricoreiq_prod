@@ -11,16 +11,19 @@
                 <p class="text-center text-muted">
                     Инновационный сервис анализа питания и рекомендаций для здорового образа жизни.
                 </p>
-                <form id="searchProductForm" class="d-flex justify-content-center mt-3">
-                    <input type="text" name="query" id="productQuery" class="form-control"
-                           placeholder="Введите название продукта" style="border-color: #d4a373;"
-                           required minlength="2" maxlength="40">
-                    <button type="submit" class="btn btn-success ms-2"
-                            style="background-color: #8b5e3b; border-color: #8b5e3b; color: white;">
+                <form id="searchProductForm" class="d-flex justify-content-center mt-3 gap-2">
+                    <div class="search-container position-relative flex-grow-1">
+                        <input type="text" name="query" id="productQuery" class="form-control"
+                               placeholder="Введите название продукта"
+                               style="border-color: #d4a373; height: 46px;"
+                               required minlength="2" maxlength="40"
+                               autocomplete="off">
+                        <div id="searchResults" class="autocomplete-dropdown"></div>
+                    </div>
+                    <button type="submit" class="btn analyze-btn">
                         Проанализировать
                     </button>
                 </form>
-                <div id="searchResults" class="mt-4"></div>
                 <div id="searchError" class="alert alert-danger d-none mt-3"></div>
             </div>
         </div>
