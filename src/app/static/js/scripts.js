@@ -369,7 +369,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     };
 
-    // 7. Поиск продуктов (объединенная версия)
+    // 7. Поиск продуктов
     const initProductSearch = () => {
         const searchInput = document.getElementById('productQuery');
         const searchResults = document.getElementById('searchResults');
@@ -383,12 +383,12 @@ document.addEventListener("DOMContentLoaded", function() {
             abortController = new AbortController();
 
             try {
-                const data = await secureFetch(`/api/v1/products/search?query=${encodeURIComponent(query)}`, {
+                const data = await secureFetch(`/api/v1/product/search?query=${encodeURIComponent(query)}`, {
                     signal: abortController.signal
                 });
 
                 if (data.exact_match) {
-                    window.location.href = `/products/${data.exact_match.id}`;
+                    window.location.href = `/api/v1/product/${data.exact_match.id}`;
                     return;
                 }
 
@@ -420,7 +420,7 @@ document.addEventListener("DOMContentLoaded", function() {
             // Добавляем обработчики кликов
             searchResults.querySelectorAll('.suggestion-item').forEach(item => {
                 item.addEventListener('click', () => {
-                    window.location.href = `/products/${item.dataset.id}`;
+                    window.location.href = `/api/v1/product/${item.dataset.id}`;
                 });
             });
         };
