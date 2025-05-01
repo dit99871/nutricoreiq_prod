@@ -6,6 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.logger import get_logger
 from db import db_helper
+from schemas.user import UserResponse
+from services.auth import get_current_auth_user
 from services.pending_product import check_pending_exists, create_pending_product
 from services.product import handle_product_search, handle_product_details
 from schemas.product import UnifiedProductResponse, PendingProductCreate
@@ -46,6 +48,7 @@ async def get_product_details(
     request: Request,
     product_id: int,
     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+    current_user: Annotated[UserResponse, Depends(get_current_auth_user)],
 ):
     """
     Retrieves the details of a product.
@@ -56,6 +59,7 @@ async def get_product_details(
     :param request: The incoming request object.
     :param product_id: The ID of the product to retrieve.
     :param session: The current database session.
+    :param current_user: The authenticated user object obtained from the dependency.
     :return: A rendered HTML template with the product details.
     """
     product_data = await handle_product_details(session, product_id)
@@ -65,6 +69,7 @@ async def get_product_details(
         name="product_detail.html",
         context={
             "product": product_data,
+            "user": current_user,
             "csp_nonce": generate_csp_nonce(),
         },
     )
