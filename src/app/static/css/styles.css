@@ -7,15 +7,17 @@
     --clay: #D77A61;
     --sky: #A7C4C2;
     --stone: #9da2a0;
+    --light-sand: #E5D8C9;
+    --light-stone: #E8E8E8;
 
     /* Системные цвета */
-    --bg-primary: #A9C8B9;       /* Основной фон */
-    --card-bg: var(--stone);     /* Фон карточек */
-    --header-bg: var(--sand);    /* Фон шапок */
-    --footer-bg: var(--sand);    /* Фон подвалов */
-    --input-bg: #EDEDED;         /* Поля ввода */
+    --bg-primary: #A9C8B9;
+    --card-bg: #C5D9C1;
+    --header-bg: var(--sand);
+    --footer-bg: var(--sand);
+    --input-bg: #EDEDED;
     --text-primary: #2F4858;
-    --link-color: var(--moss);   /* Цвет ссылок */
+    --link-color: var(--moss);
     --border-color: var(--sage);
     --border-radius: 20px;
 }
@@ -32,13 +34,25 @@ body {
     margin: 0;
 }
 
-/* Закругленные переходы */
+/* Навигация и подвал */
+.navbar,
+.footer {
+    background-color: var(--header-bg) !important;
+    padding: 1rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
 .navbar {
     border-bottom-left-radius: var(--border-radius);
     border-bottom-right-radius: var(--border-radius);
     margin-bottom: 1rem;
 }
+.footer {
+    border-top-left-radius: var(--border-radius);
+    border-top-right-radius: var(--border-radius);
+    margin-top: 2rem;
+}
 
+/* Основной контент */
 main.container {
     background: var(--card-bg);
     border-radius: var(--border-radius);
@@ -47,28 +61,7 @@ main.container {
     flex-grow: 1;
 }
 
-.footer {
-    border-top-left-radius: var(--border-radius);
-    border-top-right-radius: var(--border-radius);
-    margin-top: 2rem;
-}
-
-/* Шапка и футер */
-.navbar,
-.footer {
-    background-color: var(--sand) !important;
-    padding: 1rem;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-/* Карточка поиска */
-#searchProductForm .card {
-    background-color: var(--bg-primary) !important;
-    border: 2px solid var(--sage);
-    box-shadow: none;
-}
-
-/* Система кнопок */
+/* Кнопки и элементы управления */
 .btn {
     border-radius: 12px;
     padding: 0.6rem 1.5rem;
@@ -76,7 +69,6 @@ main.container {
     border: 2px solid;
     font-weight: 500;
 }
-
 .btn-primary,
 .btn-register,
 .analyze-btn,
@@ -86,19 +78,110 @@ main.container {
     border-color: var(--moss) !important;
     color: white !important;
 }
-
 .btn-primary:hover {
     background: #3a6b4a !important;
     transform: translateY(-2px);
 }
+.btn-outline {
+    border-color: var(--moss);
+    color: var(--moss);
+}
+.btn-outline-danger {
+    border-color: var(--clay) !important;
+    color: var(--clay) !important;
+}
+.btn-outline-danger:hover {
+    background: var(--clay) !important;
+    color: white !important;
+}
 
-/* Кнопка темы */
 .theme-toggle {
     background: none !important;
     border: none !important;
     padding: 0 !important;
     font-size: 1.6rem;
     color: inherit !important;
+    box-shadow: none !important;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.theme-toggle:hover {
+    transform: scale(1.1);
+}
+
+/* Формы и поля ввода */
+.form-control {
+    height: 46px;
+    padding: 0.875rem 1.25rem;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+    line-height: 1.5;
+    background: var(--input-bg);
+}
+.form-control:focus {
+    border-color: var(--moss);
+    box-shadow: 0 0 0 3px rgba(var(--moss), 0.2);
+}
+
+.input-group {
+    position: relative;
+}
+.input-group > .form-control[type="password"] {
+    border-top-right-radius: 12px !important;
+    border-bottom-right-radius: 12px !important;
+}
+.input-group .toggle-password {
+    background: none !important;
+    border: none !important;
+    padding: 0 12px !important;
+    position: absolute;
+    right: 3px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 5;
+    border-radius: 0 12px 12px 0;
+    height: calc(100% - 4px);
+    width: 40px;
+    transition: background 0.2s ease;
+}
+.input-group .toggle-password:hover {
+    background: rgba(0,0,0,0.1);
+}
+
+/* Модальные окна */
+.modal-content {
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+.modal-header {
+    background: var(--header-bg);
+    border-bottom: 2px solid var(--border-color);
+    padding: 1.5rem;
+}
+.modal-title {
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.modal-body {
+    background: var(--card-bg);
+    padding: 2rem;
+}
+.modal-footer {
+    background: var(--footer-bg);
+    border-top: 2px solid var(--border-color);
+    padding: 1.5rem;
 }
 
 /* Профиль */
@@ -108,7 +191,6 @@ main.container {
     padding: 2rem;
     margin: 2rem 0;
 }
-
 .profile-header {
     display: flex;
     flex-wrap: wrap;
@@ -116,7 +198,6 @@ main.container {
     align-items: flex-start;
     margin-bottom: 2rem;
 }
-
 .profile-avatar {
     width: 100px;
     height: 100px;
@@ -128,41 +209,102 @@ main.container {
     align-items: center;
     justify-content: center;
 }
-
-.action-buttons {
-    display: flex;
-    gap: 1rem;
-    margin-top: 1rem;
-    flex-wrap: wrap;
-}
-
 .detail-card {
-    background: rgba(var(--sand-rgb), 0.3);
+    background: rgba(255, 255, 255, 0.9);
     border-radius: 12px;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+.detail-item {
+    padding: 0.5rem 0;
+    border-bottom: 1px dashed var(--border-color);
+}
+
+/* Детали продукта */
+.product-detail-wrapper {
+    background: var(--light-sand);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    margin: 2rem 0;
+
+    /* Вертикальные отступы между основными секциями */
+    .nutrient-section-group:not(:last-child) {
+        margin-bottom: 3rem;
+    }
+
+    /* Отступы между подгруппами */
+    .row.nutrient-subgroup {
+        margin-bottom: 2.5rem;
+    }
+
+    /* Отступы между категориями */
+    .nutrient-category:not(:last-child) {
+        margin-bottom: 2rem;
+    }
+}
+.nutrient-category {
+    background: var(--light-stone);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+.category-header {
+    font-size: 1.25rem;
+    color: var(--moss);
+    border-bottom: 2px solid var(--sage);
+    padding-bottom: 0.75rem;
+    margin-bottom: 1rem;
+}
+.sub-category {
+    margin-left: 1.5rem;
+    padding-left: 1rem;
+    border-left: 2px solid var(--stone);
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+.nutrient-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    padding: 0.25rem 0;
+    border-bottom: none;
+}
+
+.nutrient-name {
+    padding-right: 1rem;
 }
 
 /* Темная тема */
 body.dark-mode {
     --bg-primary: #1A2F28;
     --text-primary: #E0EAE4;
-    --card-bg: rgba(40, 50, 45, 0.95);
-    --sand: #3A4540;
-
-    .navbar,
-    .footer {
-        background-color: var(--sand) !important;
-    }
+    --card-bg: #2A3B32;
+    --header-bg: #3A4540;
+    --footer-bg: #3A4540;
+    --input-bg: rgba(255, 255, 255, 0.1);
+    --link-color: #8A9B6E;
 
     .form-control {
-        background: rgba(255, 255, 255, 0.1);
         border-color: var(--sage);
         color: white;
     }
-
     .detail-card {
         background: rgba(50, 60, 55, 0.5);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+    .profile-avatar {
+        background: var(--sage);
+    }
+    .modal-body,
+    .modal-footer {
+        background: var(--card-bg);
+    }
+    .input-group .toggle-password {
+        background: rgba(255,255,255,0.05);
+        &:hover {
+            background: rgba(255,255,255,0.1);
+        }
     }
 }
 
@@ -171,86 +313,33 @@ body.dark-mode {
     :root {
         --border-radius: 15px;
     }
-
     main.container {
         padding: 1.5rem !important;
         margin: 0 1rem;
     }
-
     .profile-header {
         flex-direction: column;
         align-items: center;
         text-align: center;
     }
-
-    .action-buttons {
-        justify-content: center;
+    .action-buttons .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
     }
-}
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+    .product-detail-wrapper {
+        .nutrient-section-group:not(:last-child) {
+            margin-bottom: 2rem;
+        }
 
-.modal-content {
-    border: 2px solid var(--border-color);
-    border-radius: var(--border-radius);
-    overflow: hidden;
-}
+        .row.nutrient-subgroup {
+            margin-bottom: 1.5rem;
+        }
 
-.modal-header {
-    background: var(--header-bg);
-    border-bottom: 2px solid var(--border-color);
-    padding: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.modal-title {
-    font-size: 1.5rem;
-    color: var(--text-primary);
-    margin: 0;
-}
-
-.modal-body {
-    background: var(--card-bg);
-    padding: 2rem;
-    min-height: 200px;
-}
-
-.modal-footer {
-    background: var(--footer-bg);
-    border-top: 2px solid var(--border-color);
-    padding: 1.5rem;
-    display: flex;
-    gap: 1rem;
-}
-
-/* Ссылка регистрации */
-.registration-link {
-    color: var(--link-color) !important;
-    font-weight: 500;
-    text-decoration: underline;
-}
-
-.registration-link:hover {
-    color: #3a6b4a !important;
-}
-
-.toggle-password {
-    background: none !important;
-    border: none !important;
-    padding: 0 0.5rem !important;
-    box-shadow: none !important;
-    position: absolute;
-    right: 5px;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 5;
-}
-
-.toggle-password i {
-    font-size: 1.2rem;
-    color: var(--sage);
-}
-
-.input-group {
-    position: relative;
+        .nutrient-category:not(:last-child) {
+            margin-bottom: 1.5rem;
+        }
+    }
 }
