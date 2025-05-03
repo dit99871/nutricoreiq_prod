@@ -16,10 +16,11 @@
     --header-bg: var(--sand);
     --footer-bg: var(--sand);
     --input-bg: #EDEDED;
+    --input-bg-hover: rgba(0, 0, 0, 0.1);
     --text-primary: #2F4858;
     --link-color: var(--moss);
     --border-color: var(--sage);
-    --border-radius: 20px;
+    --border-radius: 12px;
 }
 
 /* Базовые стили */
@@ -115,44 +116,153 @@ main.container {
 }
 
 /* Формы и поля ввода */
-.form-control {
-    height: 46px;
-    padding: 0.875rem 1.25rem;
+.form-control,
+.form-select {
+    height: 50px;
+    padding: 0.75rem 1.25rem;
     border: 2px solid var(--border-color);
     border-radius: 12px;
     transition: all 0.3s ease;
     font-size: 1rem;
-    line-height: 1.5;
+    line-height: 1.2;
     background: var(--input-bg);
+    box-sizing: border-box;
 }
-.form-control:focus {
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--moss);
+    box-shadow: 0 0 0 3px rgba(var(--moss), 0.2);
+}
+.form-select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px 12px;
+    padding-right: 2.5rem;
+}
+
+/* Кастомный выпадающий список */
+.custom-select {
+    position: relative;
+    width: 100%;
+}
+.custom-select-input {
+    width: 100%;
+    height: 50px;
+    padding: 0.5rem 2.5rem 0.5rem 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    font-size: 1rem;
+    line-height: 1.6;
+    background: var(--input-bg);
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px 12px;
+}
+.custom-select-input:focus {
+    border-color: var(--moss);
+    box-shadow: 0 0 0 3px rgba(var(--moss), 0.2);
+    outline: none;
+}
+.custom-select-options {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--input-bg);
+    margin-top: 2px;
+    list-style: none;
+    padding: 0;
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+}
+.custom-select-options li {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+}
+.custom-select-options li:hover {
+    background: var(--sand);
+    color: var(--text-primary);
+}
+.custom-select.active .custom-select-options {
+    display: block;
+}
+
+/* Стили для полей ввода с кнопкой показа пароля */
+.input-group {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--input-bg);
+    transition: all 0.3s ease;
+    overflow: visible;
+    height: 50px; /* Явно задаём высоту .input-group */
+    box-sizing: border-box;
+}
+
+.input-group:focus-within {
     border-color: var(--moss);
     box-shadow: 0 0 0 3px rgba(var(--moss), 0.2);
 }
 
-.input-group {
-    position: relative;
+.input-group > .form-control {
+    border: none !important;
+    border-radius: 12px 0 0 12px; /* Радиус только слева */
+    height: 100%;
+    padding: 0.75rem 1.25rem;
+    background: transparent;
+    flex: 1;
+    box-sizing: border-box;
 }
-.input-group > .form-control[type="password"] {
-    border-top-right-radius: 12px !important;
-    border-bottom-right-radius: 12px !important;
-}
+
 .input-group .toggle-password {
     background: none !important;
     border: none !important;
     padding: 0 12px !important;
-    position: absolute;
-    right: 3px;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 5;
-    border-radius: 0 12px 12px 0;
-    height: calc(100% - 4px);
+    position: relative;
+    z-index: 10;
+    border-top-right-radius: 12px;
+    border-bottom-right-radius: 12px;
+    height: 100%;
     width: 40px;
     transition: background 0.2s ease;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+    margin: 0;
+    box-sizing: border-box;
+    line-height: 1; /* Устраняем возможные проблемы с выравниванием текста */
 }
+
 .input-group .toggle-password:hover {
-    background: rgba(0,0,0,0.1);
+    background: var(--input-bg-hover);
+}
+
+.input-group .toggle-password:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(var(--moss), 0.2);
+}
+
+/* Специфические стили для модальных окон с несколькими .input-group */
+.modal-body .input-group {
+    margin-bottom: 1rem;
+}
+
+.modal-body .input-group:last-child {
+    margin-bottom: 0;
 }
 
 /* Модальные окна */
@@ -177,11 +287,21 @@ main.container {
 .modal-body {
     background: var(--card-bg);
     padding: 2rem;
+    overflow-y: auto;
 }
 .modal-footer {
     background: var(--footer-bg);
     border-top: 2px solid var(--border-color);
     padding: 1.5rem;
+}
+
+/* Стили для ссылок в модальных окнах */
+.modal-body a {
+    color: var(--link-color) !important;
+    text-decoration: none;
+}
+.modal-body a:hover {
+    text-decoration: underline;
 }
 
 /* Профиль */
@@ -227,34 +347,34 @@ main.container {
     border-radius: var(--border-radius);
     padding: 2rem;
     margin: 2rem 0;
-
-    /* Вертикальные отступы между основными секциями */
-    .nutrient-section-group:not(:last-child) {
-        margin-bottom: 3rem;
-    }
-
-    /* Отступы между подгруппами */
-    .row.nutrient-subgroup {
-        margin-bottom: 2.5rem;
-    }
-
-    /* Отступы между категориями */
-    .nutrient-category:not(:last-child) {
-        margin-bottom: 2rem;
-    }
+}
+.product-detail-wrapper .nutrient-section-group:not(:last-child) {
+    margin-bottom: 3rem;
+}
+.product-detail-wrapper .row.nutrient-subgroup {
+    margin-bottom: 2.5rem;
+    display: flex;
+    flex-wrap: wrap;
+}
+.product-detail-wrapper .nutrient-category:not(:last-child) {
+    margin-bottom: 2rem;
 }
 .nutrient-category {
     background: var(--light-stone);
     border-radius: 12px;
     padding: 1.5rem;
     margin-bottom: 1.5rem;
+    width: 100%;
 }
 .category-header {
     font-size: 1.25rem;
-    color: var(--moss);
     border-bottom: 2px solid var(--sage);
     padding-bottom: 0.75rem;
     margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    line-height: 1.2;
 }
 .sub-category {
     margin-left: 1.5rem;
@@ -263,16 +383,87 @@ main.container {
     margin-top: 0.5rem;
     margin-bottom: 0.5rem;
 }
+.sub-category .text-muted {
+    color: var(--sage) !important;
+}
 .nutrient-item {
     display: flex;
-    justify-content: space-between;
-    padding: 0.5rem 0;
+    align-items: baseline;
     padding: 0.25rem 0;
-    border-bottom: none;
+    gap: 0.5rem;
+    font-size: 1rem;
+    line-height: normal;
+    flex-wrap: nowrap;
+    height: auto;
+}
+.nutrient-name {
+    color: var(--moss);
+    font-size: 1rem;
+    line-height: normal;
+    flex: 0 0 auto;
+}
+.nutrient-amount {
+    color: var(--stone);
+    display: flex;
+    align-items: baseline;
+    font-size: 1rem;
+    line-height: normal;
+    flex: 0 0 auto;
+    vertical-align: baseline;
+}
+.unit {
+    color: var(--stone);
+    font-size: 1rem;
+    line-height: normal;
+    vertical-align: baseline;
+}
+.nutrient-amount .text-muted.small {
+    font-size: 1rem;
+    line-height: normal;
+    vertical-align: baseline;
+    margin-left: 0.25rem;
 }
 
-.nutrient-name {
-    padding-right: 1rem;
+/* Стили для Углеводов */
+.nutrient-category .sub-category .ms-3 .nutrient-item {
+    margin-left: 1.5rem;
+}
+
+/* Стили для Энергетическая ценность и Вода */
+.nutrient-category .nutrient-amount:not(.category-header .nutrient-amount) {
+    margin-top: 0.5rem;
+    display: block;
+}
+
+/* Стили для Витаминоподобных веществ и Минералов */
+.nutrient-category .sub-category .ms-3 {
+    margin-left: 1.5rem;
+}
+
+/* Явное определение стилей для Bootstrap колонок */
+.product-detail-wrapper .row {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+}
+.product-detail-wrapper .col-md-6 {
+    flex: 0 0 50%;
+    max-width: 50%;
+    padding-right: 15px;
+    padding-left: 15px;
+}
+.product-detail-wrapper .col-md-4 {
+    flex: 0 0 33.333333%;
+    max-width: 33.333333%;
+    padding-right: 15px;
+    padding-left: 15px;
+}
+@media (max-width: 768px) {
+    .product-detail-wrapper .col-md-6,
+    .product-detail-wrapper .col-md-4 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
 }
 
 /* Темная тема */
@@ -283,29 +474,133 @@ body.dark-mode {
     --header-bg: #3A4540;
     --footer-bg: #3A4540;
     --input-bg: rgba(255, 255, 255, 0.1);
+    --input-bg-hover: rgba(255, 255, 255, 0.2);
     --link-color: #8A9B6E;
+    --light-sand: #2A3B32;
+    --light-stone: #3A4540;
+    --border-color: var(--sage);
+}
 
-    .form-control {
-        border-color: var(--sage);
-        color: white;
-    }
-    .detail-card {
-        background: rgba(50, 60, 55, 0.5);
-        border-color: rgba(255, 255, 255, 0.1);
-    }
-    .profile-avatar {
-        background: var(--sage);
-    }
-    .modal-body,
-    .modal-footer {
-        background: var(--card-bg);
-    }
-    .input-group .toggle-password {
-        background: rgba(255,255,255,0.05);
-        &:hover {
-            background: rgba(255,255,255,0.1);
-        }
-    }
+body.dark-mode .form-control,
+body.dark-mode .form-select {
+    border-color: var(--sage);
+    background: var(--input-bg);
+    color: var(--text-primary);
+}
+
+body.dark-mode .form-control:focus,
+body.dark-mode .form-select:focus {
+    border-color: var(--moss);
+    box-shadow: 0 0 0 3px rgba(var(--moss), 0.2);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+body.dark-mode .form-select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23E0EAE4' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px 12px;
+}
+
+body.dark-mode .custom-select-input {
+    border-color: var(--sage);
+    background: var(--input-bg);
+    color: var(--text-primary);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23E0EAE4' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
+}
+
+body.dark-mode .custom-select-input:focus {
+    border-color: var(--moss);
+    box-shadow: 0 0 0 3px rgba(var(--moss), 0.2);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+body.dark-mode .custom-select-options {
+    background: var(--input-bg);
+    border-color: var(--sage);
+}
+
+body.dark-mode .custom-select-options li {
+    color: #E0EAE4;
+}
+
+body.dark-mode .custom-select-options li:hover {
+    background: var(--sand);
+    color: var(--text-primary);
+}
+
+body.dark-mode .detail-card {
+    background: rgba(50, 60, 55, 0.5);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .profile-avatar {
+    background: var(--sage);
+}
+
+body.dark-mode .modal-content {
+    background: #2A3B32;
+    border-color: var(--sage);
+}
+
+body.dark-mode .modal-header {
+    background: #3A4540;
+    border-bottom: 2px solid var(--sage);
+}
+
+body.dark-mode .modal-body {
+    background: #2A3B32;
+}
+
+body.dark-mode .modal-footer {
+    background: #3A4540;
+    border-top: 2px solid var(--sage);
+}
+
+body.dark-mode .modal-title {
+    color: #E0EAE4;
+}
+
+body.dark-mode .input-group {
+    border-color: var(--sage);
+    background: var(--input-bg);
+}
+
+body.dark-mode .input-group:focus-within {
+    border-color: var(--moss);
+    box-shadow: 0 0 0 3px rgba(var(--moss), 0.2);
+}
+
+body.dark-mode .input-group .toggle-password {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+body.dark-mode .input-group .toggle-password:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .nutrient-name {
+    color: #B0C4A0;
+}
+
+body.dark-mode .nutrient-amount,
+body.dark-mode .unit {
+    color: #C5D9C1;
+}
+
+body.dark-mode .category-header {
+    border-bottom: 2px solid #5A6B4A;
+}
+
+body.dark-mode .sub-category {
+    border-left: 2px solid #5A6B4A;
+}
+
+body.dark-mode .sub-category .text-muted {
+    color: #8A9B6E !important;
 }
 
 /* Адаптивность */
@@ -329,17 +624,13 @@ body.dark-mode {
     .modal-dialog {
         margin: 0.5rem;
     }
-    .product-detail-wrapper {
-        .nutrient-section-group:not(:last-child) {
-            margin-bottom: 2rem;
-        }
-
-        .row.nutrient-subgroup {
-            margin-bottom: 1.5rem;
-        }
-
-        .nutrient-category:not(:last-child) {
-            margin-bottom: 1.5rem;
-        }
+    .product-detail-wrapper .nutrient-section-group:not(:last-child) {
+        margin-bottom: 2rem;
+    }
+    .product-detail-wrapper .row.nutrient-subgroup {
+        margin-bottom: 1.5rem;
+    }
+    .product-detail-wrapper .nutrient-category:not(:last-child) {
+        margin-bottom: 1.5rem;
     }
 }
