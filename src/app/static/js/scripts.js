@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", function() {
         return;
     }
 
-    // 1. Инициализация темы (объединенная версия)
+    // 1. Инициализация темы
     const initTheme = () => {
         const savedTheme = localStorage.getItem('theme') ||
             (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", function() {
         updateThemeButtons(savedTheme === 'dark');
     };
 
-    // 2. Переключатели пароля (улучшенная версия)
+    // 2. Переключатели пароля
     const initPasswordToggles = () => {
         document.addEventListener('click', e => {
             const toggleBtn = e.target.closest('.toggle-password');
@@ -54,22 +54,28 @@ document.addEventListener("DOMContentLoaded", function() {
             ...options.headers || {}
         };
 
+        // Добавляем тайм-аут 10 секунд
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
         try {
             const response = await fetch(url, {
                 ...options,
                 headers,
-                credentials: 'include'
+                credentials: 'include',
+                signal: controller.signal
             });
 
-            const contentType = response.headers.get('content-type');
-            let data;
+            clearTimeout(timeoutId);
 
-            if (contentType && contentType.includes('application/json')) {
-                data = await response.json();
-            } else {
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
                 const text = await response.text();
-                throw new Error(text || 'Неверный формат ответа');
+                console.error('Неверный формат ответа:', text);
+                throw new Error('Сервер вернул не JSON');
             }
+
+            const data = await response.json();
 
             if (!response.ok) {
                 const errorDetail = data.detail || data.message || 'Неизвестная ошибка';
@@ -81,12 +87,16 @@ document.addEventListener("DOMContentLoaded", function() {
             }
             return data;
         } catch (error) {
+            if (error.name === 'AbortError') {
+                console.error('Запрос превысил время ожидания (10 секунд)');
+                throw new Error('Превышено время ожидания запроса');
+            }
             console.error('Ошибка запроса:', error);
             throw error;
         }
-    }
+    };
 
-    // 4. Функции для работы с UI (объединенная версия)
+    // 4. Функции для работы с UI
     const showError = (containerId, message) => {
         const container = document.getElementById(containerId);
         if (container) {
@@ -96,12 +106,29 @@ document.addEventListener("DOMContentLoaded", function() {
     };
 
     const showSuccess = (message, elementId = 'globalSuccess') => {
+        console.log(`Попытка показать сообщение в элементе #${elementId}: "${message}"`);
         const successElement = document.getElementById(elementId);
-        if (successElement) {
-            successElement.querySelector('span').textContent = message;
-            successElement.classList.remove('d-none');
-            setTimeout(() => successElement.classList.add('d-none'), 3000);
+        if (!successElement) {
+            console.error(`Элемент #${elementId} не найден в DOM`);
+            return;
         }
+
+        const textElement = successElement.querySelector('#globalSuccessText') || successElement.querySelector('span');
+        if (!textElement) {
+            console.error(`Элемент для текста (span или #globalSuccessText) не найден внутри #${elementId}`);
+            return;
+        }
+
+        textElement.textContent = message;
+        successElement.classList.remove('d-none');
+        successElement.classList.add('show');
+        console.log(`Сообщение отображено в #${elementId}`);
+
+        setTimeout(() => {
+            successElement.classList.remove('show');
+            successElement.classList.add('d-none');
+            console.log(`Сообщение в #${elementId} скрыто`);
+        }, 3000);
     };
 
     const clearFormErrors = (formId) => {
@@ -117,7 +144,37 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     };
 
-    // 5. Обработчики форм (объединенная версия)
+    // Новая функция для обновления UI профиля
+    const updateProfileUI = (userData) => {
+        console.log('Обновление UI профиля с данными:', userData);
+
+        // Обновляем email в заголовке профиля
+        const emailElement = document.querySelector('.profile-header p');
+        if (emailElement && userData.email) {
+            emailElement.textContent = userData.email;
+        }
+
+        // Обновляем поля в detail-card
+        const detailItems = document.querySelectorAll('.detail-item');
+        detailItems.forEach(item => {
+            const label = item.querySelector('strong')?.textContent.trim();
+            const valueSpan = item.querySelector('span');
+
+            if (!valueSpan) return;
+
+            if (label === 'Рост:') {
+                valueSpan.textContent = userData.height ? `${userData.height} см` : 'Не указано';
+            } else if (label === 'Вес:') {
+                valueSpan.textContent = userData.weight ? `${userData.weight} кг` : 'Не указано';
+            } else if (label === 'Возраст:') {
+                valueSpan.textContent = userData.age ? userData.age : 'Не указано';
+            } else if (label === 'Уровень физической активности:') {
+                valueSpan.textContent = userData.activity_level || 'Не указано';
+            }
+        });
+    };
+
+    // 5. Обработчики форм
     const initLoginForm = () => {
         const form = document.getElementById('loginForm');
         if (!form) return;
@@ -135,6 +192,7 @@ document.addEventListener("DOMContentLoaded", function() {
             showError('', 'loginError');
 
             try {
+                console.log('Отправка запроса на вход...');
                 const formData = new FormData(form);
                 await secureFetch('/api/v1/auth/login', {
                     method: 'POST',
@@ -144,18 +202,31 @@ document.addEventListener("DOMContentLoaded", function() {
                     }
                 });
 
+                console.log('Получение данных пользователя...');
                 const userData = await secureFetch("/api/v1/user/me");
+                console.log('Данные пользователя:', userData);
                 updateUIForAuthenticatedUser(userData);
 
                 const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
                 if (modal) {
+                    console.log('Закрытие модального окна...');
                     modal.hide();
                     modal._element.addEventListener('hidden.bs.modal', () => {
-                        showSuccess(`Добро пожаловать, ${userData.username}!`);
+                        console.log('Модальное окно закрыто, показ сообщения...');
+                        showSuccess(`Добро пожаловать, ${userData.username || 'Пользователь'}!`, 'globalSuccess');
+                        setTimeout(() => {
+                            console.log('Перезагрузка страницы...');
+                            window.location.reload();
+                        }, 3000);
                     }, {once: true});
+                } else {
+                    console.log('Модальное окно не найдено, показ сообщения напрямую...');
+                    showSuccess(`Добро пожаловать, ${userData.username || 'Пользователь'}!`, 'globalSuccess');
+                    setTimeout(() => {
+                        console.log('Перезагрузка страницы...');
+                        window.location.reload();
+                    }, 3000);
                 }
-
-                window.location.reload();
             } catch (error) {
                 console.error("Ошибка входа:", error);
                 showError('loginError', error.message || "Неверное имя пользователя или пароль");
@@ -213,8 +284,10 @@ document.addEventListener("DOMContentLoaded", function() {
                 if (modal) {
                     modal.hide();
                     modal._element.addEventListener('hidden.bs.modal', () => {
-                        showSuccess("Регистрация прошла успешно! Теперь вы можете войти в систему.");
+                        showSuccess("Регистрация прошла успешно! Теперь вы можете войти в систему.", 'globalSuccess');
                     }, {once: true});
+                } else {
+                    showSuccess("Регистрация прошла успешно! Теперь вы можете войти в систему.", 'globalSuccess');
                 }
 
                 const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
@@ -235,7 +308,7 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     };
 
-    // 6. Обработчики модальных окон профиля (из оригинала)
+    // 6. Обработчики модальных окон профиля
     const initProfileModals = () => {
         // Редактирование профиля
         const editProfileModal = document.getElementById('editProfileModal');
@@ -250,14 +323,12 @@ document.addEventListener("DOMContentLoaded", function() {
                 btn.textContent = "Сохранение...";
 
                 clearFormErrors('editProfileForm');
-                document.getElementById('profile-error').classList.add('d-none');
-                document.getElementById('profile-success').classList.add('d-none');
+                document.getElementById('profile-error')?.classList.add('d-none');
+                document.getElementById('globalSuccess')?.classList.add('d-none');
 
                 try {
+                    console.log('Отправка запроса на обновление профиля...');
                     const formData = new FormData(editForm);
-                    const csrfToken = document.querySelector('input[name="_csrf_token"]').value;
-
-                    // Преобразование FormData в JSON с типами данных
                     const jsonData = {};
                     formData.forEach((value, key) => {
                         if (['age', 'height', 'weight'].includes(key)) {
@@ -267,56 +338,57 @@ document.addEventListener("DOMContentLoaded", function() {
                         }
                     });
 
-                    const response = await fetch('/api/v1/user/profile/update', {
+                    console.log('Данные для отправки:', jsonData);
+
+                    await secureFetch('/api/v1/user/profile/update', {
                         method: 'POST',
                         headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-Token': csrfToken
+                            'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify(jsonData),
-                        credentials: 'include'
+                        body: JSON.stringify(jsonData)
                     });
 
-                    const data = await response.json();
+                    console.log('Профиль успешно обновлен, получение новых данных...');
+                    const updatedUserData = await secureFetch('/api/v1/user/me');
+                    console.log('Обновленные данные пользователя:', updatedUserData);
 
-                    if (!response.ok) {
-                        let errorMessage = 'Ошибка обновления профиля';
-                        const errors = {};
-
-                        if (data.detail) {
-                            if (Array.isArray(data.detail)) {
-                                data.detail.forEach(err => {
-                                    const field = err.loc[1];
-                                    errors[field] = err.msg;
-                                });
-                            } else {
-                                errorMessage = data.detail;
-                            }
-                        }
-                        throw new Error(JSON.stringify(errors) || errorMessage);
+                    const modal = bootstrap.Modal.getInstance(editProfileModal);
+                    if (modal) {
+                        modal.hide();
+                        modal._element.addEventListener('hidden.bs.modal', () => {
+                            console.log('Модальное окно закрыто, показ сообщения...');
+                            showSuccess('Профиль успешно обновлен', 'globalSuccess');
+                            editForm.reset();
+                            updateProfileUI(updatedUserData);
+                        }, { once: true });
+                    } else {
+                        console.log('Модальное окно не найдено, показ сообщения напрямую...');
+                        showSuccess('Профиль успешно обновлен', 'globalSuccess');
+                        editForm.reset();
+                        updateProfileUI(updatedUserData);
                     }
-
-                    bootstrap.Modal.getInstance(editProfileModal).hide();
-                    editForm.reset();
-                    showSuccess('Профиль успешно обновлен', 'profile-success');
 
                 } catch (error) {
                     console.error('Ошибка обновления:', error);
-
+                    let errorMessage = 'Ошибка при обновлении профиля';
                     try {
-                        const errors = JSON.parse(error.message);
-                        Object.entries(errors).forEach(([field, message]) => {
-                            const input = document.getElementById(`edit${field.charAt(0).toUpperCase() + field.slice(1)}`);
-                            const errorElement = document.getElementById(`edit${field.charAt(0).toUpperCase() + field.slice(1)}Error`);
-
-                            if (input && errorElement) {
-                                input.classList.add('is-invalid');
-                                errorElement.textContent = message;
-                                errorElement.classList.remove('d-none');
-                            }
-                        });
+                        const parsedError = JSON.parse(error.message);
+                        if (parsedError.errors) {
+                            Object.entries(parsedError.errors).forEach(([field, message]) => {
+                                const input = document.getElementById(`edit${field.charAt(0).toUpperCase() + field.slice(1)}`);
+                                const errorElement = document.getElementById(`edit${field.charAt(0).toUpperCase() + field.slice(1)}Error`);
+                                if (input && errorElement) {
+                                    input.classList.add('is-invalid');
+                                    errorElement.textContent = message;
+                                    errorElement.classList.remove('d-none');
+                                }
+                            });
+                        } else {
+                            errorMessage = parsedError.message || errorMessage;
+                            showError('editProfileError', errorMessage);
+                        }
                     } catch (e) {
-                        showError(error.message || 'Ошибка при обновлении профиля', 'editProfileError');
+                        showError('editProfileError', error.message || errorMessage);
                     }
                 } finally {
                     btn.disabled = false;
@@ -354,9 +426,20 @@ document.addEventListener("DOMContentLoaded", function() {
                         })
                     });
 
-                    bootstrap.Modal.getInstance(changePasswordModal).hide();
-                    changePasswordForm.reset();
-                    showSuccess('Пароль успешно изменён');
+                    console.log('Пароль успешно изменен, закрытие модального окна...');
+                    const modal = bootstrap.Modal.getInstance(changePasswordModal);
+                    if (modal) {
+                        modal.hide();
+                        modal._element.addEventListener('hidden.bs.modal', () => {
+                            console.log('Модальное окно закрыто, показ сообщения...');
+                            showSuccess('Пароль успешно изменён', 'globalSuccess');
+                            changePasswordForm.reset();
+                        }, { once: true });
+                    } else {
+                        console.log('Модальное окно не найдено, показ сообщения напрямую...');
+                        showSuccess('Пароль успешно изменён', 'globalSuccess');
+                        changePasswordForm.reset();
+                    }
 
                 } catch (error) {
                     console.error('Ошибка смены пароля:', error);
@@ -417,7 +500,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
             searchResults.classList.add('active');
 
-            // Добавляем обработчики кликов
             searchResults.querySelectorAll('.suggestion-item').forEach(item => {
                 item.addEventListener('click', () => {
                     window.location.href = `/api/v1/product/${item.dataset.id}`;
@@ -425,7 +507,6 @@ document.addEventListener("DOMContentLoaded", function() {
             });
         };
 
-        // Навигация по подсказкам
         searchInput.addEventListener('keydown', e => {
             const items = searchResults.querySelectorAll('.suggestion-item');
             if (['ArrowDown', 'ArrowUp', 'Enter'].includes(e.key)) {
@@ -438,7 +519,6 @@ document.addEventListener("DOMContentLoaded", function() {
             }
         });
 
-        // Закрытие результатов при клике вне области
         document.addEventListener('click', (e) => {
             if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
                 searchResults.innerHTML = '';
@@ -451,22 +531,38 @@ document.addEventListener("DOMContentLoaded", function() {
         }, 300));
     };
 
-    // 8. Обновление UI после аутентификации (из оригинала)
+    // 8. Обновление UI после аутентификации
     const updateUIForAuthenticatedUser = (user) => {
         const authSection = document.querySelector('.navbar-collapse .ms-auto');
         if (!authSection) return;
 
-        authSection.innerHTML = `
-            <div class="d-flex align-items-center">
-                <a href="/api/v1/user/profile/data" class="btn btn-primary me-2">Профиль</a>
-                <button id="logoutBtn" class="btn btn-outline-danger me-2">Выйти</button>
-                <button class="btn btn-outline-secondary theme-toggle" id="themeToggle" title="Переключить тему">
-                    ${document.body.classList.contains('dark-mode') ? '☀️' : '🌙'}
-                </button>
-            </div>
-        `;
+        // Проверяем, есть ли уже кнопки (серверный рендеринг)
+        let profileBtn = authSection.querySelector('a[href="/api/v1/user/profile/data"]');
+        let logoutBtn = authSection.querySelector('#logoutBtn');
+        let themeToggle = authSection.querySelector('.theme-toggle');
 
-        document.getElementById('logoutBtn')?.addEventListener('click', async function(e) {
+        if (!profileBtn || !logoutBtn || !themeToggle) {
+            // Если кнопок нет, создаем их
+            authSection.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <a href="/api/v1/user/profile/data" class="btn btn-primary me-2">Профиль</a>
+                    <button id="logoutBtn" class="btn btn-outline-danger me-2">Выйти</button>
+                    <button class="btn btn-outline-secondary theme-toggle" id="themeToggle" title="Переключить тему">
+                        ${document.body.classList.contains('dark-mode') ? '☀️' : '🌙'}
+                    </button>
+                </div>
+            `;
+        } else {
+            // Если кнопки есть (серверный рендеринг), добавляем нужные классы
+            profileBtn.classList.add('btn', 'btn-primary', 'me-2');
+            logoutBtn.classList.add('btn', 'btn-outline-danger', 'me-2');
+            themeToggle.classList.add('btn', 'btn-outline-secondary', 'theme-toggle');
+            themeToggle.innerHTML = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+        }
+
+        // Добавляем обработчик для кнопки "Выйти"
+        logoutBtn = authSection.querySelector('#logoutBtn');
+        logoutBtn?.addEventListener('click', async function(e) {
             e.preventDefault();
             this.disabled = true;
             this.textContent = "Выход...";
@@ -476,7 +572,7 @@ document.addEventListener("DOMContentLoaded", function() {
         initTheme();
     };
 
-    // 9. Вспомогательные функции (из оригинала)
+    // 9. Вспомогательные функции
     const escapeHtml = (unsafe) => {
         return unsafe
             .replace(/&/g, "&amp;")
@@ -486,7 +582,7 @@ document.addEventListener("DOMContentLoaded", function() {
             .replace(/'/g, "&#039;");
     };
 
-    // 10. Обработчик переключения темы (из переработанного)
+    // 10. Обработчик переключения темы
     document.addEventListener('click', e => {
         if (e.target.closest('.theme-toggle')) {
             const isDark = document.body.classList.toggle('dark-mode');
