@@ -50,14 +50,15 @@ body {
 .footer {
     border-top-left-radius: var(--border-radius);
     border-top-right-radius: var(--border-radius);
-    margin-top: 2rem;
+    margin-top: 1rem;
 }
 
 /* Основной контент */
-main.container {
+main.container,
+main.container-xl {
     background: var(--card-bg);
     border-radius: var(--border-radius);
-    padding: 2rem !important;
+    padding: 1.5rem !important;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     flex-grow: 1;
 }
@@ -79,7 +80,9 @@ main.container {
     border-color: var(--moss) !important;
     color: white !important;
 }
-.btn-primary:hover {
+.btn-primary:hover,
+#saveProfileBtn:hover,
+#savePasswordBtn:hover {
     background: #3a6b4a !important;
     transform: translateY(-2px);
 }
@@ -92,6 +95,25 @@ main.container {
     color: var(--clay) !important;
 }
 .btn-outline-danger:hover {
+    background: var(--clay) !important;
+    color: white !important;
+}
+
+/* Специфичные стили для кнопок в навигационной панели */
+.navbar .btn-primary {
+    background: var(--moss) !important;
+    border-color: var(--moss) !important;
+    color: white !important;
+}
+.navbar .btn-primary:hover {
+    background: #3a6b4a !important;
+    transform: translateY(-2px);
+}
+.navbar .btn-outline-danger {
+    border-color: var(--clay) !important;
+    color: var(--clay) !important;
+}
+.navbar .btn-outline-danger:hover {
     background: var(--clay) !important;
     color: white !important;
 }
@@ -207,7 +229,7 @@ main.container {
     background: var(--input-bg);
     transition: all 0.3s ease;
     overflow: visible;
-    height: 50px; /* Явно задаём высоту .input-group */
+    height: 50px;
     box-sizing: border-box;
 }
 
@@ -218,7 +240,7 @@ main.container {
 
 .input-group > .form-control {
     border: none !important;
-    border-radius: 12px 0 0 12px; /* Радиус только слева */
+    border-radius: 12px 0 0 12px;
     height: 100%;
     padding: 0.75rem 1.25rem;
     background: transparent;
@@ -244,7 +266,7 @@ main.container {
     pointer-events: auto;
     margin: 0;
     box-sizing: border-box;
-    line-height: 1; /* Устраняем возможные проблемы с выравниванием текста */
+    line-height: 1;
 }
 
 .input-group .toggle-password:hover {
@@ -284,15 +306,25 @@ main.container {
     align-items: center;
     gap: 0.5rem;
 }
+.modal-header .bi-person-plus {
+    margin-right: 1rem;
+}
 .modal-body {
     background: var(--card-bg);
-    padding: 2rem;
+    padding: 1.5rem;
     overflow-y: auto;
 }
 .modal-footer {
     background: var(--footer-bg);
     border-top: 2px solid var(--border-color);
-    padding: 1.5rem;
+    padding: 1rem;
+}
+
+/* Выравнивание кнопки "Войти" в правый край */
+.modal-body .button-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1rem;
 }
 
 /* Стили для ссылок в модальных окнах */
@@ -304,19 +336,44 @@ main.container {
     text-decoration: underline;
 }
 
+/* Стили для ссылок в футере модальных окон */
+.modal-footer a.registration-link {
+    color: var(--moss) !important;
+    text-decoration: none;
+}
+.modal-footer a.registration-link:hover {
+    text-decoration: underline;
+    color: #3a6b4a !important;
+}
+
+#globalSuccess {
+    z-index: 1050;
+    max-width: 600px;
+    top: 20px;
+}
+
 /* Профиль */
 .profile-card {
     background: var(--card-bg);
     border-radius: var(--border-radius);
-    padding: 2rem;
-    margin: 2rem 0;
+    padding: 1.5rem;
+    margin: 1rem 0;
 }
 .profile-header {
     display: flex;
     flex-wrap: wrap;
-    gap: 1.5rem;
+    gap: 1rem;
     align-items: flex-start;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
+}
+.profile-header .d-flex {
+    width: 100%;
+}
+.profile-header .action-buttons {
+    margin-left: auto;
+    display: flex;
+    gap: 0.5rem;
+    flex-grow: 0;
 }
 .profile-avatar {
     width: 100px;
@@ -330,10 +387,10 @@ main.container {
     justify-content: center;
 }
 .detail-card {
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 203, 0.9);
     border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
     border: 1px solid rgba(0, 0, 0, 0.1);
 }
 .detail-item {
@@ -341,44 +398,49 @@ main.container {
     border-bottom: 1px dashed var(--border-color);
 }
 
+/* Центрирование секций в профиле */
+.profile-details .row {
+    justify-content: center;
+}
+
 /* Детали продукта */
 .product-detail-wrapper {
     background: var(--light-sand);
     border-radius: var(--border-radius);
-    padding: 2rem;
-    margin: 2rem 0;
+    padding: 1.5rem;
+    margin: 1rem 0;
 }
 .product-detail-wrapper .nutrient-section-group:not(:last-child) {
-    margin-bottom: 3rem;
+    margin-bottom: 2rem;
 }
 .product-detail-wrapper .row.nutrient-subgroup {
-    margin-bottom: 2.5rem;
+    margin-bottom: 1.5rem;
     display: flex;
     flex-wrap: wrap;
 }
 .product-detail-wrapper .nutrient-category:not(:last-child) {
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
 }
 .nutrient-category {
     background: var(--light-stone);
     border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
     width: 100%;
 }
 .category-header {
     font-size: 1.25rem;
     border-bottom: 2px solid var(--sage);
-    padding-bottom: 0.75rem;
-    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
     line-height: 1.2;
 }
 .sub-category {
-    margin-left: 1.5rem;
-    padding-left: 1rem;
+    margin-left: 1rem;
+    padding-left: 0.75rem;
     border-left: 2px solid var(--stone);
     margin-top: 0.5rem;
     margin-bottom: 0.5rem;
@@ -426,7 +488,7 @@ main.container {
 
 /* Стили для Углеводов */
 .nutrient-category .sub-category .ms-3 .nutrient-item {
-    margin-left: 1.5rem;
+    margin-left: 1rem;
 }
 
 /* Стили для Энергетическая ценность и Вода */
@@ -437,7 +499,7 @@ main.container {
 
 /* Стили для Витаминоподобных веществ и Минералов */
 .nutrient-category .sub-category .ms-3 {
-    margin-left: 1.5rem;
+    margin-left: 1rem;
 }
 
 /* Явное определение стилей для Bootstrap колонок */
@@ -603,19 +665,38 @@ body.dark-mode .sub-category .text-muted {
     color: #8A9B6E !important;
 }
 
+body.dark-mode .modal-footer a.registration-link {
+    color: var(--moss) !important;
+}
+body.dark-mode .modal-footer a.registration-link:hover {
+    color: #3a6b4a !important;
+}
+
+/* Улучшение читаемости текста в тёмной теме */
+body.dark-mode .text-muted {
+    color: #C5D9C1 !important;
+}
+
 /* Адаптивность */
 @media (max-width: 768px) {
     :root {
         --border-radius: 15px;
     }
-    main.container {
-        padding: 1.5rem !important;
-        margin: 0 1rem;
+    main.container,
+    main.container-xl {
+        padding: 1rem !important;
+        margin: 0 0.5rem;
     }
     .profile-header {
         flex-direction: column;
         align-items: center;
         text-align: center;
+    }
+    .profile-header .action-buttons {
+        margin-left: 0;
+        margin-top: 0.5rem;
+        width: 100%;
+        justify-content: center;
     }
     .action-buttons .btn {
         width: 100%;
@@ -625,12 +706,33 @@ body.dark-mode .sub-category .text-muted {
         margin: 0.5rem;
     }
     .product-detail-wrapper .nutrient-section-group:not(:last-child) {
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
     }
     .product-detail-wrapper .row.nutrient-subgroup {
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem;
     }
     .product-detail-wrapper .nutrient-category:not(:last-child) {
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem;
+    }
+}
+
+/* Дополнительная адаптивность для широкоформатных экранов */
+@media (min-width: 1200px) {
+    main.container-xl {
+        max-width: 1140px;
+    }
+    .profile-details .col-xl-4 {
+        flex: 0 0 33.333333%;
+        max-width: 33.333333%;
+    }
+}
+
+@media (min-width: 1400px) {
+    main.container-xl {
+        max-width: 1320px;
+    }
+    .profile-details .col-xxl-3 {
+        flex: 0 0 25%;
+        max-width: 25%;
     }
 }
