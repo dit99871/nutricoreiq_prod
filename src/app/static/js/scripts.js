@@ -144,9 +144,8 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     };
 
-    // Новая функция для обновления UI профиля
+    // Функция для обновления UI профиля
     const updateProfileUI = (userData) => {
-        console.log('Обновление UI профиля с данными:', userData);
 
         // Обновляем email в заголовке профиля
         const emailElement = document.querySelector('.profile-header p');
@@ -202,30 +201,23 @@ document.addEventListener("DOMContentLoaded", function() {
                     }
                 });
 
-                console.log('Получение данных пользователя...');
                 const userData = await secureFetch("/api/v1/user/me");
-                console.log('Данные пользователя:', userData);
                 updateUIForAuthenticatedUser(userData);
 
                 const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
                 if (modal) {
-                    console.log('Закрытие модального окна...');
                     modal.hide();
                     modal._element.addEventListener('hidden.bs.modal', () => {
-                        console.log('Модальное окно закрыто, показ сообщения...');
                         showSuccess(`Добро пожаловать, ${userData.username || 'Пользователь'}!`, 'globalSuccess');
                         setTimeout(() => {
-                            console.log('Перезагрузка страницы...');
                             window.location.reload();
-                        }, 3000);
+                        }, 2000);
                     }, {once: true});
                 } else {
-                    console.log('Модальное окно не найдено, показ сообщения напрямую...');
                     showSuccess(`Добро пожаловать, ${userData.username || 'Пользователь'}!`, 'globalSuccess');
                     setTimeout(() => {
-                        console.log('Перезагрузка страницы...');
                         window.location.reload();
-                    }, 3000);
+                    }, 2000);
                 }
             } catch (error) {
                 console.error("Ошибка входа:", error);
@@ -327,7 +319,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 document.getElementById('globalSuccess')?.classList.add('d-none');
 
                 try {
-                    console.log('Отправка запроса на обновление профиля...');
                     const formData = new FormData(editForm);
                     const jsonData = {};
                     formData.forEach((value, key) => {
@@ -338,8 +329,6 @@ document.addEventListener("DOMContentLoaded", function() {
                         }
                     });
 
-                    console.log('Данные для отправки:', jsonData);
-
                     await secureFetch('/api/v1/user/profile/update', {
                         method: 'POST',
                         headers: {
@@ -348,22 +337,17 @@ document.addEventListener("DOMContentLoaded", function() {
                         body: JSON.stringify(jsonData)
                     });
 
-                    console.log('Профиль успешно обновлен, получение новых данных...');
                     const updatedUserData = await secureFetch('/api/v1/user/me');
-                    console.log('Обновленные данные пользователя:', updatedUserData);
 
                     const modal = bootstrap.Modal.getInstance(editProfileModal);
                     if (modal) {
                         modal.hide();
                         modal._element.addEventListener('hidden.bs.modal', () => {
-                            console.log('Модальное окно закрыто, показ сообщения...');
-                            showSuccess('Профиль успешно обновлен', 'globalSuccess');
+                            showSuccess('Профиль успешно обновлен! Обновите страницу!', 'globalSuccess');
                             editForm.reset();
-                            updateProfileUI(updatedUserData);
                         }, { once: true });
                     } else {
-                        console.log('Модальное окно не найдено, показ сообщения напрямую...');
-                        showSuccess('Профиль успешно обновлен', 'globalSuccess');
+                        showSuccess('Профиль успешно обновлен! Обновите страницу!', 'globalSuccess');
                         editForm.reset();
                         updateProfileUI(updatedUserData);
                     }
@@ -426,17 +410,14 @@ document.addEventListener("DOMContentLoaded", function() {
                         })
                     });
 
-                    console.log('Пароль успешно изменен, закрытие модального окна...');
                     const modal = bootstrap.Modal.getInstance(changePasswordModal);
                     if (modal) {
                         modal.hide();
                         modal._element.addEventListener('hidden.bs.modal', () => {
-                            console.log('Модальное окно закрыто, показ сообщения...');
                             showSuccess('Пароль успешно изменён', 'globalSuccess');
                             changePasswordForm.reset();
                         }, { once: true });
                     } else {
-                        console.log('Модальное окно не найдено, показ сообщения напрямую...');
                         showSuccess('Пароль успешно изменён', 'globalSuccess');
                         changePasswordForm.reset();
                     }
@@ -456,12 +437,23 @@ document.addEventListener("DOMContentLoaded", function() {
     const initProductSearch = () => {
         const searchInput = document.getElementById('productQuery');
         const searchResults = document.getElementById('searchResults');
-        if (!searchInput || !searchResults) return;
+        const searchForm = document.getElementById('searchProductForm');
+        const analyzeBtn = searchForm?.querySelector('button[type="submit"]');
+
+        if (!searchInput || !searchResults || !searchForm) {
+            console.error('Не найдены элементы для поиска:', { searchInput, searchResults, searchForm });
+            return;
+        }
+        if (!analyzeBtn) {
+            console.error('Кнопка "Проанализировать" не найдена');
+        }
 
         let currentFocus = -1;
         let abortController = null;
+        let lastSearchData = null; // Сохраняем данные последнего поиска
 
-        const performSearch = async query => {
+        const performSearch = async (query, fromForm = false) => {
+            console.log(`Выполняется поиск: query="${query}", fromForm=${fromForm}`);
             abortController?.abort();
             abortController = new AbortController();
 
@@ -470,30 +462,40 @@ document.addEventListener("DOMContentLoaded", function() {
                     signal: abortController.signal
                 });
 
-                if (data.exact_match) {
-                    window.location.href = `/api/v1/product/${data.exact_match.id}`;
-                    return;
+                lastSearchData = data; // Сохраняем данные для дальнейшего использования
+
+                if (!fromForm) {
+                    renderResults(data.suggestions || []);
+                    if (data.exact_match) {
+                        renderResults([data.exact_match, ...data.suggestions]);
+                    }
                 }
 
-                renderResults(data.suggestions || []);
+                return data;
             } catch (error) {
                 if (error.name !== 'AbortError') {
+                    console.error('Ошибка поиска:', error);
                     showError('searchError', 'Ошибка поиска: ' + error.message);
                 }
+                throw error;
             }
         };
 
-        const renderResults = items => {
+        const renderResults = (items) => {
+            console.log('Рендеринг результатов:', items);
             if (items.length === 0) {
-                searchResults.innerHTML = '';
+                searchResults.innerHTML = '<div class="suggestion-item">Ничего не найдено</div>';
+                searchResults.classList.add('active');
                 return;
             }
 
             searchResults.innerHTML = items.map(item => `
                 <div class="suggestion-item" data-id="${item.id}">
                     <div class="suggestion-content">
-                        <div class="suggestion-title">${escapeHtml(item.title)}</div>
-                        ${item.brand ? `<div class="suggestion-brand">${escapeHtml(item.brand)}</div>` : ''}
+                        <i class="bi bi-box suggestion-icon"></i>
+                        <div>
+                            <div class="suggestion-title">${escapeHtml(item.title)}</div>
+                        </div>
                     </div>
                 </div>
             `).join('');
@@ -507,13 +509,76 @@ document.addEventListener("DOMContentLoaded", function() {
             });
         };
 
-        searchInput.addEventListener('keydown', e => {
+        // Обработка ввода с debounce
+        searchInput.addEventListener('input', _.debounce((e) => {
+            const query = e.target.value.trim();
+            if (query.length === 0) {
+                searchResults.innerHTML = '';
+                searchResults.classList.remove('active');
+                lastSearchData = null;
+                return;
+            }
+
+            if (query.length > 1) {
+                performSearch(query);
+            } else {
+                searchResults.innerHTML = '';
+                searchResults.classList.remove('active');
+                lastSearchData = null;
+            }
+        }, 300));
+
+        // Обработка формы и кнопки "Проанализировать"
+        searchForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const query = searchInput.value.trim();
+            if (!analyzeBtn) {
+                console.error('Кнопка "Проанализировать" не найдена');
+                return;
+            }
+
+            if (query.length < 2) {
+                showError('searchError', 'Запрос должен содержать минимум 2 символа');
+                return;
+            }
+
+            analyzeBtn.disabled = true;
+            const originalText = analyzeBtn.textContent;
+            analyzeBtn.textContent = 'Идет анализ...';
+
+            try {
+                const data = await performSearch(query, true);
+                if (data.exact_match) {
+                    console.log(`Найдено точное совпадение, перенаправление на /api/v1/product/${data.exact_match.id}`);
+                    window.location.href = `/api/v1/product/${data.exact_match.id}`;
+                } else if (lastSearchData && lastSearchData.exact_match) {
+                    console.log(`Используем данные последнего поиска, перенаправление на /api/v1/product/${lastSearchData.exact_match.id}`);
+                    window.location.href = `/api/v1/product/${lastSearchData.exact_match.id}`;
+                } else {
+                    showError('searchError', 'Точное совпадение не найдено');
+                }
+            } catch (error) {
+                showError('searchError', 'Ошибка анализа: ' + error.message);
+            } finally {
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = originalText;
+            }
+        });
+
+        // Обработка клавиш для навигации по подсказкам и подтверждения
+        searchInput.addEventListener('keydown', (e) => {
             const items = searchResults.querySelectorAll('.suggestion-item');
             if (['ArrowDown', 'ArrowUp', 'Enter'].includes(e.key)) {
                 e.preventDefault();
                 if (e.key === 'ArrowDown') currentFocus = (currentFocus + 1) % items.length;
                 if (e.key === 'ArrowUp') currentFocus = (currentFocus - 1 + items.length) % items.length;
-                if (e.key === 'Enter' && items[currentFocus]) items[currentFocus].click();
+                if (e.key === 'Enter') {
+                    if (items[currentFocus]) {
+                        items[currentFocus].click();
+                    } else {
+                        searchForm.dispatchEvent(new Event('submit'));
+                    }
+                }
 
                 items.forEach((item, i) => item.classList.toggle('active', i === currentFocus));
             }
@@ -522,13 +587,10 @@ document.addEventListener("DOMContentLoaded", function() {
         document.addEventListener('click', (e) => {
             if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
                 searchResults.innerHTML = '';
+                searchResults.classList.remove('active');
                 currentFocus = -1;
             }
         });
-
-        searchInput.addEventListener('input', _.debounce(e => {
-            if (e.target.value.length > 1) performSearch(e.target.value);
-        }, 300));
     };
 
     // 8. Обновление UI после аутентификации
@@ -574,12 +636,13 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // 9. Вспомогательные функции
     const escapeHtml = (unsafe) => {
+        if (typeof unsafe !== 'string') return '';
         return unsafe
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+            .replace(/'/g, "&#39;");
     };
 
     // 10. Обработчик переключения темы
