@@ -100,12 +100,12 @@ main.container-xl {
 }
 
 /* Специфичные стили для кнопок в навигационной панели */
-.navbar .btn-primary {
+.navbar .btn {
     background: var(--moss) !important;
     border-color: var(--moss) !important;
     color: white !important;
 }
-.navbar .btn-primary:hover {
+.navbar .btn:hover {
     background: #3a6b4a !important;
     transform: translateY(-2px);
 }
@@ -735,4 +735,93 @@ body.dark-mode .text-muted {
         flex: 0 0 25%;
         max-width: 25%;
     }
+}
+
+/* Стили для автозаполнения поиска */
+.autocomplete-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: var(--input-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+    z-index: 1000;
+    max-height: 300px;
+    overflow-y: auto;
+    display: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.autocomplete-dropdown.active {
+    display: block;
+}
+
+.suggestion-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+}
+
+.suggestion-item:hover,
+.suggestion-item.active {
+    background-color: var(--light-sand);
+}
+
+.suggestion-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.suggestion-icon {
+    color: var(--moss);
+    font-size: 1.2rem;
+}
+
+.suggestion-title {
+    font-weight: 500;
+    color: var(--earth);
+    flex-grow: 1;
+}
+
+.suggestion-brand {
+    font-size: 0.9em;
+    color: var(--sage);
+}
+
+.suggestion-price {
+    font-size: 0.9em;
+    color: var(--clay);
+    margin-left: auto;
+}
+
+/* Темная тема для автозаполнения */
+body.dark-mode .autocomplete-dropdown {
+    background-color: var(--input-bg);
+    border-color: var(--sage);
+}
+
+body.dark-mode .suggestion-item:hover,
+body.dark-mode .suggestion-item.active {
+    background-color: var(--sand);
+}
+
+body.dark-mode .suggestion-icon {
+    color: var(--sage);
+}
+
+body.dark-mode .suggestion-title {
+    color: var(--text-primary);
+}
+
+body.dark-mode .suggestion-brand {
+    color: var(--sky);
+}
+
+body.dark-mode .suggestion-price {
+    color: var(--clay);
 }
