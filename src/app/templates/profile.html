@@ -8,9 +8,8 @@
     <a href="/api/v1/auth/logout" class="btn btn-outline-danger">Выйти</a>
 {% endblock %}
 
-
 {% block content %}
-<div class="container">
+<div class="container-xl">
     <!-- Уведомления -->
     <div id="profile-error" class="alert alert-danger d-none"></div>
     <div id="profile-success" class="alert alert-success d-none"></div>
@@ -44,10 +43,10 @@
         </div>
 
         <!-- Детали профиля -->
-        <div class="profile-details mt-5">
+        <div class="profile-details mt-4">
             <div class="row g-4">
                 <!-- Основная информация -->
-                <div class="col-md-6 col-lg-4">
+                <div class="col-md-6 col-lg-4 col-xl-4 col-xxl-3">
                     <div class="detail-card h-100">
                         <h3 class="mb-4 text-moss"><i class="bi bi-person"></i> Основное</h3>
                         <div class="detail-item">
@@ -72,7 +71,7 @@
                 </div>
 
                 <!-- Физические параметры -->
-                <div class="col-md-6 col-lg-4">
+                <div class="col-md-6 col-lg-4 col-xl-4 col-xxl-3">
                     <div class="detail-card h-100">
                         <h3 class="mb-4 text-sage"><i class="bi bi-rulers"></i> Параметры</h3>
                         <div class="detail-item">
@@ -95,7 +94,7 @@
                 </div>
 
                 <!-- Аналитика -->
-                <div class="col-lg-4">
+                <div class="col-md-6 col-lg-4 col-xl-4 col-xxl-3">
                     <div class="detail-card h-100">
                         <h3 class="mb-4 text-clay"><i class="bi bi-graph-up"></i> Аналитика</h3>
                         <div class="detail-item">
@@ -230,8 +229,8 @@
                         <label for="currentPassword" class="form-label">Текущий пароль</label>
                         <div class="input-group">
                             <input type="password" class="form-control" id="currentPassword" name="current_password" required>
-                            <button type="button" class="toggle-password" data-target="password">
-                                    👁️
+                            <button type="button" class="toggle-password" data-target="currentPassword">
+                                    <i class="bi bi-eye-slash"></i>
                             </button>
                         </div>
                     </div>
@@ -240,8 +239,8 @@
                         <label for="newPassword" class="form-label">Новый пароль</label>
                         <div class="input-group">
                             <input type="password" class="form-control" id="newPassword" name="new_password" required minlength="8">
-                            <button type="button" class="toggle-password" data-target="password">
-                                    👁️
+                            <button type="button" class="toggle-password" data-target="newPassword">
+                                    <i class="bi bi-eye-slash"></i>
                             </button>
                         </div>
                         <div class="form-text">Минимум 8 символов</div>
@@ -251,8 +250,8 @@
                         <label for="confirmPassword" class="form-label">Подтвердите новый пароль</label>
                         <div class="input-group">
                             <input type="password" class="form-control" id="confirmPassword" name="confirm_password" required minlength="8">
-                            <button type="button" class="toggle-password" data-target="password">
-                                    👁️
+                            <button type="button" class="toggle-password" data-target="confirmPassword">
+                                    <i class="bi bi-eye-slash"></i>
                             </button>
                         </div>
                     </div>
