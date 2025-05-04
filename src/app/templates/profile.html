@@ -51,7 +51,7 @@
                         <h3 class="mb-4 text-moss"><i class="bi bi-person"></i> Основное</h3>
                         <div class="detail-item">
                             <div class="d-flex justify-content-between">
-                                <span>Пол:</span>
+                                <strong>Пол:</strong>
                                 <span id="gender-field" class="fw-medium">
                                     {% if user.gender == 'male' %}Мужской
                                     {% elif user.gender == 'female' %}Женский
@@ -61,9 +61,9 @@
                         </div>
                         <div class="detail-item mt-3">
                             <div class="d-flex justify-content-between">
-                                <span>Возраст:</span>
+                                <strong>Возраст:</strong>
                                 <span id="age-field" class="fw-medium">
-                                    {{ user.age|default('—', true) }}
+                                    {% if user.age %}{{ user.age }} лет{% else %}Не указано{% endif %}
                                 </span>
                             </div>
                         </div>
@@ -76,17 +76,17 @@
                         <h3 class="mb-4 text-sage"><i class="bi bi-rulers"></i> Параметры</h3>
                         <div class="detail-item">
                             <div class="d-flex justify-content-between">
-                                <span>Рост (см):</span>
+                                <strong>Рост:</strong>
                                 <span id="height-field" class="fw-medium">
-                                    {{ user.height|default('—', true) }}
+                                    {% if user.height %}{{ user.height }} см{% else %}Не указано{% endif %}
                                 </span>
                             </div>
                         </div>
                         <div class="detail-item mt-3">
                             <div class="d-flex justify-content-between">
-                                <span>Вес (кг):</span>
+                                <strong>Вес:</strong>
                                 <span id="weight-field" class="fw-medium">
-                                    {{ user.weight|default('—', true) }}
+                                    {% if user.weight %}{{ user.weight }} кг{% else %}Не указано{% endif %}
                                 </span>
                             </div>
                         </div>
@@ -99,25 +99,25 @@
                         <h3 class="mb-4 text-clay"><i class="bi bi-graph-up"></i> Аналитика</h3>
                         <div class="detail-item">
                             <div class="d-flex justify-content-between">
-                                <span>Цель:</span>
+                                <strong>Цель:</strong>
                                 <span id="goal-field" class="fw-medium">
-                                    {% if user.goal %}{{ user.goal }}{% else %}—{% endif %}
+                                    {% if user.goal %}{{ user.goal }}{% else %}Не указано{% endif %}
                                 </span>
                             </div>
                         </div>
                         <div class="detail-item mt-3">
                             <div class="d-flex justify-content-between">
-                                <span>Активность:</span>
+                                <strong>Уровень физической активности:</strong>
                                 <span id="kfa-field" class="fw-medium">
-                                    {% if user.kfa %}{{ user.kfa }} уровень{% else %}—{% endif %}
+                                    {% if user.kfa %}{{ user.kfa }}-й уровень{% else %}Не указано{% endif %}
                                 </span>
                             </div>
                         </div>
                         <div class="detail-item mt-3">
                             <div class="d-flex justify-content-between">
-                                <span>Регистрация:</span>
+                                <strong>Регистрация:</strong>&nbsp;
                                 <span id="registration-date-field" class="fw-medium">
-                                    {{ user.created_at|default('—', true) }}
+                                    {{ user.created_at|default('Не указано', true) }}
                                 </span>
                             </div>
                         </div>
