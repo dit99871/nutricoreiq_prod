@@ -549,10 +549,8 @@ document.addEventListener("DOMContentLoaded", function() {
             try {
                 const data = await performSearch(query, true);
                 if (data.exact_match) {
-                    console.log(`Найдено точное совпадение, перенаправление на /api/v1/product/${data.exact_match.id}`);
                     window.location.href = `/api/v1/product/${data.exact_match.id}`;
                 } else if (lastSearchData && lastSearchData.exact_match) {
-                    console.log(`Используем данные последнего поиска, перенаправление на /api/v1/product/${lastSearchData.exact_match.id}`);
                     window.location.href = `/api/v1/product/${lastSearchData.exact_match.id}`;
                 } else {
                     showError('searchError', 'Точное совпадение не найдено');
