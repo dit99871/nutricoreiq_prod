@@ -806,3 +806,44 @@ body.dark-mode .suggestion-icon {
 body.dark-mode .suggestion-title {
     color: var(--moss); /* Изменен цвет текста на темно-зеленый */
 }
+
+/* Политика конфиденциальности */
+.privacy-content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+.privacy-content h1 {
+    font-size: 2rem;
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--sage);
+    padding-bottom: 0.5rem;
+}
+.privacy-content h2 {
+    font-size: 1.5rem;
+    color: var(--moss);
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+.privacy-content p, .privacy-content ul {
+    font-size: 1rem;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+.privacy-content ul {
+    padding-left: 1.5rem;
+}
+.privacy-content a {
+    color: var(--link-color);
+    text-decoration: none;
+}
+.privacy-content a:hover {
+    text-decoration: underline;
+}
+.privacy-content hr {
+    border-top: 1px dashed var(--border-color);
+    margin: 2rem 0;
+}
