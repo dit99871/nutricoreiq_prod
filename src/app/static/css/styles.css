@@ -541,13 +541,14 @@ body.dark-mode {
     --light-sand: #2A3B32;
     --light-stone: #3A4540;
     --border-color: var(--sage);
+    --privacy-bg: #3A4540; /* Дополнительная переменная для фона контента в темной теме */
 }
 
 body.dark-mode .form-control,
 body.dark-mode .form-select {
     border-color: var(--sage);
     background: var(--input-bg);
-    color: var(--moss); /* Изменен цвет текста на темно-зеленый */
+    color: var(--moss);
 }
 
 body.dark-mode .form-control:focus,
@@ -570,7 +571,7 @@ body.dark-mode .form-select {
 body.dark-mode .custom-select-input {
     border-color: var(--sage);
     background: var(--input-bg);
-    color: var(--moss); /* Изменен цвет текста на темно-зеленый */
+    color: var(--moss);
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23E0EAE4' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
 }
 
@@ -586,7 +587,7 @@ body.dark-mode .custom-select-options {
 }
 
 body.dark-mode .custom-select-options li {
-    color: var(--moss); /* Изменен цвет текста на темно-зеленый */
+    color: var(--moss);
 }
 
 body.dark-mode .custom-select-options li:hover {
@@ -619,7 +620,7 @@ body.dark-mode .modal-body {
 
 body.dark-mode .modal-footer {
     background: #3A4540;
-    border-top: 2px solid var(--sage);
+    angiography: 2px solid var(--sage);
 }
 
 body.dark-mode .modal-title {
@@ -804,7 +805,7 @@ body.dark-mode .suggestion-icon {
 }
 
 body.dark-mode .suggestion-title {
-    color: var(--moss); /* Изменен цвет текста на темно-зеленый */
+    color: var(--moss);
 }
 
 /* Политика конфиденциальности */
@@ -812,7 +813,7 @@ body.dark-mode .suggestion-title {
     max-width: 800px;
     margin: 0 auto;
     padding: 2rem;
-    background: var(--card-bg);
+    background: var(--sand);
     border-radius: var(--border-radius);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
@@ -846,4 +847,22 @@ body.dark-mode .suggestion-title {
 .privacy-content hr {
     border-top: 1px dashed var(--border-color);
     margin: 2rem 0;
+}
+
+/* Темная тема для политики конфиденциальности */
+body.dark-mode .privacy-content {
+    background: var(--privacy-bg);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+body.dark-mode .privacy-content h1,
+body.dark-mode .privacy-content h2,
+body.dark-mode .privacy-content p,
+body.dark-mode .privacy-content ul {
+    color: #E0EAE4;
+}
+body.dark-mode .privacy-content a {
+    color: #8A9B6E;
+}
+body.dark-mode .privacy-content a:hover {
+    color: #A7C4C2;
 }
