@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from core.config import settings
 from .auth import router as auth_router
+from .info import router as info_router
 from .product import router as product_router
 from .user import router as users_router
 
@@ -19,4 +20,7 @@ router.include_router(
 router.include_router(
     users_router,
     prefix=settings.api.v1.user,
+)
+router.include_router(
+    info_router,
 )
