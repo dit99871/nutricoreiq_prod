@@ -23,3 +23,14 @@ def get_privacy_info(request: Request):
             "csp_nonce": generate_csp_nonce(),
         },
     )
+
+
+@router.get("/about")
+def get_info_about_project(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="about",
+        content={
+            "csp_nonce": generate_csp_nonce(),
+        },
+    )
