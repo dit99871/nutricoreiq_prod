@@ -10,7 +10,13 @@
 <div class="container product-detail-wrapper">
     <div class="row justify-content-center">
         <div class="col-lg-10">
-            <h1 class="text-center mb-5">{{ product.title }}</h1>
+            <h1 class="text-center mb-5">
+                {{ product.title }}
+                <span class="custom-info-icon">
+                    <span class="question-icon">?</span>
+                    <span class="custom-tooltip">Все значения нутриентов указаны в расчете на 100 г продукта</span>
+                </span>
+            </h1>
 
             <!-- Группа Белки + Жиры -->
             <div class="nutrient-section-group">
