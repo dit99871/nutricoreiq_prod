@@ -29,7 +29,7 @@ def get_privacy_info(request: Request):
 def get_info_about_project(request: Request):
     return templates.TemplateResponse(
         request=request,
-        name="about",
+        name="about.html",
         content={
             "csp_nonce": generate_csp_nonce(),
         },
