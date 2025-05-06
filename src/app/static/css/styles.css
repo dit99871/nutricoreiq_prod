@@ -502,6 +502,79 @@ main.container-xl {
     margin-left: 1rem;
 }
 
+/* Стили для кастомной иконки и tooltip */
+@keyframes pulse {
+    0% { transform: translateY(-0.7rem) scale(1); }
+    50% { transform: translateY(-0.7rem) scale(1.1); }
+    100% { transform: translateY(-0.7rem) scale(1); }
+}
+
+.custom-info-icon {
+    position: relative;
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 0.5rem;
+}
+.custom-info-icon .question-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1rem;
+    height: 1rem;
+    font-size: 0.7rem;
+    font-weight: bold;
+    color: white;
+    background: var(--moss);
+    border-radius: 50%;
+    cursor: pointer;
+    transform: translateY(-0.7rem);
+    vertical-align: super;
+    animation: pulse 2s infinite ease-in-out;
+    transition: transform 0.3s ease, background 0.3s ease;
+}
+.custom-info-icon:hover .question-icon,
+.custom-info-icon.active .question-icon {
+    transform: translateY(-0.7rem) scale(1.2);
+    background: #3a6b4a;
+    animation: none;
+}
+.custom-info-icon .custom-tooltip {
+    visibility: hidden;
+    position: absolute;
+    top: 50%;
+    left: calc(100% + 10px);
+    transform: translateY(-50%) translateX(-10px);
+    background: var(--light-stone);
+    color: var(--moss);
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    max-width: 200px;
+    white-space: normal;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.custom-info-icon:hover .custom-tooltip,
+.custom-info-icon.active .custom-tooltip {
+    visibility: visible;
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+}
+body.dark-mode .custom-info-icon .question-icon {
+    background: #8A9B6E;
+    color: #1A2F28;
+}
+body.dark-mode .custom-info-icon:hover .question-icon,
+body.dark-mode .custom-info-icon.active .question-icon {
+    background: #A7C4C2;
+}
+body.dark-mode .custom-info-icon .custom-tooltip {
+    background: #3A4540;
+    color: #C5D9C1;
+}
+
 /* Явное определение стилей для Bootstrap колонок */
 .product-detail-wrapper .row {
     display: flex;
@@ -526,6 +599,23 @@ main.container-xl {
         flex: 0 0 100%;
         max-width: 100%;
     }
+    .custom-info-icon .custom-tooltip {
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%) translateY(10px);
+        max-width: 90%;
+    }
+    .custom-info-icon:hover .custom-tooltip,
+    .custom-info-icon.active .custom-tooltip {
+        transform: translateX(-50%) translateY(20px);
+    }
+    .custom-info-icon .question-icon {
+        transform: translateY(-0.7rem);
+    }
+    .custom-info-icon:hover .question-icon,
+    .custom-info-icon.active .question-icon {
+        transform: translateY(-0.7rem) scale(1.2);
+    }
 }
 
 /* Темная тема */
@@ -536,12 +626,12 @@ body.dark-mode {
     --header-bg: #3A4540;
     --footer-bg: #3A4540;
     --input-bg: rgba(255, 255, 255, 0.1);
-    --input-bg-hover: rgba(255, 255, 255, 0.2);
+    --input-bg-hover: rgba(255, 255, orki0.2);
     --link-color: #8A9B6E;
     --light-sand: #2A3B32;
     --light-stone: #3A4540;
     --border-color: var(--sage);
-    --privacy-bg: #3A4540; /* Дополнительная переменная для фона контента в темной теме */
+    --privacy-bg: #3A4540;
 }
 
 body.dark-mode .form-control,
@@ -620,7 +710,7 @@ body.dark-mode .modal-body {
 
 body.dark-mode .modal-footer {
     background: #3A4540;
-    angiography: 2px solid var(--sage);
+    border-top: 2px solid var(--sage);
 }
 
 body.dark-mode .modal-title {
@@ -786,7 +876,6 @@ body.dark-mode .text-muted {
 .suggestion-title {
     font-weight: 500;
     color: var(--earth);
-    flex-grow: 1;
 }
 
 /* Темная тема для автозаполнения */
@@ -864,5 +953,64 @@ body.dark-mode .privacy-content a {
     color: #8A9B6E;
 }
 body.dark-mode .privacy-content a:hover {
+    color: #A7C4C2;
+}
+
+/* О проекте */
+.about-content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+    background: var(--sand);
+    border-radius: var(--border-radius);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+.about-content h1 {
+    font-size: 2rem;
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--sage);
+    padding-bottom: 0.5rem;
+}
+.about-content h2 {
+    font-size: 1.5rem;
+    color: var(--moss);
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+.about-content p, .about-content ul {
+    font-size: 1rem;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+.about-content ul {
+    padding-left: 1.5rem;
+}
+.about-content a {
+    color: var(--link-color);
+    text-decoration: none;
+}
+.about-content a:hover {
+    text-decoration: underline;
+}
+.about-content hr {
+    border-top: 1px dashed var(--border-color);
+    margin: 2rem 0;
+}
+
+/* Темная тема для страницы "О проекте" */
+body.dark-mode .about-content {
+    background: var(--privacy-bg);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+body.dark-mode .about-content h1,
+body.dark-mode .about-content h2,
+body.dark-mode .about-content p,
+body.dark-mode .about-content ul {
+    color: #E0EAE4;
+}
+body.dark-mode .about-content a {
+    color: #8A9B6E;
+}
+body.dark-mode .about-content a:hover {
     color: #A7C4C2;
 }
