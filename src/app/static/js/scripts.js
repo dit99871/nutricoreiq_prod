@@ -146,7 +146,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Функция для обновления UI профиля
     const updateProfileUI = (userData) => {
-
         // Обновляем email в заголовке профиля
         const emailElement = document.querySelector('.profile-header p');
         if (emailElement && userData.email) {
@@ -640,7 +639,7 @@ document.addEventListener("DOMContentLoaded", function() {
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#39;");
+            .replace(/'/g, "&#039;");
     };
 
     // 10. Обработчик переключения темы
@@ -657,7 +656,34 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
-    // 11. Основная инициализация
+    // 11. Обработка тач-событий для tooltip
+    const initTooltip = () => {
+        const infoIcons = document.querySelectorAll('.custom-info-icon');
+
+        infoIcons.forEach(icon => {
+            // Обработка тач-событий для мобильных устройств
+            icon.addEventListener('touchstart', function (e) {
+                e.preventDefault();
+                // Переключаем класс active для показа/скрытия tooltip
+                this.classList.toggle('active');
+                // Убираем active у других иконок
+                infoIcons.forEach(otherIcon => {
+                    if (otherIcon !== this) {
+                        otherIcon.classList.remove('active');
+                    }
+                });
+            });
+
+            // Закрытие tooltip при клике/тапе вне иконки
+            document.addEventListener('touchstart', function (e) {
+                if (!icon.contains(e.target)) {
+                    icon.classList.remove('active');
+                }
+            });
+        });
+    };
+
+    // 12. Основная инициализация
     const initAll = () => {
         initTheme();
         initPasswordToggles();
@@ -665,6 +691,7 @@ document.addEventListener("DOMContentLoaded", function() {
         initRegisterForm();
         initProfileModals();
         initProductSearch();
+        initTooltip();
     };
 
     // Запускаем инициализацию
