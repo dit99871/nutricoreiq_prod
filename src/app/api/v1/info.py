@@ -27,6 +27,14 @@ def get_privacy_info(request: Request):
 
 @router.get("/about")
 def get_info_about_project(request: Request):
+    """
+    Returns the about page.
+
+    This page is a static HTML template that displays the description of the project.
+
+    :param request: The incoming request object.
+    :return: A rendered HTML template with the about page.
+    """
     return templates.TemplateResponse(
         request=request,
         name="about.html",
