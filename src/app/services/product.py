@@ -20,6 +20,30 @@ async def handle_product_search(
     query: str,
     confirmed: bool,
 ) -> UnifiedProductResponse:
+    """
+    Searches for products based on a query string.
+
+    This function performs a search for products by matching the query string
+    against the product titles in the database. It returns a `UnifiedProductResponse`
+    containing an exact match if found, or suggests similar products.
+
+    The function takes a query string and a boolean flag indicating whether to skip
+    suggestions.
+
+    If the `confirmed` flag is set to `True`, the function adds the product to the
+    pending queue if it does not already exist.
+
+    If a database error occurs, raises an `HTTPException` with a 404 status code and
+    a detail string containing the error message. If an unexpected error occurs,
+    raises an `HTTPException` with a 500 status code and a detail string containing the
+    error message.
+
+    :param session: The current database session.
+    :param query: The search query string. It must be at least 2 characters long.
+    :param confirmed: A boolean flag indicating whether to skip suggestions.
+    :return: A `UnifiedProductResponse` object with the search results.
+    :raises HTTPException: If a database error or unexpected error occurs.
+    """
     response = UnifiedProductResponse()
     query = query.strip().lower()
 
