@@ -40,7 +40,7 @@
                                                 {{ {'nonessential': 'заменимые', 'essential': 'незаменимые', 'cond_essential': 'условнонезаменимые'}[type] }}:
                                             </span>
                                             <span class="nutrient-amount">
-                                                {{ (product.proteins.amino_acids[type] / 1000)|round(3) }} <span class="unit">г</span>
+                                                {{ (product.proteins.amino_acids[type])|round(3) }} <span class="unit">г</span>
                                             </span>
                                         </div>
                                         {% endif %}
