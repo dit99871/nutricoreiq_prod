@@ -3,24 +3,23 @@
 {% block title %}Главная - NutriCoreIQ{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
+<div class="container-fluid mt-5 px-3 px-md-5">
     <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow-sm p-4" style="background-color: #f5f5dc; border-color: #d4a373;">
-                <h1 class="text-center" style="color: #8b5e3b;">Добро пожаловать в NutriCoreIQ!</h1>
-                <p class="text-center text-muted">
+        <div class="col-12 col-md-10 col-lg-10 col-xl-8">
+            <div class="card welcome-card shadow-sm p-4 text-center">
+                <h1 class="welcome-title">Добро пожаловать в NutriCoreIQ!</h1>
+                <p class="text-muted welcome-text">
                     Инновационный сервис анализа питания и рекомендаций для здорового образа жизни.
                 </p>
-                <form id="searchProductForm" class="d-flex justify-content-center mt-3 gap-2">
-                    <div class="search-container position-relative flex-grow-1">
+                <form id="searchProductForm" class="d-flex flex-column flex-md-row justify-content-center align-items-center mt-3 gap-2 w-100">
+                    <div class="search-container position-relative flex-grow-1 w-100">
                         <input type="text" name="query" id="productQuery" class="form-control"
                                placeholder="Введите название продукта"
-                               style="border-color: #d4a373; height: 46px;"
                                required minlength="2" maxlength="40"
                                autocomplete="off">
                         <div id="searchResults" class="autocomplete-dropdown"></div>
                     </div>
-                    <button type="submit" class="btn analyze-btn">
+                    <button type="submit" class="btn analyze-btn mt-2 mt-md-0">
                         Проанализировать
                     </button>
                 </form>
