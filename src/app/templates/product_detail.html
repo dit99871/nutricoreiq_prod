@@ -237,14 +237,14 @@
                 {% endif %}
 
                 <!-- Другие компоненты -->
-                {% if product.others %}
+                {% if product.other %}
                 <div class="nutrient-category">
                     <h2 class="category-header">
                         <span class="nutrient-name">Другие компоненты</span>
                     </h2>
                     <div class="sub-category">
                         <div class="ms-3">
-                            {% for item in product.others.oths %}
+                            {% for item in product.other.oths %}
                                 {% if item.amount %}
                                 <div class="nutrient-item">
                                     <span class="nutrient-name">{{ item.name }}:</span>
