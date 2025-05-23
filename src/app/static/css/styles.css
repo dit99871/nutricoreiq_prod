@@ -11,11 +11,11 @@
     --light-stone: #E8E8E8;
 
     /* Системные цвета */
-    --bg-primary: #A9C8B9;
+    --bg-primary: #B8D1C6;
     --card-bg: #C5D9C1;
     --header-bg: var(--sand);
     --footer-bg: var(--sand);
-    --input-bg: #EDEDED;
+    --input-bg: var(--sand);
     --input-bg-hover: rgba(0, 0, 0, 0.1);
     --text-primary: #2F4858;
     --link-color: var(--moss);
@@ -33,134 +33,65 @@ body {
     display: flex;
     flex-direction: column;
     margin: 0;
-    overflow-x: hidden; /* Устранение горизонтальной прокрутки */
+    overflow-x: hidden;
 }
 
 /* Навигация и подвал */
 .navbar,
 .footer {
     background-color: var(--header-bg) !important;
-    border-radius: var(--border-radius); /* Закругленные края */
+    border-radius: var(--border-radius);
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    width: calc(100% - 2rem); /* Отступы от краёв экрана */
-    max-width: 1600px; /* Увеличено с 1320px до 1600px */
-    margin: 0 auto; /* Центрирование */
+    width: calc(100% - 2rem);
+    max-width: 1600px;
+    margin: 0 auto;
 }
 
 .navbar {
-    margin-top: 1rem; /* Отступ сверху */
+    margin-top: 1rem;
     margin-bottom: 1rem;
 }
 
 .footer {
     margin-top: 1rem;
-    margin-bottom: 1rem; /* Отступ снизу */
+    margin-bottom: 1rem;
 }
 
 /* Основной контент */
 main {
     flex-grow: 1;
-    width: calc(100% - 2rem); /* Отступы от краёв экрана */
-    max-width: 1600px; /* Увеличено с 1320px до 1600px */
-    margin: 0 auto; /* Центрирование */
-    overflow-x: hidden; /* Предотвращаем горизонтальный бегунок */
+    width: calc(100% - 2rem);
+    max-width: 1600px;
+    margin: 0 auto;
+    overflow-x: hidden;
+}
+
+main.container.d-flex.flex-column.flex-grow-1.py-4 {
+    background: var(--bg-primary) !important;
+    border-radius: var(--border-radius);
 }
 
 /* Если main имеет класс container или container-xl, переопределяем стили */
 main.container,
 main.container-xl {
     background: var(--card-bg);
-    border-radius: var(--border-radius); /* Закругленные края */
-    padding: 1.5rem !important; /* Внутренние отступы */
-    margin: 0 auto !important; /* Центрирование */
-    width: calc(100% - 2rem) !important; /* Отступы от краёв */
-    max-width: 1600px !important; /* Увеличено с 1320px до 1600px */
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Тень */
+    border-radius: var(--border-radius);
+    padding: 1.5rem !important;
+    margin: 0 auto !important;
+    width: calc(100% - 2rem) !important;
+    max-width: 1600px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
-/* Кнопки и элементы управления */
-.btn {
-    border-radius: 12px;
-    padding: 0.6rem 1.5rem;
-    transition: all 0.3s ease;
-    border: 2px solid;
-    font-weight: 500;
+/* Элемент с классом col-12 col-md-10 col-lg-10 col-xl-8 (возврат к исходному состоянию) */
+div.col-12.col-md-10.col-lg-10.col-xl-8 {
+    border-radius: var(--border-radius);
 }
 
-.btn-primary,
-.btn-register,
-.analyze-btn,
-#saveProfileBtn,
-#savePasswordBtn {
-    background: var(--moss) !important;
-    border-color: var(--moss) !important;
-    color: white !important;
-}
-
-.btn-primary:hover,
-#saveProfileBtn:hover,
-#savePasswordBtn:hover {
-    background: #3a6b4a !important;
-    transform: translateY(-2px);
-}
-
-.btn-outline {
-    border-color: var(--moss);
-    color: var(--moss);
-}
-
-.btn-outline-danger,
-.btn-logout {
-    border-color: var(--clay) !important;
-    color: var(--clay) !important;
-}
-
-.btn-outline-danger:hover,
-.btn-logout:hover {
-    background: var(--clay) !important;
-    color: white !important;
-}
-
-.btn-login {
-    border-color: var(--moss);
-    color: var(--moss);
-    background: none;
-}
-
-.btn-login:hover {
-    background: var(--moss) !important;
-    color: white !important;
-}
-
-.btn-profile {
-    background: var(--moss) !important;
-    border-color: var(--moss) !important;
-    color: white !important;
-}
-
-.btn-profile:hover {
-    background: #3a6b4a !important;
-    transform: translateY(-2px);
-}
-
-.theme-toggle {
-    background: none !important;
-    border: none !important;
-    padding: 0 !important;
-    font-size: 1.6rem;
-    color: inherit !important;
-    box-shadow: none !important;
-    cursor: pointer;
-    transition: transform 0.3s ease;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.theme-toggle:hover {
-    transform: scale(1.1);
+/* Элемент с классом card welcome-card shadow-sm p-4 text-center */
+div.card.welcome-card.shadow-sm.p-4.text-center {
+    background: var(--light-sand) !important;
+    border-radius: var(--border-radius);
 }
 
 /* Формы и поля ввода */
@@ -173,14 +104,16 @@ main.container-xl {
     transition: all 0.3s ease;
     font-size: 1rem;
     line-height: 1.2;
-    background: var(--input-bg);
+    background: var(--light-sand) !important;
     box-sizing: border-box;
+    color: var(--text-primary);
 }
 
 .form-control:focus,
 .form-select:focus {
     border-color: var(--moss);
     box-shadow: 0 0 0 3px rgba(var(--moss), 0.2);
+    background: var(--light-sand) !important;
 }
 
 .form-select {
@@ -214,12 +147,14 @@ main.container-xl {
     background-repeat: no-repeat;
     background-position: right 0.75rem center;
     background-size: 16px 12px;
+    color: var(--text-primary);
 }
 
 .custom-select-input:focus {
     border-color: var(--moss);
     box-shadow: 0 0 0 3px rgba(var(--moss), 0.2);
     outline: none;
+    background: var(--input-bg);
 }
 
 .custom-select-options {
@@ -270,6 +205,7 @@ main.container-xl {
 .input-group:focus-within {
     border-color: var(--moss);
     box-shadow: 0 0 0 3px rgba(var(--moss), 0.2);
+    background: var(--input-bg);
 }
 
 .input-group > .form-control {
@@ -280,6 +216,7 @@ main.container-xl {
     background: transparent;
     flex: 1;
     box-sizing: border-box;
+    color: var(--text-primary);
 }
 
 .input-group .toggle-password {
@@ -455,25 +392,22 @@ main.container-xl {
     background: var(--light-sand);
     border-radius: var(--border-radius);
     padding: 1rem;
-    margin: 0 auto; /* Центрирование */
-    max-width: 1200px; /* Ограничение максимальной ширины */
-    width: 90%; /* Увеличение заполнения пространства */
+    margin: 0 auto;
+    max-width: 1200px;
+    width: 90%;
     box-sizing: border-box;
-    overflow-x: hidden; /* Устранение горизонтальной прокрутки */
-}
-
-.product-detail-wrapper .nutrient-section-group:not(:last-child) {
-    margin-bottom: 1.5rem;
+    overflow-x: hidden;
 }
 
 .product-detail-wrapper .nutrient-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 1rem;
     justify-items: center;
     width: 100%;
     max-width: 100%;
-    grid-auto-flow: dense; /* Подтягивание блоков */
+    grid-auto-flow: dense;
+    margin-bottom: 1.5rem;
 }
 
 .product-detail-wrapper .nutrient-category {
@@ -482,8 +416,8 @@ main.container-xl {
     padding: 0.75rem;
     margin-bottom: 0;
     width: 100%;
-    min-width: 250px;
-    max-width: 350px;
+    min-width: 300px;
+    max-width: 400px;
     box-sizing: border-box;
 }
 
@@ -517,7 +451,7 @@ main.container-xl {
     gap: 0.5rem;
     font-size: 1rem;
     line-height: normal;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     height: auto;
 }
 
@@ -526,6 +460,7 @@ main.container-xl {
     font-size: 1rem;
     line-height: normal;
     flex: 0 0 auto;
+    word-break: break-word;
 }
 
 .nutrient-amount {
@@ -536,6 +471,8 @@ main.container-xl {
     line-height: normal;
     flex: 0 0 auto;
     vertical-align: baseline;
+    word-break: break-word;
+    margin-left: 1rem; /* Добавлен отступ слева для единообразия */
 }
 
 .unit {
@@ -563,119 +500,39 @@ main.container-xl {
     display: block;
 }
 
-/* Стили для Витаминов и Витаминоподобных веществ */
-.product-detail-wrapper .nutrient-grid.vitamins-grid {
+/* Стили для Минералов */
+.mineral-category {
+    background: var(--light-stone);
+    border-radius: 12px;
+    padding: 0.75rem;
+    margin-bottom: 0;
+}
+
+.mineral-category .mineral-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    align-items: stretch;
-}
-
-.product-detail-wrapper .nutrient-grid.vitamins-grid .nutrient-category {
-    flex-grow: 1;
-}
-
-/* Стили для Минералов */
-.mineral-category .nutrient-grid.mineral-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(200px, 1fr)); /* Горизонтальная компоновка */
     gap: 1rem;
-    align-items: stretch; /* Выравнивание высоты блоков */
+    align-items: stretch;
 }
 
 .mineral-category .sub-category.macro-minerals,
 .mineral-category .sub-category.micro-minerals {
     margin-left: 0;
-    padding-left: 0;
+    padding: 0.75rem;
     border-left: none;
     margin-top: 0.5rem;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    min-height: 200px; /* Минимальная высота для равномерности */
+    justify-content: flex-start;
+    min-height: auto;
+    background: transparent;
+    overflow-y: auto;
+    max-height: 400px;
 }
 
-.mineral-category .sub-category .ms-3 {
+.mineral-category .sub-category .mineral-content {
     flex-grow: 1;
-}
-
-/* Адаптивная группировка блоков */
-@media (min-width: 1200px) {
-    .product-detail-wrapper .nutrient-grid {
-        grid-template-columns: repeat(3, minmax(250px, 1fr)); /* 3 блока в ряд */
-    }
-}
-
-@media (min-width: 768px) and (max-width: 1199px) {
-    .product-detail-wrapper .nutrient-grid {
-        grid-template-columns: repeat(2, minmax(250px, 1fr)); /* 2 блока в ряд */
-    }
-}
-
-@media (max-width: 767px) {
-    .product-detail-wrapper .nutrient-grid {
-        grid-template-columns: 1fr; /* 1 блок в ряд */
-    }
-    .product-detail-wrapper .nutrient-category {
-        min-width: 200px;
-        max-width: 300px;
-    }
-    .mineral-category .nutrient-grid.mineral-grid {
-        grid-template-columns: 1fr; /* На маленьких экранах вертикально */
-    }
-    .mineral-category .sub-category.macro-minerals,
-    .mineral-category .sub-category.micro-minerals {
-        min-height: auto; /* Сброс минимальной высоты на мобильных */
-    }
-}
-
-/* Стили для стартовой страницы */
-.container-fluid .card {
-    width: 100%;
-    max-width: none; /* Убрано ограничение 1200px для полной адаптивности */
-    margin: 0 auto;
-    padding: 2rem;
-}
-
-.welcome-card {
-    background-color: #f5f5dc;
-    border: 2px solid #d4a373;
-    border-radius: var(--border-radius);
-}
-
-.welcome-title {
-    color: var(--earth);
-    font-size: 2rem;
-    margin-bottom: 1rem;
-}
-
-.welcome-text {
-    color: var(--sage);
-    font-size: 1rem;
-}
-
-#searchProductForm {
-    max-width: 100%;
-    width: 100%;
-}
-
-.search-container {
-    flex-grow: 1;
-    max-width: 100%;
-    width: 100%;
-}
-
-#productQuery {
-    width: 100%;
-    min-width: 300px; /* Минимальная ширина поля ввода */
-    max-width: none; /* Убрано ограничение 1000px для полной адаптивности */
-    border-color: var(--border-color);
-    height: 46px;
-}
-
-.analyze-btn {
-    white-space: nowrap;
-    width: auto; /* Установка ширины по содержимому */
-    padding: 0.6rem 1.2rem; /* Уменьшение отступов для компактности */
+    overflow-y: auto;
 }
 
 /* Стили для кастомной иконки и tooltip */
@@ -686,7 +543,7 @@ main.container-xl {
 }
 
 .custom-info-icon {
-    position: unset;
+    position: relative;
     display: inline-block;
     vertical-align: middle;
     margin-left: 0.5rem;
@@ -720,9 +577,9 @@ main.container-xl {
 .custom-info-icon .custom-tooltip {
     visibility: hidden;
     position: absolute;
-    top: 50%;
-    left: calc(100% + 10px);
-    transform: translateY(-50%) translateX(-10px);
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(5px);
     background: var(--light-stone);
     color: var(--moss);
     font-size: 0.9rem;
@@ -740,7 +597,7 @@ main.container-xl {
 .custom-info-icon.active .custom-tooltip {
     visibility: visible;
     opacity: 1;
-    transform: translateY(-50%) translateX(0);
+    transform: translateX(-50%) translateY(10px);
 }
 
 body.dark-mode .custom-info-icon .question-icon {
@@ -765,7 +622,7 @@ body.dark-mode {
     --card-bg: #2A3B32;
     --header-bg: #3A4540;
     --footer-bg: #3A4540;
-    --input-bg: rgba(255, 255, 255, 0.1);
+    --input-bg: var(--sand);
     --input-bg-hover: rgba(255, 255, 255, 0.2);
     --link-color: #8A9B6E;
     --light-sand: #2A3B32;
@@ -778,14 +635,14 @@ body.dark-mode .form-control,
 body.dark-mode .form-select {
     border-color: var(--sage);
     background: var(--input-bg);
-    color: var(--moss);
+    color: var(--text-primary);
 }
 
 body.dark-mode .form-control:focus,
 body.dark-mode .form-select:focus {
     border-color: var(--moss);
     box-shadow: 0 0 0 3px rgba(var(--moss), 0.2);
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--input-bg);
 }
 
 body.dark-mode .form-select {
@@ -801,14 +658,14 @@ body.dark-mode .form-select {
 body.dark-mode .custom-select-input {
     border-color: var(--sage);
     background: var(--input-bg);
-    color: var(--moss);
+    color: var(--text-primary);
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23E0EAE4' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
 }
 
 body.dark-mode .custom-select-input:focus {
     border-color: var(--moss);
     box-shadow: 0 0 0 3px rgba(var(--moss), 0.2);
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--input-bg);
 }
 
 body.dark-mode .custom-select-options {
@@ -817,7 +674,7 @@ body.dark-mode .custom-select-options {
 }
 
 body.dark-mode .custom-select-options li {
-    color: var(--moss);
+    color: var(--text-primary);
 }
 
 body.dark-mode .custom-select-options li:hover {
@@ -896,6 +753,10 @@ body.dark-mode .sub-category .text-muted {
     color: #8A9B6E !important;
 }
 
+body.dark-mode .mineral-category {
+    background: var(--light-stone);
+}
+
 body.dark-mode .modal-footer a.registration-link {
     color: var(--moss) !important;
 }
@@ -920,12 +781,12 @@ body.dark-mode .text-dark {
     }
     main.container,
     main.container-xl {
-        width: calc(100% - 1rem) !important; /* Уменьшаем отступы на мобильных */
+        width: calc(100% - 1rem) !important;
         padding: 1rem !important;
     }
     .navbar,
     .footer {
-        width: calc(100% - 1rem); /* Уменьшаем отступы на мобильных */
+        width: calc(100% - 1rem);
     }
     .profile-header {
         flex-direction: column;
@@ -945,9 +806,6 @@ body.dark-mode .text-dark {
     .modal-dialog {
         margin: 0.5rem;
     }
-    .product-detail-wrapper .nutrient-section-group:not(:last-child) {
-        margin-bottom: 1.5rem;
-    }
     .custom-info-icon .custom-tooltip {
         top: 100%;
         left: 50%;
@@ -965,12 +823,15 @@ body.dark-mode .text-dark {
     .custom-info-icon.active .question-icon {
         transform: translateY(-0.7rem) scale(1.2);
     }
+    .mineral-category .mineral-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* Дополнительная адаптивность для широкоформатных экранов */
 @media (min-width: 1200px) {
     main.container-xl {
-        max-width: 1440px !important; /* Увеличено с 1140px до 1440px */
+        max-width: 1440px !important;
     }
     .profile-details .col-xl-4 {
         flex: 0 0 33.333333%;
@@ -980,7 +841,7 @@ body.dark-mode .text-dark {
 
 @media (min-width: 1400px) {
     main.container-xl {
-        max-width: 1600px !important; /* Увеличено с 1320px до 1600px */
+        max-width: 1600px !important;
     }
     .profile-details .col-xxl-3 {
         flex: 0 0 25%;
@@ -1193,4 +1054,97 @@ body.dark-mode .about-content a {
 
 body.dark-mode .about-content a:hover {
     color: #A7C4C2;
+}
+
+/* Кнопки и элементы управления */
+.btn {
+    border-radius: var(--border-radius) !important;
+    padding: 0.6rem 1.5rem !important;
+    transition: all 0.3s ease !important;
+    border: 2px solid !important;
+    font-weight: 500 !important;
+    text-transform: none !important; /* Убираем преобразование текста Bootstrap */
+}
+
+.btn-primary,
+.btn-register,
+.analyze-btn,
+#saveProfileBtn,
+#savePasswordBtn {
+    background: var(--moss) !important;
+    border-color: var(--moss) !important;
+    color: white !important;
+}
+
+.btn-primary:hover,
+#saveProfileBtn:hover,
+#savePasswordBtn:hover,
+.analyze-btn:hover {
+    background: #3a6b4a !important;
+    transform: translateY(-2px) !important;
+}
+
+.btn-outline {
+    border-color: var(--moss) !important;
+    color: var(--moss) !important;
+    background: none !important;
+}
+
+.btn-outline-danger,
+.btn-logout {
+    border-color: var(--clay) !important;
+    color: var(--clay) !important;
+    background: none !important;
+}
+
+.btn-outline-danger:hover,
+.btn-logout:hover {
+    background: var(--clay) !important;
+    color: white !important;
+}
+
+.btn-login {
+    border-color: var(--moss) !important;
+    color: var(--moss) !important;
+    background: none !important;
+}
+
+.btn-login:hover {
+    background: var(--moss) !important;
+    color: white !important;
+}
+
+.btn-profile {
+    background: var(--moss) !important;
+    border-color: var(--moss) !important;
+    color: white !important;
+}
+
+.btn-profile:hover {
+    background: #3a6b4a !important;
+    transform: translateY(-2px) !important;
+}
+
+.theme-toggle {
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    font-size: 1.6rem !important;
+    color: inherit !important;
+    box-shadow: none !important;
+    cursor: pointer !important;
+    transition: transform 0.3s ease !important;
+    width: 40px !important;
+    height: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.theme-toggle:hover {
+    transform: scale(1.1) !important;
+}
+
+body.dark-mode .theme-toggle {
+    color: #E0EAE4 !important; /* Подходит для тёмной темы */
 }
