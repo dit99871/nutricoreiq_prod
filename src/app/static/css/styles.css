@@ -21,6 +21,7 @@
     --link-color: var(--moss);
     --border-color: var(--sage);
     --border-radius: 12px;
+    --standard-width: 400px;
 }
 
 /* Базовые стили */
@@ -400,25 +401,89 @@ div.card.welcome-card.shadow-sm.p-4.text-center {
 }
 
 .product-detail-wrapper .nutrient-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    display: flex;
+    flex-direction: column;
     gap: 1rem;
-    justify-items: center;
     width: 100%;
     max-width: 100%;
-    grid-auto-flow: dense;
     margin-bottom: 1.5rem;
 }
 
-.product-detail-wrapper .nutrient-category {
+.product-detail-wrapper .nutrient-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+}
+
+.product-detail-wrapper .nutrient-group-inner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    width: 100%;
+    align-items: stretch; /* Выравнивание по высоте */
+}
+
+/* Обычные блоки (Белки, Жиры, Углеводы, Витамины) */
+.product-detail-wrapper .nutrient-group-inner .nutrient-category {
     background: var(--light-stone);
     border-radius: 12px;
     padding: 0.75rem;
-    margin-bottom: 0;
-    width: 100%;
+    flex: 1 1 calc(33.333% - 1rem); /* Максимум 3 блока в строке */
     min-width: 300px;
-    max-width: 400px;
     box-sizing: border-box;
+}
+
+/* Вертикальная группа (Энергетическая ценность, Вода, Витаминоподобные вещества, Другие компоненты) */
+.product-detail-wrapper .nutrient-group-inner .nutrient-category-group {
+    flex: 1 1 calc(33.333% - 1rem);
+    min-width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.product-detail-wrapper .nutrient-group-inner .nutrient-category-group .nutrient-category {
+    background: var(--light-stone);
+    border-radius: 12px;
+    padding: 0.75rem;
+    flex: 0 0 auto; /* Не растягивается внутри группы */
+}
+
+/* Минералы */
+.product-detail-wrapper .nutrient-group-inner .mineral-category {
+    flex: 0 0 auto; /* Занимает только необходимую ширину */
+    min-width: 300px;
+}
+
+.product-detail-wrapper .nutrient-group-inner .mineral-category.single-mineral {
+    min-width: 200px; /* Меньшая минимальная ширина для одного типа минералов */
+}
+
+.product-detail-wrapper .mineral-grid {
+    display: flex;
+    flex-direction: row; /* "Микронутриенты" и "Макронутриенты" в ряд */
+    gap: 1rem;
+    align-items: stretch;
+}
+
+.product-detail-wrapper .sub-category.macro-minerals,
+.product-detail-wrapper .sub-category.micro-minerals {
+    margin-left: 0;
+    padding: 0.75rem;
+    border-left: none;
+    margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column; /* Нутриенты друг под другом */
+    justify-content: flex-start;
+    min-height: auto;
+    background: transparent;
+    flex: 0 0 auto; /* Занимает только место содержимого */
+}
+
+.product-detail-wrapper .sub-category .mineral-content {
+    flex-grow: 0;
+    padding: 0.25rem 0;
 }
 
 .category-header {
@@ -451,7 +516,7 @@ div.card.welcome-card.shadow-sm.p-4.text-center {
     gap: 0.5rem;
     font-size: 1rem;
     line-height: normal;
-    flex-wrap: wrap;
+    flex-wrap: nowrap; /* Запрещаем перенос внутри элемента */
     height: auto;
 }
 
@@ -472,7 +537,7 @@ div.card.welcome-card.shadow-sm.p-4.text-center {
     flex: 0 0 auto;
     vertical-align: baseline;
     word-break: break-word;
-    margin-left: 1rem; /* Добавлен отступ слева для единообразия */
+    margin-left: 1rem;
 }
 
 .unit {
@@ -498,41 +563,6 @@ div.card.welcome-card.shadow-sm.p-4.text-center {
 .nutrient-category .nutrient-amount:not(.category-header .nutrient-amount) {
     margin-top: 0.5rem;
     display: block;
-}
-
-/* Стили для Минералов */
-.mineral-category {
-    background: var(--light-stone);
-    border-radius: 12px;
-    padding: 0.75rem;
-    margin-bottom: 0;
-}
-
-.mineral-category .mineral-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1rem;
-    align-items: stretch;
-}
-
-.mineral-category .sub-category.macro-minerals,
-.mineral-category .sub-category.micro-minerals {
-    margin-left: 0;
-    padding: 0.75rem;
-    border-left: none;
-    margin-top: 0.5rem;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    min-height: auto;
-    background: transparent;
-    overflow-y: auto;
-    max-height: 400px;
-}
-
-.mineral-category .sub-category .mineral-content {
-    flex-grow: 1;
-    overflow-y: auto;
 }
 
 /* Стили для кастомной иконки и tooltip */
@@ -823,8 +853,16 @@ body.dark-mode .text-dark {
     .custom-info-icon.active .question-icon {
         transform: translateY(-0.7rem) scale(1.2);
     }
-    .mineral-category .mineral-grid {
-        grid-template-columns: 1fr;
+    .product-detail-wrapper .nutrient-group-inner .nutrient-category,
+    .product-detail-wrapper .nutrient-group-inner .nutrient-category-group {
+        flex: 1 1 100%;
+    }
+    .product-detail-wrapper .mineral-grid {
+        flex-direction: column; /* На мобильных устройствах вертикально */
+    }
+    .product-detail-wrapper .sub-category.macro-minerals,
+    .product-detail-wrapper .sub-category.micro-minerals {
+        flex: 0 0 auto;
     }
 }
 
