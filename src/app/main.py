@@ -34,7 +34,7 @@ app.add_middleware(
 )
 app.include_router(api_router)
 app.mount(
-    "/static",
+    "/static/",
     StaticFiles(directory="static"),
     name="static",
 )
