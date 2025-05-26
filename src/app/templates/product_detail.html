@@ -6,16 +6,29 @@
 <div class="container product-detail-wrapper">
     <div class="row justify-content-center">
         <div class="col-lg-12">
-            <h1 class="text-center mb-5">
-                {{ product.title }}
-                <span class="custom-info-icon">
-                    <span class="question-icon">?</span>
-                    <span class="custom-tooltip">Все значения нутриентов указаны в расчете на 100 г продукта</span>
-                </span>
-            </h1>
+            <!-- Заголовок и поле поиска на одном уровне -->
+            <div class="d-flex flex-column flex-md-row align-items-center justify-content-between mb-5 mt-3">
+                <h1 class="mb-0">
+                    {{ product.title }}
+                    <span class="custom-info-icon">
+                        <span class="question-icon">?</span>
+                        <span class="custom-tooltip">Все значения нутриентов указаны в расчете на 100 г продукта</span>
+                    </span>
+                </h1>
+                <div class="search-wrapper mt-2 mt-md-0 d-flex justify-content-md-end">
+                    <form id="productDetailSearchForm" class="search-container">
+                        <input type="text" name="query" id="productDetailQuery" class="form-control search-input compact-search"
+                               placeholder="Поиск продукта"
+                               autocomplete="off">
+                        <span class="search-tooltip">Введите название продукта для анализа</span>
+                        <div id="productDetailSearchResults" class="autocomplete-dropdown"></div>
+                    </form>
+                </div>
+            </div>
+            <div id="productDetailSearchError" class="alert alert-danger d-none mt-3"></div>
 
+            <!-- Питательные вещества -->
             <div class="nutrient-grid">
-                <!-- Все блоки в одном контейнере с переносом -->
                 <div class="nutrient-group">
                     <div class="nutrient-group-inner">
                         <!-- Белки -->
