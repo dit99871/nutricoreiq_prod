@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Request
 
 from utils.security import generate_csp_nonce
@@ -20,6 +22,7 @@ def get_privacy_info(request: Request):
         request=request,
         name="privacy.html",
         content={
+            "current_year": datetime.now().year,
             "csp_nonce": generate_csp_nonce(),
         },
     )
@@ -39,6 +42,7 @@ def get_info_about_project(request: Request):
         request=request,
         name="about.html",
         content={
+            "current_year": datetime.now().year,
             "csp_nonce": generate_csp_nonce(),
         },
     )
