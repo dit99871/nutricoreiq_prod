@@ -6,7 +6,7 @@
     --clay: #D77A61;
     --sky: #A7C4C2;
     --stone: #9da2a0;
-    --light-sand: #E5D8C9;
+    --light-sand: #F0E8DE;
     --light-stone: #E8E8E8;
     --bg-primary: #B8D1C6;
     --card-bg: #C5D9C1;
@@ -67,13 +67,24 @@ main.container-xl {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
-div.col-12.col-md-10.col-lg-10.col-xl-8,
+div.col-12.col-md-10.col-lg-11.col-xl-9,
 div.card.welcome-card.shadow-sm.p-4.text-center {
     border-radius: var(--border-radius);
 }
 
 div.card.welcome-card.shadow-sm.p-4.text-center {
     background: var(--light-sand);
+}
+
+.welcome-title {
+    color: var(--text-primary);
+    font-size: 1.75rem;
+    margin-bottom: 1rem;
+}
+
+.welcome-text {
+    color: var(--stone);
+    font-size: 1rem;
 }
 
 .form-control,
@@ -233,6 +244,16 @@ div.card.welcome-card.shadow-sm.p-4.text-center {
     box-shadow: 0 0 0 3px rgba(74, 124, 89, 0.2);
 }
 
+.modal-content .form-control,
+.modal-content .input-group .form-control {
+    background: var(--light-sand);
+}
+
+.modal-content .form-control:focus,
+.modal-content .input-group .form-control:focus {
+    background: var(--light-sand);
+}
+
 .modal-body .modal-group {
     margin-bottom: 1rem;
 }
@@ -366,75 +387,107 @@ div.card.welcome-card.shadow-sm.p-4.text-center {
     max-width: 1200px;
     width: 90%;
     box-sizing: border-box;
-    overflow-x: hidden;
+    position: relative;
+    overflow-x: visible;
 }
 
-.product-detail-wrapper .nutrient-grid {
+.product-detail-wrapper .nutrient-grid,
+.product-detail-wrapper .suggestions {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
     gap: 1rem;
     width: 100%;
     max-width: 100%;
     margin-bottom: 1.5rem;
 }
 
-.product-detail-wrapper .nutrient-group {
+.product-detail-wrapper .nutrient-group,
+.product-detail-wrapper .suggestions-group {
     display: flex;
     flex-direction: column;
     gap: 1rem;
     width: 100%;
 }
 
-.product-detail-wrapper .nutrient-group-inner {
+.product-detail-wrapper .nutrient-group-inner,
+.product-detail-wrapper .suggestions-group-inner {
     display: flex;
     flex-wrap: wrap;
     gap: 1rem;
     width: 100%;
-    align-items: stretch;
+    align-items: flex-start;
 }
 
-.product-detail-wrapper .nutrient-group-inner .nutrient-category {
-    background: var(--light-stone);
+.product-detail-wrapper .nutrient-group-wrapper,
+.product-detail-wrapper .suggestions-group-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    width: max-content;
+}
+
+.product-detail-wrapper .nutrient-category,
+.product-detail-wrapper .mineral-category,
+.product-detail-wrapper .suggestions-item,
+.product-detail-wrapper .suggestions-category {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
     padding: 0.75rem;
-    flex: 1 1 calc(33.333% - 1rem);
-    min-width: 300px;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-width: 0;
     box-sizing: border-box;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    white-space: normal;
 }
 
-.product-detail-wrapper .nutrient-group-inner .nutrient-group {
-    flex: 1 1 calc(33.333% - 1rem);
-    min-width: 300px;
+.product-detail-wrapper .nutrient-category-group .nutrient-category,
+.product-detail-wrapper .suggestions-group-inner .suggestions-category {
+    margin-bottom: 1rem;
+}
+
+.product-detail-wrapper .nutrient-category-group .nutrient-category:last-child,
+.product-detail-wrapper .suggestions-group-inner .suggestions-category:last-child {
+    margin-bottom: 0;
+}
+
+.product-detail-wrapper .nutrient-group-inner .nutrient-group,
+.product-detail-wrapper .suggestions-group-inner .suggestions-group {
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    width: 100%;
 }
 
-.product-detail-wrapper .nutrient-group-inner .nutrient-group .nutrient-category {
-    background: var(--light-stone);
-    border-radius: var(--border-radius);
-    padding: 0.75rem;
-    flex: 0 0 auto;
+.product-detail-wrapper .nutrient-group-inner .nutrient-group .nutrient-category,
+.product-detail-wrapper .suggestions-group-inner .suggestions-group .suggestions-category {
+    flex: 1 1 auto;
 }
 
-.product-detail-wrapper .nutrient-group-inner .mineral {
-    flex: 0 0 auto;
-    min-width: 300px;
+.product-detail-wrapper .nutrient-group-inner .mineral-category {
+    flex: 1 1 auto;
 }
 
-.product-detail-wrapper .nutrient-group-inner .mineral.single-mineral {
-    min-width: 200px;
+.product-detail-wrapper .nutrient-group-inner .mineral-category.single-mineral {
+    min-width: 280px;
 }
 
 .product-detail-wrapper .mineral-grid {
     display: flex;
     flex-direction: row;
     gap: 1rem;
-    align-items: stretch;
+    align-items: flex-start;
 }
 
-.product-detail-wrapper .sub-category.macro-mineral,
-.product-detail-wrapper .sub-category.micro-mineral {
+.product-detail-wrapper .mineral-grid .sub-category {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.product-detail-wrapper .sub-category.macro-minerals,
+.product-detail-wrapper .sub-category.micro-minerals {
     margin-left: 0;
     padding: 0.75rem;
     border-left: none;
@@ -444,11 +497,10 @@ div.card.welcome-card.shadow-sm.p-4.text-center {
     justify-content: flex-start;
     min-height: auto;
     background: transparent;
-    flex: 0 0 auto;
     position: relative;
 }
 
-.product-detail-wrapper .mineral-grid .macro-mineral + .micro-minimal::before {
+.product-detail-wrapper .mineral-grid .macro-minerals + .micro-minerals::before {
     content: '';
     position: absolute;
     left: -0.5rem;
@@ -458,7 +510,7 @@ div.card.welcome-card.shadow-sm.p-4.text-center {
     background-color: var(--stone);
 }
 
-body.dark-mode .mineral-grid .macro-mineral + .micro-minimal::before {
+body.dark-mode .mineral-grid .macro-minerals + .micro-minerals::before {
     background-color: var(--sage);
 }
 
@@ -478,6 +530,11 @@ body.dark-mode .mineral-grid .macro-mineral + .micro-minimal::before {
     line-height: 1.2;
 }
 
+.category-header .nutrient-name {
+    color: var(--moss);
+    font-weight: 600;
+}
+
 .sub-category {
     margin-left: 1rem;
     padding-left: 0.75rem;
@@ -488,33 +545,40 @@ body.dark-mode .mineral-grid .macro-mineral + .micro-minimal::before {
 
 .nutrient-item {
     display: flex;
-    align-items: baseline;
+    flex-direction: column;
     padding: 0.25rem 0;
-    gap: 0.5rem;
+    gap: 0.25rem;
     font-size: 1rem;
     line-height: normal;
-    flex-wrap: nowrap;
-    height: auto;
+    white-space: normal;
 }
 
 .nutrient-name {
-    color: var(--moss);
+    color: var(--sage);
     font-size: 1rem;
     line-height: normal;
     flex: 0 0 auto;
     word-break: break-word;
+    font-weight: 400;
 }
 
 .nutrient-amount {
-    color: var(--stone);
-    display: flex;
-    align-items: baseline;
+    color: var(--earth);
     font-size: 1rem;
     line-height: normal;
-    flex: auto;
-    vertical-align: baseline;
-    word-break: nowrap;
-    margin-left: 1rem;
+    flex: 0 0 auto;
+    margin-left: 0;
+    white-space: nowrap;
+}
+
+.nutrient-category .nutrient-amount:not(.category-header .nutrient-amount) {
+    font-weight: 400;
+}
+
+.category-header .nutrient-amount {
+    color: var(--earth);
+    font-weight: 600;
+    margin-left: 0.5rem;
 }
 
 .unit {
@@ -538,6 +602,12 @@ body.dark-mode .mineral-grid .macro-mineral + .micro-minimal::before {
 .nutrient-category .nutrient-amount:not(.category-header .nutrient-amount) {
     margin-top: 0.5rem;
     display: block;
+}
+
+.text-muted.small.mb-2 {
+    color: var(--sky);
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
 }
 
 @keyframes pulse {
@@ -578,81 +648,72 @@ body.dark-mode .mineral-grid .macro-mineral + .micro-minimal::before {
     animation: none;
 }
 
-.custom-info-icon .custom-tooltip,
-.search-container .search-tooltip {
+.custom-info-icon .custom-tooltip {
     visibility: hidden;
     position: absolute;
-    background: var(--light-sand);
+    background: #E8DED5;
     color: var(--text-primary);
     padding: 0.5rem 1rem;
     border-radius: 5px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     white-space: normal;
-    z-index: 1000;
+    z-index: 1001;
     opacity: 0;
     transition: opacity 0.3s ease, transform 0.3s ease;
     font-size: 0.85rem;
-}
-
-.custom-info-icon .custom-tooltip {
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%) translateY(10px);
-    min-width: 200px;
+    top: -100%;
+    left: 100%;
+    margin-left: 8px;
+    transform: translateY(0);
+    min-width: 205px;
+    overflow-wrap: break-word;
 }
 
 .custom-info-icon:hover .custom-tooltip,
 .custom-info-icon.active .custom-tooltip {
     visibility: visible;
     opacity: 1;
-    transform: translateX(-50%) translateY(15px);
+    transform: translateY(-5px);
 }
 
-.search-container .search-tooltip {
-    top: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
-    min-width: 200px;
-    text-align: center;
-    pointer-events: none;
+.product-detail-wrapper .custom-info-icon .custom-tooltip {
+    top: -100%;
+    left: 100%;
+    margin-left: 8px;
+    transform: translateY(0);
 }
 
-.search-container:hover .search-tooltip {
-    visibility: visible;
-    opacity: 1;
-    transform: translateX(-50%) translateY(5px);
-}
-
-.search-container:focus-within .search-tooltip {
-    visibility: hidden;
-    opacity: 0;
+.product-detail-wrapper .custom-info-icon:hover .custom-tooltip,
+.product-detail-wrapper .custom-info-icon.active .custom-tooltip {
+    transform: translateY(-5px);
 }
 
 .search-container {
     position: relative;
     width: 100%;
-    max-width: 400px;
+    max-width: 500px;
 }
 
 .search-container .form-control.search-input {
     padding-left: 2.5rem;
-    background-color: var(--light-sand);
+    background-color: #F3ECE7;
     transition: border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    font-size: 1rem;
 }
 
 .search-container .form-control.search-input:focus {
     padding-left: 2.5rem;
     border-color: var(--moss);
     box-shadow: 0 0 0 3px rgba(74, 124, 89, 0.2);
-    background-color: var(--light-sand);
+    background-color: #F3ECE7;
 }
 
 .search-container .form-control.search-input.compact-search {
     width: 100%;
     height: 40px;
-    font-size: 0.9rem;
+    font-size: 1rem;
     padding: 0.5rem 0.75rem 0.5rem 2.5rem;
-    background: var(--light-sand);
+    background: #F3ECE7;
     border: 2px solid var(--border-color);
     border-radius: var(--border-radius);
     transition: border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
@@ -672,6 +733,32 @@ body.dark-mode .mineral-grid .macro-mineral + .micro-minimal::before {
 .search-container .form-control.search-input.compact-search::placeholder {
     color: var(--stone);
     opacity: 0.7;
+}
+
+.search-container .search-tooltip {
+    visibility: hidden;
+    position: absolute;
+    background: #E8DED5;
+    color: var(--text-primary);
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    white-space: nowrap;
+    z-index: 1002;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    font-size: 0.85rem;
+    font-weight: bold; /* Добавлено для соответствия .custom-info-icon .custom-tooltip */
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 8px;
+}
+
+.search-container:hover .search-tooltip {
+    visibility: visible;
+    opacity: 1;
+    transform: translateX(-50%) translateY(-4px);
 }
 
 @keyframes slideDown {
@@ -746,7 +833,8 @@ body.dark-mode .mineral-grid .macro-mineral + .micro-minimal::before {
     position: relative;
 }
 
-.navbar .btn-icon {
+.navbar .btn-icon,
+.navbar .theme-toggle {
     width: 2.5rem;
     height: 2.5rem;
     display: flex;
@@ -757,10 +845,11 @@ body.dark-mode .mineral-grid .macro-mineral + .micro-minimal::before {
     font-size: 1.1rem;
 }
 
-.btn-icon[aria-label]::after {
+.navbar .btn-icon[aria-label]::after,
+.navbar .theme-toggle[aria-label]::after {
     content: attr(aria-label);
     position: absolute;
-    bottom: calc(100% + 8px);
+    top: calc(100% + 8px);
     left: 50%;
     transform: translateX(-50%);
     background-color: var(--light-sand);
@@ -771,14 +860,20 @@ body.dark-mode .mineral-grid .macro-mineral + .micro-minimal::before {
     white-space: nowrap;
     z-index: 1000;
     opacity: 0;
-    transition: opacity 0.3s ease, transform 0.3s ease;
+    visibility: hidden;
+    transition: transform 0.3s ease, opacity 0s, visibility 0s 0.3s;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    pointer-events: none;
 }
 
-.btn-icon:hover[aria-label]::after,
-.btn-icon:focus[aria-label]::after {
+.navbar .btn-icon:hover[aria-label]::after,
+.navbar .btn-icon:focus[aria-label]::after,
+.navbar .theme-toggle:hover[aria-label]::after,
+.navbar .theme-toggle:focus[aria-label]::after {
     opacity: 1;
-    transform: translateX(-50%) translateY(-5px);
+    visibility: visible;
+    transform: translateX(-50%) translateY(5px);
+    transition: transform 0.3s ease, opacity 0s, visibility 0s;
 }
 
 .btn-primary,
@@ -786,6 +881,7 @@ body.dark-mode .mineral-grid .macro-mineral + .micro-minimal::before {
     background-color: var(--moss);
     border-color: var(--moss);
     color: white;
+    padding: 0.6rem 1rem;
 }
 
 .btn-primary:hover,
@@ -927,7 +1023,7 @@ body.dark-mode {
     --footer-bg: #3A4540;
     --input-bg: #D7C0A9;
     --link-color: #8A9B6E;
-    --light-sand: #2A3B32;
+    --light-sand: #3A454C;
     --light-stone: #3A4540;
     --border-color: #8A9B6E;
 }
@@ -944,6 +1040,16 @@ body.dark-mode .form-select:focus {
     border-color: var(--moss);
     box-shadow: 0 0 0 3px rgba(74, 124, 89, 0.2);
     background: var(--input-bg);
+}
+
+body.dark-mode .modal-content .form-control,
+body.dark-mode .modal-content .input-group .form-control {
+    background: var(--light-sand);
+}
+
+body.dark-mode .modal-content .form-control:focus,
+body.dark-mode .modal-content .input-group .form-control:focus {
+    background: var(--light-sand);
 }
 
 body.dark-mode .form-control::placeholder,
@@ -1061,10 +1167,43 @@ body.dark-mode .custom-info-icon.active .question-icon {
     background: #A7C4C2;
 }
 
-body.dark-mode .custom-info-icon .custom-tooltip,
-body.dark-mode .search-container .search-tooltip {
-    background: #3A4540;
+body.dark-mode .custom-info-icon .custom-tooltip {
+    background: #4F5A55;
     color: var(--text-primary);
+}
+
+body.dark-mode .search-container .form-control.search-input {
+    background-color: #4D423D;
+}
+
+body.dark-mode .search-container .form-control.search-input:focus {
+    background-color: #4D423D;
+}
+
+body.dark-mode .search-container .form-control.search-input.compact-search {
+    background: #4D423D;
+}
+
+body.dark-mode .search-container .search-tooltip {
+    background: #4F5A55;
+    font-size: 0.85rem;
+    font-weight: bold; /* Добавлено для соответствия .custom-info-icon .custom-tooltip */
+}
+
+body.dark-mode .category-header .nutrient-name {
+    color: #4A7C59;
+}
+
+body.dark-mode .nutrient-name {
+    color: #8A9B6E;
+}
+
+body.dark-mode .nutrient-amount {
+    color: #8B5A2B;
+}
+
+body.dark-mode .text-muted.small.mb-2 {
+    color: #A7C4C2;
 }
 
 body.dark-mode .privacy-content,
@@ -1090,6 +1229,39 @@ body.dark-mode .about-content a:hover {
     color: #A7C4C2;
 }
 
+body.dark-mode .product-detail-wrapper .nutrient-category {
+    background: var(--card-bg);
+    border-color: var(--border-color);
+}
+
+@media (max-width: 1200px) {
+    .product-detail-wrapper .nutrient-group-inner,
+    .product-detail-wrapper .suggestions-group-inner {
+        flex-basis: 25%;
+    }
+
+    .product-detail-wrapper .nutrient-category,
+    .product-detail-wrapper .mineral-category,
+    .product-detail-wrapper .suggestions-item,
+    .product-detail-wrapper .suggestions-category {
+        flex-basis: 25%;
+    }
+}
+
+@media (max-width: 992px) {
+    .product-detail-wrapper .nutrient-group-inner,
+    .product-detail-wrapper .suggestions-group-inner {
+        flex-basis: 33.333%;
+    }
+
+    .product-detail-wrapper .nutrient-category,
+    .product-detail-wrapper .mineral-category,
+    .product-detail-wrapper .suggestions-item,
+    .product-detail-wrapper .suggestions-category {
+        flex-basis: 33.333%;
+    }
+}
+
 @media (max-width: 768px) {
     :root {
         --border-radius: 8px;
@@ -1108,7 +1280,8 @@ body.dark-mode .about-content a:hover {
         margin: 0.5rem auto;
     }
 
-    .navbar .btn-icon {
+    .navbar .btn-icon,
+    .navbar .theme-toggle {
         width: 2rem;
         height: 2rem;
         font-size: 1rem;
@@ -1142,51 +1315,67 @@ body.dark-mode .about-content a:hover {
         margin-bottom: 0.5rem;
     }
 
-    .custom-info-icon .custom-tooltip {
+    .custom-info-icon .custom-tooltip,
+    .custom-info-container .custom-suggestion {
         max-width: 300px;
         width: calc(100% - 20px);
         font-size: 0.8rem;
         margin: 0.5rem;
-    }
-
-    .custom-info-icon .custom-tooltip {
         top: calc(100% + 10px);
         left: 50%;
         transform: translateX(-50%);
     }
 
     .custom-info-icon:hover .custom-tooltip,
-    .custom-info-icon.active .custom-tooltip {
+    .custom-info-icon.active .custom-tooltip,
+    .custom-info-container:hover .custom-suggestion,
+    .custom-info-container.active .custom-suggestion {
         transform: translateX(-50%) translateY(5px);
     }
 
     .product-detail-wrapper .custom-info-icon .custom-tooltip {
-        top: calc(100% + 10px);
+        top: 100%;
         left: 50%;
-        margin-bottom: 5px;
+        margin-left: 0;
+        transform: translateX(-50%) translateY(10px);
     }
 
-    .product-detail-wrapper .nutrient-grid {
+    .product-detail-wrapper .custom-info-icon:hover .custom-tooltip,
+    .product-detail-wrapper .custom-info-icon.active .custom-tooltip {
+        transform: translateX(-50%) translateY(15px);
+    }
+
+    .product-detail-wrapper .nutrient-grid,
+    .product-detail-wrapper .suggestions {
         flex-direction: column;
     }
 
-    .product-detail-wrapper .nutrient-group-inner .nutrient-category,
-    .product-detail-wrapper .nutrient-group-inner .nutrient-group {
-        flex: 1 1 100%;
+    .product-detail-wrapper .nutrient-category,
+    .product-detail-wrapper .mineral-category,
+    .product-detail-wrapper .suggestions-item,
+    .product-detail-wrapper .suggestions-category,
+    .product-detail-wrapper .nutrient-group-inner .nutrient-group,
+    .product-detail-wrapper .suggestions-group-inner .suggestions-group,
+    .product-detail-wrapper .suggestions-group-inner .suggestion {
+        flex-basis: 100%;
+    }
+
+    .product-detail-wrapper .mineral-grid,
+    .product-detail-wrapper .suggestions-grid {
+        flex-direction: column;
+    }
+
+    .product-detail-wrapper .sub-category.macro-minerals,
+    .product-detail-wrapper .sub-category.micro-minerals,
+    .product-detail-wrapper .sub-category.macro-suggestion,
+    .product-detail-wrapper .sub-category.micro-suggestion {
+        margin-left: 0;
+        border-left: none;
         min-width: 100%;
     }
 
-    .product-detail-wrapper .mineral-grid {
-        flex-direction: column;
-    }
-
-    .product-detail-wrapper .sub-category.macro-mineral,
-    .product-detail-wrapper .sub-category.micro-mineral {
-        margin-left: 0;
-        border-left: none;
-    }
-
-    .product-detail-wrapper .mineral-grid .macro-mineral + .micro-minimal::before {
+    .product-detail-wrapper .mineral-grid .macro-minerals + .micro-minerals::before,
+    .product-detail-wrapper .suggestions-grid .macro-suggestion + .micro-suggestion::before {
         display: none;
     }
 }
