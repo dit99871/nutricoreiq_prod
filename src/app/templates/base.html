@@ -45,9 +45,15 @@
             <div class="collapse navbar-collapse" id="mainNav">
                 <div class="ms-auto d-flex align-items-center gap-2">
                     {% if user %}
-                        <a href="/api/v1/user/profile/data" class="btn btn-profile btn-icon" aria-label="Профиль">
-                            <i class="bi bi-person"></i>
-                        </a>
+                        {% if request.path == '/api/v1/user/profile/data' %}
+                            <a href="/" class="btn btn-profile btn-icon" aria-label="Главная">
+                                <i class="bi bi-house"></i>
+                            </a>
+                        {% else %}
+                            <a href="/api/v1/user/profile/data" class="btn btn-profile btn-icon" aria-label="Профиль">
+                                <i class="bi bi-person"></i>
+                            </a>
+                        {% endif %}
                         <a href="/api/v1/auth/logout" class="btn btn-logout btn-icon" aria-label="Выйти">
                             <i class="bi bi-box-arrow-right"></i>
                         </a>
