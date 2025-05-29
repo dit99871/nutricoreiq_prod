@@ -2,12 +2,6 @@
 
 {% block title %}Личный кабинет | NutriCoreIQ{% endblock %}
 
-{% block user_buttons %}
-    <!-- Кастомные кнопки для страницы профиля -->
-    <a href="/" class="btn btn-outline">Главная</a>
-    <a href="/api/v1/auth/logout" class="btn btn-outline-danger">Выйти</a>
-{% endblock %}
-
 {% block content %}
 <div class="container-xl">
     <!-- Уведомления -->
@@ -18,108 +12,101 @@
     <div class="profile-card">
         <!-- Заголовок профиля -->
         <div class="profile-header">
-            <div class="d-flex flex-column flex-md-row align-items-md-center gap-4">
+            <div class="header-content">
                 <!-- Аватар -->
                 <div class="profile-avatar">
                     {{ user.username[0]|upper }}
                 </div>
 
                 <!-- Информация -->
-                <div class="profile-info flex-grow-1">
+                <div class="profile-info">
                     <h1 class="mb-2">{{ user.username }}</h1>
                     <p class="lead text-muted mb-0">{{ user.email }}</p>
                 </div>
-
-                <!-- Кнопки действий -->
-                <div class="action-buttons mt-3 mt-md-0">
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">
-                        <i class="bi bi-pencil"></i> Редактировать
-                    </button>
-                    <button type="button" class="btn btn-outline" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
-                        <i class="bi bi-shield-lock"></i> Сменить пароль
-                    </button>
-                </div>
+            </div>
+            <!-- Кнопки действий -->
+            <div class="action-buttons">
+                <button type="button" class="btn btn-edit" data-bs-toggle="modal" data-bs-target="#editProfileModal" aria-label="Редактировать профиль">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button type="button" class="btn btn-change-password" data-bs-toggle="modal" data-bs-target="#changePasswordModal" aria-label="Сменить пароль">
+                    <i class="bi bi-shield-lock"></i>
+                </button>
             </div>
         </div>
 
         <!-- Детали профиля -->
-        <div class="profile-details mt-4">
-            <div class="row g-4">
+        <div class="profile-details">
+            <div class="detail-container">
                 <!-- Основная информация -->
-                <div class="col-md-6 col-lg-4 col-xl-4 col-xxl-3">
-                    <div class="detail-card h-100">
-                        <h3 class="mb-4 text-moss"><i class="bi bi-person"></i> Основное</h3>
-                        <div class="detail-item">
-                            <div class="d-flex justify-content-between">
-                                <strong>Пол:</strong>
-                                <span id="gender-field" class="fw-medium">
-                                    {% if user.gender == 'male' %}Мужской
-                                    {% elif user.gender == 'female' %}Женский
-                                    {% else %}Не указан{% endif %}
-                                </span>
-                            </div>
+                <div class="detail-card">
+                    <h3 class="mb-4"><i class="bi bi-person"></i> Основное</h3>
+                    <div class="detail-item">
+                        <div class="d-flex justify-content-between">
+                            <strong>Пол:</strong>
+                            <span id="gender-field" class="fw-medium">
+                                {% if user.gender == 'male' %}Мужской
+                                {% elif user.gender == 'female' %}Женский
+                                {% else %}Не указан{% endif %}
+                            </span>
                         </div>
-                        <div class="detail-item mt-3">
-                            <div class="d-flex justify-content-between">
-                                <strong>Возраст:</strong>
-                                <span id="age-field" class="fw-medium">
-                                    {% if user.age %}{{ user.age }} лет{% else %}Не указано{% endif %}
-                                </span>
-                            </div>
+                    </div>
+                    <div class="detail-item mt-3">
+                        <div class="d-flex justify-content-between">
+                            <strong>Возраст:</strong>
+                            <span id="age-field" class="fw-medium">
+                                {% if user.age %}{{ user.age }} лет{% else %}Не указано{% endif %}
+                            </span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Физические параметры -->
-                <div class="col-md-6 col-lg-4 col-xl-4 col-xxl-3">
-                    <div class="detail-card h-100">
-                        <h3 class="mb-4 text-sage"><i class="bi bi-rulers"></i> Параметры</h3>
-                        <div class="detail-item">
-                            <div class="d-flex justify-content-between">
-                                <strong>Рост:</strong>
-                                <span id="height-field" class="fw-medium">
-                                    {% if user.height %}{{ user.height }} см{% else %}Не указано{% endif %}
-                                </span>
-                            </div>
+                <div class="detail-card">
+                    <h3 class="mb-4"><i class="bi bi-rulers"></i> Параметры</h3>
+                    <div class="detail-item">
+                        <div class="d-flex justify-content-between">
+                            <strong>Рост:</strong>
+                            <span id="height-field" class="fw-medium">
+                                {% if user.height %}{{ user.height }} см{% else %}Не указано{% endif %}
+                            </span>
                         </div>
-                        <div class="detail-item mt-3">
-                            <div class="d-flex justify-content-between">
-                                <strong>Вес:</strong>
-                                <span id="weight-field" class="fw-medium">
-                                    {% if user.weight %}{{ user.weight }} кг{% else %}Не указано{% endif %}
-                                </span>
-                            </div>
+                    </div>
+                    <div class="detail-item mt-3">
+                        <div class="d-flex justify-content-between">
+                            <strong>Вес:</strong>
+                            <span id="weight-field" class="fw-medium">
+                                {% if user.weight %}{{ user.weight }} кг{% else %}Не указано{% endif %}
+                            </span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Аналитика -->
-                <div class="col-md-6 col-lg-4 col-xl-4 col-xxl-3">
-                    <div class="detail-card h-100">
-                        <h3 class="mb-4 text-clay"><i class="bi bi-graph-up"></i> Аналитика</h3>
-                        <div class="detail-item">
-                            <div class="d-flex justify-content-between">
-                                <strong>Цель:</strong>
-                                <span id="goal-field" class="fw-medium">
-                                    {% if user.goal %}{{ user.goal }}{% else %}Не указано{% endif %}
-                                </span>
-                            </div>
+                <div class="detail-card">
+                    <h3 class="mb-4"><i class="bi bi-graph-up"></i> Аналитика</h3>
+                    <div class="detail-item">
+                        <div class="d-flex justify-content-between">
+                            <strong>Цель:</strong>
+                            <span id="goal-field" class="fw-medium">
+                                {% if user.goal %}{{ user.goal }}{% else %}Не указано{% endif %}
+                            </span>
                         </div>
-                        <div class="detail-item mt-3">
-                            <div class="d-flex justify-content-between">
-                                <strong>Уровень физической активности:</strong>
-                                <span id="kfa-field" class="fw-medium">
-                                    {% if user.kfa %}{{ user.kfa }}-й уровень{% else %}Не указано{% endif %}
-                                </span>
-                            </div>
+                    </div>
+                    <div class="detail-item mt-3">
+                        <div class="d-flex justify-content-between">
+                            <strong>Уровень физической активности:</strong>
+                            <span id="kfa-field" class="fw-medium">
+                                {% if user.kfa %}{{ user.kfa }}-й уровень{% else %}Не указано{% endif %}
+                            </span>
                         </div>
-                        <div class="detail-item mt-3">
-                            <div class="d-flex justify-content-between">
-                                <strong>Регистрация:</strong>&nbsp;
-                                <span id="registration-date-field" class="fw-medium">
-                                    {{ user.created_at|default('Не указано', true) }}
-                                </span>
-                            </div>
+                    </div>
+                    <div class="detail-item mt-3">
+                        <div class="d-flex justify-content-between">
+                            <strong>Регистрация:</strong>
+                            <span id="registration-date-field" class="fw-medium">
+                                {{ user.created_at|default('Не указано', true) }}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -143,14 +130,9 @@
                     <div class="mb-3">
                         <label for="editGender" class="form-label">Пол</label>
                         <select class="form-select" id="editGender" name="gender">
-                            <option value="">{% if user.gender == 'male' %}
-                                                Мужской
-                                             {% elif user.gender == 'female' %}
-                                                Женский
-                                             {% else %}
-                                                Не указан
-                                             {% endif %}
-                            </option>
+                            <option value="">{% if user.gender == 'male' %}Мужской
+                                {% elif user.gender == 'female' %}Женский
+                                {% else %}Не указан{% endif %}</option>
                             <option value="male" {% if user.gender == 'male' %}selected{% endif %}>Мужской</option>
                             <option value="female" {% if user.gender == 'female' %}selected{% endif %}>Женский</option>
                         </select>
@@ -207,7 +189,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" class="btn btn-register" id="saveProfileBtn">Сохранить изменения</button>
+                <button type="button" class="btn btn-primary" id="saveProfileBtn">Сохранить изменения</button>
             </div>
         </div>
     </div>
@@ -230,7 +212,7 @@
                         <div class="input-group">
                             <input type="password" class="form-control" id="currentPassword" name="current_password" required>
                             <button type="button" class="toggle-password" data-target="currentPassword">
-                                    <i class="bi bi-eye-slash"></i>
+                                <i class="bi bi-eye-slash"></i>
                             </button>
                         </div>
                     </div>
@@ -240,7 +222,7 @@
                         <div class="input-group">
                             <input type="password" class="form-control" id="newPassword" name="new_password" required minlength="8">
                             <button type="button" class="toggle-password" data-target="newPassword">
-                                    <i class="bi bi-eye-slash"></i>
+                                <i class="bi bi-eye-slash"></i>
                             </button>
                         </div>
                         <div class="form-text">Минимум 8 символов</div>
@@ -251,7 +233,7 @@
                         <div class="input-group">
                             <input type="password" class="form-control" id="confirmPassword" name="confirm_password" required minlength="8">
                             <button type="button" class="toggle-password" data-target="confirmPassword">
-                                    <i class="bi bi-eye-slash"></i>
+                                <i class="bi bi-eye-slash"></i>
                             </button>
                         </div>
                     </div>
@@ -261,7 +243,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" class="btn btn-register" id="savePasswordBtn">Изменить пароль</button>
+                <button type="button" class="btn btn-primary" id="savePasswordBtn">Изменить пароль</button>
             </div>
         </div>
     </div>
