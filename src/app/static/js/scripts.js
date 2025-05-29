@@ -27,6 +27,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 updateThemeButtons(isDark);
             });
         });
+
+        // Обновление темы при изменении системных настроек
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+            const newTheme = e.matches ? 'dark' : 'light';
+            document.body.classList.toggle('dark-mode', newTheme === 'dark');
+            localStorage.setItem('theme', newTheme);
+            updateThemeButtons(newTheme === 'dark');
+        });
     };
 
     // 2. Переключатели пароля
@@ -48,7 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             toggleBtn.setAttribute('aria-pressed', isVisible);
             toggleBtn.setAttribute('aria-label', isVisible ? 'Скрыть пароль' : 'Показать пароль');
-        });
+        }, { capture: true });
     };
 
     // 3. Универсальный fetch
@@ -153,7 +161,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    const escapeHtml = unsafe => {
+    const escapeHtml = (unsafe) => {
         return unsafe
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
@@ -167,7 +175,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const form = document.getElementById('loginForm');
         if (!form) return;
 
-        form.addEventListener('submit', async e => {
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = form.querySelector('button[type="submit"]');
             const originalText = btn.textContent;
@@ -214,7 +222,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const form = document.getElementById('registerForm');
         if (!form) return;
 
-        form.addEventListener('submit', async e => {
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = form.querySelector('button[type="submit"]');
             const originalText = btn.textContent;
@@ -428,7 +436,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             };
 
-            const renderResults = items => {
+            const renderResults = (items) => {
                 searchResults.innerHTML = items.length === 0 ? '<div class="suggestion-item">Ничего не найдено</div>' : items.map(item => `
                     <div class="suggestion-item" data-id="${item.id}">
                         <div class="suggestion-content">
@@ -447,7 +455,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             };
 
-            searchInput.addEventListener('input', _.debounce(e => {
+            searchInput.addEventListener('input', _.debounce((e) => {
                 const query = e.target.value.trim();
                 if (query.length < 2) {
                     searchResults.innerHTML = '';
@@ -458,7 +466,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 performSearch(query);
             }, 300));
 
-            searchForm.addEventListener('submit', async e => {
+            searchForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const query = searchInput.value.trim();
                 if (!analyzeBtn || query.length < 2) {
@@ -476,7 +484,25 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (id) {
                         window.location.href = `/api/v1/product/${id}`;
                     } else {
-                        showError(errorId, 'Точное совпадение не найдено');
+                        const modal = new bootstrap.Modal(document.getElementById('addPendingProductModal'));
+                        document.getElementById('pendingProductName').textContent = escapeHtml(query);
+                        document.getElementById('pendingProductInput').value = query;
+                        modal.show();
+
+                        const confirmBtn = document.getElementById('confirmPendingProductBtn');
+                        confirmBtn.onclick = async () => {
+                            try {
+                                await secureFetch('/api/v1/product/pending', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ name: query })
+                                });
+                                modal.hide();
+                                showSuccess(`Продукт "${query}" добавлен в очередь на рассмотрение!`);
+                            } catch (error) {
+                                showError(errorId, error.message || 'Ошибка при добавлении продукта');
+                            }
+                        };
                     }
                 } catch (error) {
                     showError(errorId, 'Ошибка анализа: ' + error.message);
@@ -486,7 +512,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
 
-            searchInput.addEventListener('keydown', e => {
+            searchInput.addEventListener('keydown', (e) => {
                 const items = searchResults.querySelectorAll('.suggestion-item');
                 if (e.key === 'ArrowDown') {
                     e.preventDefault();
@@ -502,7 +528,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 items.forEach((item, i) => item.classList.toggle('active', i === currentFocus));
             });
 
-            document.addEventListener('click', e => {
+            document.addEventListener('click', (e) => {
                 if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
                     searchResults.innerHTML = '';
                     searchResults.classList.remove('active');
@@ -515,7 +541,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 9. Tooltips
     const initTooltips = () => {
         document.querySelectorAll('.custom-info-icon').forEach(icon => {
-            icon.addEventListener('click', e => {
+            icon.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const isActive = icon.classList.contains('active');
                 document.querySelectorAll('.custom-info-icon').forEach(i => i.classList.remove('active'));
@@ -523,7 +549,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
-        document.addEventListener('click', e => {
+        document.addEventListener('click', (e) => {
             if (!e.target.closest('.custom-info-icon')) {
                 document.querySelectorAll('.custom-info-icon').forEach(icon => icon.classList.remove('active'));
             }
