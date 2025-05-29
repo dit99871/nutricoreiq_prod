@@ -116,7 +116,7 @@
 </div>
 
 <!-- Модальное окно редактирования профиля -->
-<div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+<div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true" data-bs-theme="light">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
@@ -127,63 +127,88 @@
                 <form id="editProfileForm">
                     <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
 
+                    <!-- Пол -->
                     <div class="mb-3">
                         <label for="editGender" class="form-label">Пол</label>
-                        <select class="form-select" id="editGender" name="gender">
-                            <option value="">{% if user.gender == 'male' %}Мужской
-                                {% elif user.gender == 'female' %}Женский
-                                {% else %}Не указан{% endif %}</option>
-                            <option value="male" {% if user.gender == 'male' %}selected{% endif %}>Мужской</option>
-                            <option value="female" {% if user.gender == 'female' %}selected{% endif %}>Женский</option>
-                        </select>
+                        <div class="custom-select-wrapper">
+                            <div class="custom-select" data-name="gender">
+                                <div class="custom-select-display">
+                                    {% if user.gender == 'male' %}Мужской
+                                    {% elif user.gender == 'female' %}Женский
+                                    {% else %}Не указан{% endif %}
+                                </div>
+                                <ul class="custom-select-options">
+                                    <li data-value="">Не указан</li>
+                                    <li data-value="male">Мужской</li>
+                                    <li data-value="female">Женский</li>
+                                </ul>
+                            </div>
+                            <input type="hidden" name="gender" id="editGender" value="{{ user.gender if user.gender else '' }}">
+                        </div>
                         <div id="editGenderError" class="invalid-feedback d-none"></div>
                     </div>
 
+                    <!-- Возраст -->
                     <div class="mb-3">
                         <label for="editAge" class="form-label">Возраст</label>
                         <input type="number" class="form-control" id="editAge" name="age"
-                               value="{{ user.age if user.age is not none }}" min="18" max="120"
+                               value="{{ user.age if user.age is not none else '' }}" min="18" max="120"
                                placeholder="Введите свой возраст">
                     </div>
 
+                    <!-- Рост -->
                     <div class="mb-3">
                         <label for="editHeight" class="form-label">Рост (см)</label>
                         <input type="number" class="form-control" id="editHeight" name="height"
-                               value="{{ user.height if user.height is not none }}" min="50" max="250"
+                               value="{{ user.height if user.height is not none else '' }}" min="50" max="250"
                                placeholder="Введите свой рост">
                     </div>
 
+                    <!-- Вес -->
                     <div class="mb-3">
                         <label for="editWeight" class="form-label">Вес (кг)</label>
                         <input type="number" class="form-control" id="editWeight" name="weight"
-                               value="{{ user.weight if user.weight is not none }}" min="20" max="300"
+                               value="{{ user.weight if user.weight is not none else '' }}" min="20" max="300"
                                placeholder="Введите свой вес">
                     </div>
 
+                    <!-- Цель -->
                     <div class="mb-3">
                         <label for="editGoal" class="form-label">Ваша цель</label>
-                        <select class="form-select" id="editGoal" name="goal">
-                            <option value="">{% if user.goal %}{{ user.goal }}{% else %}Не указана{% endif %}</option>
-                            {% for g in ["Снижение веса", "Увеличение веса", "Поддержание веса"] %}
-                            <option value="{{ g }}" {{ 'selected' if user.goal == g }}>
-                                {{ g }}
-                            </option>
-                            {% endfor %}
-                        </select>
+                        <div class="custom-select-wrapper">
+                            <div class="custom-select" data-name="goal">
+                                <div class="custom-select-display">
+                                    {% if user.goal %}{{ user.goal }}{% else %}Не указана{% endif %}
+                                </div>
+                                <ul class="custom-select-options">
+                                    <li data-value="">Не указана</li>
+                                    <li data-value="Снижение веса">Снижение веса</li>
+                                    <li data-value="Увеличение веса">Увеличение веса</li>
+                                    <li data-value="Поддержание веса">Поддержание веса</li>
+                                </ul>
+                            </div>
+                            <input type="hidden" name="goal" id="editGoal" value="{{ user.goal if user.goal else '' }}">
+                        </div>
                     </div>
 
+                    <!-- Уровень физической активности -->
                     <div class="mb-3">
                         <label for="editKfa" class="form-label">Уровень физической активности</label>
-                        <select class="form-select" id="editKfa" name="kfa">
-                            <option value="">{% if user.kfa %}{{ user.kfa }}-й уровень{% else %}Не указан{% endif %}</option>
-                            {% for k in [1,2,3,4,5] %}
-                            <option value="{{ k }}" {{ 'selected' if user.kfa == k|string }}>
-                                {{ k }}-й уровень
-                            </option>
-                            {% endfor %}
-                        </select>
+                        <div class="custom-select-wrapper">
+                            <div class="custom-select" data-name="kfa">
+                                <div class="custom-select-display">
+                                    {% if user.kfa %}{{ user.kfa }}-й уровень{% else %}Не указан{% endif %}
+                                </div>
+                                <ul class="custom-select-options">
+                                    <li data-value="">Не указан</li>
+                                    {% for k in [1, 2, 3, 4, 5] %}
+                                    <li data-value="{{ k }}">{{ k }}-й уровень</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            <input type="hidden" name="kfa" id="editKfa" value="{{ user.kfa if user.kfa else '' }}">
+                        </div>
                     </div>
-
                     <div id="editProfileError" class="alert alert-danger d-none"></div>
                 </form>
             </div>
@@ -196,7 +221,7 @@
 </div>
 
 <!-- Модальное окно смены пароля -->
-<div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+<div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true" data-bs-theme="light">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
