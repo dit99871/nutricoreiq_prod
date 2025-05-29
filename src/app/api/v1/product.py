@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request, Query, HTTPException, status
@@ -68,6 +69,7 @@ async def get_product_details(
         request=request,
         name="product_detail.html",
         context={
+            "current_year": datetime.now().year,
             "product": product_data,
             "user": current_user,
             "csp_nonce": generate_csp_nonce(),
