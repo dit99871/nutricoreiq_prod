@@ -28,4 +28,26 @@
         </div>
     </div>
 </div>
+
+<!-- Модальное окно для добавления нового продукта -->
+<div class="modal fade" id="addPendingProductModal" tabindex="-1" aria-labelledby="addPendingProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addPendingProductModalLabel">Добавить новый продукт</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <p>Продукт "<span id="pendingProductName"></span>" не найден в базе данных. Хотите предложить его добавление?</p>
+                <form id="addPendingProductForm">
+                    <input type="hidden" id="pendingProductInput" name="name">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="confirmPendingProductBtn">Добавить</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
