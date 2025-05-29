@@ -455,6 +455,36 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             };
 
+            const openPendingProductModal = (query) => {
+                const modal = new bootstrap.Modal(document.getElementById('addPendingProductModal'));
+                const pendingProductName = document.getElementById('pendingProductName');
+                const pendingProductInput = document.getElementById('pendingProductInput');
+                const confirmBtn = document.getElementById('confirmPendingProductBtn');
+
+                if (!modal || !pendingProductName || !pendingProductInput || !confirmBtn) {
+                    showError(errorId, 'Ошибка: модальное окно недоступно');
+                    return;
+                }
+
+                pendingProductName.textContent = escapeHtml(query);
+                pendingProductInput.value = query;
+                modal.show();
+
+                confirmBtn.onclick = async () => {
+                    try {
+                        await secureFetch('/api/v1/product/pending', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name: query })
+                        });
+                        modal.hide();
+                        showSuccess(`Продукт "${query}" добавлен в очередь на рассмотрение!`);
+                    } catch (error) {
+                        showError(errorId, error.message || 'Ошибка при добавлении продукта');
+                    }
+                };
+            };
+
             searchInput.addEventListener('input', _.debounce((e) => {
                 const query = e.target.value.trim();
                 if (query.length < 2) {
@@ -469,46 +499,47 @@ document.addEventListener("DOMContentLoaded", () => {
             searchForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const query = searchInput.value.trim();
-                if (!analyzeBtn || query.length < 2) {
+
+                // Проверка минимальной длины запроса
+                if (query.length < 2) {
                     showError(errorId, 'Запрос должен содержать минимум 2 символа');
                     return;
                 }
 
-                analyzeBtn.disabled = true;
-                const originalText = analyzeBtn.textContent;
-                analyzeBtn.textContent = 'Идет анализ...';
+                // Если кнопка анализа отсутствует, просто продолжаем
+                if (analyzeBtn) {
+                    analyzeBtn.disabled = true;
+                    const originalText = analyzeBtn.textContent;
+                    analyzeBtn.textContent = 'Идет анализ...';
 
-                try {
-                    const data = await performSearch(query, true);
-                    const id = data.exact_match?.id || lastSearchData?.exact_match?.id;
-                    if (id) {
-                        window.location.href = `/api/v1/product/${id}`;
-                    } else {
-                        const modal = new bootstrap.Modal(document.getElementById('addPendingProductModal'));
-                        document.getElementById('pendingProductName').textContent = escapeHtml(query);
-                        document.getElementById('pendingProductInput').value = query;
-                        modal.show();
+                    try {
+                        const data = await performSearch(query, true);
+                        const id = data.exact_match?.id || lastSearchData?.exact_match?.id;
 
-                        const confirmBtn = document.getElementById('confirmPendingProductBtn');
-                        confirmBtn.onclick = async () => {
-                            try {
-                                await secureFetch('/api/v1/product/pending', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ name: query })
-                                });
-                                modal.hide();
-                                showSuccess(`Продукт "${query}" добавлен в очередь на рассмотрение!`);
-                            } catch (error) {
-                                showError(errorId, error.message || 'Ошибка при добавлении продукта');
-                            }
-                        };
+                        if (id) {
+                            window.location.href = `/api/v1/product/${id}`;
+                        } else {
+                            openPendingProductModal(query);
+                        }
+                    } catch (error) {
+                        // Ошибка уже отображается в performSearch
+                    } finally {
+                        analyzeBtn.disabled = false;
+                        analyzeBtn.textContent = originalText;
                     }
-                } catch (error) {
-                    showError(errorId, 'Ошибка анализа: ' + error.message);
-                } finally {
-                    analyzeBtn.disabled = false;
-                    analyzeBtn.textContent = originalText;
+                } else {
+                    try {
+                        const data = await performSearch(query, true);
+                        const id = data.exact_match?.id || lastSearchData?.exact_match?.id;
+
+                        if (id) {
+                            window.location.href = `/api/v1/product/${id}`;
+                        } else {
+                            openPendingProductModal(query);
+                        }
+                    } catch (error) {
+                        // Ошибка уже отображается в performSearch
+                    }
                 }
             });
 
