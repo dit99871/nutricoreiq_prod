@@ -1,4 +1,4 @@
-/* Переменные */
+/* 1. Переменные */
 :root {
     --earth: #8B5A2B;
     --sage: #8A9B6E;
@@ -24,7 +24,7 @@
     --card-padding: 1rem;
 }
 
-/* Базовые стили */
+/* 2. Базовые стили */
 body {
     font-family: system-ui, -apple-system, sans-serif;
     line-height: 1.6;
@@ -37,62 +37,7 @@ body {
     overflow-x: hidden;
 }
 
-/* Навигация и футер */
-.navbar,
-.footer {
-    background-color: var(--header-bg);
-    border-radius: var(--border-radius);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    width: calc(100% - 2rem);
-    max-width: 1600px;
-    margin: 1rem auto;
-    padding: 0.5rem;
-}
-
-.navbar .btn-icon,
-.navbar .theme-toggle {
-    width: 2.5rem;
-    height: 2.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--border-radius);
-    transition: all 0.3s ease;
-    font-size: 1.1rem;
-}
-
-.navbar .btn-icon[aria-label]::after,
-.navbar .theme-toggle[aria-label]::after {
-    content: attr(aria-label);
-    position: absolute;
-    top: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: var(--light-sand);
-    color: var(--text-primary);
-    padding: 4px 8px;
-    border-radius: 5px;
-    font-size: 0.75rem;
-    white-space: nowrap;
-    z-index: 1000;
-    opacity: 0;
-    visibility: hidden;
-    transition: transform 0.3s ease, opacity 0s, visibility 0s 0.3s;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    pointer-events: none;
-}
-
-.navbar .btn-icon:hover[aria-label]::after,
-.navbar .btn-icon:focus[aria-label]::after,
-.navbar .theme-toggle:hover[aria-label]::after,
-.navbar .theme-toggle:focus[aria-label]::after {
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(-50%) translateY(5px);
-    transition: transform 0.3s ease, opacity 0s, visibility 0s;
-}
-
-/* Основной контент */
+/* 3. Контейнеры и макет */
 main {
     flex-grow: 1;
     width: calc(100% - 2rem);
@@ -116,100 +61,21 @@ main.container.d-flex.flex-column.flex-grow-1.py-4 {
     border-radius: var(--border-radius);
 }
 
-/* Карточки и профиль */
-.profile-card {
-    background: var(--card-bg);
+/* 4. Навигация и футер */
+.navbar,
+.footer {
+    background-color: var(--header-bg);
     border-radius: var(--border-radius);
-    padding: 1.5rem;
-    margin: 1rem 0;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    width: calc(100% - 2rem);
+    max-width: 1600px;
+    margin: 1rem auto;
+    padding: 0.5rem;
 }
 
-.profile-header {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    margin-bottom: 1.5rem;
-}
+/* 5. Компоненты */
 
-.header-content {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 1rem;
-    flex-grow: 1;
-}
-
-.profile-avatar {
-    width: 100px;
-    height: 100px;
-    background: var(--moss);
-    color: white;
-    font-size: 2.5rem;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.profile-info h1 {
-    margin: 0;
-    font-size: 1.75rem;
-    color: var(--text-primary);
-}
-
-.profile-info .lead {
-    margin: 0;
-    color: var(--stone);
-}
-
-.action-buttons {
-    display: flex; /* Явно задаём flex-контейнер */
-    flex-direction: row; /* Кнопки в ряд */
-    gap: 0.5rem; /* Расстояние между кнопками */
-    align-items: center; /* Выравнивание по центру */
-    margin-top: 0.5rem; /* Сохраняем отступ сверху */
-}
-
-.profile-details {
-    margin-top: 1.5rem;
-}
-
-.detail-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--gutter);
-    width: 100%;
-}
-
-.detail-card {
-    background: var(--light-sand);
-    border-radius: var(--border-radius);
-    padding: var(--card-padding);
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    flex: 1 1 calc(33.33% - (var(--gutter) * 2 / 3));
-    min-width: 250px;
-    box-sizing: border-box;
-}
-
-.detail-card h3 {
-    margin: 0 0 1rem;
-    font-size: 1.25rem;
-    color: var(--text-primary);
-}
-
-.detail-card h3 i {
-    margin-right: 0.5rem;
-}
-
-.detail-item {
-    margin-bottom: 0.75rem;
-}
-
-.detail-item:last-child {
-    margin-bottom: 0;
-}
-
-/* Кнопки */
+/* 5.1 Кнопки */
 .btn {
     border-radius: var(--border-radius);
     padding: 0.6rem 1.5rem;
@@ -303,7 +169,7 @@ main.container.d-flex.flex-column.flex-grow-1.py-4 {
 .btn-shadow-danger,
 .btn-shadow {
     border-color: var(--clay);
-    color: var(--clay);
+    color: var(--moss);
     background: none;
 }
 
@@ -362,6 +228,49 @@ main.container.d-flex.flex-column.flex-grow-1.py-4 {
     transition: opacity 0.2s ease, visibility 0s;
 }
 
+.navbar .btn-icon,
+.navbar .theme-toggle {
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--border-radius);
+    transition: all 0.3s ease;
+    font-size: 1.1rem;
+}
+
+.navbar .btn-icon[aria-label]::after,
+.navbar .theme-toggle[aria-label]::after {
+    content: attr(aria-label);
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--light-sand);
+    color: var(--text-primary);
+    padding: 4px 8px;
+    border-radius: 5px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: transform 0.3s ease, opacity 0s, visibility 0s 0.3s;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    pointer-events: none;
+}
+
+.navbar .btn-icon:hover[aria-label]::after,
+.navbar .btn-icon:focus[aria-label]::after,
+.navbar .theme-toggle:hover[aria-label]::after,
+.navbar .theme-toggle:focus[aria-label]::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(5px);
+    transition: transform 0.3s ease, opacity 0s, visibility 0s;
+}
+
 .theme-toggle {
     background: none;
     border: 2px solid var(--stone);
@@ -382,7 +291,100 @@ main.container.d-flex.flex-column.flex-grow-1.py-4 {
     transform: translateY(-2px);
 }
 
-/* Модальные окна */
+/* 5.2 Карточка профиля */
+.profile-card {
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin: 1rem 0;
+}
+
+.profile-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+}
+
+.header-content {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    flex-grow: 1;
+}
+
+.profile-avatar {
+    width: 100px;
+    height: 100px;
+    background: var(--moss);
+    color: white;
+    font-size: 2.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.profile-info h1 {
+    margin: 0;
+    font-size: 1.75rem;
+    color: var(--text-primary);
+}
+
+.profile-info .lead {
+    margin: 0;
+    color: var(--stone);
+}
+
+.action-buttons {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    align-items: center;
+    margin-top: 0.5rem;
+}
+
+.profile-details {
+    margin-top: 1.5rem;
+}
+
+.detail-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gutter);
+    width: 100%;
+}
+
+.detail-card {
+    background: var(--light-sand);
+    border-radius: var(--border-radius);
+    padding: var(--card-padding);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    flex: 1 1 calc(33.33% - (var(--gutter) * 2 / 3));
+    min-width: 250px;
+    box-sizing: border-box;
+}
+
+.detail-card h3 {
+    margin: 0 0 1rem;
+    font-size: 1.25rem;
+    color: var(--text-primary);
+}
+
+.detail-card h3 i {
+    margin-right: 0.5rem;
+}
+
+.detail-item {
+    margin-bottom: 0.75rem;
+}
+
+.detail-item:last-child {
+    margin-bottom: 0;
+}
+
+/* 5.3 Модальные окна */
 .modal-content {
     border: 2px solid var(--border-color);
     border-radius: var(--border-radius);
@@ -439,15 +441,14 @@ main.container.d-flex.flex-column.flex-grow-1.py-4 {
     color: #3a6b4a;
 }
 
-/* Формы и поля ввода */
+/* 5.4 Формы и поля ввода */
 .form-label {
     font-weight: 600;
     margin-bottom: 0.5rem;
     display: block;
 }
 
-.form-control,
-.form-select {
+.form-control {
     height: 50px;
     padding: 0.75rem 1.25rem;
     border: 2px solid var(--border-color);
@@ -455,30 +456,22 @@ main.container.d-flex.flex-column.flex-grow-1.py-4 {
     background: var(--light-sand);
     color: var(--text-primary);
     font-size: 1rem;
-}
-
-.form-control:focus,
-.form-select:focus {
-    border-color: var(--moss);
-    box-shadow: 0 0 0 3px rgba(74, 124, 89, 0.2);
-    background: var(--light-sand);
-}
-
-.form-control::placeholder,
-.form-select::placeholder {
-    color: var(--stone);
-    opacity: 0.7;
-}
-
-.form-select {
+    font-family: system-ui, -apple-system, sans-serif;
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 0.75rem center;
-    background-size: 16px 12px;
-    padding-right: 2.5rem;
+}
+
+.form-control:focus {
+    border-color: var(--moss);
+    box-shadow: 0 0 0 3px rgba(74, 124, 89, 0.2);
+    background: var(--light-sand);
+    color: var(--text-primary);
+}
+
+.form-control::placeholder {
+    color: var(--stone);
+    opacity: 0.7;
 }
 
 .input-group {
@@ -538,7 +531,64 @@ main.container.d-flex.flex-column.flex-grow-1.py-4 {
     box-shadow: 0 0 0 3px rgba(74, 124, 89, 0.2);
 }
 
-/* Поиск */
+/* 5.5 Кастомный селект */
+.custom-select-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.custom-select {
+    position: relative;
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--light-sand);
+    cursor: pointer;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1.25rem;
+    color: var(--text-primary);
+}
+
+.custom-select-display {
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.custom-select-options {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--light-sand);
+    margin-top: 2px;
+    list-style: none;
+    padding: 0;
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+}
+
+.custom-select-options li {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+}
+
+.custom-select-options li:hover {
+    background: var(--sand);
+    color: var(--text-primary);
+}
+
+.custom-select.active .custom-select-options {
+    display: block;
+}
+
+/* 5.6 Поиск */
 .search-container {
     position: relative;
     width: 100%;
@@ -612,7 +662,7 @@ main.container.d-flex.flex-column.flex-grow-1.py-4 {
     transform: translateX(-50%) translateY(-4px);
 }
 
-/* Автодополнение */
+/* 5.7 Автодополнение */
 @keyframes slideDown {
     0% { opacity: 0; transform: translateY(-10px); }
     100% { opacity: 1; transform: translateY(0); }
@@ -668,76 +718,7 @@ main.container.d-flex.flex-column.flex-grow-1.py-4 {
     color: var(--earth);
 }
 
-/* Кастомный селект */
-.custom-select-aligned {
-    display: flex;
-    align-items: center;
-    height: 50px;
-    padding: 0.5rem 1rem;
-    line-height: 1.5;
-}
-
-.custom-select-search {
-    position: relative;
-    width: 100%;
-}
-
-.custom-select-input {
-    width: 100%;
-    height: 50px;
-    padding: 0.5rem 2.5rem 0.5rem 1rem;
-    border: 2px solid var(--border-color);
-    border-radius: var(--border-radius);
-    font-size: 1rem;
-    line-height: 1.6;
-    background: var(--input-bg);
-    cursor: pointer;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 0.75rem center;
-    background-size: 16px 12px;
-    color: var(--text-primary);
-}
-
-.custom-select-input:focus {
-    border-color: var(--moss);
-    box-shadow: 0 0 0 3px rgba(74, 124, 89, 0.2);
-    outline: none;
-    background: var(--input-bg);
-}
-
-.custom-select-options {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    border: 2px solid var(--border-color);
-    border-radius: var(--border-radius);
-    background: var(--input-bg);
-    margin-top: 2px;
-    list-style: none;
-    padding: 0;
-    z-index: 1000;
-    max-height: 200px;
-    overflow-y: auto;
-}
-
-.custom-select-options li {
-    padding: 0.5rem 1rem;
-    cursor: pointer;
-}
-
-.custom-select-options li:hover {
-    background: var(--sand);
-    color: var(--text-primary);
-}
-
-.custom-select-search.active .custom-select-options {
-    display: block;
-}
-
-/* Информационные иконки и тултипы */
+/* 5.8 Информационные иконки и тултипы */
 @keyframes pulse {
     0% { transform: translateY(-0.7rem) scale(1); }
     50% { transform: translateY(-0.7rem) scale(1.1); }
@@ -804,7 +785,7 @@ main.container.d-flex.flex-column.flex-grow-1.py-4 {
     transform: translateY(-5px);
 }
 
-/* Страницы About и Privacy */
+/* 5.9 Страницы About и Privacy */
 .privacy-content,
 .about-content {
     max-width: 800px;
@@ -860,7 +841,7 @@ main.container.d-flex.flex-column.flex-grow-1.py-4 {
     margin: 2rem 0;
 }
 
-/* Детали продукта */
+/* 5.10 Детали продукта */
 .product-detail-wrapper {
     background: var(--light-sand);
     border-radius: var(--border-radius);
@@ -1097,7 +1078,7 @@ main.container.d-flex.flex-column.flex-grow-1.py-4 {
     margin-bottom: 0.5rem;
 }
 
-/* Приветственная карточка */
+/* 5.11 Приветственная карточка */
 div.col-12.col-md-10.col-lg-11.col-xl-9,
 div.card.welcome-card.shadow-sm.p-4.text-center {
     border-radius: var(--border-radius);
@@ -1118,7 +1099,7 @@ div.card.welcome-card.shadow-sm.p-4.text-center {
     font-size: 1rem;
 }
 
-/* Уведомления */
+/* 5.12 Уведомления */
 .alert {
     margin-bottom: 1rem;
     border-radius: var(--border-radius);
@@ -1130,14 +1111,14 @@ div.card.welcome-card.shadow-sm.p-4.text-center {
     top: 20px;
 }
 
-/* Тёмный режим */
+/* 6. Темная тема */
 body.dark-mode {
     --bg-primary: #1A2F28;
     --text-primary: #E0EAE4;
     --card-bg: #2A3B32;
     --header-bg: #3A4540;
     --footer-bg: #3A4540;
-    --input-bg: #D7C0A9;
+    --input-bg: #3A454C;
     --link-color: #8A9B6E;
     --light-sand: #3A454C;
     --light-stone: #3A4540;
@@ -1165,25 +1146,42 @@ body.dark-mode .profile-info .lead {
     color: var(--stone);
 }
 
-body.dark-mode .form-control,
-body.dark-mode .form-select {
+body.dark-mode .form-control {
+    border-color: var(--sage);
+    background: var(--input-bg);
+    color: var(--text-primary);
+}
+
+body.dark-mode .form-control:focus {
+    border-color: var(--moss);
+    box-shadow: 0 0 0 3px rgba(74, 124, 89, 0.2);
+    background: var(--input-bg);
+    color: var(--text-primary);
+}
+
+body.dark-mode .custom-select {
+    border-color: var(--sage);
+    background: var(--input-bg);
+    color: var(--text-primary);
+}
+
+body.dark-mode .custom-select-options {
     border-color: var(--sage);
     background: var(--input-bg);
 }
 
-body.dark-mode .form-control:focus,
-body.dark-mode .form-select:focus {
-    border-color: var(--moss);
-    box-shadow: 0 0 0 3px rgba(74, 124, 89, 0.2);
-    background: var(--input-bg);
-}
-
-body.dark-mode .form-select {
-    background-image: url('data:image/svg+xml,%3csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"%3e%3cpath fill="none" stroke="%23E0EAE4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2 5l6 6 6-6"/%3e%3c/svg%3e');
+body.dark-mode .custom-select-options li:hover {
+    background: var(--light-sand);
 }
 
 body.dark-mode .input-group {
     border-color: var(--sage);
+    background: var(--input-bg);
+}
+
+body.dark-mode .input-group .form-control {
+    background: transparent;
+    color: var(--text-primary);
 }
 
 body.dark-mode .input-group .toggle-password {
@@ -1237,7 +1235,7 @@ body.dark-mode .autocomplete-dropdown {
 
 body.dark-mode .suggestion-item:hover,
 body.dark-mode .suggestion-item.active {
-    background: var(--light-sand);
+    background: #4F5A55; /* Более контрастный фон для подсказок */
 }
 
 body.dark-mode .suggestion-icon {
@@ -1324,7 +1322,7 @@ body.dark-mode .btn-change-password[aria-label]::after {
     color: var(--text-primary);
 }
 
-/* Медиа-запросы */
+/* 7. Медиа-запросы */
 @media (max-width: 1200px) {
     .detail-card {
         flex: 1 1 calc(33% - (var(--gutter) * 2 / 3));
