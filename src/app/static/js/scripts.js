@@ -194,11 +194,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     modal.hide();
                     modal._element.addEventListener('hidden.bs.modal', () => {
                         showSuccess(`Добро пожаловать, ${userData.username || 'Пользователь'}!`);
-                        setTimeout(() => window.location.reload(), 2000);
+                        setTimeout(() => window.location.reload(), 700);
                     }, { once: true });
                 } else {
                     showSuccess(`Добро пожаловать, ${userData.username || 'Пользователь'}!`);
-                    setTimeout(() => window.location.reload(), 2000);
+                    setTimeout(() => window.location.reload(), 700);
                 }
             } catch (error) {
                 showError('loginError', error.message || "Неверное имя пользователя или пароль");
