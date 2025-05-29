@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -63,6 +64,7 @@ async def get_profile(
             name="profile.html",
             request=request,
             context={
+                "current_year": datetime.now().year,
                 "csp_nonce": generate_csp_nonce(),
                 "user": user,
                 "is_filled": all(
