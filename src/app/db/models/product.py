@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, Index, event, DDL
+from sqlalchemy import ForeignKey, Index
 from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
