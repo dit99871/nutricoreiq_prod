@@ -2,8 +2,8 @@ from datetime import datetime
 
 from fastapi import APIRouter, Request
 
-from utils.security import generate_csp_nonce
-from utils.templates import templates
+from src.app.utils.security import generate_csp_nonce
+from src.app.utils.templates import templates
 
 router = APIRouter(tags=["Info"])
 
