@@ -1,6 +1,6 @@
 import logging
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Optional
 
 from pydantic import BaseModel
 from pydantic import PostgresDsn
@@ -76,6 +76,8 @@ class ApiPrefix(BaseModel):
 class DatabaseConfig(BaseModel):
     url: PostgresDsn
     echo: bool = False
+    test_url: Optional[PostgresDsn] = None  # URL для тестовой базы
+    test_echo: Optional[bool] = None
     echo_pool: bool = False
     pool_size: int = 50
     max_overflow: int = 10
