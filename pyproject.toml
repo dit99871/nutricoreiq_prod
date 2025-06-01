@@ -19,6 +19,7 @@ pyjwt = {extras = ["crypto"], version = "^2.10.1"}
 bcrypt = "^4.3.0"
 python-multipart = "^0.0.20"
 redis = "^5.2.1"
+mypy = "^1.16.0"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -28,7 +29,25 @@ pytest-asyncio = "^0.25.3"
 pytest-mock = "^3.14.0"
 pylint = "^3.3.5"
 ruff = "^0.11.0"
+types-python-jose = "^3.5.0.20250531"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
+follow_imports = "skip"
+check_untyped_defs = true
+disallow_any_unimported = true
+disallow_incomplete_defs = true
+disallow_untyped_decorators = true
+
+[mypy.plugins]
+pydantic.mypy = true
+
+[[tool.mypy.overrides]]
+module = ["src.app.*", "src.tests.*"]
+ignore_missing_imports = true
