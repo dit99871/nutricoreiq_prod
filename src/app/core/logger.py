@@ -2,7 +2,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 from typing import Optional
 
-from core.config import settings
+from src.app.core.config import settings
 
 
 def setup_logging():
