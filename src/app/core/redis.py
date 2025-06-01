@@ -1,14 +1,11 @@
-from typing import Any, AsyncGenerator
-
+from typing import AsyncGenerator, Any
 from redis.asyncio import Redis
-
 from src.app.core.config import settings
 from src.app.core.logger import get_logger
 
 log = get_logger("redis_core")
 
 
-# @asynccontextmanager
 async def get_redis() -> AsyncGenerator[Any, Redis]:
     """
     Yields a Redis connection object after establishing a connection
@@ -36,6 +33,6 @@ async def get_redis() -> AsyncGenerator[Any, Redis]:
             log.info("Redis connection opening")
             yield redis
         finally:
-            await redis.close()
+            await redis.aclose()
 
         log.info("Redis connection closed")
