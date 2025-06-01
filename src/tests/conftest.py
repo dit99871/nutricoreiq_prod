@@ -1,10 +1,18 @@
 import os
+import sys
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
 from fastapi.testclient import TestClient
+
+# Динамически добавляем src в sys.path
+src_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src"))
+if src_path not in sys.path:
+    sys.path.insert(0, src_path)
+print("Updated sys.path in conftest.py:", sys.path)
+
 from src.app.main import app
 from src.app.db.models import Base
 from src.app.core.config import settings
