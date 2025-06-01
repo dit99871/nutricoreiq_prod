@@ -5,15 +5,18 @@ from fastapi import APIRouter, Depends, Request, Query, HTTPException, status
 from fastapi.responses import ORJSONResponse, HTMLResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.logger import get_logger
-from db import db_helper
-from schemas.user import UserResponse
-from services.auth import get_current_auth_user
-from services.pending_product import check_pending_exists, create_pending_product
-from services.product import handle_product_search, handle_product_details
-from schemas.product import UnifiedProductResponse, PendingProductCreate
-from utils.security import generate_csp_nonce
-from utils.templates import templates
+from src.app.core.logger import get_logger
+from src.app.db import db_helper
+from src.app.schemas.user import UserResponse
+from src.app.services.auth import get_current_auth_user
+from src.app.services.pending_product import (
+    check_pending_exists,
+    create_pending_product,
+)
+from src.app.services.product import handle_product_search, handle_product_details
+from src.app.schemas.product import UnifiedProductResponse, PendingProductCreate
+from src.app.utils.security import generate_csp_nonce
+from src.app.utils.templates import templates
 
 log = get_logger("product_api")
 

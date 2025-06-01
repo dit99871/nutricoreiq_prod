@@ -8,15 +8,15 @@ from fastapi import (
     Request,
 )
 from fastapi.responses import ORJSONResponse, RedirectResponse
-from fastapi.security import OAuth2PasswordRequestForm, HTTPBearer
+from fastapi.security import OAuth2PasswordRequestForm
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from db import db_helper
-from core.logger import get_logger
-from core.redis import get_redis
-from crud.user import create_user, get_user_by_email
-from services.auth import (
+from src.app.db import db_helper
+from src.app.core.logger import get_logger
+from src.app.core.redis import get_redis
+from src.app.crud.user import create_user, get_user_by_email
+from src.app.services.auth import (
     add_tokens_to_response,
     create_access_jwt,
     create_refresh_jwt,
@@ -25,9 +25,9 @@ from services.auth import (
     get_current_auth_user_for_refresh,
     authenticate_user,
 )
-from services.redis import revoke_refresh_token
-from schemas.user import UserCreate, UserResponse
-from utils.auth import create_response
+from src.app.services.redis import revoke_refresh_token
+from src.app.schemas.user import UserCreate, UserResponse
+from src.app.utils.auth import create_response
 
 log = get_logger("auth_api")
 
