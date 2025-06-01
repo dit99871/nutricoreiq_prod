@@ -113,15 +113,15 @@ def test_encode_jwt_with_timedelta(mocker):
 
 def test_encode_jwt_file_not_found(mocker):
     payload = {"sub": "user123"}
-    original_path = settings.auth.private_key_path
-    settings.auth.private_key_path = Path("/nonexistent/path/private_key.pem")
-    try:
-        with pytest.raises(HTTPException) as exc_info:
-            encode_jwt(payload)
-        assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
-        assert "File with private key not found" in str(exc_info.value.detail)
-    finally:
-        settings.auth.private_key_path = original_path
+    mocker.patch.object(
+        settings.auth,
+        "private_key_path",
+        Path("/nonexistent/path/private_key.pem"),
+    )
+    with pytest.raises(HTTPException) as exc_info:
+        encode_jwt(payload)
+    assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
+    assert "File with private key not found" in str(exc_info.value.detail)
 
 
 def test_encode_jwt_jwt_error(mocker):
