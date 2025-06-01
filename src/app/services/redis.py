@@ -76,9 +76,8 @@ async def validate_refresh_jwt(
     """
     try:
         token_hash = generate_hash_token(refresh_token)
-        token_key = f"refresh_token:{uid}:{token_hash}:*"
-
-        return await redis.exists(token_key) == 1
+        token_keys = await redis.keys(f"refresh_token:{uid}:{token_hash}:*")
+        return len(token_keys) > 0
 
     except HTTPException as e:
         raise e
@@ -102,9 +101,10 @@ async def revoke_refresh_token(
     :return: None
     """
     token_hash = generate_hash_token(refresh_token)
-    token_key = f"refresh_token:{uid}:{token_hash}"
-    await redis.delete(token_key)
-    log.info("Refresh token revoked")
+    token_keys = await redis.keys(f"refresh_token:{uid}:{token_hash}:*")
+    if token_keys:
+        await redis.delete(*token_keys)
+        log.info("Refresh token revoked")
 
 
 async def revoke_all_refresh_tokens(
