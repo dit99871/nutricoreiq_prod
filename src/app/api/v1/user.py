@@ -5,12 +5,12 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import ORJSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from crud.profile import update_user_profile, get_user_profile
-from db import db_helper
-from schemas.user import UserProfile, UserResponse, UserAccount
-from services.auth import get_current_auth_user
-from utils.security import generate_csp_nonce
-from utils.templates import templates
+from src.app.crud.profile import update_user_profile, get_user_profile
+from src.app.db import db_helper
+from src.app.schemas.user import UserProfile, UserResponse, UserAccount
+from src.app.services.auth import get_current_auth_user
+from src.app.utils.security import generate_csp_nonce
+from src.app.utils.templates import templates
 
 router = APIRouter(
     tags=["User"],
