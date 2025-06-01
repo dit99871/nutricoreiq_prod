@@ -93,7 +93,7 @@ def decode_jwt(token: str) -> dict[str, Any] | None:
 
 def encode_jwt(
     payload: dict,
-    private_key: str = settings.auth.private_key_path.read_text(),
+    private_key: str | None = None,
     algorithm: str = settings.auth.algorithm,
     expire_minutes: int = settings.auth.access_token_expires,
     expire_timedelta: dt.timedelta | None = None,
@@ -110,7 +110,7 @@ def encode_jwt(
     and error message.
 
     :param payload: The payload to be encoded as a JWT token.
-    :param private_key: The private key to be used for encoding.
+    :param private_key: The private key to be used for encoding, if None uses settings.
     :param algorithm: The algorithm to be used for encoding.
     :param expire_minutes: The number of minutes before the token expires.
     :param expire_timedelta: The timedelta object representing the expiration
@@ -119,6 +119,19 @@ def encode_jwt(
                            occurs during encoding, or an HTTP error occurs.
     :return: The encoded JWT token as a string.
     """
+    if private_key is None:
+        log.info("Using private_key_path: %s", settings.auth.private_key_path)
+        log.info("private_key_path type: %s", type(settings.auth.private_key_path))
+        try:
+            private_key = settings.auth.private_key_path.read_text()
+            log.info("Successfully read private key: %s...", private_key[:50])
+        except FileNotFoundError as e:
+            log.error("File with private key not found: %s", e)
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"File with private key not found: {str(e)}.",
+            )
+
     to_encode = payload.copy()
     now = dt.datetime.now(dt.UTC)
 
@@ -139,12 +152,6 @@ def encode_jwt(
             algorithm=algorithm,
         )
         return encoded
-    except FileNotFoundError as e:
-        log.error("File with private key not found: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"File with private key not found: {str(e)}.",
-        )
     except JWTError as e:
         log.error("JWT error encoding token: %s", e)
         raise HTTPException(
