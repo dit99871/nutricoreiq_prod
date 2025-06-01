@@ -131,6 +131,12 @@ async def handle_product_search(
 async def handle_product_details(
     session: AsyncSession, product_id: int
 ) -> ProductDetailResponse:
+    """
+
+    :param session:
+    :param product_id:
+    :return:
+    """
     try:
         log.info("Start product detail handler")
         product = await session.execute(
@@ -143,7 +149,7 @@ async def handle_product_details(
             )
             .where(Product.id == product_id)
         )
-        product = product.scalar()
+        product = product.unique().scalar_one_or_none()
 
         if not product:
             log.error("Product not found")
@@ -154,6 +160,8 @@ async def handle_product_details(
 
         return map_to_schema(product)
 
+    except HTTPException as e:
+        raise e
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
