@@ -33,11 +33,13 @@ app.add_middleware(
     max_age=600,
 )
 app.include_router(api_router)
-app.mount(
-    "/static/",
-    StaticFiles(directory="static"),
-    name="static",
-)
+# Монтирование статических файлов откладывается
+if __name__ == "__main__":
+    app.mount("/static/", StaticFiles(directory="src/app/static"), name="static")
+    uvicorn.run("main:app", host=settings.run.host, port=settings.run.port, reload=True)
+else:
+    # Для тестов или импорта можно не монтировать
+    pass
 
 app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(Exception, generic_exception_handler)
