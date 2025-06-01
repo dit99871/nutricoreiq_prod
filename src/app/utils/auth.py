@@ -7,8 +7,8 @@ from fastapi.exceptions import HTTPException
 from fastapi.responses import ORJSONResponse
 from jose import jwt, JWTError, ExpiredSignatureError
 
-from core.config import settings
-from core.logger import get_logger
+from src.app.core.config import settings
+from src.app.core.logger import get_logger
 
 log = get_logger("auth_utils")
 
