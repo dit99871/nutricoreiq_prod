@@ -1,5 +1,6 @@
 import datetime as dt
 import uuid
+from typing import Any
 
 import bcrypt
 from fastapi import status
@@ -46,7 +47,7 @@ def verify_password(
     )
 
 
-def decode_jwt(token: str) -> dict | None:
+def decode_jwt(token: str) -> dict[str, Any] | None:
     """
     Decodes a JWT token using the public key.
 
@@ -64,7 +65,7 @@ def decode_jwt(token: str) -> dict | None:
     if token is None:
         return None
     try:
-        decoded: dict = jwt.decode(
+        decoded = jwt.decode(
             token,
             settings.auth.public_key_path.read_text(),
             algorithms=settings.auth.algorithm,

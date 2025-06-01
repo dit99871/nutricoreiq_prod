@@ -5,7 +5,7 @@ from typing import Optional
 from src.app.core.config import settings
 
 
-def setup_logging():
+def setup_logging() -> None:
     """
     Настройка логирования на основе конфигурации из settings.
     """
