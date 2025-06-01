@@ -7,8 +7,8 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
-from core.config import settings
-from db.models import (
+from src.app.core.config import settings
+from src.app.db.models import (
     Base,
     User,
     PendingProduct,
