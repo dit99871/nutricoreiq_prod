@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from db.models import PendingProduct
+from src.app.db.models import PendingProduct
 
 
 async def check_pending_exists(

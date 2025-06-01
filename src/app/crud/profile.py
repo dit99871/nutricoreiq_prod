@@ -3,9 +3,9 @@ from sqlalchemy import update, select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.logger import get_logger
-from db.models import User
-from schemas.user import UserResponse, UserProfile, UserAccount
+from src.app.core.logger import get_logger
+from src.app.db.models import User
+from src.app.schemas.user import UserResponse, UserProfile, UserAccount
 
 log = get_logger("profile_crud")
 

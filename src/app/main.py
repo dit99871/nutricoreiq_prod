@@ -6,17 +6,17 @@ from fastapi.responses import HTMLResponse, ORJSONResponse
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 
-from api import router as api_router
-from core.config import settings
-from core.exception_handlers import (
+from src.app.api import router as api_router
+from src.app.core.config import settings
+from src.app.core.exception_handlers import (
     http_exception_handler,
     generic_exception_handler,
 )
-from core.logger import setup_logging
-from lifespan import docker_lifespan
-from services.auth import get_current_auth_user
-from utils.security import generate_csrf_token, generate_csp_nonce
-from utils.templates import templates
+from src.app.core.logger import setup_logging
+from src.app.lifespan import docker_lifespan
+from src.app.services.auth import get_current_auth_user
+from src.app.utils.security import generate_csrf_token, generate_csp_nonce
+from src.app.utils.templates import templates
 
 setup_logging()
 

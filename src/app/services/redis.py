@@ -4,9 +4,9 @@ import time
 from redis.asyncio import RedisError, Redis
 from fastapi import HTTPException, status
 
-from core.logger import get_logger
-from core.redis import get_redis
-from utils.security import generate_hash_token
+from src.app.core.logger import get_logger
+from src.app.core.redis import get_redis
+from src.app.utils.security import generate_hash_token
 
 log = get_logger("redis_service")
 

@@ -7,17 +7,17 @@ from fastapi.security import OAuth2PasswordBearer
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.config import settings
-from core.logger import get_logger
-from crud.user import get_user_by_uid, get_user_by_name
-from db import db_helper
-from schemas.user import UserResponse
-from services.redis import (
+from src.app.core.config import settings
+from src.app.core.logger import get_logger
+from src.app.crud.user import get_user_by_uid, get_user_by_name
+from src.app.db import db_helper
+from src.app.schemas.user import UserResponse
+from src.app.services.redis import (
     add_refresh_to_redis,
     revoke_all_refresh_tokens,
     validate_refresh_jwt,
 )
-from utils.auth import (
+from src.app.utils.auth import (
     decode_jwt,
     encode_jwt,
     create_response,

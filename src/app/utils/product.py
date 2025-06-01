@@ -1,7 +1,7 @@
-from core.logger import get_logger
-from db.models import Product
-from db.models.nutrient import NutrientCategory
-from schemas.product import NutrientBase, ProductDetailResponse
+from src.app.core.logger import get_logger
+from src.app.db.models import Product
+from src.app.db.models.nutrient import NutrientCategory
+from src.app.schemas.product import NutrientBase, ProductDetailResponse
 
 log = get_logger("product_utils")
 

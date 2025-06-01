@@ -1,7 +1,7 @@
 import hashlib
 from secrets import token_hex, token_urlsafe
 
-from core.config import settings
+from src.app.core.config import settings
 
 
 def generate_csrf_token() -> str:

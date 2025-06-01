@@ -3,14 +3,14 @@ from sqlalchemy import select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
-from core.logger import get_logger
-from db.models import Product, PendingProduct, ProductNutrient
-from schemas.product import (
+from src.app.core.logger import get_logger
+from src.app.db.models import Product, PendingProduct, ProductNutrient
+from src.app.schemas.product import (
     ProductDetailResponse,
     ProductSuggestion,
     UnifiedProductResponse,
 )
-from utils.product import map_to_schema
+from src.app.utils.product import map_to_schema
 
 log = get_logger("product_services")
 

@@ -5,10 +5,10 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from core.logger import get_logger
-from db.models import User
-from schemas.user import UserCreate, UserResponse
-from utils.auth import get_password_hash
+from src.app.core.logger import get_logger
+from src.app.db.models import User
+from src.app.schemas.user import UserCreate, UserResponse
+from src.app.utils.auth import get_password_hash
 
 log = get_logger("user_crud")
 
@@ -91,7 +91,7 @@ async def get_user_by_uid(
             log.error("User not found in db by uid")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User not found in db by uid",
+                detail="User not found in db by uid",
             )
         return user
 
@@ -157,7 +157,7 @@ async def get_user_by_name(
             log.error("User not found in db by name")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User not found in db by name",
+                detail="User not found in db by name",
             )
         return user
 

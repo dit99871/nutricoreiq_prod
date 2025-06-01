@@ -1,4 +1,4 @@
-from schemas.user import UserAccount
+from src.app.schemas.user import UserAccount
 
 
 def calculate_bmr(user: UserAccount) -> float:
