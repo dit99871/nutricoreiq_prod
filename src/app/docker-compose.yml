@@ -23,7 +23,7 @@ services:
       POSTGRES_USER: test_user
       POSTGRES_PASSWORD: test_pass
     ports:
-      - "5432:5432"
+      - "5435:5432"
 
   redis:
     image: redis:alpine
