@@ -406,6 +406,8 @@ main.container.d-flex.flex-column.flex-grow-1.py-4 {
 .modal-body {
     background: var(--card-bg);
     padding: 1.5rem;
+    max-height: calc(70vh - 100px); /* Адаптивная высота с прокруткой */
+    overflow-y: auto;
 }
 
 .modal-footer {
@@ -439,6 +441,10 @@ main.container.d-flex.flex-column.flex-grow-1.py-4 {
 .modal-footer a.registration-link:hover {
     text-decoration: underline;
     color: #3a6b4a;
+}
+
+.modal .custom-select-options {
+    z-index: 1010; /* Увеличен для модального окна */
 }
 
 /* 5.4 Формы и поля ввода */
@@ -569,9 +575,10 @@ main.container.d-flex.flex-column.flex-grow-1.py-4 {
     list-style: none;
     padding: 0;
     z-index: 1000;
-    max-height: 200px;
+    max-height: calc(50vh - 50px); /* Адаптивная высота */
     overflow-y: auto;
     display: none;
+    animation: slideDown 0.3s forwards;
 }
 
 .custom-select-options li {
@@ -1168,6 +1175,11 @@ body.dark-mode .custom-select {
 body.dark-mode .custom-select-options {
     border-color: var(--sage);
     background: var(--input-bg);
+    max-height: calc(50vh - 50px); /* Адаптивная высота в темной теме */
+}
+
+body.dark-mode .custom-select-options li {
+    color: var(--text-primary);
 }
 
 body.dark-mode .custom-select-options li:hover {
@@ -1468,5 +1480,13 @@ body.dark-mode .btn-change-password[aria-label]::after {
     .product-detail-wrapper .mineral-grid .macro-minerals + .micro-minerals::before,
     .product-detail-wrapper .suggestions-grid .macro-suggestion + .micro-suggestion::before {
         display: none;
+    }
+
+    .modal-body {
+        max-height: calc(80vh - 80px); /* Увеличено для мобильных */
+    }
+
+    .custom-select-options {
+        max-height: calc(40vh - 30px); /* Уменьшено для мобильных */
     }
 }
