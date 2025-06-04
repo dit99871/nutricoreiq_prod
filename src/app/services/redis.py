@@ -76,8 +76,9 @@ async def validate_refresh_jwt(
     """
     try:
         token_hash = generate_hash_token(refresh_token)
-        token_keys = await redis.keys(f"refresh_token:{uid}:{token_hash}:*")
-        return len(token_keys) > 0
+        token_key = f"refresh_token:{uid}:{token_hash}:*"
+
+        return await redis.exists(token_key) == 1
 
     except HTTPException as e:
         raise e
