@@ -1,4 +1,5 @@
 from datetime import datetime
+import os
 
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,6 +25,12 @@ app = FastAPI(
     lifespan=docker_lifespan,
     default_response_class=ORJSONResponse,
 )
+
+base_dir = os.path.dirname(os.path.dirname(__file__))
+static_dir = os.path.join(base_dir, "app", "static")
+if os.path.exists(static_dir) and os.path.isdir(static_dir):
+    app.mount("/static/", StaticFiles(directory=static_dir), name="static")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors.allow_origins,
@@ -33,9 +40,6 @@ app.add_middleware(
     max_age=600,
 )
 app.include_router(api_router)
-
-app.mount("/static/", StaticFiles(directory="static"), name="static")
-
 
 app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(Exception, generic_exception_handler)
