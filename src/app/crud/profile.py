@@ -44,6 +44,9 @@ async def get_user_profile(
             detail=f"DB error getting user: {str(e)}",
         )
 
+    except HTTPException:
+        raise
+
     except Exception as e:
         log.exception("Unexpected error getting user from db: %s", e)
         raise HTTPException(
@@ -90,7 +93,7 @@ async def update_user_profile(
         await session.commit()
         log.info("User updated with name: %s", current_user.username)
 
-        return
+        return UserAccount.model_construct(**updated_user.__dict__)
 
     except SQLAlchemyError as e:
         log.error(
@@ -98,6 +101,10 @@ async def update_user_profile(
         )
         await session.rollback()
         return None
+
+    except HTTPException:
+        raise
+
     except Exception as e:
         log.exception(
             "Unexpected error updating user with name %s: %s", current_user.username, e
