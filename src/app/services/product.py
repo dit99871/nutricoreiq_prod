@@ -132,10 +132,19 @@ async def handle_product_details(
     session: AsyncSession, product_id: int
 ) -> ProductDetailResponse:
     """
+    Retrieves the details of a product by its ID.
 
-    :param session:
-    :param product_id:
-    :return:
+    This function queries the database for a product with the given `product_id`.
+    It uses eager loading to fetch related product groups and nutrient associations
+    for efficient data retrieval. If the product is found, it is mapped to a
+    `ProductDetailResponse` schema and returned. If the product is not found, an
+    HTTP 404 exception is raised. In case of other exceptions, an HTTP 500 exception
+    is raised with the error details.
+
+    :param session: The current database session.
+    :param product_id: The unique identifier of the product to retrieve.
+    :return: A `ProductDetailResponse` object containing the product details.
+    :raises HTTPException: If the product is not found or an error occurs during execution.
     """
     try:
         log.info("Start product detail handler")
