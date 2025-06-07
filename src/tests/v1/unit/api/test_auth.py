@@ -1,5 +1,5 @@
 import pytest
-from fastapi import HTTPException, Request
+from fastapi import HTTPException
 from fastapi.responses import RedirectResponse
 from unittest.mock import MagicMock, patch
 from src.app.api.v1.auth import (
@@ -10,7 +10,17 @@ from src.app.api.v1.auth import (
     change_password,
 )
 from src.app.schemas.user import UserCreate, UserResponse
-from src.app.services.auth import add_tokens_to_response, update_password
+
+
+# Предполагаем, что mock_db_session и mock_redis уже определены как фикстуры
+@pytest.fixture
+def mock_db_session():
+    return MagicMock()
+
+
+@pytest.fixture
+def mock_redis():
+    return MagicMock()
 
 
 @pytest.mark.asyncio
@@ -96,9 +106,7 @@ async def test_logout_success(mock_redis):
         assert isinstance(response, RedirectResponse)
         assert response.status_code == 303
         assert response.headers["location"] == "/"
-        # Проверяем удаление куков через заголовки
         set_cookie_headers = response.headers.getlist("Set-Cookie")
-        # Проверяем наличие заголовков для удаления access_token и refresh_token
         access_token_deleted = any(
             "access_token=" in header.lower() and "max-age=0" in header.lower()
             for header in set_cookie_headers
@@ -107,12 +115,8 @@ async def test_logout_success(mock_redis):
             "refresh_token=" in header.lower() and "max-age=0" in header.lower()
             for header in set_cookie_headers
         )
-        assert (
-            access_token_deleted
-        ), f"access_token not deleted, headers: {set_cookie_headers}"
-        assert (
-            refresh_token_deleted
-        ), f"refresh_token not deleted, headers: {set_cookie_headers}"
+        assert access_token_deleted
+        assert refresh_token_deleted
         mock_revoke.assert_called_once_with(user.uid, "refresh_token", mock_redis)
 
 
