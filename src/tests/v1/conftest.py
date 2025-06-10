@@ -6,24 +6,49 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
 from fastapi.testclient import TestClient
+from unittest.mock import AsyncMock
+
+from src.app.core.config import settings
+from src.app.core.redis import get_redis
+from src.app.db import db_helper
+from src.app.db.models import Base
+from src.app.main import app
 
 # Динамически добавляем src в sys.path
 src_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 if src_path not in sys.path:
     sys.path.insert(0, src_path)
 
-from src.app.main import app
-from src.app.db.models import Base
-from src.app.core.config import settings
-from unittest.mock import AsyncMock
-
 # Определяем URL и echo для тестов
-TEST_DATABASE_URL = settings.db.test_url or settings.db.url
+TEST_DATABASE_URL = str(settings.db.test_url or settings.db.url)  # Преобразуем в строку
 SQLALCHEMY_ECHO = (
     settings.db.test_echo if settings.db.test_echo is not None else settings.db.echo
 )
 
+# Настраиваем pytest-asyncio для использования event_loop с областью session
+pytest_asyncio.plugin.asyncio_default_loop_scope = "session"
 
+
+# Фикстура для сброса состояния settings
+@pytest.fixture(autouse=True, scope="function")
+def reset_settings():
+    """Сбрасывает settings.redis.salt до исходного значения перед и после каждого теста."""
+    original_salt = settings.redis.salt
+    yield
+    settings.redis.salt = original_salt
+
+
+@pytest.fixture(autouse=True, scope="session")
+def setup_test_environment():
+    """Настраиваем окружение для тестов."""
+    os.environ["ENV"] = "test"
+    os.environ["TESTING"] = "true"
+    yield
+    os.environ.pop("ENV", None)
+    os.environ.pop("TESTING", None)
+
+
+# Фикстура для интеграционных тестов
 @pytest_asyncio.fixture(scope="session")
 async def engine():
     """Создаем асинхронный движок для PostgreSQL и тестовую базу данных."""
@@ -34,33 +59,24 @@ async def engine():
     temp_engine = create_async_engine(
         default_db_url,
         echo=SQLALCHEMY_ECHO,
-        pool_pre_ping=True,
-        pool_recycle=3600,
         poolclass=NullPool,
     )
 
     # Проверяем и создаем тестовую базу данных, если она не существует
     async with temp_engine.connect() as conn:
-        try:
+        await conn.execute(text("COMMIT"))
+        result = await conn.execute(
+            text("SELECT 1 FROM pg_database WHERE datname = 'test_nutricoreiq'")
+        )
+        if result.scalar() is None:
+            await conn.execute(text("CREATE DATABASE test_nutricoreiq"))
             await conn.execute(text("COMMIT"))
-            result = await conn.execute(
-                text("SELECT 1 FROM pg_database WHERE datname = 'test_nutricoreiq'")
-            )
-            if result.scalar() is None:
-                await conn.execute(text("CREATE DATABASE test_nutricoreiq"))
-                await conn.execute(text("COMMIT"))
-        except Exception as e:
-            print(f"Ошибка при создании базы данных: {e}")
-            raise
-        finally:
-            await temp_engine.dispose()
+        await temp_engine.dispose()
 
     # Создаем движок для тестовой базы данных
     engine = create_async_engine(
         TEST_DATABASE_URL,
         echo=SQLALCHEMY_ECHO,
-        pool_pre_ping=True,
-        pool_recycle=3600,
         poolclass=NullPool,
     )
     async with engine.begin() as conn:
@@ -83,39 +99,6 @@ async def db_session(engine):
         # Транзакция автоматически откатывается после теста
 
 
-@pytest.fixture(scope="function")
-def client(db_session):
-    """Фикстура для тестового клиента FastAPI с переопределением зависимостей."""
-
-    async def override_db():
-        yield db_session
-
-    app.dependency_overrides[lambda: None] = override_db  # Замените на вашу зависимость
-    with TestClient(app) as test_client:
-        yield test_client
-    app.dependency_overrides.clear()
-
-
-@pytest.fixture(autouse=True, scope="session")
-def setup_test_environment():
-    """Настраиваем окружение для тестов."""
-    os.environ["ENV"] = "test"
-    os.environ["TESTING"] = "true"
-    yield
-    os.environ.pop("ENV", None)
-    os.environ.pop("TESTING", None)
-
-
-@pytest.fixture
-def mock_redis(mocker):
-    """Фикстура для мокинга Redis с базовыми методами."""
-    mock_redis = AsyncMock()
-    mock_redis.get.return_value = None
-    mock_redis.set.return_value = True
-    mocker.patch("src.app.core.redis.get_redis", return_value=mock_redis)
-    return mock_redis
-
-
 @pytest_asyncio.fixture
 async def clean_db(db_session):
     """Очищаем таблицы перед конкретным тестом."""
@@ -126,3 +109,35 @@ async def clean_db(db_session):
             )
         await db_session.commit()
     yield
+
+
+@pytest.fixture
+def mock_redis():
+    """Мок для Redis-клиента (для юнит- и интеграционных тестов, где требуется)."""
+    mock_redis = AsyncMock()
+    mock_redis.get.return_value = None
+    mock_redis.set.return_value = True
+    return mock_redis
+
+
+@pytest.fixture
+def mock_db_session():
+    """Мок для сессии базы данных (для юнит-тестов)."""
+    return AsyncMock()
+
+
+@pytest.fixture
+def client(db_session, mock_redis):
+    """Фикстура для тестового клиента FastAPI с переопределением зависимостей."""
+
+    async def override_db():
+        yield db_session
+
+    async def override_redis():
+        return mock_redis
+
+    app.dependency_overrides[db_helper.session_getter] = override_db
+    app.dependency_overrides[lambda: get_redis] = override_redis
+    with TestClient(app) as test_client:
+        yield test_client
+    app.dependency_overrides.clear()
