@@ -62,26 +62,26 @@ async def validate_refresh_jwt(
     Validates a refresh token for a given user.
 
     Validates a refresh token from the Redis database for a given user ID and
-    refresh token. The token is hashed and the corresponding key in Redis is
+    refresh token. The token is hashed and the corresponding keys in Redis are
     checked for existence. If the token is invalid, has expired, or does not
-    exist, raises an HTTPException with a 401 status code and an appropriate
-    error message.
+    exist, returns False.
 
     :param uid: The user ID for which to validate the refresh token.
     :param refresh_token: The refresh token to be validated.
     :param redis: The Redis client to use for the query.
-    :raises HTTPException: If the token is invalid, has expired, or does not
-                           exist.
+    :raises HTTPException: If an unexpected error occurs.
     :return: True if the token is valid, False otherwise.
     """
     try:
         token_hash = generate_hash_token(refresh_token)
-        token_key = f"refresh_token:{uid}:{token_hash}:*"
-
-        return await redis.exists(token_key) == 1
-
-    except HTTPException as e:
-        raise e
+        token_keys = await redis.keys(f"refresh_token:{uid}:{token_hash}:*")
+        return len(token_keys) > 0
+    except RedisError as e:
+        log.error("Redis error validating refresh token: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Redis error validating refresh token: {str(e)}",
+        )
 
 
 async def revoke_refresh_token(
