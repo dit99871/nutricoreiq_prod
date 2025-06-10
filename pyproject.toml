@@ -10,7 +10,7 @@ package-mode = true
 python = "^3.13"
 fastapi = {extras = ["all"], version = "^0.115.11"}
 pydantic-settings = "^2.8.1"
-sqlalchemy = {extras = ["asyncio"], version = "^2.0.39"}
+sqlalchemy = "^2.0.41"
 black = "^25.1.0"
 alembic = "^1.15.1"
 asyncpg = "^0.30.0"
@@ -19,8 +19,10 @@ python-jose = "^3.4.0"
 pyjwt = {extras = ["crypto"], version = "^2.10.1"}
 bcrypt = "^4.3.0"
 python-multipart = "^0.0.20"
-redis = "^5.2.1"
+redis = "6.2.0"
 mypy = "^1.16.0"
+httpx = "^0.28.1"
+pytest = "^8.4.0"
 
 
 [tool.poetry.group.dev.dependencies]
