@@ -49,7 +49,9 @@ async def test_add_refresh_to_redis_success(mock_get_redis):
 async def test_add_refresh_to_redis_limit_exceeded(mock_get_redis):
     """Проверяет удаление старого токена при превышении лимита (4)."""
     mock_redis = mock_get_redis
-    mock_redis.keys.return_value = [f"refresh_token:user1:token1:{i}" for i in range(4)]
+    mock_redis.keys.return_value = [
+        f"refresh_token:user1:token{i}:{i}" for i in range(4)
+    ]
     with patch("src.app.services.redis.generate_hash_token", return_value="new_token"):
         await add_refresh_to_redis("user1", "new_jwt", 3600)
     assert mock_redis.delete.call_count == 1
@@ -77,7 +79,7 @@ async def test_validate_refresh_jwt_success(mock_redis):
     ):
         result = await validate_refresh_jwt("user1", "refresh_token", mock_redis)
     assert result is True
-    mock_redis.keys.assert_called()
+    mock_redis.keys.assert_called_with("refresh_token:user1:hashed_token:*")
 
 
 @pytest.mark.asyncio
@@ -89,7 +91,7 @@ async def test_validate_refresh_jwt_failure(mock_redis):
     ):
         result = await validate_refresh_jwt("user1", "refresh_token", mock_redis)
     assert result is False
-    mock_redis.keys.assert_called()
+    mock_redis.keys.assert_called_with("refresh_token:user1:hashed_token:*")
 
 
 # Тесты для revoke_refresh_token
@@ -99,10 +101,8 @@ async def test_revoke_refresh_token_success(mock_redis):
     mock_redis.keys.return_value = ["refresh_token:user1:hashed_token:123"]
     with patch(
         "src.app.services.redis.generate_hash_token", return_value="hashed_token"
-    ) as mock_generate_hash:
+    ):
         await revoke_refresh_token("user1", "refresh_token", mock_redis)
-        print(f"mock_redis.keys call args: {mock_redis.keys.call_args}")
-        print(f"mock_generate_hash call args: {mock_generate_hash.call_args}")
     mock_redis.keys.assert_called_with("refresh_token:user1:hashed_token:*")
     mock_redis.delete.assert_called_with("refresh_token:user1:hashed_token:123")
 
