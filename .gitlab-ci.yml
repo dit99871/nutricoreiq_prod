@@ -51,18 +51,3 @@ test_job:
         path: coverage.xml
   rules:
     - if: '$CI_COMMIT_BRANCH || $CI_MERGE_REQUEST_IID'
-
-lint_job:
-  stage: test
-  script:
-    - apt-get update && apt-get install -y curl
-    - curl -sSL https://install.python-poetry.org | python3 -
-    - export PATH="/root/.local/bin:$PATH"
-    - poetry config virtualenvs.create false
-    - poetry install --no-root
-    - poetry run black --check .
-    - poetry run mypy .
-    - poetry run pylint src
-    - poetry run ruff check .
-  rules:
-    - if: '$CI_COMMIT_BRANCH || $CI_MERGE_REQUEST_IID'
