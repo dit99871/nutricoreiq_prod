@@ -74,7 +74,7 @@ class ApiPrefix(BaseModel):
 
 
 class DatabaseConfig(BaseModel):
-    url: PostgresDsn
+    url: Optional[PostgresDsn] = None
     echo: bool = False
     test_url: Optional[PostgresDsn] = None  # URL для тестовой базы
     test_echo: Optional[bool] = None
@@ -106,11 +106,15 @@ class Settings(BaseSettings):
     redis: RedisConfig
     cors: CORSConfig
 
-    is_test: bool = Field(False, env="APP_CONFIG__IS_TEST")  # Флаг тестовой среды
+    is_test: bool = False
 
     @property
     def effective_db_url(self) -> PostgresDsn:
-        return self.db.test_url if self.is_test else self.db.url
+        if self.is_test and self.db.test_url:
+            return self.db.test_url
+        if self.db.url:
+            return self.db.url
+        raise ValueError("Neither db.url nor db.test_url is provided when needed.")
 
 
 settings = Settings()
