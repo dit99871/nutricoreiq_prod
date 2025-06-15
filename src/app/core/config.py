@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import Literal, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pydantic import PostgresDsn
 from pydantic_settings import (
     BaseSettings,
@@ -105,6 +105,12 @@ class Settings(BaseSettings):
     auth: AuthConfig
     redis: RedisConfig
     cors: CORSConfig
+
+    is_test: bool = Field(False, env="APP_CONFIG__IS_TEST")  # Флаг тестовой среды
+
+    @property
+    def effective_db_url(self) -> PostgresDsn:
+        return self.db.test_url if self.is_test else self.db.url
 
 
 settings = Settings()
