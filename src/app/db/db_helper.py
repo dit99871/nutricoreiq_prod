@@ -43,7 +43,7 @@ class DatabaseHelper:
 
 
 db_helper = DatabaseHelper(
-    url=str(settings.db.url),
+    url=str(settings.effective_db_url),
     echo=settings.db.echo,
     echo_pool=settings.db.echo_pool,
     pool_size=settings.db.pool_size,
