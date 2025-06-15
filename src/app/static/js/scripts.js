@@ -185,7 +185,7 @@ document.addEventListener("DOMContentLoaded", () => {
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+            .replace(/'/g, "&#39;");
     };
 
     // 5. Форма логина
@@ -516,7 +516,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             searchForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const query = e.target.value.trim();
+                const query = searchInput.value.trim();
 
                 // Проверка минимальной длины запроса
                 if (query.length < 2) {
