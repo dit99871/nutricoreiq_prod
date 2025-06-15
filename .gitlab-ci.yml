@@ -19,6 +19,7 @@ test_job:
     POSTGRES_USER: test_user
     POSTGRES_PASSWORD: test_password
     REDIS_PASSWORD: test_password
+    APP_CONFIG__IS_TEST: "true"
     APP_CONFIG__DB__TEST_URL: postgresql+asyncpg://test_user:test_password@postgres:5432/test_db
     APP_CONFIG__REDIS__URL: redis://:test_password@redis:6379/0
     APP_CONFIG__REDIS__SALT: test_salt
