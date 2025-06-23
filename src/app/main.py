@@ -22,8 +22,8 @@ from src.app.utils.templates import templates
 setup_logging()
 
 app = FastAPI(
-    lifespan=docker_lifespan,
-    default_response_class=ORJSONResponse,
+    # lifespan=docker_lifespan,
+    # default_response_class=ORJSONResponse,
 )
 
 base_dir = os.path.dirname(os.path.dirname(__file__))
@@ -64,8 +64,8 @@ def start_page(
 
 if __name__ == "__main__":
     uvicorn.run(
-        "main:app",
+        "src.app.main:app",
         host=settings.run.host,
         port=settings.run.port,
-        reload=True,
+        reload=False,
     )
