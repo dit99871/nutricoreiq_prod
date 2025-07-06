@@ -153,4 +153,4 @@ cython_debug/
 # Custom certificate paths
 /src/app/core/certs/
 /src/app/utils/certs/
-postgres.conf
+postgresql.conf
