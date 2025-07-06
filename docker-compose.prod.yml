@@ -1,23 +1,53 @@
 services:
-
   db:
-    image: postgres:latest
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+    image: postgres:17
+    container_name: postgre
+    ports:
+      - "127.0.0.1:5432:5432"
     env_file:
       - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/pg_hba.conf:/var/lib/postgresql/pg_hba.conf
+      - ./postgresql.conf:/var/lib/postgresql/data/postgresql.conf
+    command: -c config_file=/var/lib/postgresql/data/postgresql.conf
     networks:
       - app-network
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER}" ]
+      test: [ "CMD-SHELL", "pg_isready -U user -d nutricoreiq" ]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  postgres_exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.10.0
+    container_name: postgres_exporter
+    environment:
+      - DATA_SOURCE_NAME=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable
+    volumes:
+      - ./postgres_exporter.yml:/postgres_exporter.yml
+    command:
+      - "--web.listen-address=:9187"
+      - "--extend.query-path=/postgres_exporter.yml"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+
   redis:
-    image: redis:latest
+    image: redis:7
+    container_name: redis
+    ports:
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
     networks:
       - app-network
     healthcheck:
@@ -26,12 +56,28 @@ services:
       timeout: 3s
       retries: 5
 
+  redis_exporter:
+    image: oliver006/redis_exporter
+    container_name: redis_exporter
+    environment:
+      - REDIS_ADDR=redis:6379
+      - LOG_LEVEL=debug
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+
   fastapi:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "0.0.0.0:8080:8080"
+    volumes:
+      - ./src/app/utils/certs:/nutricoreiq/src/app/utils/certs
+      - ./src/app/logs:/nutricoreiq/src/app/logs
+    container_name: web_app
     env_file:
       - .env
     depends_on:
@@ -42,9 +88,66 @@ services:
     networks:
       - app-network
 
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    networks:
+      - app-network
+
+  grafana:
+    image: grafana/grafana:11.2.2
+    container_name: grafana
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      - GF_SERVER_PROTOCOL=http
+      - GF_SERVER_DOMAIN=nutricoreiq.ru
+      - GF_SERVER_ROOT_URL=http://nutricoreiq.ru/grafana/
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /etc/nginx/conf.d:/etc/nginx/conf.d
+      - /etc/letsencrypt:/etc/letsencrypt
+      - /var/log/nginx:/var/log/nginx
+    depends_on:
+      - fastapi
+    networks:
+      - app-network
+
+  node_exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: node_exporter
+    ports:
+      - "127.0.0.1:9100:9100"
+    networks:
+      - app-network
+
+  nginx_exporter:
+    image: nginx/nginx-prometheus-exporter:1.1.0
+    container_name: nginx_exporter
+    command: --nginx.scrape-uri=http://nginx:80/stub_status
+    networks:
+      - app-network
+
 volumes:
   postgres_data:
   redis_data:
+  prometheus_data:
+  grafana_data:
 
 networks:
   app-network:

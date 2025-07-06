@@ -9,6 +9,9 @@ package-mode = true
 [tool.poetry.dependencies]
 python = "^3.13"
 fastapi = {extras = ["all"], version = "^0.115.11"}
+prometheus-fastapi-instrumentator = "^7.0.0"
+uvicorn = "^0.34.3"
+gunicorn = "^23.0.0"
 pydantic-settings = "^2.8.1"
 sqlalchemy = "^2.0.41"
 black = "^25.1.0"

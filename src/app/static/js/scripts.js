@@ -269,7 +269,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             try {
-                await secureFetch("api/v1/auth/register", {
+                await secureFetch("/api/v1/auth/register", {
                     method: 'POST',
                     body: JSON.stringify({
                         username: form.username.value,

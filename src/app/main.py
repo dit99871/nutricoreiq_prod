@@ -5,6 +5,7 @@ from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, ORJSONResponse
 from fastapi.staticfiles import StaticFiles
+from prometheus_fastapi_instrumentator import Instrumentator
 import uvicorn
 
 from src.app.api import router as api_router
@@ -14,17 +15,14 @@ from src.app.core.exception_handlers import (
     generic_exception_handler,
 )
 from src.app.core.logger import setup_logging
-from src.app.lifespan import docker_lifespan
 from src.app.services.auth import get_current_auth_user
 from src.app.utils.security import generate_csrf_token, generate_csp_nonce
 from src.app.utils.templates import templates
 
 setup_logging()
 
-app = FastAPI(
-    # lifespan=docker_lifespan,
-    # default_response_class=ORJSONResponse,
-)
+app = FastAPI()
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 base_dir = os.path.dirname(os.path.dirname(__file__))
 static_dir = os.path.join(base_dir, "app", "static")
@@ -61,11 +59,3 @@ def start_page(
         },
     )
 
-
-if __name__ == "__main__":
-    uvicorn.run(
-        "src.app.main:app",
-        host=settings.run.host,
-        port=settings.run.port,
-        reload=False,
-    )
