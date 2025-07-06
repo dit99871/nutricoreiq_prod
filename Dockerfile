@@ -1,9 +1,8 @@
-# Базовый образ для сборки
+# Этап сборки
 FROM python:3.13-slim AS builder
 RUN pip install --no-cache-dir poetry==1.8.3
 WORKDIR /nutricoreiq
 COPY pyproject.toml poetry.lock ./
-# Экспортируем зависимости в requirements.txt для кэширования
 RUN poetry export -f requirements.txt --output requirements.txt --without-hashes
 
 # Финальный образ
@@ -11,12 +10,19 @@ FROM python:3.13-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     gcc \
+    postgresql-client \
+    redis-tools \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /nutricoreiq
 COPY --from=builder /nutricoreiq/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --root-user-action=ignore -r requirements.txt gunicorn
 COPY . .
-# Создаем не-root пользователя для безопасности
-RUN useradd -m appuser && chown -R appuser:appuser /nutricoreiq
-USER appuser
-CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "src.app.main:app", "--bind", "0.0.0.0:8000"]
+# Создаем пользователя и директорию логов
+RUN useradd -m appuser && \
+    mkdir -p /nutricoreiq/src/app/logs && \
+    chown appuser:appuser /nutricoreiq/src/app/logs && \
+    chmod 770 /nutricoreiq/src/app/logs && \
+    chown -R appuser:appuser /nutricoreiq
+COPY entrypoint.sh .
+RUN chmod +x entrypoint.sh
+CMD ["./entrypoint.sh"]
