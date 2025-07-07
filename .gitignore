@@ -154,3 +154,4 @@ cython_debug/
 /src/app/core/certs/
 /src/app/utils/certs/
 postgresql.conf
+/.env
