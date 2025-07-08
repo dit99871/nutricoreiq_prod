@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from pydantic import PostgresDsn
 from pydantic_settings import (
     BaseSettings,
@@ -52,7 +52,7 @@ class LoggingConfig(BaseModel):
         "critical",
     ] = "info"
     log_format: str = LOG_DEFAULT_FORMAT
-    log_file: str = "/nutricoreiq/src/app/logs/app.log"  # Путь к файлу логов
+    log_file: str = str(BASE_DIR / "logs" / "app.log") # Путь к файлу логов
     log_file_max_size: int = 5 * 1024 * 1024  # 5 MB
     log_file_backup_count: int = 3  # Количество backup файлов
 
