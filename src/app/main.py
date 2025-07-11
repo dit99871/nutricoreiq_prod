@@ -2,6 +2,7 @@ from datetime import datetime
 import os
 
 from fastapi import FastAPI, HTTPException, Request, Depends
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, ORJSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -11,10 +12,12 @@ import uvicorn
 from src.app.api import router as api_router
 from src.app.core.config import settings
 from src.app.core.exception_handlers import (
-    http_exception_handler,
     generic_exception_handler,
+    http_exception_handler,
+    validation_exception_handler,
 )
 from src.app.core.logger import setup_logging
+from src.app.lifespan import docker_lifespan
 from src.app.services.auth import get_current_auth_user
 from src.app.utils.security import generate_csrf_token, generate_csp_nonce
 from src.app.utils.templates import templates
@@ -40,6 +43,7 @@ app.add_middleware(
 app.include_router(api_router)
 
 app.add_exception_handler(HTTPException, http_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(Exception, generic_exception_handler)
 
 
