@@ -99,7 +99,9 @@ async def add_pending_product(
     if await check_pending_exists(session, data.name):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Продукт уже в очереди",
+            detail={
+                "message": "Продукт уже в очереди",
+            },
         )
 
     await create_pending_product(session, data.name)
