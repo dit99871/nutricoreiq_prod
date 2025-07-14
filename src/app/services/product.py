@@ -122,7 +122,13 @@ async def handle_product_search(
         await session.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e),
+            detail={
+                "message": "Произошла ошибка во время поиска продукта",
+                "details": {
+                    "error": str(e),
+                    "query": query,
+                }
+            }
         )
 
     return response
@@ -164,7 +170,10 @@ async def handle_product_details(
             log.error("Product not found")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Продукт не найден",
+                detail={
+                        "message": "Продукт не найден",
+                        "details": f"Product with id {product_id} not found",
+                }
             )
 
         return map_to_schema(product)
@@ -174,5 +183,8 @@ async def handle_product_details(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e),
+            detail={
+                "message": "Произошла ошибка во время поиска продукта",
+                "details": str(e),
+            }
         )
