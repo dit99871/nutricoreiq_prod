@@ -96,7 +96,7 @@ async def update_profile(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={
-                "message": "No data provided for update",
+                "message": "Произошла ошибка. Попробуйте позже!",
             },
         )
     await update_user_profile(data_in, current_user, session)
