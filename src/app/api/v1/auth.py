@@ -72,7 +72,9 @@ async def register_user(
             )
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email already registered",
+                detail={
+                    "message": "Этот email уже зарегистрирован",
+                },
             )
         user = await create_user(session, user_in)
         if not user:
@@ -82,7 +84,9 @@ async def register_user(
             await session.rollback()
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to create user",
+                detail={
+                    "message": "Произошла ошибка при регистрации",
+                },
             )
         log.info("User registered successfully: %s", user.email)
         return user
@@ -126,7 +130,10 @@ async def login(
         log.exception("Unexpected error logging in: %s", e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Unexpected error logging in: {e!r}",
+            detail={
+                "message": "Произошла ошибка при авторизации",
+                "error": str(e),
+            },
         )
 
 
@@ -155,7 +162,10 @@ async def logout(
         log.error("Refresh token not found in cookies")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="No refresh token in cookies",
+            detail={
+                "message": "Внутренняя ошибка сервера",
+                "error": "Refresh token not found in cookies",
+            },
         )
     await revoke_refresh_token(user.uid, refresh_jwt, redis)
     response = RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
@@ -197,7 +207,10 @@ async def refresh_token(
         log.error("Refresh token not found in cookies")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="No refresh token found in cookies",
+            detail={
+                "message": "Внутренняя ошибка сервера",
+                "error": "Refresh token not found in cookies",
+            },
         )
 
     try:
@@ -217,7 +230,10 @@ async def refresh_token(
         log.exception("Unexpected error refreshing tokens: %s", e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Unexpected error refreshing tokens: {e!r}",
+            detail={
+                "message": "Внутренняя ошибка сервера",
+                "error": f"Unexpected error refreshing tokens: {e!r}",
+            },
         )
 
     return response
