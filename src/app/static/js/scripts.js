@@ -92,9 +92,11 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const data = await response.json();
+
             if (!response.ok) {
-                throw new Error(data.detail || data.message || 'Неизвестная ошибка');
+                throw data.error || { message: 'Неизвестная ошибка' };
             }
+
             return data;
         } catch (error) {
             if (error.name === 'AbortError') {
@@ -105,12 +107,19 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // 4. UI-утилиты
-    const showError = (containerId, message) => {
+    const showError = (containerId, errorData) => {
         const container = document.getElementById(containerId);
-        if (container) {
-            container.textContent = message;
-            container.classList.remove('d-none');
+        if (!container) return;
+
+        if (typeof errorData === 'string') {
+            container.textContent = errorData;
+        } else if (errorData.code === 'validation_error' && errorData.details?.fields) {
+            const errorMessages = errorData.details.fields.map(err => `${err.field}: ${err.message}`).join(', ');
+            container.textContent = `Ошибки валидации: ${errorMessages}`;
+        } else {
+            container.textContent = errorData.message || 'Неизвестная ошибка';
         }
+        container.classList.remove('d-none');
     };
 
     const showSuccess = (message, elementId = 'globalSuccess') => {
