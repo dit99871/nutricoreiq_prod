@@ -58,22 +58,19 @@ async def get_profile(
     :return: A UserAccount object containing the user's profile information.
     :raises HTTPException: If the user is not found in the database.
     """
-    try:
-        user = await get_user_profile(session, current_user.id)
-        return templates.TemplateResponse(
-            name="profile.html",
-            request=request,
-            context={
-                "current_year": datetime.now().year,
-                "csp_nonce": generate_csp_nonce(),
-                "user": user,
-                "is_filled": all(
-                    (user.gender, user.age, user.weight, user.height, user.kfa)
-                ),
-            },
-        )
-    except HTTPException as e:
-        raise e
+    user = await get_user_profile(session, current_user.id)
+    return templates.TemplateResponse(
+        name="profile.html",
+        request=request,
+        context={
+            "current_year": datetime.now().year,
+            "csp_nonce": generate_csp_nonce(),
+            "user": user,
+            "is_filled": all(
+                (user.gender, user.age, user.weight, user.height, user.kfa)
+            ),
+        },
+    )
 
 
 @router.post("/profile/update", response_class=ORJSONResponse)
@@ -98,13 +95,13 @@ async def update_profile(
     if not data_in:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No data provided for update",
+            detail={
+                "message": "No data provided for update",
+            },
         )
-    try:
-        await update_user_profile(data_in, current_user, session)
-        return {"message": "Profile updated successfully"}
-    except HTTPException as e:
-        raise e
+    await update_user_profile(data_in, current_user, session)
+    return {"message": "Profile updated successfully"}
+
 
 
 #
