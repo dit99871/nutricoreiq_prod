@@ -9,20 +9,24 @@ log = get_logger("exc_handlers")
 
 
 def http_exception_handler(request: Request, exc: HTTPException):
-    """Обрабатывает HTTPException с формированием структурированного ответа об ошибке"""
+    """
+    Обработка http-exception, которые могут возникнуть
+    при выполнении запросов к API.
+
+    :param request: Объект Request, содержащий информацию о запросе
+    :param exc: объект HTTPException, содержащий информацию о возникшей ошибке
+    :return: объект ORJSONResponse, содержащий структурированную информацию об ошибке
+    """
     if isinstance(exc.detail, dict):
-        code = exc.detail.get("code", "unknown")
         message = exc.detail.get("message", "Произошла ошибка")
-        details = exc.detail.get("detail")
+        details = exc.detail.get("details")
     else:
-        code = "unknown"
         message = exc.detail or "Произошла ошибка"
         details = None
 
     error_detail = ErrorDetail(
-        code=code,
         message=message,
-        details=details
+        details=details,
     )
 
     error_response = ErrorResponse(
@@ -31,8 +35,8 @@ def http_exception_handler(request: Request, exc: HTTPException):
     )
 
     log.error(
-        "HTTP-ошибка по адресу %s: код=%s, сообщение=%s, статус=%s",
-        request.url, code, message, exc.status_code
+        "HTTP-ошибка по адресу %s: сообщение=%s, статус=%s",
+        request.url, message, exc.status_code
     )
 
     return ORJSONResponse(
@@ -42,7 +46,14 @@ def http_exception_handler(request: Request, exc: HTTPException):
 
 
 def validation_exception_handler(request: Request, exc: RequestValidationError):
-    """Обрабатывает RequestValidationError с формированием структурированного ответа об ошибке"""
+    """
+    Обработка ошибок валидации, которые могут возникнуть
+    при выполнении запросов к API.
+
+    :param request: Объект Request, содержащий информацию о запросе
+    :param exc: объект RequestValidationError, содержащий информацию о возникшей ошибке
+    :return: объект ORJSONResponse, содержащий структурированную информацию об ошибке
+    """
     errors = [
         {"field": err["loc"][-1], "message": err["msg"]}
         for err in exc.errors()
@@ -50,7 +61,6 @@ def validation_exception_handler(request: Request, exc: RequestValidationError):
     error_response = ErrorResponse(
         status="error",
         error=ErrorDetail(
-            code="validation_error",
             message="Некорректные входные данные",
             details={"fields": errors}
         )
@@ -68,7 +78,13 @@ def validation_exception_handler(request: Request, exc: RequestValidationError):
 
 
 def generic_exception_handler(request: Request, exc: Exception):
-    """Обрабатывает непредвиденные ошибки с формированием структурированного ответа"""
+    """
+    Обработка необработанных Exception, которые могут возникнуть при выполнении запросов к API.
+
+    :param request: Объект Request, содержащий информацию о запросе
+    :param exc: объект Exception, содержащий информацию об возникшей ошибке
+    :return: объект ORJSONResponse, содержащий структурированную информацию об ошибке
+    """
     details = (
         {"field": "server", "message": str(exc)}
         if settings.DEBUG
@@ -77,7 +93,6 @@ def generic_exception_handler(request: Request, exc: Exception):
     error_response = ErrorResponse(
         status="error",
         error=ErrorDetail(
-            code="internal_error",
             message="Внутренняя ошибка сервера",
             details=details
         )
