@@ -11,7 +11,6 @@ class SuccessResponse(BaseSchema):
 
 
 class ErrorDetail(BaseSchema):
-    code: constr(min_length=3, max_length=32)  # пример: "auth/invalid-credentials"
     message: constr(max_length=255)
     details: dict[str, Any] | None = Field(
         default=None, examples=[{"field": "email", "message": "Invalid email format"}]
