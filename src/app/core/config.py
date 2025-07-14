@@ -12,7 +12,7 @@ from pydantic_settings import (
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 LOG_DEFAULT_FORMAT = (
-    "[%(asctime)s.%(msecs)03d] %(name)24s:%(lineno)-4d %(levelname)-7s - %(message)s"
+    "[%(asctime)s] %(name)24s:%(lineno)-4d %(levelname)-7s - %(message)s"
 )
 
 
@@ -76,7 +76,8 @@ class ApiPrefix(BaseModel):
 class DatabaseConfig(BaseModel):
     url: Optional[PostgresDsn] = None
     echo: bool = False
-    test_url: Optional[PostgresDsn] = None  # URL для тестовой базы
+    is_test: bool = False
+    test_url: Optional[PostgresDsn] = None
     test_echo: Optional[bool] = None
     echo_pool: bool = False
     pool_size: int = 50
@@ -92,12 +93,15 @@ class DatabaseConfig(BaseModel):
 
 
 class Settings(BaseSettings):
+    DEBUG: bool = True
+
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",
         case_sensitive=False,
         env_nested_delimiter="__",
         env_prefix="APP_CONFIG__",
     )
+
     run: RunConfig
     logging: LoggingConfig = LoggingConfig()
     api: ApiPrefix = ApiPrefix()
@@ -106,11 +110,9 @@ class Settings(BaseSettings):
     redis: RedisConfig
     cors: CORSConfig
 
-    is_test: bool = False
-
     @property
     def effective_db_url(self) -> PostgresDsn:
-        if self.is_test and self.db.test_url:
+        if self.db.is_test and self.db.test_url:
             return self.db.test_url
         if self.db.url:
             return self.db.url
