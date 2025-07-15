@@ -349,7 +349,7 @@ async def authenticate_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
-                "message": "Неверное имя пользователя или пароль"
+                "message": "Неверный пароль"
             },
         )
 
