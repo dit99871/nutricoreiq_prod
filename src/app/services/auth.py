@@ -138,22 +138,19 @@ def create_access_jwt(user: UserResponse) -> str:
 
     :param user: The user object for which to create the token.
     :return: The encoded JWT token as a string.
-    :raises HTTPException: If there is an HTTP error during encoding.
     """
     jwt_payload = {
         "sub": user.uid,
         "username": user.username,
         "email": user.email,
     }
-    try:
-        jwt = create_jwt(
-            token_type=ACCESS_TOKEN_TYPE,
-            token_data=jwt_payload,
-            expire_minutes=settings.auth.access_token_expires,
-        )
-        return jwt
-    except HTTPException as e:
-        raise e
+    jwt = create_jwt(
+        token_type=ACCESS_TOKEN_TYPE,
+        token_data=jwt_payload,
+        expire_minutes=settings.auth.access_token_expires,
+    )
+
+    return jwt
 
 
 async def create_refresh_jwt(
@@ -164,42 +161,32 @@ async def create_refresh_jwt(
 
     This function takes a user object and creates a refresh token with the
     user's UID as the payload. The token is set to expire after the duration
-    specified in the configuration. The function adds the token to Redis
-    and returns the encoded JWT token as a string.
+    specified in the configuration. The function also stores the token in Redis,
+    ensuring that no more than four tokens exist for the user by deleting the
+    oldest token if necessary.
 
     :param user: The user object for which to create the token.
     :return: The encoded JWT token as a string.
-    :raises HTTPException: If there is an HTTP error during encoding or adding
-                           to Redis.
+    :raises HTTPException: If there is an HTTP error during encoding or storing
+                           the token in Redis.
     """
     jwt_payload = {
         "sub": user.uid,
     }
     jwt_expires = timedelta(days=settings.auth.refresh_token_expires)
-    try:
-        jwt = create_jwt(
-            token_type=REFRESH_TOKEN_TYPE,
-            token_data=jwt_payload,
-            expire_timedelta=jwt_expires,
-        )
 
-        await add_refresh_to_redis(
-            uid=user.uid,
-            jwt=jwt,
-            exp=jwt_expires,
-        )
+    jwt = create_jwt(
+        token_type=REFRESH_TOKEN_TYPE,
+        token_data=jwt_payload,
+        expire_timedelta=jwt_expires,
+    )
+    await add_refresh_to_redis(
+        uid=user.uid,
+        jwt=jwt,
+        exp=jwt_expires,
+    )
 
-        return jwt
-
-    except HTTPException as e:
-        raise e
-
-    except Exception as e:
-        log.exception("Unexpected error creating refresh token: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=str(e),
-        )
+    return jwt
 
 
 async def update_password(user: UserResponse):
