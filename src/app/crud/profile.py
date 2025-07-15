@@ -33,7 +33,10 @@ async def get_user_profile(
             log.error("User not found in db for user_id: %s", user_id)
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"User not found in db for user_id {user_id}",
+                detail={
+                    "message": "Пользователь не найден",
+                    "user_id": user_id,
+                },
             )
         return UserAccount.model_construct(**user.__dict__)
 
@@ -41,17 +44,10 @@ async def get_user_profile(
         log.error("Database error getting user: %s", e)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"DB error getting user: {str(e)}",
-        )
-
-    except HTTPException:
-        raise
-
-    except Exception as e:
-        log.exception("Unexpected error getting user from db: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Unexpected error getting user {str(e)}",
+            detail={
+                "message": "Внутренняя ошибка сервера",
+                "details": str(e),
+            },
         )
 
 
@@ -59,19 +55,16 @@ async def update_user_profile(
     data_in: UserProfile,
     current_user: UserResponse,
     session: AsyncSession,
-):
+) -> UserAccount:
     """
-    Updates the current user's profile in the database.
+    Updates the current authenticated user's profile information in the database.
 
-    This function updates the profile of the authenticated user based on the provided
-    `UserProfile` data. The function attempts to update the user's profile information
-    in the database and commits the changes.
-
-    :param data_in: A `UserProfile` instance containing the new profile data.
+    :param data_in: The updated user profile information.
     :param current_user: The authenticated user whose profile is to be updated.
     :param session: The current database session.
-    :raises HTTPException: If the user is not found or an error occurs during the update.
-    :return: None if update is successful, otherwise raises an exception.
+    :return: The user's updated profile information.
+    :raises HTTPException: If the user is not found in the database or
+                           if an error occurs during the update.
     """
     update_data = data_in.model_dump()
     try:
@@ -87,9 +80,11 @@ async def update_user_profile(
 
         if not updated_user:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="User not updated"
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={
+                    "message": "При обновлении профиля произошла ошибка",
+                }
             )
-
         await session.commit()
         log.info("User updated with name: %s", current_user.username)
 
@@ -97,17 +92,14 @@ async def update_user_profile(
 
     except SQLAlchemyError as e:
         log.error(
-            "Database error updating user with name %s: %s", current_user.username, e
+            "Database error updating user with name %s: %s",
+            current_user.username, e
         )
         await session.rollback()
-        return None
-
-    except HTTPException:
-        raise
-
-    except Exception as e:
-        log.exception(
-            "Unexpected error updating user with name %s: %s", current_user.username, e
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "message": "Внутренняя ошибка сервера",
+                "details": str(e),
+            },
         )
-        await session.rollback()
-        return None
