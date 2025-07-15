@@ -70,22 +70,10 @@ async def register_user(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={
-                "message": "Этот email уже зарегистрирован",
+                "message": "Пользователь с таким email уже зарегистрирован",
             },
         )
     user = await create_user(session, user_in)
-    if not user:
-        log.error(
-            "Registration failed: Database error creating user: %s", user_in.email
-        )
-        await session.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "message": "Произошла ошибка при регистрации",
-                "error": f"Database error for email: {user_in.email}",
-            },
-        )
     log.info("User registered successfully: %s", user.email)
     return user
 
