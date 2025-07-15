@@ -45,7 +45,10 @@ async def _get_user_by_filter(
         return UserResponse.model_validate(user) if user else None
 
     except SQLAlchemyError as e:
-        log.error("Database error getting user: %s", e)
+        log.error(
+            "Database error getting user: %s",
+            str(e),
+        )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={
@@ -177,18 +180,24 @@ async def create_user(
         session.add(db_user)
         await session.commit()
         await session.refresh(db_user)
-        log.info("User created with email: %s", user_in.email)
+        log.info(
+            "User created with email: %s",
+            user_in.email,
+        )
 
         return user_in
 
     except SQLAlchemyError as e:
-        log.error("Database error creating user_in with email %s: %s", user_in.email, e)
+        log.error(
+            "Database error creating user_in with email %s: %s",
+            user_in.email, str(e),
+        )
         await session.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={
                 "message": "Ошибка при создании пользователя",
-                "details": str(e),
+                # "details": str(e),
             },
         )
 
