@@ -50,19 +50,9 @@ async def _get_user_by_filter(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={
                 "message": "Внутренняя ошибка сервера",
-                "details": {str(e)},
             },
         )
 
-    except Exception as e:
-        log.error("Unexpected error getting user: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "message": "Внутренняя ошибка сервера",
-                "details": {str(e)},
-            },
-        )
 
 
 async def get_user_by_uid(
@@ -102,29 +92,22 @@ async def get_user_by_uid(
 async def get_user_by_email(
     session: AsyncSession,
     email: EmailStr,
-) -> UserResponse:
+) -> UserResponse | None:
     """
-    Fetches a user from the database by their email.
+    Fetches a user from the database by their email address.
 
-    This function constructs a SQLAlchemy query to find an active user
-    using the provided email address. If the user is found, it returns
-    a `UserResponse` object containing the user's data. If the user is
-    not found, it returns `None`.
+    Given a `session` and an `email`, constructs a SQLAlchemy query to fetch a user
+    from the database. The query will only return active users.
+
+    On success, returns a `UserResponse` object containing the user's data. If the user
+    is not found, returns `None`.
 
     :param session: The current database session.
     :param email: The email address of the user to fetch.
-    :return: A `UserResponse` object containing the user's data, or `None` if the user is not found.
-    :raises HTTPException: If a database error or unexpected error occurs.
+    :return: A `UserResponse` object containing the user's data, or `None` if the user
+        is not found.
     """
     user = await _get_user_by_filter(session, User.email == email)
-    if user is None:
-        log.error("User not found in db by email")
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={
-                "message": "Пользователь с таким email не найден",
-            },
-        )
 
     return user
 
@@ -200,19 +183,6 @@ async def create_user(
 
     except SQLAlchemyError as e:
         log.error("Database error creating user_in with email %s: %s", user_in.email, e)
-        await session.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "message": "Ошибка при создании пользователя",
-                "details": str(e),
-            },
-        )
-
-    except Exception as e:
-        log.exception(
-            "Unexpected error creating user_in with email %s: %s", user_in.email, e
-        )
         await session.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
