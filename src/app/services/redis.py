@@ -32,24 +32,25 @@ async def add_refresh_to_redis(
     try:
         async for redis in get_redis():
             token_hash = generate_hash_token(jwt)
-            # Check the number of tokens for the uid
             keys = await redis.keys(f"refresh_token:{uid}:*")
             if len(keys) >= 4:
-                # Find the oldest token and delete it
                 oldest_key = min(keys, key=lambda k: int(k.rsplit(":", 1)[-1]))
                 await redis.delete(oldest_key)
-            timestamp = time.time_ns()  # Get current timestamp
+            timestamp = time.time_ns()
             await redis.set(
                 f"refresh_token:{uid}:{token_hash}:{timestamp}",
                 "valid",
                 ex=exp,
             )
-            log.info("Refresh token added to redis")
+            # log.info("Refresh token added to redis")
     except RedisError as e:
         log.error("Redis error adding refresh token: %s", e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Redis error adding refresh token: {str(e)}",
+            detail={
+                "message": "Ошибка авторизации",
+                "details": f"Redis error adding refresh token: {str(e)}",
+            },
         )
 
 
