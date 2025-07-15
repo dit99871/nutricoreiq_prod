@@ -93,44 +93,44 @@ def decode_jwt(token: str) -> dict[str, Any] | None:
 
 def encode_jwt(
     payload: dict,
-    private_key: str | None = None,
     algorithm: str = settings.auth.algorithm,
     expire_minutes: int = settings.auth.access_token_expires,
     expire_timedelta: dt.timedelta | None = None,
 ) -> str:
     """
-    Encodes a given payload as a JWT token using the private key.
+    Encodes a JWT token from the given payload and configuration.
 
-    This function creates a JWT token from a given payload using the private key
-    specified in the configuration. It adds the current time as the "iat" claim,
-    a unique identifier as the "jti" claim, and an expiration time based on the
-    given `expire_minutes` parameter or the `expire_timedelta` parameter. If the
-    private key file is not found, a JWT error occurs, or there is an HTTP error
-    during encoding, it raises an HTTPException with an appropriate status code
-    and error message.
+    This function encodes a JWT token using the private key specified in the
+    configuration and the given payload. If the private key file is not found,
+    a JWT error occurs during encoding, or the `expire_minutes` parameter is
+    invalid, it raises an HTTPException with an appropriate status code and
+    error message.
 
-    :param payload: The payload to be encoded as a JWT token.
-    :param private_key: The private key to be used for encoding, if None uses settings.
-    :param algorithm: The algorithm to be used for encoding.
-    :param expire_minutes: The number of minutes before the token expires.
+    :param payload: The payload to be encoded into the JWT token.
+    :param algorithm: The algorithm to use for encoding the token, defaults to
+                      the algorithm specified in the configuration.
+    :param expire_minutes: The number of minutes before the token expires,
+                           defaults to the expiration time specified in the
+                           configuration.
     :param expire_timedelta: The timedelta object representing the expiration
-                             time of the token.
-    :raises HTTPException: If the private key file is not found, a JWT error
-                           occurs during encoding, or an HTTP error occurs.
+                             time of the token, overrides the `expire_minutes`
+                             parameter if provided.
     :return: The encoded JWT token as a string.
+    :raises HTTPException: If the private key file is not found, the token
+                           has expired, or a JWT error occurs during encoding.
     """
-    if private_key is None:
-        log.info("Using private_key_path: %s", settings.auth.private_key_path)
-        log.info("private_key_path type: %s", type(settings.auth.private_key_path))
-        try:
-            private_key = settings.auth.private_key_path.read_text()
-            log.info("Successfully read private key: %s...", private_key[:50])
-        except FileNotFoundError as e:
-            log.error("File with private key not found: %s", e)
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"File with private key not found: {str(e)}.",
-            )
+    try:
+        private_key = settings.auth.private_key_path.read_text()
+
+    except FileNotFoundError as e:
+        log.error("File with private key not found: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "message": "Ошибка авторизации",
+                "details": f"File with private key not found: {str(e)}.",
+            },
+        )
 
     to_encode = payload.copy()
     now = dt.datetime.now(dt.UTC)
@@ -156,7 +156,10 @@ def encode_jwt(
         log.error("JWT error encoding token: %s", e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"JWT error encoding token: {str(e)}",
+            detail={
+                "message": "Ошибка авторизации",
+                "details": f"JWT error encoding token: {str(e)}",
+            },
         )
 
 
