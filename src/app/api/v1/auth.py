@@ -95,32 +95,15 @@ async def login(
     :raises HTTPException: If the user is not found, or if the password is incorrect.
     :raises HTTPException: If an unexpected error occurs while logging in.
     """
-    log.info("Attempting login for user: %s", form_data.username)
+    user = await authenticate_user(
+        session,
+        form_data.username,
+        form_data.password,
+    )
+    response = await add_tokens_to_response(user)
 
-    try:
-        user = await authenticate_user(
-            session,
-            form_data.username,
-            form_data.password,
-        )
-        response = await add_tokens_to_response(user)
-
-        log.info("User logged in successfully: %s", form_data.username)
-        return response
-
-    except HTTPException as e:
-        log.error("Login failed for user %s: %s", form_data.username, str(e))
-        raise e
-
-    except Exception as e:
-        log.exception("Unexpected error logging in: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                "message": "Произошла ошибка при авторизации",
-                "error": str(e),
-            },
-        )
+    log.info("User logged in successfully: %s", form_data.username)
+    return response
 
 
 @router.get("/logout")
