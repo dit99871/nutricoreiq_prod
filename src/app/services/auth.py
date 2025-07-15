@@ -342,24 +342,15 @@ async def authenticate_user(
     Raises:
         HTTPException: If the user is not found or the password is incorrect.
     """
-    log.debug("Attempting to authenticate user: %s", username)
-    unauthed_exc = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid email or password",
-    )
-    try:
-        user = await get_user_by_name(session, username)
-    except HTTPException as e:
-        raise e
-    else:
-        if user is None:
-            log.error("User not found in db for authentication: %s", username)
-            raise unauthed_exc
+    user = await get_user_by_name(session, username)
 
-        log.debug("User found: %s. Verifying password.", username)
-        if not verify_password(password, user.hashed_password):
-            log.error("Invalid password for user: %s", username)
-            raise unauthed_exc
+    if not verify_password(password, user.hashed_password):
+        log.error("Invalid password for user: %s", username)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "message": "Неверное имя пользователя или пароль"
+            },
+        )
 
-        log.info("User authenticated successfully: %s", username)
-        return UserResponse.model_validate(user)
+    return UserResponse.model_validate(user)
