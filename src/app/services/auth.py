@@ -274,32 +274,39 @@ async def get_current_auth_user_for_refresh(
     :param redis: The Redis client to use for the query.
     :return: The authenticated user object.
     """
-    try:
-        payload = decode_jwt(token)
-        if payload is None:
-            log.error("Failed to decode refresh token")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Failed to decode refresh token",
-            )
+    payload = decode_jwt(token)
+    if payload is None:
+        log.error("Failed to decode refresh token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "message": "Ошибка аутентификации",
+                "details": "Failed to decode refresh token",
+            },
+        )
 
-        uid: str | None = payload.get("sub")
-        if uid is None:
-            log.error("User id not found in refresh token")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User id not found in refresh token",
-            )
-        if not await validate_refresh_jwt(uid, token, redis):
-            log.error("Refresh token is invalid or has expired")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Refresh token is invalid or has expired",
-            )
-        user = await get_user_by_uid(session, uid)
-        return user
-    except HTTPException as e:
-        raise e
+    uid: str | None = payload.get("sub")
+    if uid is None:
+        log.error("User id not found in refresh token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "message": "Ошибка аутентификации",
+                "details": "User id not found in refresh token",
+            },
+        )
+    if not await validate_refresh_jwt(uid, token, redis):
+        log.error("Refresh token is invalid or has expired")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "message": "Ошибка аутентификации. Пожалуйста, войдите заново",
+                "details": "Refresh token is invalid or has expired",
+            },
+        )
+    user = await get_user_by_uid(session, uid)
+
+    return user
 
 
 async def authenticate_user(
