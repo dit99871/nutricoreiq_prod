@@ -44,7 +44,10 @@ async def add_refresh_to_redis(
             )
             # log.info("Refresh token added to redis")
     except RedisError as e:
-        log.error("Redis error adding refresh token: %s", e)
+        log.error(
+            "Redis error adding refresh token: %s",
+            e,
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
@@ -78,7 +81,10 @@ async def validate_refresh_jwt(
         token_keys = await redis.keys(f"refresh_token:{uid}:{token_hash}:*")
         return len(token_keys) > 0
     except RedisError as e:
-        log.error("Redis error validating refresh token: %s", e)
+        log.error(
+            "Redis error validating refresh token: %s",
+            e,
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Redis error validating refresh token: {str(e)}",
@@ -103,10 +109,23 @@ async def revoke_refresh_token(
     :return: None
     """
     token_hash = generate_hash_token(refresh_token)
-    token_keys = await redis.keys(f"refresh_token:{uid}:{token_hash}:*")
-    if token_keys:
-        await redis.delete(*token_keys)
-        log.info("Refresh token revoked")
+    try:
+        token_keys = await redis.keys(f"refresh_token:{uid}:{token_hash}:*")
+        if token_keys:
+            await redis.delete(*token_keys)
+            log.info("Refresh token revoked")
+    except RedisError as e:
+        log.error(
+            "Redis error revoking refresh token: %s",
+            e,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "message": "Внутренняя ошибка сервера",
+                # "details": f"Redis error revoking refresh token: {str(e)}",
+            },
+        )
 
 
 async def revoke_all_refresh_tokens(
