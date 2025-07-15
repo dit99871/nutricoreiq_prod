@@ -102,7 +102,7 @@ async def login(
     )
     response = await add_tokens_to_response(user)
 
-    log.info("User logged in successfully: %s", form_data.username)
+    # log.info("User logged in successfully: %s", form_data.username)
     return response
 
 
@@ -133,7 +133,7 @@ async def logout(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
                 "message": "Внутренняя ошибка сервера",
-                "error": "Refresh token not found in cookies",
+                "details": "Refresh token not found in cookies",
             },
         )
     await revoke_refresh_token(user.uid, refresh_jwt, redis)
