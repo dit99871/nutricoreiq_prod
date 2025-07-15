@@ -120,15 +120,12 @@ def create_jwt(
         "iat": datetime.now(dt.UTC),
     }
     jwt_payload.update(token_data)
-    try:
-        encoded: str = encode_jwt(
-            payload=jwt_payload,
-            expire_minutes=expire_minutes,
-            expire_timedelta=expire_timedelta,
-        )
-        return encoded
-    except HTTPException as e:
-        raise e
+    encoded: str = encode_jwt(
+        payload=jwt_payload,
+        expire_minutes=expire_minutes,
+        expire_timedelta=expire_timedelta,
+    )
+    return encoded
 
 
 def create_access_jwt(user: UserResponse) -> str:
