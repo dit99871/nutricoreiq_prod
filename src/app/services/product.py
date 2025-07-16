@@ -42,14 +42,31 @@ async def handle_product_search(
     :param query: The search query string. It must be at least 2 characters long.
     :param confirmed: A boolean flag indicating whether to skip suggestions.
     :return: A `UnifiedProductResponse` object with the search results.
-    :raises HTTPException: If a database error or unexpected error occurs.
     """
     response = UnifiedProductResponse()
     query = query.strip().lower()
 
-    try:
-        # Точное совпадение с явной загрузкой
-        exact_match = await session.execute(
+    exact_match = await session.execute(
+        select(Product)
+        .options(
+            selectinload(Product.product_groups),
+            selectinload(Product.nutrient_associations).selectinload(
+                ProductNutrient.nutrients
+            ),
+        )
+        .where(func.lower(Product.title) == query)
+    )
+    product = exact_match.unique().scalar_one_or_none()
+
+    if product:
+        # log.info("Точное совпадение: %s", product.title)
+        response.exact_match = map_to_schema(product)
+        return response
+
+    # Поиск предложений
+    if not confirmed:
+        # log.info("Поиск предложений: %s", query)
+        suggestions = await session.execute(
             select(Product)
             .options(
                 selectinload(Product.product_groups),
@@ -57,79 +74,44 @@ async def handle_product_search(
                     ProductNutrient.nutrients
                 ),
             )
-            .where(func.lower(Product.title) == query)
+            .where(
+                or_(
+                    Product.search_vector.op("@@")(
+                        func.websearch_to_tsquery("russian", query)
+                    ),
+                    Product.title.ilike(f"%{query}%"),
+                )
+            )
+            .order_by(
+                func.ts_rank(
+                    Product.search_vector,
+                    func.websearch_to_tsquery("russian", query),
+                )
+            )
+            .limit(5)
         )
-        product = exact_match.unique().scalar_one_or_none()
+        suggestions = suggestions.unique().scalars().all()
 
-        if product:
-            log.info("Точное совпадение: %s", product.title)
-            response.exact_match = map_to_schema(product)
+        if suggestions:
+            # log.info("Загрузка предложений: %s", query)
+            response.suggestions = [
+                ProductSuggestion(
+                    id=p.id, title=p.title, group_name=p.product_groups.name
+                )
+                for p in suggestions
+            ]
             return response
 
-        # Поиск предложений
-        if not confirmed:
-            log.info("Поиск предложений: %s", query)
-            suggestions = await session.execute(
-                select(Product)
-                .options(
-                    selectinload(Product.product_groups),
-                    selectinload(Product.nutrient_associations).selectinload(
-                        ProductNutrient.nutrients
-                    ),
-                )
-                .where(
-                    or_(
-                        Product.search_vector.op("@@")(
-                            func.websearch_to_tsquery("russian", query)
-                        ),
-                        Product.title.ilike(f"%{query}%"),
-                    )
-                )
-                .order_by(
-                    func.ts_rank(
-                        Product.search_vector,
-                        func.websearch_to_tsquery("russian", query),
-                    )
-                )
-                .limit(5)
-            )
-            suggestions = suggestions.unique().scalars().all()
-
-            if suggestions:
-                log.info("Загрузка предложений: %s", query)
-                response.suggestions = [
-                    ProductSuggestion(
-                        id=p.id, title=p.title, group_name=p.product_groups.name
-                    )
-                    for p in suggestions
-                ]
-                return response
-
-        # Обработка подтверждения
-        if confirmed:
-            exists = await session.execute(
-                select(PendingProduct).where(func.lower(PendingProduct.name) == query)
-            )
-            if not exists.scalar():
-                log.info("Добавление в очередь: %s", query)
-                new_pending = PendingProduct(name=query)
-                session.add(new_pending)
-                await session.commit()
-                response.pending_added = True
-
-    except Exception as e:
-        log.error("Произошла ошибка во время поиска продукта: %s", e)
-        await session.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "message": "Произошла ошибка во время поиска продукта",
-                "details": {
-                    "error": str(e),
-                    "query": query,
-                }
-            }
+    if confirmed:
+        exists = await session.execute(
+            select(PendingProduct).where(func.lower(PendingProduct.name) == query)
         )
+        if not exists.scalar():
+            # log.info("Добавление в очередь: %s", query)
+            new_pending = PendingProduct(name=query)
+            session.add(new_pending)
+            await session.commit()
+            response.pending_added = True
 
     return response
 
@@ -150,41 +132,28 @@ async def handle_product_details(
     :param session: The current database session.
     :param product_id: The unique identifier of the product to retrieve.
     :return: A `ProductDetailResponse` object containing the product details.
-    :raises HTTPException: If the product is not found or an error occurs during execution.
     """
-    try:
-        log.info("Start product detail handler")
-        product = await session.execute(
-            select(Product)
-            .options(
-                joinedload(Product.product_groups),
-                joinedload(Product.nutrient_associations).joinedload(
-                    ProductNutrient.nutrients
-                ),
-            )
-            .where(Product.id == product_id)
+    # log.info("Start product detail handler")
+    product = await session.execute(
+        select(Product)
+        .options(
+            joinedload(Product.product_groups),
+            joinedload(Product.nutrient_associations).joinedload(
+                ProductNutrient.nutrients
+            ),
         )
-        product = product.unique().scalar_one_or_none()
+        .where(Product.id == product_id)
+    )
+    product = product.unique().scalar_one_or_none()
 
-        if not product:
-            log.error("Product not found")
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={
-                        "message": "Продукт не найден",
-                        "details": f"Product with id {product_id} not found",
-                }
-            )
-
-        return map_to_schema(product)
-
-    except HTTPException as e:
-        raise e
-    except Exception as e:
+    if not product:
+        log.error("Product not found")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail={
-                "message": "Произошла ошибка во время поиска продукта",
-                "details": str(e),
+                    "message": "Продукт не найден",
+                    "details": f"Product with id {product_id} not found",
             }
         )
+
+    return map_to_schema(product)
