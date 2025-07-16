@@ -113,7 +113,7 @@ async def revoke_refresh_token(
         token_keys = await redis.keys(f"refresh_token:{uid}:{token_hash}:*")
         if token_keys:
             await redis.delete(*token_keys)
-            log.info("Refresh token revoked")
+            # log.info("Refresh token revoked")
     except RedisError as e:
         log.error(
             "Redis error revoking refresh token: %s",
@@ -146,7 +146,7 @@ async def revoke_all_refresh_tokens(
             keys = await redis.keys(f"refresh_token:{uid}:*")
             if keys:
                 await redis.delete(*keys)
-                log.info("All refresh tokens revoked")
+                # log.info("All refresh tokens revoked")
     except RedisError as e:
         log.error("Redis error revoking refresh tokens: %s", e)
         raise HTTPException(
