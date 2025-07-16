@@ -21,7 +21,7 @@ def map_to_schema(product: Product) -> ProductDetailResponse:
         title=product.title,
         group_name=product.product_groups.name,
     )
-    log.info("Mapping product %s to schema", product.title)
+    # log.info("Mapping product %s to schema", product.title)
     for assoc in product.nutrient_associations:
         nutrient = assoc.nutrients
         amount = assoc.amount
