@@ -340,32 +340,31 @@ async def authenticate_user(
     password: str,
 ) -> UserResponse | None:
     """
-    Authenticates a user with the given username and password.
+    Authenticates a user by validating their username and password.
 
-    This function attempts to authenticate a user by checking if the provided
-    username exists and if the password matches the stored hashed password.
-    If the user is found and the password is correct, the user object is returned.
-    Otherwise, an HTTP 401 Unauthorized exception is raised.
+    This function retrieves a user from the database using the provided
+    username and verifies the provided password against the stored
+    hashed password. If the password is incorrect, it raises an HTTPException
+    with a 401 status code.
 
-    Args:
-        session (Annotated[AsyncSession, Depends]): The async database session dependency.
-        username (str): The username of the user to authenticate.
-        password (str): The password of the user to authenticate.
-
-    Returns:
-        User | None: The authenticated user object, or None if authentication fails.
-
-    Raises:
-        HTTPException: If the user is not found or the password is incorrect.
+    :param session: The current database session.
+    :param username: The username of the user to authenticate.
+    :param password: The password of the user to authenticate.
+    :return: A `UserResponse` object containing the authenticated user's data,
+             or None if the authentication fails.
+    :raises HTTPException: If the password is incorrect.
     """
     user = await get_user_by_name(session, username)
 
     if not verify_password(password, user.hashed_password):
-        log.error("Invalid password for user: %s", username)
+        log.error(
+            "Invalid password for user: %s",
+            username,
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
-                "message": "Неверный пароль"
+                "message": "Введён неверный пароль"
             },
         )
 
