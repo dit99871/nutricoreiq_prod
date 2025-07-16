@@ -80,14 +80,23 @@ def get_current_token_payload(
 
     token_type: str | None = payload.get(TOKEN_TYPE_FIELD)
     if token_type is None or token_type != ACCESS_TOKEN_TYPE:
-        log.error("No match for token type in token payload: %s", payload)
+        log.error(
+            "No match for token type in token payload: %s",
+            payload,
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid token type {token_type!r} expected {ACCESS_TOKEN_TYPE!r}",
+            detail={
+                "message": "",
+                "details": f"Invalid token type {token_type!r} expected {ACCESS_TOKEN_TYPE!r}",
+            },
         )
     uid: str | None = payload.get("sub")
     if uid is None:
-        log.error("User uid not found in token payload: %s", payload)
+        log.error(
+            "User uid not found in token payload: %s",
+            payload,
+        )
         raise CREDENTIAL_EXCEPTION
 
     return payload
@@ -271,7 +280,10 @@ async def get_current_auth_user(
     try:
         payload: dict = get_current_token_payload(token)
         uid: str | None = payload.get("sub")
-        log.debug("Looking for user with uid: %s", uid)
+        log.debug(
+            "Looking for user with uid: %s",
+            uid,
+        )
         user = await get_user_by_uid(session, uid)
     except HTTPException as e:
         raise e
@@ -308,7 +320,7 @@ async def get_current_auth_user_for_refresh(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
-                "message": "Ошибка аутентификации",
+                "message": "Ошибка аутентификации. Пожалуйста, войдите заново",
                 "details": "Failed to decode refresh token",
             },
         )
@@ -319,7 +331,7 @@ async def get_current_auth_user_for_refresh(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
-                "message": "Ошибка аутентификации",
+                "message": "Ошибка аутентификации. Пожалуйста, войдите заново",
                 "details": "User id not found in refresh token",
             },
         )
