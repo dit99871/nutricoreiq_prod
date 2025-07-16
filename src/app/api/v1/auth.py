@@ -16,6 +16,7 @@ from src.app.db import db_helper
 from src.app.core.logger import get_logger
 from src.app.core.redis import get_redis
 from src.app.crud.user import create_user, get_user_by_email
+from src.app.schemas.user import PasswordChange, UserCreate, UserResponse
 from src.app.services.auth import (
     add_tokens_to_response,
     create_access_jwt,
@@ -26,7 +27,6 @@ from src.app.services.auth import (
     authenticate_user,
 )
 from src.app.services.redis import revoke_refresh_token
-from src.app.schemas.user import UserCreate, UserResponse
 from src.app.utils.auth import create_response
 
 log = get_logger("auth_api")
@@ -60,7 +60,7 @@ async def register_user(
     :return: The created `UserCreate` object or raises an HTTP exception.
     :raises HTTPException: If the email is already registered or if a database error occurs.
     """
-    log.info("Attempting to register user with email: %s", user_in.email)
+    # log.info("Attempting to register user with email: %s", user_in.email)
     db_user = await get_user_by_email(session, user_in.email)
 
     if db_user:
@@ -210,15 +210,32 @@ async def refresh_token(
 
 @router.post("/password/change")
 async def change_password(
+    password_data: PasswordChange,
+    request: Request,
     user: Annotated[UserResponse, Depends(get_current_auth_user)],
+    session: AsyncSession = Depends(db_helper.session_getter),
 ):
+
     """
-    Changes the password for the current user.
+    Changes the password for the authenticated user.
 
-    This endpoint takes no input and will change the password for the current
-    user. The new password is randomly generated. The response will contain
-    the new access and refresh tokens.
+    Given a valid username and old password, this endpoint changes the
+    password for the authenticated user to the new password provided in the
+    request.
 
+    :param password_data: The new password and the old password to change.
+    :param request: The current request object.
+    :param user: The authenticated user object.
+    :param session: The current database session.
     :return: A response containing the new access and refresh tokens.
+    :raises HTTPException: If the old password is incorrect.
+    :raises HTTPException: If an unexpected error occurs while changing the
+                           password.
     """
-    return await update_password(user)
+    authenticated_user = await authenticate_user(
+        session, user.username, password_data.current_password
+    )
+
+    return await update_password(
+        authenticated_user, session, password_data.new_password
+    )
