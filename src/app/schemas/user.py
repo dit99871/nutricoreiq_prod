@@ -39,3 +39,8 @@ class UserProfile(BaseSchema):
     goal: str = Literal["Снижение веса", "Увеличение веса", "Поддержание веса"]
 
     model_config = ConfigDict(strict=True)
+
+
+class PasswordChange(BaseSchema):
+    current_password: Annotated[str, MinLen(8)]
+    new_password: Annotated[str, MinLen(8)]
