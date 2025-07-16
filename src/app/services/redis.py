@@ -83,11 +83,14 @@ async def validate_refresh_jwt(
     except RedisError as e:
         log.error(
             "Redis error validating refresh token: %s",
-            e,
+            str(e),
         )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Redis error validating refresh token: {str(e)}",
+            detail={
+                "message": "Ошибка аутентификации. Пожалуйста, войдите заново",
+                # "details": f"Redis error validating refresh token: {str(e)!r}",
+            },
         )
 
 
@@ -117,7 +120,7 @@ async def revoke_refresh_token(
     except RedisError as e:
         log.error(
             "Redis error revoking refresh token: %s",
-            e,
+            str(e),
         )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -148,8 +151,14 @@ async def revoke_all_refresh_tokens(
                 await redis.delete(*keys)
                 # log.info("All refresh tokens revoked")
     except RedisError as e:
-        log.error("Redis error revoking refresh tokens: %s", e)
+        log.error(
+            "Redis error revoking refresh tokens: %s",
+            str(e),
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Redis error revoking refresh tokens: {str(e)}",
+            detail={
+                "message": "",
+                # "details": f"Redis error revoking refresh tokens: {str(e)}",
+            },
         )
