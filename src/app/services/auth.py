@@ -5,8 +5,10 @@ from typing import Annotated
 from fastapi import HTTPException, status, Request, Depends
 from fastapi.security import OAuth2PasswordBearer
 from redis.asyncio import Redis
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from db.models import User
 from src.app.core.config import settings
 from src.app.core.logger import get_logger
 from src.app.crud.user import get_user_by_uid, get_user_by_name
@@ -18,9 +20,10 @@ from src.app.services.redis import (
     validate_refresh_jwt,
 )
 from src.app.utils.auth import (
+    create_response,
     decode_jwt,
     encode_jwt,
-    create_response,
+    get_password_hash,
     verify_password,
 )
 
@@ -189,18 +192,40 @@ async def create_refresh_jwt(
     return jwt
 
 
-async def update_password(user: UserResponse):
+async def update_password(
+    user: UserResponse,
+    session: AsyncSession,
+    new_password: str,
+):
     """
-    Revoke all refresh tokens for the user and generate new tokens.
+    Updates the password for the given user.
 
-    This function is used when the user's password has been changed. It revokes all
-    refresh tokens for the user and generates new tokens. The function returns the
-    new tokens as part of a response.
+    Given a user object and a new password, updates the user's password in the
+    database. The function first queries the database for the user, then
+    updates the user's password with the new password (hashed with a secure
+    hashing algorithm). The function then commits the changes and revokes all
+    refresh tokens for the user. Finally, the function returns a response
+    containing a new access and refresh token for the user.
 
-    :param user: The user object for which to revoke all refresh tokens and
-                 generate new tokens.
+    :param user: The user object whose password is to be updated.
+    :param session: The database session to use for the query.
+    :param new_password: The new password to set for the user.
     :return: A response containing the new access and refresh tokens.
+    :raises HTTPException: If the user is not found in the database.
     """
+    stmt = select(User).where(User.uid == user.uid)
+    result = await session.execute(stmt)
+    db_user = result.scalar_one_or_none()
+    if db_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "message": "Пользователь не найден",
+            },
+        )
+    db_user.hashed_password = get_password_hash(new_password)
+
+    await session.commit()
     await revoke_all_refresh_tokens(user.uid)
 
     return await add_tokens_to_response(user)
