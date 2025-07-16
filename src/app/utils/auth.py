@@ -192,7 +192,7 @@ def create_response(
             "Pragma": "no-cache",
         },
         content={
-            "message": "Login successful",
+            "message": "Password changed successfully",
         },
     )
 
