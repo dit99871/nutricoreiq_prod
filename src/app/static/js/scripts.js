@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 1. Тема
     const initTheme = () => {
-        console.log('Инициализация темы'); // Отладка
+//        console.log('Инициализация темы'); // Отладка
         const savedTheme = localStorage.getItem('theme') ||
             (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         document.body.classList.toggle('dark-mode', savedTheme === 'dark');
@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         document.querySelectorAll('.theme-toggle').forEach(btn => {
             btn.addEventListener('click', () => {
-                console.log('Переключение темы'); // Отладка
+//                console.log('Переключение темы'); // Отладка
                 const isDark = document.body.classList.toggle('dark-mode');
                 localStorage.setItem('theme', isDark ? 'dark' : 'light');
                 updateThemeButtons(isDark);
@@ -32,7 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Обновление темы при изменении системных настроек
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-            console.log('Изменение системной темы'); // Отладка
+//            console.log('Изменение системной темы'); // Отладка
             const newTheme = e.matches ? 'dark' : 'light';
             document.body.classList.toggle('dark-mode', newTheme === 'dark');
             localStorage.setItem('theme', newTheme);
@@ -42,12 +42,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 2. Переключатели пароля
     const initPasswordToggles = () => {
-        console.log('Инициализация переключателей пароля'); // Отладка
+//        console.log('Инициализация переключателей пароля'); // Отладка
         document.addEventListener('click', e => {
             const toggleBtn = e.target.closest('.toggle-password');
             if (!toggleBtn) return;
 
-            console.log('Клик по переключателю пароля'); // Отладка
+//            console.log('Клик по переключателю пароля'); // Отладка
             const input = document.getElementById(toggleBtn.dataset.target);
             if (!input) return;
 
@@ -598,11 +598,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 9. Tooltips
     const initTooltips = () => {
-        console.log('Инициализация туллов'); // Добавлено для отладки
+//        console.log('Инициализация туллов'); // Добавлено для отладки
         document.querySelectorAll('.custom-info-icon').forEach(icon => {
             icon.addEventListener('click', (e) => {
                 e.stopPropagation();
-                console.log('Клик по иконке информации'); // Отладка
+//                console.log('Клик по иконке информации'); // Отладка
                 const isActive = icon.classList.contains('active');
                 document.querySelectorAll('.custom-info-icon').forEach(i => i.classList.remove('active'));
                 if (!isActive) icon.classList.add('active');
@@ -618,7 +618,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 10. Кастомные выпадающие списки
     const initCustomSelects = () => {
-        console.log('Инициализация custom-select'); // Добавлено для отладки
+//        console.log('Инициализация custom-select'); // Добавлено для отладки
         const customSelects = document.querySelectorAll('.custom-select');
 
         customSelects.forEach(select => {
@@ -635,7 +635,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // Открытие/закрытие списка при клике на display
             display.addEventListener('click', function (e) {
                 e.preventDefault();
-                console.log('Клик по custom-select display'); // Отладка
+//                console.log('Клик по custom-select display'); // Отладка
                 const isActive = select.classList.contains('active');
                 // Закрываем все остальные селекты
                 document.querySelectorAll('.custom-select').forEach(s => {
@@ -650,7 +650,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // Обработка выбора опции
             optionItems.forEach(option => {
                 option.addEventListener('click', function (e) {
-                    console.log('Выбор опции в custom-select'); // Отладка
+//                    console.log('Выбор опции в custom-select'); // Отладка
                     const value = this.getAttribute('data-value');
                     const text = this.textContent.trim();
                     display.textContent = text;
@@ -663,7 +663,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Закрытие всех выпадающих списков при клике вне селекта
         document.addEventListener('click', function (e) {
             if (!e.target.closest('.custom-select')) {
-                console.log('Клик вне custom-select, закрытие'); // Отладка
+//                console.log('Клик вне custom-select, закрытие'); // Отладка
                 document.querySelectorAll('.custom-select').forEach(s => {
                     s.classList.remove('active');
                 });
@@ -672,7 +672,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // Инициализация
-    console.log('Начало инициализации функций'); // Отладка
+//    console.log('Начало инициализации функций'); // Отладка
     initTheme();
     initPasswordToggles();
     initLoginForm();
@@ -681,5 +681,5 @@ document.addEventListener("DOMContentLoaded", () => {
     initProductSearch();
     initTooltips();
     initCustomSelects();
-    console.log('Конец инициализации функций'); // Отладка
+//    console.log('Конец инициализации функций'); // Отладка
 });
