@@ -180,10 +180,10 @@ async def create_user(
         session.add(db_user)
         await session.commit()
         await session.refresh(db_user)
-        log.info(
-            "User created with email: %s",
-            user_in.email,
-        )
+        # log.info(
+        #     "User created with email: %s",
+        #     user_in.email,
+        # )
 
         return user_in
 
