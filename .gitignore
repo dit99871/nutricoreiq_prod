@@ -155,3 +155,12 @@ cython_debug/
 /src/app/utils/certs/
 postgresql.conf
 /.env
+config/postgres_exporter.yml
+entrypoint.sh
+postgres/pg_hba.conf
+postgres_exporter.yml
+prometheus.yml
+redis.conf
+src/app/utils/certs/jwt-private.pem
+src/app/utils/certs/jwt-public.pem
+src/app/utils/certs/README.md

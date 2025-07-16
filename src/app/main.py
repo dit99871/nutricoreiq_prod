@@ -17,7 +17,6 @@ from src.app.core.exception_handlers import (
     validation_exception_handler,
 )
 from src.app.core.logger import setup_logging
-from src.app.lifespan import docker_lifespan
 from src.app.services.auth import get_current_auth_user
 from src.app.utils.security import generate_csrf_token, generate_csp_nonce
 from src.app.utils.templates import templates
