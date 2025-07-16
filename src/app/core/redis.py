@@ -30,9 +30,9 @@ async def get_redis() -> AsyncGenerator[Any, Redis]:
     )
     async with redis.client() as redis:
         try:
-            log.info("Redis connection opening")
+            # log.info("Redis connection opening")
             yield redis
         finally:
             await redis.aclose()
 
-        log.info("Redis connection closed")
+        # log.info("Redis connection closed")
