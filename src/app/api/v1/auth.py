@@ -92,8 +92,6 @@ async def login(
     :param form_data: The username and password to log in with.
     :param session: The current database session.
     :return: A response containing an access and refresh token.
-    :raises HTTPException: If the user is not found, or if the password is incorrect.
-    :raises HTTPException: If an unexpected error occurs while logging in.
     """
     user = await authenticate_user(
         session,
@@ -168,8 +166,6 @@ async def refresh_token(
     :raises HTTPException: If the refresh token is not found in the request
                            cookies, or if the refresh token is invalid or has
                            expired.
-    :raises HTTPException: If an unexpected error occurs while refreshing the
-                           tokens.
     """
     refresh_jwt = request.cookies.get("refresh_token")
     if not refresh_jwt:
@@ -177,33 +173,19 @@ async def refresh_token(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
-                "message": "Внутренняя ошибка сервера",
-                "error": "Refresh token not found in cookies",
+                "message": "Ошибка аутентификации. Пожалуйста, повторите попытку",
+                "details": "Refresh token not found in cookies",
             },
         )
 
-    try:
-        user = await get_current_auth_user_for_refresh(refresh_jwt, session, redis)
-        access_jwt = create_access_jwt(user)
-        refresh_jwt = await create_refresh_jwt(user)
+    user = await get_current_auth_user_for_refresh(refresh_jwt, session, redis)
+    access_jwt = create_access_jwt(user)
+    refresh_jwt = await create_refresh_jwt(user)
 
-        response = create_response(
-            access_token=access_jwt,
-            refresh_token=refresh_jwt,
-        )
-
-    except HTTPException as e:
-        raise e
-
-    except Exception as e:
-        log.exception("Unexpected error refreshing tokens: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                "message": "Внутренняя ошибка сервера",
-                "error": f"Unexpected error refreshing tokens: {e!r}",
-            },
-        )
+    response = create_response(
+        access_token=access_jwt,
+        refresh_token=refresh_jwt,
+    )
 
     return response
 
