@@ -36,7 +36,7 @@ REFRESH_TOKEN_TYPE = "refresh"
 
 CREDENTIAL_EXCEPTION = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
-    detail="Could not validate credentials",
+    detail={"message": "Неверные учетные данные"},
     headers={"WWW-Authenticate": "Bearer"},
 )
 
@@ -277,7 +277,10 @@ async def get_current_auth_user(
         raise e
     else:
         if user is None:
-            log.error("User not found for uid: %s", uid)
+            log.error(
+                "User not found for uid: %s",
+                uid,
+            )
             raise CREDENTIAL_EXCEPTION
 
         return user
