@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Уууппсс, ошибка!</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            font-size: 2.5em;
+        }
+        p {
+            color: #666;
+            font-size: 1.2em;
+            max-width: 600px;
+        }
+        .apple-animation {
+            width: 100px;
+            height: 100px;
+            background-image: url('/static/img/logo-icon.jpeg');
+            background-size: cover;
+            animation: fall 2s infinite;
+        }
+        @keyframes fall {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(20px); }
+            100% { transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <h1>Уууппсс, произошла ошибка!</h1>
+    <p>Наши спецы уже с ней разбираются. Приходите позже.</p>
+    <div class="apple-animation"></div>
+</body>
+</html>
