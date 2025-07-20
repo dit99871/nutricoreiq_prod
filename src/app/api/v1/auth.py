@@ -173,7 +173,7 @@ async def refresh_token(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
-                "message": "Ошибка аутентификации. Пожалуйста, повторите попытку",
+                "message": "Ошибка аутентификации. Пожалуйста, войдите заново",
                 "details": "Refresh token not found in cookies",
             },
         )
