@@ -1,0 +1,11 @@
+FROM nginx:latest
+
+# Копируем статические файлы и страницу ошибки
+COPY ./src/app/static /usr/share/nginx/html/static
+COPY ./error.html /usr/share/nginx/html/error.html
+
+# Копируем конфигурацию Nginx
+COPY ./nginx/conf.d/nutricoreiq.conf /etc/nginx/conf.d/nutricoreiq.conf
+
+# Проверяем синтаксис конфигурации Nginx
+RUN nginx -t

@@ -82,7 +82,7 @@ async def register_user(
 async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-):
+) -> UserResponse:
     """
     Logs a user in and returns a response containing an access and refresh token.
 
@@ -109,7 +109,7 @@ async def logout(
     request: Request,
     user: Annotated[UserResponse, Depends(get_current_auth_user)],
     redis: Redis = Depends(get_redis),
-):
+) -> RedirectResponse:
     """
     Logs out a user and invalidates their refresh token.
 
@@ -173,7 +173,7 @@ async def refresh_token(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
-                "message": "Ошибка аутентификации. Пожалуйста, повторите попытку",
+                "message": "Ошибка аутентификации. Пожалуйста, войдите заново",
                 "details": "Refresh token not found in cookies",
             },
         )

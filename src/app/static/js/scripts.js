@@ -94,6 +94,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const data = await response.json();
 
             if (!response.ok) {
+                if (response.status === 500) {
+                    window.location.href = '/error'; // Редирект на страницу ошибки
+                }
                 throw data.error || { message: 'Неизвестная ошибка' };
             }
 

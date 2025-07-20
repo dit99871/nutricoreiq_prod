@@ -8,7 +8,7 @@ from redis.asyncio import Redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.app.db.models import User
+from db.models import User
 from src.app.core.config import settings
 from src.app.core.logger import get_logger
 from src.app.crud.user import get_user_by_uid, get_user_by_name
