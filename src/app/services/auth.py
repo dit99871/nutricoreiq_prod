@@ -53,6 +53,7 @@ async def get_access_token_from_cookies(request: Request):
     :return: The access token as a string if present, otherwise None.
     """
     token = request.cookies.get("access_token")
+    log.info("Полученный токен: %s", token)
     return token
 
 
@@ -87,8 +88,11 @@ def get_current_token_payload(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
-                "message": "",
-                "details": f"Invalid token type {token_type!r} expected {ACCESS_TOKEN_TYPE!r}",
+                "message": "Ошибка авторизации. Пожалуйста, войдите заново",
+                "details": {
+                    "field": "token payload",
+                    "message": f"Invalid token type {token_type!r} expected {ACCESS_TOKEN_TYPE!r}",
+                },
             },
         )
     uid: str | None = payload.get("sub")
@@ -230,6 +234,10 @@ async def update_password(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={
                 "message": "Пользователь не найден",
+                "details": {
+                    "field": "update password",
+                    "message": "User not found",
+                },
             },
         )
     db_user.hashed_password = get_password_hash(new_password)
@@ -277,25 +285,23 @@ async def get_current_auth_user(
     """
     if token is None:
         return None
-    try:
-        payload: dict = get_current_token_payload(token)
-        uid: str | None = payload.get("sub")
-        log.debug(
-            "Looking for user with uid: %s",
+
+    payload: dict = get_current_token_payload(token)
+    uid: str | None = payload.get("sub")
+    log.debug(
+        "Looking for user with uid: %s",
+        uid,
+    )
+    user = await get_user_by_uid(session, uid)
+
+    if user is None:
+        log.error(
+            "User not found for uid: %s",
             uid,
         )
-        user = await get_user_by_uid(session, uid)
-    except HTTPException as e:
-        raise e
-    else:
-        if user is None:
-            log.error(
-                "User not found for uid: %s",
-                uid,
-            )
-            raise CREDENTIAL_EXCEPTION
+        raise CREDENTIAL_EXCEPTION
 
-        return user
+    return user
 
 
 async def get_current_auth_user_for_refresh(
@@ -321,18 +327,24 @@ async def get_current_auth_user_for_refresh(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
                 "message": "Ошибка аутентификации. Пожалуйста, войдите заново",
-                "details": "Failed to decode refresh token",
+                "details": {
+                    "field": "refresh token",
+                    "message": "Failed to decode refresh token",
+                },
             },
         )
 
     uid: str | None = payload.get("sub")
     if uid is None:
-        log.error("User id not found in refresh token")
+        log.error("User uid not found in refresh token")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
                 "message": "Ошибка аутентификации. Пожалуйста, войдите заново",
-                "details": "User id not found in refresh token",
+                "details": {
+                    "field": "refresh token",
+                    "message": "User uid not found in refresh token",
+                },
             },
         )
     if not await validate_refresh_jwt(uid, token, redis):
@@ -341,7 +353,10 @@ async def get_current_auth_user_for_refresh(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
                 "message": "Ошибка аутентификации. Пожалуйста, войдите заново",
-                "details": "Refresh token is invalid or has expired",
+                "details": {
+                    "field": "refresh token",
+                    "message": "Refresh token is invalid or has expired",
+                },
             },
         )
     user = await get_user_by_uid(session, uid)
@@ -379,7 +394,11 @@ async def authenticate_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
-                "message": "Введён неверный пароль"
+                "message": "Введён неверный пароль",
+                "details": {
+                    "field": "password",
+                    "message": "Invalid password",
+                },
             },
         )
 
