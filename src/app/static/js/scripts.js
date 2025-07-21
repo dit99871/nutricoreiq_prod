@@ -76,32 +76,59 @@ document.addEventListener("DOMContentLoaded", () => {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
+        const fetchWithRetry = async (originalUrl, originalOptions, retry = false) => {
+            try {
+                const response = await fetch(originalUrl, {
+                    ...originalOptions,
+                    headers,
+                    credentials: 'include',
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                if (!response.headers.get('content-type')?.includes('application/json')) {
+                    const text = await response.text();
+                    throw new Error(`Неверный формат ответа: ${text}`);
+                }
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    if (response.status === 401 && !retry && response.headers.get('X-Error-Type') === 'authentication_error') {
+                        // Пытаемся обновить токены
+                        try {
+                            await fetch('/api/v1/auth/refresh', {
+                                method: 'POST',
+                                credentials: 'include',
+                                headers: { 'X-CSRF-Token': csrfToken }
+                            });
+                            // Повторяем исходный запрос
+                            return fetchWithRetry(originalUrl, originalOptions, true);
+                        } catch (refreshError) {
+                            // Если обновление токенов не удалось, перенаправляемIEN
+                            showError('globalError', 'Ваша сессия истекла. Пожалуйста, войдите снова.');
+                            window.location.href = '/login';
+                            return Promise.reject(refreshError);
+                        }
+                    } else if (response.status === 500) {
+                        window.location.href = '/error';
+                    }
+                    throw data.error || { message: 'Неизвестная ошибка' };
+                }
+
+                return data;
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    throw new Error('Превышено время ожидания запроса');
+                }
+                throw error;
+            }
+        };
+
         try {
-            const response = await fetch(url, {
-                ...options,
-                headers,
-                credentials: 'include',
-                signal: controller.signal
-            });
-
-            clearTimeout(timeoutId);
-
-            if (!response.headers.get('content-type')?.includes('application/json')) {
-                const text = await response.text();
-                throw new Error(`Неверный формат ответа: ${text}`);
-            }
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw data.error || { message: 'Неизвестная ошибка' };
-            }
-
-            return data;
+            return await fetchWithRetry(url, options);
         } catch (error) {
-            if (error.name === 'AbortError') {
-                throw new Error('Превышено время ожидания запроса');
-            }
             throw error;
         }
     };
