@@ -164,3 +164,7 @@ redis.conf
 src/app/utils/certs/jwt-private.pem
 src/app/utils/certs/jwt-public.pem
 src/app/utils/certs/README.md
+.idea/
+src/app/docker-compose.dev.yml
+src/app/lifespan.py
+structure.py
