@@ -104,7 +104,12 @@ def generic_exception_handler(request: Request, exc: Exception):
         exc_info=True
     )
 
+    headers = {}
+    if exc.status_code == status.HTTP_401_UNAUTHORIZED:
+        headers["X-Error-Type"] = "authentication_error"
+
     return ORJSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content=error_response.model_dump()
+        status_code=exc.status_code,
+        content=error_response.model_dump(),
+        headers=headers,
     )
