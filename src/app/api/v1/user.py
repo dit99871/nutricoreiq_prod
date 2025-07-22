@@ -17,19 +17,29 @@ router = APIRouter(
     default_response_class=ORJSONResponse,
 )
 
+UNAUTHORIZED_EXCEPTION = HTTPException(
+    status_code=status.HTTP_401_UNAUTHORIZED,
+    detail={"message": "Время сессии истекло. Пожалуйста, войдите заново"},
+)
+
 
 @router.get("/me", response_class=ORJSONResponse)
 async def read_current_user(
     user: Annotated[UserResponse, Depends(get_current_auth_user)],
 ):
     """
-    Retrieves the current authenticated user's information.
+    Retrieves the current authenticated user's basic information.
 
     This endpoint returns the username and email of the authenticated user.
+    If the user is not authenticated, it raises an HTTPException with a 401 status code.
 
     :param user: The authenticated user object obtained from the dependency.
     :return: A dictionary containing the username and email of the user.
+    :raises HTTPException: If the user is not authenticated.
     """
+    if user is None:
+        raise UNAUTHORIZED_EXCEPTION
+
     return {
         "username": user.username,
         "email": user.email,
@@ -43,22 +53,25 @@ async def read_current_user(
 )
 async def get_profile(
     request: Request,
-    current_user: Annotated[UserResponse, Depends(get_current_auth_user)],
+    user: Annotated[UserResponse, Depends(get_current_auth_user)],
     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
 ):
     """
     Retrieves the current authenticated user's profile information.
 
-    This endpoint returns the username, email, joined date, and last seen date
-    of the authenticated user.
+    This endpoint returns the profile information of the authenticated user.
+    If the user is not authenticated, it raises an HTTPException with a 401 status code.
 
     :param request: The incoming request object.
-    :param current_user: The authenticated user object obtained from the dependency.
-    :param session: The database session to use for the query.
-    :return: A UserAccount object containing the user's profile information.
-    :raises HTTPException: If the user is not found in the database.
+    :param user: The authenticated user object obtained from the dependency.
+    :param session: The current database session.
+    :return: A rendered HTML template with the user's profile information.
+    :raises HTTPException: If the user is not authenticated.
     """
-    user = await get_user_profile(session, current_user.id)
+    if user is None:
+        raise UNAUTHORIZED_EXCEPTION
+
+    user = await get_user_profile(session, user.id)
     return templates.TemplateResponse(
         name="profile.html",
         request=request,
@@ -76,22 +89,26 @@ async def get_profile(
 @router.post("/profile/update", response_class=ORJSONResponse)
 async def update_profile(
     data_in: UserProfile,
-    current_user: Annotated[UserResponse, Depends(get_current_auth_user)],
+    user: Annotated[UserResponse, Depends(get_current_auth_user)],
     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
 ):
     """
     Updates the current authenticated user's profile information.
 
-    This endpoint takes a `UserProfile` object as input and updates the user's
-    profile information in the database. The function attempts to update the
-    user's profile information in the database and commits the changes.
+    This endpoint accepts a `UserProfile` object containing the updated
+    profile details and updates the current user's profile in the database.
+    If the user is not authenticated, it raises a 401 HTTPException. If
+    the provided data is invalid, it raises a 400 HTTPException.
 
-    :param data_in: A `UserProfile` instance containing the new profile data.
-    :param current_user: The authenticated user whose profile is to be updated.
+    :param data_in: The updated user profile information.
+    :param user: The authenticated user object obtained from the dependency.
     :param session: The current database session.
-    :raises HTTPException: If the user is not found or an error occurs during the update.
-    :return: A JSON response indicating success if the update is successful.
+    :return: A JSON response indicating the success of the profile update.
+    :raises HTTPException: If the user is not authenticated or if the provided data is invalid.
     """
+    if user is None:
+        raise UNAUTHORIZED_EXCEPTION
+
     if not data_in:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -99,19 +116,18 @@ async def update_profile(
                 "message": "Произошла ошибка. Попробуйте позже!",
             },
         )
-    await update_user_profile(data_in, current_user, session)
+    await update_user_profile(data_in, user, session)
+
     return {"message": "Profile updated successfully"}
-
-
 
 #
 #
 # @router.delete("/me/", response_model=UserDelete)
 # async def delete_current_user(
 #     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-#     current_user: Annotated[UserRead, Depends(get_current_user)],
+#     user: Annotated[UserRead, Depends(get_current_user)],
 # ):
-#     deleted_user = await delete_user(db, current_user)
+#     deleted_user = await delete_user(db, user)
 #     if deleted_user is None:
 #         raise HTTPException(status_code=404, detail="User not found")
 #     return deleted_user
