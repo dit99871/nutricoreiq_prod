@@ -6,7 +6,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 1. Тема
     const initTheme = () => {
-//        console.log('Инициализация темы'); // Отладка
         const savedTheme = localStorage.getItem('theme') ||
             (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         document.body.classList.toggle('dark-mode', savedTheme === 'dark');
@@ -23,16 +22,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         document.querySelectorAll('.theme-toggle').forEach(btn => {
             btn.addEventListener('click', () => {
-//                console.log('Переключение темы'); // Отладка
                 const isDark = document.body.classList.toggle('dark-mode');
                 localStorage.setItem('theme', isDark ? 'dark' : 'light');
                 updateThemeButtons(isDark);
             });
         });
 
-        // Обновление темы при изменении системных настроек
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-//            console.log('Изменение системной темы'); // Отладка
             const newTheme = e.matches ? 'dark' : 'light';
             document.body.classList.toggle('dark-mode', newTheme === 'dark');
             localStorage.setItem('theme', newTheme);
@@ -42,12 +38,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 2. Переключатели пароля
     const initPasswordToggles = () => {
-//        console.log('Инициализация переключателей пароля'); // Отладка
         document.addEventListener('click', e => {
             const toggleBtn = e.target.closest('.toggle-password');
             if (!toggleBtn) return;
 
-//            console.log('Клик по переключателю пароля'); // Отладка
             const input = document.getElementById(toggleBtn.dataset.target);
             if (!input) return;
 
@@ -66,6 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 3. Универсальный fetch
     const secureFetch = async (url, options = {}) => {
+        console.log('secureFetch called for:', url); // Отладка
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
         const headers = {
             'Accept': 'application/json',
@@ -93,20 +88,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 const data = await response.json();
+                console.log('X-Error-Type:', response.headers.get('X-Error-Type')); // Отладка
 
                 if (!response.ok) {
                     if (response.status === 401 && !retry && response.headers.get('X-Error-Type') === 'authentication_error') {
-                        // Пытаемся обновить токены
                         try {
                             await fetch('/api/v1/auth/refresh', {
                                 method: 'POST',
                                 credentials: 'include',
                                 headers: { 'X-CSRF-Token': csrfToken }
                             });
-                            // Повторяем исходный запрос
                             return fetchWithRetry(originalUrl, originalOptions, true);
                         } catch (refreshError) {
-                            // Если обновление токенов не удалось, перенаправляемIEN
                             showError('globalError', 'Ваша сессия истекла. Пожалуйста, войдите снова.');
                             window.location.href = '/login';
                             return Promise.reject(refreshError);
@@ -181,7 +174,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const updateProfileUI = (userData) => {
         if (!userData || typeof userData !== 'object') {
-            console.warn('Некорректные данные userData:', userData); // Отладка
+            console.warn('Некорректные данные userData:', userData);
             return;
         }
 
@@ -221,7 +214,7 @@ document.addEventListener("DOMContentLoaded", () => {
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#39;");
+            .replace(/'/g, "&#039;");
     };
 
     // 5. Форма логина
@@ -503,8 +496,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 searchResults.classList.add('active');
 
                 searchResults.querySelectorAll('.suggestion-item').forEach(item => {
-                    item.addEventListener('click', () => {
-                        window.location.href = `/api/v1/product/${item.dataset.id}`;
+                    item.addEventListener('click', async () => {
+                        try {
+                            const data = await secureFetch(`/api/v1/product/${item.dataset.id}`);
+                            window.location.href = `/product/${item.dataset.id}`; // Клиентский URL
+                        } catch (error) {
+                            showError(errorId, 'Ошибка загрузки продукта: ' + (error.message || 'Неизвестная ошибка'));
+                        }
                     });
                 });
             };
@@ -554,13 +552,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 e.preventDefault();
                 const query = searchInput.value.trim();
 
-                // Проверка минимальной длины запроса
                 if (query.length < 2) {
                     showError(errorId, 'Запрос должен содержать минимум 2 символа');
                     return;
                 }
 
-                // Если кнопка анализа отсутствует, просто продолжаем
                 if (analyzeBtn) {
                     analyzeBtn.disabled = true;
                     const originalText = analyzeBtn.textContent;
@@ -571,7 +567,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         const id = data.exact_match?.id || lastSearchData?.exact_match?.id;
 
                         if (id) {
-                            window.location.href = `/api/v1/product/${id}`;
+                            const productData = await secureFetch(`/api/v1/product/${id}`);
+                            window.location.href = `/product/${id}`; // Клиентский URL
                         } else {
                             openPendingProductModal(query);
                         }
@@ -587,7 +584,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         const id = data.exact_match?.id || lastSearchData?.exact_match?.id;
 
                         if (id) {
-                            window.location.href = `/api/v1/product/${id}`;
+                            const productData = await secureFetch(`/api/v1/product/${id}`);
+                            window.location.href = `/product/${id}`; // Клиентский URL
                         } else {
                             openPendingProductModal(query);
                         }
@@ -625,11 +623,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 9. Tooltips
     const initTooltips = () => {
-//        console.log('Инициализация туллов'); // Добавлено для отладки
         document.querySelectorAll('.custom-info-icon').forEach(icon => {
             icon.addEventListener('click', (e) => {
                 e.stopPropagation();
-//                console.log('Клик по иконке информации'); // Отладка
                 const isActive = icon.classList.contains('active');
                 document.querySelectorAll('.custom-info-icon').forEach(i => i.classList.remove('active'));
                 if (!isActive) icon.classList.add('active');
@@ -645,7 +641,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 10. Кастомные выпадающие списки
     const initCustomSelects = () => {
-//        console.log('Инициализация custom-select'); // Добавлено для отладки
         const customSelects = document.querySelectorAll('.custom-select');
 
         customSelects.forEach(select => {
@@ -659,25 +654,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            // Открытие/закрытие списка при клике на display
             display.addEventListener('click', function (e) {
                 e.preventDefault();
-//                console.log('Клик по custom-select display'); // Отладка
                 const isActive = select.classList.contains('active');
-                // Закрываем все остальные селекты
                 document.querySelectorAll('.custom-select').forEach(s => {
                     s.classList.remove('active');
                 });
-                // Переключаем текущий селект
                 if (!isActive) {
                     select.classList.add('active');
                 }
             });
 
-            // Обработка выбора опции
             optionItems.forEach(option => {
                 option.addEventListener('click', function (e) {
-//                    console.log('Выбор опции в custom-select'); // Отладка
                     const value = this.getAttribute('data-value');
                     const text = this.textContent.trim();
                     display.textContent = text;
@@ -687,10 +676,8 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
-        // Закрытие всех выпадающих списков при клике вне селекта
         document.addEventListener('click', function (e) {
             if (!e.target.closest('.custom-select')) {
-//                console.log('Клик вне custom-select, закрытие'); // Отладка
                 document.querySelectorAll('.custom-select').forEach(s => {
                     s.classList.remove('active');
                 });
@@ -698,8 +685,65 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
+    // 11. Обработчики для новых кнопок
+    const initNavigationButtons = () => {
+        // Кнопка профиля
+        const profileBtn = document.querySelector('.profile-btn');
+        if (profileBtn) {
+            profileBtn.addEventListener('click', async () => {
+                try {
+                    const userData = await secureFetch('/api/v1/user/profile/data');
+                    updateProfileUI(userData);
+                    window.location.href = '/profile'; // Клиентский URL
+                } catch (error) {
+                    console.error('Ошибка загрузки профиля:', error);
+                    // Ошибка обрабатывается в secureFetch (редирект на /login при 401)
+                }
+            });
+        }
+
+        // Кнопка выхода
+        const logoutBtn = document.querySelector('.logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async () => {
+                try {
+                    await secureFetch('/api/v1/auth/logout', { method: 'POST' });
+                    showSuccess('Вы успешно вышли из аккаунта!');
+                    setTimeout(() => window.location.href = '/login', 1000);
+                } catch (error) {
+                    showError('globalError', 'Ошибка при выходе: ' + (error.message || 'Неизвестная ошибка'));
+                }
+            });
+        }
+
+        // Кнопка "О проекте"
+        const aboutBtn = document.querySelector('.about-btn');
+        if (aboutBtn) {
+            aboutBtn.addEventListener('click', async () => {
+                try {
+                    const data = await secureFetch('/api/v1/about');
+                    window.location.href = '/about'; // Клиентский URL
+                } catch (error) {
+                    showError('globalError', 'Ошибка загрузки страницы "О проекте": ' + (error.message || 'Неизвестная ошибка'));
+                }
+            });
+        }
+
+        // Кнопка "Политика конфиденциальности"
+        const privacyBtn = document.querySelector('.privacy-btn');
+        if (privacyBtn) {
+            privacyBtn.addEventListener('click', async () => {
+                try {
+                    const data = await secureFetch('/api/v1/privacy');
+                    window.location.href = '/privacy'; // Клиентский URL
+                } catch (error) {
+                    showError('globalError', 'Ошибка загрузки политики конфиденциальности: ' + (error.message || 'Неизвестная ошибка'));
+                }
+            });
+        }
+    };
+
     // Инициализация
-//    console.log('Начало инициализации функций'); // Отладка
     initTheme();
     initPasswordToggles();
     initLoginForm();
@@ -708,5 +752,5 @@ document.addEventListener("DOMContentLoaded", () => {
     initProductSearch();
     initTooltips();
     initCustomSelects();
-//    console.log('Конец инициализации функций'); // Отладка
+    initNavigationButtons();
 });
