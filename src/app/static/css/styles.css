@@ -291,6 +291,57 @@ main.container.d-flex.flex-column.flex-grow-1.py-4 {
     transform: translateY(-2px);
 }
 
+.about-btn,
+.privacy-btn {
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: var(--border-radius);
+    transition: all 0.3s ease;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.about-btn:hover,
+.privacy-btn:hover {
+    background-color: var(--moss);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.about-btn[aria-label]::after,
+.privacy-btn[aria-label]::after {
+    content: attr(aria-label);
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--light-sand);
+    color: var(--text-primary);
+    padding: 4px 8px;
+    border-radius: 5px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: transform 0.3s ease, opacity 0s, visibility 0s 0.3s;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    pointer-events: none;
+}
+
+.about-btn:hover[aria-label]::after,
+.about-btn:focus[aria-label]::after,
+.privacy-btn:hover[aria-label]::after,
+.privacy-btn:focus[aria-label]::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(5px);
+    transition: transform 0.3s ease, opacity 0s, visibility 0s;
+}
+
 /* 5.2 Карточка профиля */
 .profile-card {
     background: var(--card-bg);
@@ -1334,6 +1385,23 @@ body.dark-mode .btn-change-password[aria-label]::after {
     color: var(--text-primary);
 }
 
+body.dark-mode .about-btn,
+body.dark-mode .privacy-btn {
+    color: var(--text-primary);
+}
+
+body.dark-mode .about-btn:hover,
+body.dark-mode .privacy-btn:hover {
+    background-color: var(--moss);
+    color: white;
+}
+
+body.dark-mode .about-btn[aria-label]::after,
+body.dark-mode .privacy-btn[aria-label]::after {
+    background-color: #4F5A55;
+    color: var(--text-primary);
+}
+
 /* 7. Медиа-запросы */
 @media (max-width: 1200px) {
     .detail-card {
@@ -1488,5 +1556,11 @@ body.dark-mode .btn-change-password[aria-label]::after {
 
     .custom-select-options {
         max-height: calc(40vh - 30px); /* Уменьшено для мобильных */
+    }
+
+    .about-btn,
+    .privacy-btn {
+        font-size: 0.8rem;
+        padding: 0.3rem 0.6rem;
     }
 }
