@@ -384,6 +384,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     const updatedUserData = await secureFetch('/api/v1/user/me');
                     updateProfileUI(updatedUserData);
+                    window.location.href = '/api/v1/user/profile/data'
 
                     const modal = bootstrap.Modal.getInstance(editProfileModal);
                     if (modal) {
