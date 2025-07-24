@@ -8,7 +8,10 @@ from src.app.core.config import settings
 log = get_logger("exc_handlers")
 
 
-def http_exception_handler(request: Request, exc: HTTPException):
+def http_exception_handler(
+    request: Request,
+    exc: HTTPException,
+):
     """
     Обработка http-exception, которые могут возникнуть
     при выполнении запросов к API.
@@ -48,7 +51,10 @@ def http_exception_handler(request: Request, exc: HTTPException):
     )
 
 
-def validation_exception_handler(request: Request, exc: RequestValidationError):
+def validation_exception_handler(
+    request: Request,
+    exc: RequestValidationError,
+):
     """
     Обработка ошибок валидации, которые могут возникнуть
     при выполнении запросов к API.
@@ -70,7 +76,7 @@ def validation_exception_handler(request: Request, exc: RequestValidationError):
     )
 
     log.error(
-        "Ошибка валидации по адресу %s: ошибки=%s",
+        "Ошибка валидации по адресу: %s, ошибки: %s",
         request.url, errors
     )
 
@@ -80,7 +86,10 @@ def validation_exception_handler(request: Request, exc: RequestValidationError):
     )
 
 
-def generic_exception_handler(request: Request, exc: Exception):
+def generic_exception_handler(
+    request: Request,
+    exc: Exception,
+):
     """
     Обработка необработанных Exception, которые могут возникнуть при выполнении запросов к API.
 
