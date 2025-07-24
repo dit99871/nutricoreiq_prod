@@ -28,20 +28,23 @@ def http_exception_handler(request: Request, exc: HTTPException):
         message=message,
         details=details,
     )
-
     error_response = ErrorResponse(
         status="error",
         error=error_detail
     )
-
     log.error(
         "HTTP-ошибка по адресу %s: сообщение=%s, статус=%s",
         request.url, message, exc.status_code
     )
+    headers = {}
+    if exc.status_code == status.HTTP_401_UNAUTHORIZED:
+        headers["X-Error-Type"] = "authentication_error"
+        headers["Access-Control-Expose-Headers"] = "X-Error-Type"
 
     return ORJSONResponse(
         status_code=exc.status_code,
-        content=error_response.model_dump()
+        content=error_response.model_dump(),
+        headers=headers,
     )
 
 
@@ -106,5 +109,5 @@ def generic_exception_handler(request: Request, exc: Exception):
 
     return ORJSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content=error_response.model_dump()
+        content=error_response.model_dump(),
     )

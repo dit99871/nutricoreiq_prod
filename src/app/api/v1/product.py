@@ -48,6 +48,7 @@ async def search_products(
 
 
 @router.get("/{product_id}", response_class=HTMLResponse)
+@router.head("/{product_id}")
 async def get_product_details(
     request: Request,
     product_id: int,

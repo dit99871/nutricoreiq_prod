@@ -6,7 +6,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 1. Тема
     const initTheme = () => {
-//        console.log('Инициализация темы'); // Отладка
         const savedTheme = localStorage.getItem('theme') ||
             (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         document.body.classList.toggle('dark-mode', savedTheme === 'dark');
@@ -23,16 +22,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         document.querySelectorAll('.theme-toggle').forEach(btn => {
             btn.addEventListener('click', () => {
-//                console.log('Переключение темы'); // Отладка
                 const isDark = document.body.classList.toggle('dark-mode');
                 localStorage.setItem('theme', isDark ? 'dark' : 'light');
                 updateThemeButtons(isDark);
             });
         });
 
-        // Обновление темы при изменении системных настроек
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-//            console.log('Изменение системной темы'); // Отладка
             const newTheme = e.matches ? 'dark' : 'light';
             document.body.classList.toggle('dark-mode', newTheme === 'dark');
             localStorage.setItem('theme', newTheme);
@@ -42,12 +38,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 2. Переключатели пароля
     const initPasswordToggles = () => {
-//        console.log('Инициализация переключателей пароля'); // Отладка
         document.addEventListener('click', e => {
             const toggleBtn = e.target.closest('.toggle-password');
             if (!toggleBtn) return;
 
-//            console.log('Клик по переключателю пароля'); // Отладка
             const input = document.getElementById(toggleBtn.dataset.target);
             if (!input) return;
 
@@ -70,7 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const headers = {
             'Accept': 'application/json',
             ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
-            ...options.headers
+            ...options.headers,
         };
 
         const controller = new AbortController();
@@ -81,26 +75,30 @@ document.addEventListener("DOMContentLoaded", () => {
                 ...options,
                 headers,
                 credentials: 'include',
-                signal: controller.signal
+                signal: controller.signal,
             });
-
             clearTimeout(timeoutId);
 
-            if (!response.headers.get('content-type')?.includes('application/json')) {
-                const text = await response.text();
-                throw new Error(`Неверный формат ответа: ${text}`);
-            }
-
-            const data = await response.json();
-
             if (!response.ok) {
-                if (response.status === 500) {
-                    window.location.href = '/error'; // Редирект на страницу ошибки
+                if (response.status === 401 && response.headers.get('X-Error-Type') === 'authentication_error') {
+                    const refreshResponse = await fetch('/api/v1/auth/refresh', {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'X-CSRF-Token': csrfToken },
+                    });
+                    if (refreshResponse.ok) {
+                        // Повторяем запрос после успешного обновления токенов
+                        return secureFetch(url, options);
+                    }
+                    throw new Error('Ваша сессия истекла. Пожалуйста, войдите заново.');
+                } else if (response.status === 500) {
+                    window.location.href = '/error';
                 }
+                const data = await response.json();
                 throw data.error || { message: 'Неизвестная ошибка' };
             }
 
-            return data;
+            return await response.json();
         } catch (error) {
             if (error.name === 'AbortError') {
                 throw new Error('Превышено время ожидания запроса');
@@ -109,7 +107,52 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    // 4. UI-утилиты
+    // 4. Функция для работы с HTMLResponse
+    const checkAuthAndRedirect = async (url) => {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+        try {
+            const response = await fetch(url, {
+                method: 'HEAD', // Попробуйте заменить на 'GET' для теста
+                credentials: 'include',
+                headers: { 'X-CSRF-Token': csrfToken },
+            });
+
+            if (response.ok) {
+                window.location.href = url;
+            } else if (response.status === 401 && response.headers.get('X-Error-Type') === 'authentication_error') {
+                const refreshResponse = await fetch('/api/v1/auth/refresh', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'X-CSRF-Token': csrfToken },
+                });
+
+                if (refreshResponse.ok) {
+                    const retryResponse = await fetch(url, {
+                        method: 'HEAD',
+                        credentials: 'include',
+                        headers: { 'X-CSRF-Token': csrfToken },
+                    });
+
+                    if (retryResponse.ok) {
+                        window.location.href = url;
+                    } else {
+                        throw new Error('Доступ запрещен после обновления токенов');
+                    }
+                } else {
+                    throw new Error('Не удалось обновить токены');
+                }
+            } else {
+                throw new Error(`Ошибка сервера: ${response.status}`);
+            }
+        } catch (error) {
+            console.error('Ошибка в checkAuthAndRedirect:', error);
+            showError('globalError', error.message || 'Не удалось перейти к странице профиля');
+            window.location.href = '/';
+        }
+    };
+
+    // 5. UI-утилиты
     const showError = (containerId, errorData) => {
         const container = document.getElementById(containerId);
         if (!container) return;
@@ -157,7 +200,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const updateProfileUI = (userData) => {
         if (!userData || typeof userData !== 'object') {
-            console.warn('Некорректные данные userData:', userData); // Отладка
+            console.warn('Некорректные данные userData:', userData);
             return;
         }
 
@@ -197,10 +240,10 @@ document.addEventListener("DOMContentLoaded", () => {
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")
             .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#39;");
+            .replace(/'/g, "&#039;");
     };
 
-    // 5. Форма логина
+    // 6. Форма логина
     const initLoginForm = () => {
         const form = document.getElementById('loginForm');
         if (!form) return;
@@ -247,7 +290,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    // 6. Форма регистрации
+    // 7. Форма регистрации
     const initRegisterForm = () => {
         const form = document.getElementById('registerForm');
         if (!form) return;
@@ -311,7 +354,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    // 7. Модальные окна профиля
+    // 8. Модальные окна профиля
     const initProfileModals = () => {
         const editProfileModal = document.getElementById('editProfileModal');
         if (editProfileModal) {
@@ -411,21 +454,21 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    // 8. Поиск продуктов
+    // 9. Поиск продуктов
     const initProductSearch = () => {
         const searchConfigs = [
             {
                 formId: 'searchProductForm',
                 inputId: 'productQuery',
                 resultsId: 'searchResults',
-                errorId: 'searchError'
+                errorId: 'searchError',
             },
             {
                 formId: 'productDetailSearchForm',
                 inputId: 'productDetailQuery',
                 resultsId: 'productDetailSearchResults',
-                errorId: 'productDetailSearchError'
-            }
+                errorId: 'productDetailSearchError',
+            },
         ];
 
         searchConfigs.forEach(({ formId, inputId, resultsId, errorId }) => {
@@ -447,7 +490,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 try {
                     const data = await secureFetch(`/api/v1/product/search?query=${encodeURIComponent(query)}`, {
-                        signal: abortController.signal
+                        signal: abortController.signal,
                     });
 
                     lastSearchData = data;
@@ -467,20 +510,22 @@ document.addEventListener("DOMContentLoaded", () => {
             };
 
             const renderResults = (items) => {
-                searchResults.innerHTML = items.length === 0 ? '<div class="suggestion-item">Ничего не найдено</div>' : items.map(item => `
-                    <div class="suggestion-item" data-id="${item.id}">
-                        <div class="suggestion-content">
-                            <i class="bi bi-box suggestion-icon"></i>
-                            <div class="suggestion-title">${escapeHtml(item.title)}</div>
+                searchResults.innerHTML = items.length === 0
+                    ? '<div class="suggestion-item">Ничего не найдено</div>'
+                    : items.map(item => `
+                        <div class="suggestion-item" data-id="${item.id}">
+                            <div class="suggestion-content">
+                                <i class="bi bi-box suggestion-icon"></i>
+                                <div class="suggestion-title">${escapeHtml(item.title)}</div>
+                            </div>
                         </div>
-                    </div>
-                `).join('');
+                    `).join('');
 
                 searchResults.classList.add('active');
 
                 searchResults.querySelectorAll('.suggestion-item').forEach(item => {
                     item.addEventListener('click', () => {
-                        window.location.href = `/api/v1/product/${item.dataset.id}`;
+                        checkAuthAndRedirect(`/api/v1/product/${item.dataset.id}`);
                     });
                 });
             };
@@ -505,7 +550,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         await secureFetch('/api/v1/product/pending', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ name: query })
+                            body: JSON.stringify({ name: query }),
                         });
                         modal.hide();
                         showSuccess(`Продукт "${query}" добавлен в очередь на рассмотрение!`);
@@ -530,13 +575,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 e.preventDefault();
                 const query = searchInput.value.trim();
 
-                // Проверка минимальной длины запроса
                 if (query.length < 2) {
                     showError(errorId, 'Запрос должен содержать минимум 2 символа');
                     return;
                 }
 
-                // Если кнопка анализа отсутствует, просто продолжаем
                 if (analyzeBtn) {
                     analyzeBtn.disabled = true;
                     const originalText = analyzeBtn.textContent;
@@ -547,12 +590,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         const id = data.exact_match?.id || lastSearchData?.exact_match?.id;
 
                         if (id) {
-                            window.location.href = `/api/v1/product/${id}`;
+                            checkAuthAndRedirect(`/api/v1/product/${id}`);
                         } else {
                             openPendingProductModal(query);
                         }
                     } catch (error) {
-                        // Ошибка уже отображается в performSearch
                     } finally {
                         analyzeBtn.disabled = false;
                         analyzeBtn.textContent = originalText;
@@ -563,12 +605,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         const id = data.exact_match?.id || lastSearchData?.exact_match?.id;
 
                         if (id) {
-                            window.location.href = `/api/v1/product/${id}`;
+                            checkAuthAndRedirect(`/api/v1/product/${id}`);
                         } else {
                             openPendingProductModal(query);
                         }
-                    } catch (error) {
-                        // Ошибка уже отображается в performSearch
+                    } catch (error) {с
                     }
                 }
             });
@@ -599,13 +640,11 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    // 9. Tooltips
+    // 10. Tooltips
     const initTooltips = () => {
-//        console.log('Инициализация туллов'); // Добавлено для отладки
         document.querySelectorAll('.custom-info-icon').forEach(icon => {
             icon.addEventListener('click', (e) => {
                 e.stopPropagation();
-//                console.log('Клик по иконке информации'); // Отладка
                 const isActive = icon.classList.contains('active');
                 document.querySelectorAll('.custom-info-icon').forEach(i => i.classList.remove('active'));
                 if (!isActive) icon.classList.add('active');
@@ -619,9 +658,8 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    // 10. Кастомные выпадающие списки
+    // 11. Кастомные выпадающие списки
     const initCustomSelects = () => {
-//        console.log('Инициализация custom-select'); // Добавлено для отладки
         const customSelects = document.querySelectorAll('.custom-select');
 
         customSelects.forEach(select => {
@@ -635,25 +673,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            // Открытие/закрытие списка при клике на display
             display.addEventListener('click', function (e) {
                 e.preventDefault();
-//                console.log('Клик по custom-select display'); // Отладка
                 const isActive = select.classList.contains('active');
-                // Закрываем все остальные селекты
                 document.querySelectorAll('.custom-select').forEach(s => {
                     s.classList.remove('active');
                 });
-                // Переключаем текущий селект
                 if (!isActive) {
                     select.classList.add('active');
                 }
             });
 
-            // Обработка выбора опции
             optionItems.forEach(option => {
                 option.addEventListener('click', function (e) {
-//                    console.log('Выбор опции в custom-select'); // Отладка
                     const value = this.getAttribute('data-value');
                     const text = this.textContent.trim();
                     display.textContent = text;
@@ -663,10 +695,8 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
-        // Закрытие всех выпадающих списков при клике вне селекта
         document.addEventListener('click', function (e) {
             if (!e.target.closest('.custom-select')) {
-//                console.log('Клик вне custom-select, закрытие'); // Отладка
                 document.querySelectorAll('.custom-select').forEach(s => {
                     s.classList.remove('active');
                 });
@@ -674,8 +704,36 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
+    // 12. Обработчики для новых кнопок
+    const initNavigationButtons = () => {
+        // Кнопка профиля
+        const profileBtn = document.querySelector('.profile-btn');
+        if (profileBtn) {
+            profileBtn.addEventListener('click', () => {
+                checkAuthAndRedirect('/api/v1/user/profile/data');
+            });
+        }
+
+
+        // Кнопка выхода
+        const logoutBtn = document.querySelector('.logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', async () => {
+                try {
+                    await fetch('/api/v1/auth/logout', {
+                        method: 'GET',
+                        credentials: 'include',
+                    });
+                    showSuccess('Вы успешно вышли из аккаунта!');
+                    setTimeout(() => window.location.href = '/', 500);
+                } catch (error) {
+                    showError('globalError', 'Ошибка при выходе: ' + (error.message || 'Неизвестная ошибка'));
+                }
+            });
+        }
+    };
+
     // Инициализация
-//    console.log('Начало инициализации функций'); // Отладка
     initTheme();
     initPasswordToggles();
     initLoginForm();
@@ -684,5 +742,5 @@ document.addEventListener("DOMContentLoaded", () => {
     initProductSearch();
     initTooltips();
     initCustomSelects();
-//    console.log('Конец инициализации функций'); // Отладка
+    initNavigationButtons();
 });
