@@ -23,6 +23,10 @@ def calculate_bmr(user: UserAccount) -> float:
         field for field in required_fields if getattr(user, field) is None
     ]
     if missing_fields:
+        log.error(
+            "Не заполнены поля: %s",
+            missing_fields,
+        )
         raise ValueError(
             f"Missing required fields for BMR calculation: {missing_fields}"
         )
@@ -68,19 +72,28 @@ def calculate_tdee(user: UserAccount) -> float:
     """
     # Проверка kfa
     if user.kfa is None:
+        log.error(
+            "Отсутствует kfa для пользователя: %s",
+            user,
+        )
         raise ValueError("Activity factor (kfa) is required for TDEE calculation.")
 
     try:
         kfa = float(
             user.kfa
         )  # Используем float вместо int для поддержки дробных значений
-    except ValueError:
+    except ValueError as e:
+        log.error(
+            "Ошибка значения kfa: %s",
+            str(e),
+        )
         raise ValueError(
             f"Invalid kfa: {user.kfa}. Must be a string representing a number (e.g., '1.5')."
         )
 
     # Валидация kfa
     if kfa < 1.0 or kfa > 2.5:
+        log.error("Ошибка валидации kfa")
         raise ValueError(f"Invalid kfa: {kfa}. Must be between 1.0 and 2.5.")
 
     # Вычисление BMR
