@@ -1,13 +1,20 @@
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import ORJSONResponse
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Request,
+    status,
+)
+from fastapi.responses import ORJSONResponse, HTMLResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.app.core.logger import get_logger
 from src.app.crud.profile import update_user_profile, get_user_profile
 from src.app.db import db_helper
-from src.app.schemas.user import UserProfile, UserResponse, UserAccount
+from src.app.schemas.user import UserProfile, UserResponse
 from src.app.services.auth import get_current_auth_user
 from src.app.utils.security import generate_csp_nonce
 from src.app.utils.templates import templates
@@ -17,13 +24,15 @@ router = APIRouter(
     default_response_class=ORJSONResponse,
 )
 
+log = get_logger("user_api")
+
 UNAUTHORIZED_EXCEPTION = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
     detail={"message": "Время сессии истекло. Пожалуйста, войдите заново"},
 )
 
 
-@router.get("/me", response_class=ORJSONResponse)
+@router.get("/me")
 async def read_current_user(
     user: Annotated[UserResponse, Depends(get_current_auth_user)],
 ):
@@ -46,11 +55,8 @@ async def read_current_user(
     }
 
 
-@router.get(
-    "/profile/data",
-    response_model=UserAccount,
-    response_model_exclude_unset=True,
-)
+@router.get("/profile/data", response_class=HTMLResponse)
+@router.head("/profile/data")
 async def get_profile(
     request: Request,
     user: Annotated[UserResponse, Depends(get_current_auth_user)],
@@ -69,6 +75,7 @@ async def get_profile(
     :raises HTTPException: If the user is not authenticated.
     """
     if user is None:
+        log.error("Пользователь не авторизован")
         raise UNAUTHORIZED_EXCEPTION
 
     user = await get_user_profile(session, user.id)
@@ -86,7 +93,7 @@ async def get_profile(
     )
 
 
-@router.post("/profile/update", response_class=ORJSONResponse)
+@router.post("/profile/update")
 async def update_profile(
     data_in: UserProfile,
     user: Annotated[UserResponse, Depends(get_current_auth_user)],
