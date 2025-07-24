@@ -118,14 +118,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 headers: { 'X-CSRF-Token': csrfToken },
             });
 
-            console.log('Response status:', response.status);
-            console.log('X-Error-Type:', response.headers.get('X-Error-Type'));
-
             if (response.ok) {
-                console.log('Redirecting to:', url);
                 window.location.href = url;
             } else if (response.status === 401 && response.headers.get('X-Error-Type') === 'authentication_error') {
-                console.log('Attempting to refresh token');
                 const refreshResponse = await fetch('/api/v1/auth/refresh', {
                     method: 'POST',
                     credentials: 'include',
@@ -133,7 +128,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
 
                 if (refreshResponse.ok) {
-                    console.log('Token refreshed, retrying request');
                     const retryResponse = await fetch(url, {
                         method: 'HEAD',
                         credentials: 'include',
@@ -141,7 +135,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     });
 
                     if (retryResponse.ok) {
-                        console.log('Retry successful, redirecting to:', url);
                         window.location.href = url;
                     } else {
                         throw new Error('Доступ запрещен после обновления токенов');
@@ -155,11 +148,11 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (error) {
             console.error('Ошибка в checkAuthAndRedirect:', error);
             showError('globalError', error.message || 'Не удалось перейти к странице профиля');
-//            window.location.href = '/login'; // Раскомментировано для перенаправления
+            window.location.href = '/';
         }
     };
 
-    // 4. UI-утилиты
+    // 5. UI-утилиты
     const showError = (containerId, errorData) => {
         const container = document.getElementById(containerId);
         if (!container) return;
@@ -250,7 +243,7 @@ document.addEventListener("DOMContentLoaded", () => {
             .replace(/'/g, "&#039;");
     };
 
-    // 5. Форма логина
+    // 6. Форма логина
     const initLoginForm = () => {
         const form = document.getElementById('loginForm');
         if (!form) return;
@@ -297,7 +290,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    // 6. Форма регистрации
+    // 7. Форма регистрации
     const initRegisterForm = () => {
         const form = document.getElementById('registerForm');
         if (!form) return;
@@ -361,7 +354,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    // 7. Модальные окна профиля
+    // 8. Модальные окна профиля
     const initProfileModals = () => {
         const editProfileModal = document.getElementById('editProfileModal');
         if (editProfileModal) {
@@ -461,21 +454,21 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    // 8. Поиск продуктов
+    // 9. Поиск продуктов
     const initProductSearch = () => {
         const searchConfigs = [
             {
                 formId: 'searchProductForm',
                 inputId: 'productQuery',
                 resultsId: 'searchResults',
-                errorId: 'searchError'
+                errorId: 'searchError',
             },
             {
                 formId: 'productDetailSearchForm',
                 inputId: 'productDetailQuery',
                 resultsId: 'productDetailSearchResults',
-                errorId: 'productDetailSearchError'
-            }
+                errorId: 'productDetailSearchError',
+            },
         ];
 
         searchConfigs.forEach(({ formId, inputId, resultsId, errorId }) => {
@@ -497,7 +490,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 try {
                     const data = await secureFetch(`/api/v1/product/search?query=${encodeURIComponent(query)}`, {
-                        signal: abortController.signal
+                        signal: abortController.signal,
                     });
 
                     lastSearchData = data;
@@ -517,25 +510,22 @@ document.addEventListener("DOMContentLoaded", () => {
             };
 
             const renderResults = (items) => {
-                searchResults.innerHTML = items.length === 0 ? '<div class="suggestion-item">Ничего не найдено</div>' : items.map(item => `
-                    <div class="suggestion-item" data-id="${item.id}">
-                        <div class="suggestion-content">
-                            <i class="bi bi-box suggestion-icon"></i>
-                            <div class="suggestion-title">${escapeHtml(item.title)}</div>
+                searchResults.innerHTML = items.length === 0
+                    ? '<div class="suggestion-item">Ничего не найдено</div>'
+                    : items.map(item => `
+                        <div class="suggestion-item" data-id="${item.id}">
+                            <div class="suggestion-content">
+                                <i class="bi bi-box suggestion-icon"></i>
+                                <div class="suggestion-title">${escapeHtml(item.title)}</div>
+                            </div>
                         </div>
-                    </div>
-                `).join('');
+                    `).join('');
 
                 searchResults.classList.add('active');
 
                 searchResults.querySelectorAll('.suggestion-item').forEach(item => {
-                    item.addEventListener('click', async () => {
-                        try {
-                            const data = await secureFetch(`/api/v1/product/${item.dataset.id}`);
-                            window.location.href = `/api/v1/product/${item.dataset.id}`; // Клиентский URL
-                        } catch (error) {
-                            showError(errorId, 'Ошибка загрузки продукта: ' + (error.message || 'Неизвестная ошибка'));
-                        }
+                    item.addEventListener('click', () => {
+                        checkAuthAndRedirect(`/api/v1/product/${item.dataset.id}`);
                     });
                 });
             };
@@ -560,7 +550,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         await secureFetch('/api/v1/product/pending', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ name: query })
+                            body: JSON.stringify({ name: query }),
                         });
                         modal.hide();
                         showSuccess(`Продукт "${query}" добавлен в очередь на рассмотрение!`);
@@ -600,13 +590,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         const id = data.exact_match?.id || lastSearchData?.exact_match?.id;
 
                         if (id) {
-                            const productData = await secureFetch(`/api/v1/product/${id}`);
-                            window.location.href = `/api/v1/product/${id}`; // Клиентский URL
+                            checkAuthAndRedirect(`/api/v1/product/${id}`);
                         } else {
                             openPendingProductModal(query);
                         }
                     } catch (error) {
-                        // Ошибка уже отображается в performSearch
                     } finally {
                         analyzeBtn.disabled = false;
                         analyzeBtn.textContent = originalText;
@@ -617,13 +605,11 @@ document.addEventListener("DOMContentLoaded", () => {
                         const id = data.exact_match?.id || lastSearchData?.exact_match?.id;
 
                         if (id) {
-                            const productData = await secureFetch(`/api/v1/product/${id}`);
-                            window.location.href = `/api/v1/product/${id}`; // Клиентский URL
+                            checkAuthAndRedirect(`/api/v1/product/${id}`);
                         } else {
                             openPendingProductModal(query);
                         }
-                    } catch (error) {
-                        // Ошибка уже отображается в performSearch
+                    } catch (error) {с
                     }
                 }
             });
@@ -654,7 +640,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    // 9. Tooltips
+    // 10. Tooltips
     const initTooltips = () => {
         document.querySelectorAll('.custom-info-icon').forEach(icon => {
             icon.addEventListener('click', (e) => {
@@ -672,7 +658,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    // 10. Кастомные выпадающие списки
+    // 11. Кастомные выпадающие списки
     const initCustomSelects = () => {
         const customSelects = document.querySelectorAll('.custom-select');
 
@@ -718,7 +704,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    // 11. Обработчики для новых кнопок
+    // 12. Обработчики для новых кнопок
     const initNavigationButtons = () => {
         // Кнопка профиля
         const profileBtn = document.querySelector('.profile-btn');
