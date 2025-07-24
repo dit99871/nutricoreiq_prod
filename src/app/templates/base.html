@@ -51,13 +51,13 @@
                                     <i class="bi bi-house"></i>
                                 </a>
                             {% else %}
-                                <a href="/api/v1/user/profile/data" class="btn btn-profile btn-icon" aria-label="Профиль">
+                                <button type="button" class="btn btn-profile btn-icon profile-btn" aria-label="Профиль">
                                     <i class="bi bi-person"></i>
-                                </a>
+                                </button>
                             {% endif %}
-                            <a href="/api/v1/auth/logout" class="btn btn-logout btn-icon" aria-label="Выйти">
+                            <button type="button" class="btn btn-logout btn-icon logout-btn" aria-label="Выйти">
                                 <i class="bi bi-box-arrow-right"></i>
-                            </a>
+                            </button>
                         {% else %}
                             <button type="button" class="btn btn-login btn-icon" data-bs-toggle="modal" data-bs-target="#loginModal" aria-label="Войти">
                                 <i class="bi bi-box-arrow-in-right"></i>
@@ -97,14 +97,14 @@
                 <div class="col-lg-4 mb-3 mb-lg-0">
                     <div class="d-flex align-items-center">
                         <img src="/static/img/logo-icon.jpeg" alt="Logo" height="30" class="me-2">
-                        <span class="small">© {{ current_year }} NutriCoreIQ</span>
+                        <span class="text-dark text-decoration-none small">© {{ current_year }} NutriCoreIQ</span>
                     </div>
                 </div>
                 <div class="col-lg-8">
                     <div class="d-flex flex-column flex-lg-row justify-content-lg-end gap-3">
-                        <a href="/api/v1/about" class="text-decoration-none small text-dark">О проекте</a>
-                        <a href="/api/v1/privacy" class="text-decoration-none small text-dark">Политика конфиденциальности</a>
-                        <a href="mailto:support@nutricoreiq.ru" class="text-decoration-none small text-dark">
+                        <a href="/api/v1/about" class="text-decoration-none small text-dark about-btn">О проекте</a>
+                        <a href="/api/v1/privacy" class="text-decoration-none small text-dark privacy-btn">Политика конфиденциальности</a>
+                        <a href="mailto:support@nutricoreiq.ru" class="text-dark text-decoration-none small mailto-btn">
                             <i class="bi bi-envelope me-1"></i>support@nutricoreiq.ru
                         </a>
                     </div>

@@ -30,7 +30,10 @@ async def get_user_profile(
         result = await session.execute(stmt)
         user = result.scalar_one_or_none()
         if user is None:
-            log.error("User not found in db for user_id: %s", user_id)
+            log.error(
+                "User not found in db for user_id: %s",
+                user_id,
+            )
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail={
@@ -41,12 +44,15 @@ async def get_user_profile(
         return UserAccount.model_construct(**user.__dict__)
 
     except SQLAlchemyError as e:
-        log.error("Database error getting user: %s", e)
+        log.error(
+            "Ошибка БД при получении пользователя: %s",
+            e)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={
+                "field": "DB error",
                 "message": "Внутренняя ошибка сервера",
-                "details": str(e),
+                # "details": str(e),
             },
         )
 
@@ -78,28 +84,34 @@ async def update_user_profile(
         result = await session.execute(stmt)
         updated_user = result.scalar_one_or_none()
 
-        if not updated_user:
+        if updated_user is None:
+            log.error(
+                "Ошибка обновления профиля для %s",
+                current_user,
+            )
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail={
+                    "field": "Update user profile",
                     "message": "При обновлении профиля произошла ошибка",
                 }
             )
         await session.commit()
-        log.info("User updated with name: %s", current_user.username)
+        # log.info("User updated with name: %s", current_user.username)
 
         return UserAccount.model_construct(**updated_user.__dict__)
 
     except SQLAlchemyError as e:
         log.error(
-            "Database error updating user with name %s: %s",
+            "Ошибка БД при обновлении профиля пользователя %s: %s",
             current_user.username, e
         )
         await session.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={
+                "field": "Update user profile",
                 "message": "Внутренняя ошибка сервера",
-                "details": str(e),
+                # "details": str(e),
             },
         )

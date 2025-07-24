@@ -8,7 +8,10 @@ from src.app.core.config import settings
 log = get_logger("exc_handlers")
 
 
-def http_exception_handler(request: Request, exc: HTTPException):
+def http_exception_handler(
+    request: Request,
+    exc: HTTPException,
+):
     """
     Обработка http-exception, которые могут возникнуть
     при выполнении запросов к API.
@@ -28,24 +31,30 @@ def http_exception_handler(request: Request, exc: HTTPException):
         message=message,
         details=details,
     )
-
     error_response = ErrorResponse(
         status="error",
         error=error_detail
     )
-
     log.error(
         "HTTP-ошибка по адресу %s: сообщение=%s, статус=%s",
         request.url, message, exc.status_code
     )
+    headers = {}
+    if exc.status_code == status.HTTP_401_UNAUTHORIZED:
+        headers["X-Error-Type"] = "authentication_error"
+        headers["Access-Control-Expose-Headers"] = "X-Error-Type"
 
     return ORJSONResponse(
         status_code=exc.status_code,
-        content=error_response.model_dump()
+        content=error_response.model_dump(),
+        headers=headers,
     )
 
 
-def validation_exception_handler(request: Request, exc: RequestValidationError):
+def validation_exception_handler(
+    request: Request,
+    exc: RequestValidationError,
+):
     """
     Обработка ошибок валидации, которые могут возникнуть
     при выполнении запросов к API.
@@ -67,7 +76,7 @@ def validation_exception_handler(request: Request, exc: RequestValidationError):
     )
 
     log.error(
-        "Ошибка валидации по адресу %s: ошибки=%s",
+        "Ошибка валидации по адресу: %s, ошибки: %s",
         request.url, errors
     )
 
@@ -77,7 +86,10 @@ def validation_exception_handler(request: Request, exc: RequestValidationError):
     )
 
 
-def generic_exception_handler(request: Request, exc: Exception):
+def generic_exception_handler(
+    request: Request,
+    exc: Exception,
+):
     """
     Обработка необработанных Exception, которые могут возникнуть при выполнении запросов к API.
 
@@ -106,5 +118,5 @@ def generic_exception_handler(request: Request, exc: Exception):
 
     return ORJSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content=error_response.model_dump()
+        content=error_response.model_dump(),
     )

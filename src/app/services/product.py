@@ -117,7 +117,8 @@ async def handle_product_search(
 
 
 async def handle_product_details(
-    session: AsyncSession, product_id: int
+    session: AsyncSession,
+    product_id: int,
 ) -> ProductDetailResponse:
     """
     Retrieves the details of a product by its ID.
@@ -147,7 +148,10 @@ async def handle_product_details(
     product = product.unique().scalar_one_or_none()
 
     if not product:
-        log.error("Product not found")
+        log.error(
+            "Продукт с id %s не найден",
+            product_id,
+        )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={

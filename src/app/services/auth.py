@@ -27,7 +27,10 @@ from src.app.utils.auth import (
     verify_password,
 )
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login", auto_error=False)
+oauth2_scheme = OAuth2PasswordBearer(
+    tokenUrl="api/v1/auth/login",
+    auto_error=False,
+)
 log = get_logger("auth_service")
 
 TOKEN_TYPE_FIELD = "type"
