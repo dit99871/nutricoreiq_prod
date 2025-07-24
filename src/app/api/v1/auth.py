@@ -131,11 +131,14 @@ async def logout(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
                 "message": "Внутренняя ошибка сервера",
-                "details": "Refresh token not found in cookies",
+                "details": {
+                    "field": "logout",
+                    "message": "Refresh token not found in cookies",
+                },
             },
         )
     await revoke_refresh_token(user.uid, refresh_jwt, redis)
-    response = RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+    response = RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
     response.delete_cookie("refresh_token")
     response.delete_cookie("access_token")
 
