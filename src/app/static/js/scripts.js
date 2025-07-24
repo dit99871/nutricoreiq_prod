@@ -60,69 +60,102 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 3. Универсальный fetch
     const secureFetch = async (url, options = {}) => {
-        console.log('secureFetch called for:', url); // Отладка
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
         const headers = {
             'Accept': 'application/json',
             ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
-            ...options.headers
+            ...options.headers,
         };
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-        const fetchWithRetry = async (originalUrl, originalOptions, retry = false) => {
-            try {
-                const response = await fetch(originalUrl, {
-                    ...originalOptions,
-                    headers,
-                    credentials: 'include',
-                    signal: controller.signal
-                });
+        try {
+            const response = await fetch(url, {
+                ...options,
+                headers,
+                credentials: 'include',
+                signal: controller.signal,
+            });
+            clearTimeout(timeoutId);
 
-                clearTimeout(timeoutId);
-
-                if (!response.headers.get('content-type')?.includes('application/json')) {
-                    const text = await response.text();
-                    throw new Error(`Неверный формат ответа: ${text}`);
-                }
-
-                const data = await response.json();
-                console.log('X-Error-Type:', response.headers.get('X-Error-Type')); // Отладка
-
-                if (!response.ok) {
-                    if (response.status === 401 && !retry && response.headers.get('X-Error-Type') === 'authentication_error') {
-                        try {
-                            await fetch('/api/v1/auth/refresh', {
-                                method: 'POST',
-                                credentials: 'include',
-                                headers: { 'X-CSRF-Token': csrfToken }
-                            });
-                            return fetchWithRetry(originalUrl, originalOptions, true);
-                        } catch (refreshError) {
-                            showError('globalError', 'Ваша сессия истекла. Пожалуйста, войдите снова.');
-                            window.location.href = '/login';
-                            return Promise.reject(refreshError);
-                        }
-                    } else if (response.status === 500) {
-                        window.location.href = '/error';
+            if (!response.ok) {
+                if (response.status === 401 && response.headers.get('X-Error-Type') === 'authentication_error') {
+                    const refreshResponse = await fetch('/api/v1/auth/refresh', {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'X-CSRF-Token': csrfToken },
+                    });
+                    if (refreshResponse.ok) {
+                        // Повторяем запрос после успешного обновления токенов
+                        return secureFetch(url, options);
                     }
-                    throw data.error || { message: 'Неизвестная ошибка' };
+                    throw new Error('Ваша сессия истекла. Пожалуйста, войдите заново.');
+                } else if (response.status === 500) {
+                    window.location.href = '/error';
                 }
-
-                return data;
-            } catch (error) {
-                if (error.name === 'AbortError') {
-                    throw new Error('Превышено время ожидания запроса');
-                }
-                throw error;
+                const data = await response.json();
+                throw data.error || { message: 'Неизвестная ошибка' };
             }
-        };
+
+            return await response.json();
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                throw new Error('Превышено время ожидания запроса');
+            }
+            throw error;
+        }
+    };
+
+    // 4. Функция для работы с HTMLResponse
+    const checkAuthAndRedirect = async (url) => {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
 
         try {
-            return await fetchWithRetry(url, options);
+            const response = await fetch(url, {
+                method: 'HEAD', // Попробуйте заменить на 'GET' для теста
+                credentials: 'include',
+                headers: { 'X-CSRF-Token': csrfToken },
+            });
+
+            console.log('Response status:', response.status);
+            console.log('X-Error-Type:', response.headers.get('X-Error-Type'));
+
+            if (response.ok) {
+                console.log('Redirecting to:', url);
+                window.location.href = url;
+            } else if (response.status === 401 && response.headers.get('X-Error-Type') === 'authentication_error') {
+                console.log('Attempting to refresh token');
+                const refreshResponse = await fetch('/api/v1/auth/refresh', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'X-CSRF-Token': csrfToken },
+                });
+
+                if (refreshResponse.ok) {
+                    console.log('Token refreshed, retrying request');
+                    const retryResponse = await fetch(url, {
+                        method: 'HEAD',
+                        credentials: 'include',
+                        headers: { 'X-CSRF-Token': csrfToken },
+                    });
+
+                    if (retryResponse.ok) {
+                        console.log('Retry successful, redirecting to:', url);
+                        window.location.href = url;
+                    } else {
+                        throw new Error('Доступ запрещен после обновления токенов');
+                    }
+                } else {
+                    throw new Error('Не удалось обновить токены');
+                }
+            } else {
+                throw new Error(`Ошибка сервера: ${response.status}`);
+            }
         } catch (error) {
-            throw error;
+            console.error('Ошибка в checkAuthAndRedirect:', error);
+            showError('globalError', error.message || 'Не удалось перейти к странице профиля');
+//            window.location.href = '/login'; // Раскомментировано для перенаправления
         }
     };
 
@@ -499,7 +532,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     item.addEventListener('click', async () => {
                         try {
                             const data = await secureFetch(`/api/v1/product/${item.dataset.id}`);
-                            window.location.href = `/product/${item.dataset.id}`; // Клиентский URL
+                            window.location.href = `/api/v1/product/${item.dataset.id}`; // Клиентский URL
                         } catch (error) {
                             showError(errorId, 'Ошибка загрузки продукта: ' + (error.message || 'Неизвестная ошибка'));
                         }
@@ -568,7 +601,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                         if (id) {
                             const productData = await secureFetch(`/api/v1/product/${id}`);
-                            window.location.href = `/product/${id}`; // Клиентский URL
+                            window.location.href = `/api/v1/product/${id}`; // Клиентский URL
                         } else {
                             openPendingProductModal(query);
                         }
@@ -585,7 +618,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                         if (id) {
                             const productData = await secureFetch(`/api/v1/product/${id}`);
-                            window.location.href = `/product/${id}`; // Клиентский URL
+                            window.location.href = `/api/v1/product/${id}`; // Клиентский URL
                         } else {
                             openPendingProductModal(query);
                         }
@@ -690,54 +723,25 @@ document.addEventListener("DOMContentLoaded", () => {
         // Кнопка профиля
         const profileBtn = document.querySelector('.profile-btn');
         if (profileBtn) {
-            profileBtn.addEventListener('click', async () => {
-                try {
-                    const userData = await secureFetch('/api/v1/user/profile/data');
-                    updateProfileUI(userData);
-                    window.location.href = '/profile'; // Клиентский URL
-                } catch (error) {
-                    console.error('Ошибка загрузки профиля:', error);
-                    // Ошибка обрабатывается в secureFetch (редирект на /login при 401)
-                }
+            profileBtn.addEventListener('click', () => {
+                checkAuthAndRedirect('/api/v1/user/profile/data');
             });
         }
+
 
         // Кнопка выхода
         const logoutBtn = document.querySelector('.logout-btn');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', async () => {
                 try {
-                    await secureFetch('/api/v1/auth/logout', { method: 'POST' });
+                    await fetch('/api/v1/auth/logout', {
+                        method: 'GET',
+                        credentials: 'include',
+                    });
                     showSuccess('Вы успешно вышли из аккаунта!');
-                    setTimeout(() => window.location.href = '/login', 1000);
+                    setTimeout(() => window.location.href = '/', 500);
                 } catch (error) {
                     showError('globalError', 'Ошибка при выходе: ' + (error.message || 'Неизвестная ошибка'));
-                }
-            });
-        }
-
-        // Кнопка "О проекте"
-        const aboutBtn = document.querySelector('.about-btn');
-        if (aboutBtn) {
-            aboutBtn.addEventListener('click', async () => {
-                try {
-                    const data = await secureFetch('/api/v1/about');
-                    window.location.href = '/about'; // Клиентский URL
-                } catch (error) {
-                    showError('globalError', 'Ошибка загрузки страницы "О проекте": ' + (error.message || 'Неизвестная ошибка'));
-                }
-            });
-        }
-
-        // Кнопка "Политика конфиденциальности"
-        const privacyBtn = document.querySelector('.privacy-btn');
-        if (privacyBtn) {
-            privacyBtn.addEventListener('click', async () => {
-                try {
-                    const data = await secureFetch('/api/v1/privacy');
-                    window.location.href = '/privacy'; // Клиентский URL
-                } catch (error) {
-                    showError('globalError', 'Ошибка загрузки политики конфиденциальности: ' + (error.message || 'Неизвестная ошибка'));
                 }
             });
         }
