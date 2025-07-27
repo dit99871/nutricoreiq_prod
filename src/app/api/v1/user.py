@@ -60,7 +60,7 @@ async def read_current_user(
 async def get_profile(
     request: Request,
     user: Annotated[UserResponse, Depends(get_current_auth_user)],
-    session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+    db_session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
 ):
     """
     Retrieves the current authenticated user's profile information.
@@ -70,7 +70,7 @@ async def get_profile(
 
     :param request: The incoming request object.
     :param user: The authenticated user object obtained from the dependency.
-    :param session: The current database session.
+    :param db_session: The current database db_session.
     :return: A rendered HTML template with the user's profile information.
     :raises HTTPException: If the user is not authenticated.
     """
@@ -78,12 +78,16 @@ async def get_profile(
         log.error("Пользователь не авторизован")
         raise UNAUTHORIZED_EXCEPTION
 
-    user = await get_user_profile(session, user.id)
+    user = await get_user_profile(db_session, user.id)
+
+    redis_session = request.scope.get("redis_session", {})
+
     return templates.TemplateResponse(
         name="profile.html",
         request=request,
         context={
             "current_year": datetime.now().year,
+            "csrf_token": redis_session.get("csrf_token"),
             "csp_nonce": generate_csp_nonce(),
             "user": user,
             "is_filled": all(
@@ -97,7 +101,7 @@ async def get_profile(
 async def update_profile(
     data_in: UserProfile,
     user: Annotated[UserResponse, Depends(get_current_auth_user)],
-    session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+    db_session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
 ):
     """
     Updates the current authenticated user's profile information.
@@ -109,7 +113,7 @@ async def update_profile(
 
     :param data_in: The updated user profile information.
     :param user: The authenticated user object obtained from the dependency.
-    :param session: The current database session.
+    :param db_session: The current database db_session.
     :return: A JSON response indicating the success of the profile update.
     :raises HTTPException: If the user is not authenticated or if the provided data is invalid.
     """
@@ -123,7 +127,7 @@ async def update_profile(
                 "message": "Произошла ошибка. Попробуйте позже!",
             },
         )
-    await update_user_profile(data_in, user, session)
+    await update_user_profile(data_in, user, db_session)
 
     return {"message": "Profile updated successfully"}
 
