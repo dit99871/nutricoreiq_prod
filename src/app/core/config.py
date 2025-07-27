@@ -93,7 +93,7 @@ class DatabaseConfig(BaseModel):
 
 
 class Settings(BaseSettings):
-    DEBUG: bool = True
+    DEBUG: bool = False
 
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",
