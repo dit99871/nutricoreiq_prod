@@ -11,10 +11,10 @@ log = get_logger("lifespan")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    subprocess.run(
-        ["docker-compose", "-f", "docker-compose.dev.yml", "up", "-d"],
-        check=True,
-    )
+    # subprocess.run(
+    #     ["docker-compose", "-f", "docker-compose.dev.yml", "up", "-d"],
+    #     check=True,
+    # )
     await init_redis()
     log.info("Application startup complete")
     try:

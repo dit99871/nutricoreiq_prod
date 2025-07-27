@@ -17,19 +17,16 @@ from src.app.core.exception_handlers import (
     validation_exception_handler,
 )
 from src.app.core.logger import setup_logging
-<<<<<<< HEAD
-=======
 from src.app.core.middleware.csrf_middleware import CSRFMiddleware
 from src.app.core.middleware.redis_session_middleware import RedisSessionMiddleware
 from src.app.lifespan import lifespan
->>>>>>> develop
 from src.app.services.auth import get_current_auth_user
 from src.app.utils.security import generate_csp_nonce
 from src.app.utils.templates import templates
 
 setup_logging()
 
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 base_dir = os.path.dirname(os.path.dirname(__file__))
