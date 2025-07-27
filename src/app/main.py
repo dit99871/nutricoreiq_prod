@@ -18,9 +18,10 @@ from src.app.core.exception_handlers import (
 )
 from src.app.core.logger import setup_logging
 from src.app.core.middleware.csrf_middleware import CSRFMiddleware
-from src.app.lifespan import docker_lifespan
+from src.app.core.middleware.redis_session_middleware import RedisSessionMiddleware
+from src.app.lifespan import lifespan
 from src.app.services.auth import get_current_auth_user
-from src.app.utils.security import generate_csrf_token, generate_csp_nonce
+from src.app.utils.security import generate_csp_nonce
 from src.app.utils.templates import templates
 
 setup_logging()
@@ -42,6 +43,8 @@ app.add_middleware(
     max_age=600,
 )
 app.add_middleware(CSRFMiddleware)
+app.add_middleware(RedisSessionMiddleware)
+
 app.include_router(api_router)
 
 app.add_exception_handler(HTTPException, http_exception_handler)
@@ -58,13 +61,14 @@ def start_page(
     request: Request,
     current_user: str | None = Depends(get_current_auth_user),
 ):
+    redis_session = request.scope.get("redis_session", {})
     return templates.TemplateResponse(
         request=request,
         name="index.html",
         context={
             "current_year": datetime.now().year,
             "user": current_user,
-            "csrf_token": generate_csrf_token(),
+            "csrf_token": redis_session.get("csrf_token"),
             "csp_nonce": generate_csp_nonce(),
         },
     )
