@@ -17,6 +17,7 @@ from src.app.core.exception_handlers import (
     validation_exception_handler,
 )
 from src.app.core.logger import setup_logging
+from src.app.core.middleware.csrf_middleware import CSRFMiddleware
 from src.app.lifespan import docker_lifespan
 from src.app.services.auth import get_current_auth_user
 from src.app.utils.security import generate_csrf_token, generate_csp_nonce
@@ -40,6 +41,7 @@ app.add_middleware(
     allow_headers=settings.cors.allow_headers,
     max_age=600,
 )
+app.add_middleware(CSRFMiddleware)
 app.include_router(api_router)
 
 app.add_exception_handler(HTTPException, http_exception_handler)
@@ -47,7 +49,11 @@ app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(Exception, generic_exception_handler)
 
 
-@app.get("/", name="home", response_class=HTMLResponse)
+@app.get(
+    "/",
+    name="home",
+    response_class=HTMLResponse,
+)
 def start_page(
     request: Request,
     current_user: str | None = Depends(get_current_auth_user),
