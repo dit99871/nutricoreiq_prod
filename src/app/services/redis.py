@@ -51,8 +51,11 @@ async def add_refresh_to_redis(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
-                "message": "Ошибка авторизации",
-                "details": f"Redis error adding refresh token: {str(e)}",
+                "message": "Ошибка авторизации. Пожалуйста, войдите заново",
+                "details": {
+                    "field": "refresh token",
+                    "message": "Redis error adding refresh token",
+                },
             },
         )
 
@@ -89,7 +92,10 @@ async def validate_refresh_jwt(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
                 "message": "Ошибка аутентификации. Пожалуйста, войдите заново",
-                # "details": f"Redis error validating refresh token: {str(e)!r}",
+                "details": {
+                    "field": "refresh token",
+                    "message": "Redis error validating refresh token",
+                },
             },
         )
 
@@ -125,8 +131,11 @@ async def revoke_refresh_token(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
-                "message": "Внутренняя ошибка сервера",
-                # "details": f"Redis error revoking refresh token: {str(e)}",
+                "message": "Ошибка сервера",
+                "details": {
+                    "field": "refresh token",
+                    "message": "Redis error revoking refresh token",
+                },
             },
         )
 
@@ -158,7 +167,10 @@ async def revoke_all_refresh_tokens(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
-                "message": "",
-                # "details": f"Redis error revoking refresh tokens: {str(e)}",
+                "message": "Ошибка сервера",
+                "details": {
+                    "field": "refresh token",
+                    "message": "Redis error revoking refresh tokens",
+                },
             },
         )

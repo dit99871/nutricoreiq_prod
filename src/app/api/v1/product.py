@@ -44,6 +44,7 @@ async def search_products(
     :param confirmed: A boolean flag indicating whether to skip suggestions.
     :return: A `UnifiedProductResponse` object with the search results.
     """
+
     return await handle_product_search(session, query, confirmed)
 
 
@@ -67,8 +68,11 @@ async def get_product_details(
     :param current_user: The authenticated user object obtained from the dependency.
     :return: A rendered HTML template with the product details.
     """
+
     product_data = await handle_product_details(session, product_id)
-    log.info("Rendering template")
+    # log.info("Rendering template")
+    redis_session = request.scope.get("redis_session", {})
+
     return templates.TemplateResponse(
         request=request,
         name="product_detail.html",
@@ -76,6 +80,7 @@ async def get_product_details(
             "current_year": datetime.now().year,
             "product": product_data,
             "user": current_user,
+            "csrf_token": redis_session.get("csrf_token"),
             "csp_nonce": generate_csp_nonce(),
         },
     )
@@ -104,6 +109,6 @@ async def add_pending_product(
                 "message": "Продукт уже в очереди на добавление",
             },
         )
-
     await create_pending_product(session, data.name)
+
     return {"status": "success"}

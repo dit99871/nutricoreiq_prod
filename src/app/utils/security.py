@@ -13,6 +13,13 @@ def generate_csrf_token() -> str:
     return token_hex(32)
 
 
+def generate_redis_session_id() -> str:
+    """
+
+    """
+    return token_hex(16)
+
+
 def generate_csp_nonce() -> str:
     """
     Generates a random URL-safe string of 32 characters to be used as a nonce
