@@ -213,7 +213,7 @@ def create_response(
             key=key,
             value=value,
             httponly=True,
-            secure=True,  # switch on production
+            secure=True,
             samesite="lax",  # than use csrf tokens else "strict"
             expires=expires,
         )
