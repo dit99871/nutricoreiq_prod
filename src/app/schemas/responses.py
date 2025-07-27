@@ -13,7 +13,11 @@ class SuccessResponse(BaseSchema):
 class ErrorDetail(BaseSchema):
     message: constr(max_length=255)
     details: dict[str, Any] | None = Field(
-        default=None, examples=[{"field": "email", "message": "Invalid email format"}]
+        default=None,
+        examples=[{
+            "field": "email",
+            "message": "Invalid email format",
+        }]
     )
 
 
