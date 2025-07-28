@@ -4,11 +4,8 @@ from datetime import datetime
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from src.app.core.logger import get_logger
 from src.app.core.redis import redis_client
 from src.app.utils.security import generate_redis_session_id, generate_csrf_token
-
-log = get_logger("redis_session_middleware")
 
 
 class RedisSessionMiddleware(BaseHTTPMiddleware):
@@ -17,7 +14,6 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
         session_id = request.cookies.get("redis_session_id")
         if not session_id:
             session_id = generate_redis_session_id()
-            log.info(f"Создание нового id для сессии redis: {session_id}")
 
         session_data = await redis_client.get(f"redis_session:{session_id}")
         if session_data:
@@ -28,24 +24,20 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
                 "csrf_token": generate_csrf_token(),
                 "created_at": datetime.now().isoformat()
             }
-            log.info(f"Created new redis_session for session_id: {session_id}")
-
         request.scope["redis_session"] = session
 
         response = await call_next(request)
-        log.info(f"redis_session before serialization: {session}")
+
         await redis_client.set(
             f"redis_session:{session_id}",
             json.dumps(session),
             ex=3600,
         )
-
         response.set_cookie(
             key="redis_session_id",
             value=session_id,
             httponly=True,
             secure=True,
-            samesite="lax"
+            samesite="strict",
         )
-
         return response
