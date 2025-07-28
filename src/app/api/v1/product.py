@@ -81,7 +81,7 @@ async def get_product_details(
             "product": product_data,
             "user": current_user,
             "csrf_token": redis_session.get("csrf_token"),
-            "csp_nonce": generate_csp_nonce(),
+            "csp_nonce": request.state.csp_nonce,
         },
     )
 
