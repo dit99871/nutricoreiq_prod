@@ -88,7 +88,7 @@ async def get_profile(
         context={
             "current_year": datetime.now().year,
             "csrf_token": redis_session.get("csrf_token"),
-            "csp_nonce": generate_csp_nonce(),
+            "csp_nonce": request.state.csp_nonce,
             "user": user,
             "is_filled": all(
                 (user.gender, user.age, user.weight, user.height, user.kfa)
