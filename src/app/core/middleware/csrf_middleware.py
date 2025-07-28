@@ -12,11 +12,9 @@ class CSRFMiddleware(BaseHTTPMiddleware):
     """
 
     async def dispatch(self, request: Request, call_next):
-        log.info("Start CSRFMiddleware")
         if request.url.path in ["/api/v1/auth/login", "/api/v1/auth/register"]:
             return await call_next(request)
 
-        log.info("Processing ...")
         if request.method in ["POST", "PUT", "DELETE", "PATCH"]:
             csrf_token = request.headers.get("X-CSRF-Token")
             redis_session = request.scope.get("redis_session", {})
