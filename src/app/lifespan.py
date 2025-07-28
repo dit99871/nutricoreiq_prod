@@ -16,10 +16,7 @@ async def lifespan(app: FastAPI):
     #     check=True,
     # )
     await init_redis()
-    log.info("Application startup complete")
     try:
         yield
     finally:
-        log.info("Shutting down application...")
         await close_redis()
-        log.info("All resources closed")

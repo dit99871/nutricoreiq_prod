@@ -16,6 +16,7 @@ from src.app.core.exception_handlers import (
     validation_exception_handler,
 )
 from src.app.core.logger import setup_logging
+from src.app.core.middleware.csp_middleware import CSPMiddleware
 from src.app.core.middleware.csrf_middleware import CSRFMiddleware
 from src.app.core.middleware.redis_session_middleware import RedisSessionMiddleware
 from src.app.lifespan import lifespan
@@ -26,6 +27,7 @@ from src.app.utils.templates import templates
 setup_logging()
 
 app = FastAPI(lifespan=lifespan)
+
 Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 base_dir = os.path.dirname(os.path.dirname(__file__))
@@ -41,6 +43,8 @@ app.add_middleware(
     allow_headers=settings.cors.allow_headers,
     max_age=600,
 )
+
+app.add_middleware(CSPMiddleware)
 app.add_middleware(CSRFMiddleware)
 app.add_middleware(RedisSessionMiddleware)
 
@@ -68,7 +72,7 @@ def start_page(
             "current_year": datetime.now().year,
             "user": current_user,
             "csrf_token": redis_session.get("csrf_token"),
-            "csp_nonce": generate_csp_nonce(),
+            "csp_nonce": request.state.csp_nonce,
         },
     )
 

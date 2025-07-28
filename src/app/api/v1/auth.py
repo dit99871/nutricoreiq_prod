@@ -104,12 +104,12 @@ async def login(
     return response
 
 
-@router.get("/logout")
+@router.post("/logout")
 async def logout(
     request: Request,
     user: Annotated[UserResponse, Depends(get_current_auth_user)],
     redis: Redis = Depends(get_redis),
-) -> RedirectResponse:
+):
     """
     Logs out a user and invalidates their refresh token.
 
@@ -138,9 +138,19 @@ async def logout(
             },
         )
     await revoke_refresh_token(user.uid, refresh_jwt, redis)
-    response = RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
+
+    session_id = request.cookies.get("redis_session_id")
+    if session_id:
+        await redis.delete(f"redis_session:{session_id}")
+
+    response = ORJSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"message": "Successfully logged out"},
+    )
+
     response.delete_cookie("refresh_token")
     response.delete_cookie("access_token")
+    response.delete_cookie("redis_session_id")
 
     return response
 
