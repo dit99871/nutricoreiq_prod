@@ -6,8 +6,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-# from prometheus_fastapi_instrumentator import Instrumentator
-import uvicorn
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from src.app.api import router as api_router
 from src.app.core.config import settings
@@ -28,7 +27,7 @@ setup_logging()
 
 app = FastAPI(lifespan=lifespan)
 
-# Instrumentator().instrument(app).expose(app, endpoint="/metrics")
+Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 base_dir = os.path.dirname(os.path.dirname(__file__))
 static_dir = os.path.join(base_dir, "app", "static")
@@ -76,11 +75,3 @@ def start_page(
         },
     )
 
-
-if __name__ == "__main__":
-    uvicorn.run(
-        "src.app.main:app",
-        host=settings.run.host,
-        port=settings.run.port,
-        reload=True,
-    )
