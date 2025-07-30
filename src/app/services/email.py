@@ -6,8 +6,6 @@ from fastapi import HTTPException, status
 
 from src.app.core.config import settings
 from src.app.core.logger import get_logger
-from src.app.crud.user import get_user_by_email
-from src.app.db import db_helper
 
 log = get_logger("email_services")
 
@@ -31,8 +29,9 @@ async def send_email(
             sender=sender,
             port=settings.mail.port,
             hostname=settings.mail.host,
-            username=settings.mail.username,
-            password=settings.mail.password,
+            # username=settings.mail.username,
+            # password=settings.mail.password,
+            # use_tls=settings.mail.use_tls,
         )
     except SMTPException as e:
         log.error(
@@ -51,14 +50,7 @@ async def send_email(
         )
 
 
-async def send_welcome_email(user_email) -> None:
-    """
-    Sends a welcome email to a user.
-
-    :param user_email: The email address of the user to send the email to.
-    """
-    async with db_helper.session_getter() as session:
-        user = await get_user_by_email(session, user_email)
+async def send_welcome_email(user) -> None:
 
     await send_email(
         recipient=str(user.email),
@@ -66,5 +58,4 @@ async def send_welcome_email(user_email) -> None:
         subject="Добро пожаловать в NutricoreIQ!",
         body=f"{user.username}, добро пожаловать в NutricoreIQ!",
     )
-
     log.info("Welcome email sent successfully to: %s", user.email)
