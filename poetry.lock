@@ -2348,6 +2348,21 @@ files = [
 ]
 
 [[package]]
+name = "taskiq-fastapi"
+version = "0.3.5"
+description = "FastAPI integration for taskiq"
+optional = false
+python-versions = "<4.0.0,>=3.8.1"
+files = [
+    {file = "taskiq_fastapi-0.3.5-py3-none-any.whl", hash = "sha256:35553cb05cfb8e34d50179bad747d79a42d782f5b9c529128ad64263af8c246f"},
+    {file = "taskiq_fastapi-0.3.5.tar.gz", hash = "sha256:0df3df3e7e0a355b9f21a4f81429ad95d0d33af305e75039654ac13ae26c538f"},
+]
+
+[package.dependencies]
+fastapi = ">=0.93.0"
+taskiq = ">=0.8.0,<1"
+
+[[package]]
 name = "tenacity"
 version = "9.1.2"
 description = "Retry code until it succeeds"
@@ -2939,4 +2954,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.13"
-content-hash = "eed9c34d2c47dd832e7c70125ae82e8e8ff8e00c29feaa15908313ca0ce1f650"
+content-hash = "b9e368b743839fdf0a2795bba6b8eb63ab976f36605aaedc6b99e424c5e2bbe1"
