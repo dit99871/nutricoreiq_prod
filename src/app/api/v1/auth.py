@@ -26,7 +26,7 @@ from src.app.services.auth import (
     get_current_auth_user_for_refresh,
     authenticate_user,
 )
-from src.app.services.email import send_welcome_email
+from src.app.tasks import send_welcome_email
 from src.app.services.redis import revoke_refresh_token
 from src.app.utils.auth import create_response
 
@@ -73,7 +73,7 @@ async def register_user(
     user = await create_user(session, user_in)
     log.info("User registered successfully: %s", user.email)
 
-    await send_welcome_email(user_in.email)
+    await send_welcome_email.kiq(user.email)
 
     return user
 
