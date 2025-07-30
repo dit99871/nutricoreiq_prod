@@ -15,7 +15,10 @@ def setup_logging() -> None:
     log_dir.mkdir(parents=True, exist_ok=True)
 
     # Форматтер для логов
-    formatter = logging.Formatter(settings.logging.log_format)
+    formatter = logging.Formatter(
+        fmt=settings.logging.log_format,
+        datefmt=settings.logging.log_date_format,
+    )
 
     # Хэндлер для записи в файл с ротацией
     file_handler = RotatingFileHandler(
