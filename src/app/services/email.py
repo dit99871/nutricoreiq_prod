@@ -46,6 +46,7 @@ async def send_email(
             username=settings.mail.username,
             password=settings.mail.password,
             use_tls=settings.mail.use_tls,
+            timeout=30,
         )
         log.info("Email sent successfully to: %s", recipient)
     except SMTPException as e:
