@@ -1,3 +1,4 @@
+version: "3.8"
 services:
   db:
     image: postgres:17
@@ -25,7 +26,7 @@ services:
     env_file:
       - .env
     environment:
-      - DATA_SOURCE_NAME=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable
+      - DATA_SOURCE_NAME=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?sslmode=disable
     volumes:
       - ./postgres_exporter.yml:/postgres_exporter.yml
     command:
@@ -78,10 +79,10 @@ services:
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     healthcheck:
-      test: [ "CMD", "rabbitmqctl", "status" ]
+      test: [ "CMD-SHELL", "rabbitmq-diagnostics -q ping && rabbitmqctl status" ]
       interval: 5s
-      timeout: 3s
-      retries: 5
+      timeout: 5s
+      retries: 10
     networks:
       - app-network
 
@@ -112,7 +113,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: taskiq_worker
-    command: bash -c "sleep 10 && taskiq worker src.app.core:broker --workers 1 --fs-discover --tasks-pattern '**/tasks'"
+    command: >
+      bash -c "sleep 10 && taskiq worker src.app.core:broker --workers 1 --fs-discover --tasks-pattern '**/tasks'"
     env_file:
       - .env
     depends_on:
@@ -127,6 +129,7 @@ services:
       - ./src/app/logs:/nutricoreiq/src/app/logs
     networks:
       - app-network
+    restart: unless-stopped
 
   prometheus:
     image: prom/prometheus:v2.54.1
@@ -165,7 +168,6 @@ services:
       - /etc/nginx/conf.d:/etc/nginx/conf.d
       - /etc/letsencrypt:/etc/letsencrypt
       - /var/log/nginx:/var/log/nginx
-      - /etc/nginx/conf.d:/etc/nginx/conf.d
     depends_on:
       - fastapi
     networks:
