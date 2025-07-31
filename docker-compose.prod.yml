@@ -82,6 +82,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    networks:
+      - app-network
 
   fastapi:
     build:
@@ -110,7 +112,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: taskiq_worker
-    command: taskiq worker src.app.core:broker --workers 1 --no-configure-logging --fs-discover --tasks-pattern "**/tasks"
+    command: bash -c "sleep 30 && taskiq worker src.app.core:broker --workers 1 --no-configure-logging --fs-discover --tasks-pattern '**/tasks'"
     env_file:
       - .env
     depends_on:
