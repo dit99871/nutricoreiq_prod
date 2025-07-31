@@ -13,7 +13,10 @@ from src.app.services.email import send_welcome_email as send_welcome
 log = get_logger("email_tasks")
 
 
-@broker.task
+@broker.task(
+    max_retries=3,
+    retry_delay=60,
+)
 async def send_welcome_email(
     user_email: EmailStr,
     session: Annotated[AsyncSession, TaskiqDepends(db_helper.session_getter)],
