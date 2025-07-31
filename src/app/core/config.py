@@ -99,8 +99,8 @@ class SMTPConfig(BaseModel):
     host: str
     port: int
     username: str
-    # password: str | None
-    # use_tls: bool
+    password: str | None
+    use_tls: bool
 
 
 class TaskiqConfig(BaseModel):
