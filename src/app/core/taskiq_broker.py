@@ -26,5 +26,8 @@ async def on_worker_startup(state: TaskiqState) -> None:
         level=settings.logging.log_level_value,
         format=settings.taskiq.log_format,
         datefmt=settings.logging.log_date_format,
+        handlers=[
+            logging.FileHandler(settings.logging.log_file),
+        ],
     )
     log.info("Worker startup complete, got state: %s", state)
