@@ -100,7 +100,7 @@ class SMTPConfig(BaseModel):
     port: int
     username: str
     password: str | None
-    use_ssl: bool
+    use_tls: bool
 
 
 class TaskiqConfig(BaseModel):
