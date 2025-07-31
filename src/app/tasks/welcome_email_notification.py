@@ -19,6 +19,10 @@ async def send_welcome_email(
     session: Annotated[AsyncSession, TaskiqDepends(db_helper.session_getter)],
 ) -> None:
     user = await get_user_by_email(session, user_email)
+    if user is None:
+        log.error("User with email %s not found", user_email)
+        return
+
     log.info("Sending welcome email to: %s", user.email)
 
     await send_welcome(user)
