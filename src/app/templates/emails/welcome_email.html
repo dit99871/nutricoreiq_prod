@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff; border-radius: 8px; }
+        h1 { color: #333; }
+        p { color: #555; }
+        .button { display: inline-block; background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; }
+        .footer { font-size: 12px; color: #888; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>{{ username }}, рады Вас приветствовать в NutricoreIQ!</h1>
+        <p>Спасибо за регистрацию! Желаем приятного пользования!</p>
+        <p>Начните использовать наш сервис прямо сейчас!</p>
+        <a href="https://nutricoreiq.ru" class="button">Перейти к сервису</a>
+        <div class="footer">
+            <p>Если вы не хотите получать наши письма, <a href="{{ unsubscribe_link }}">отпишитесь</a>.</p>
+        </div>
+    </div>
+</body>
+</html>

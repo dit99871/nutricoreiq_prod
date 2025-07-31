@@ -36,7 +36,11 @@ poetry install
 ```bash
 poetry run alembic upgrade head
 ```
+6. Запустите worker taskiq:
+```bash
+taskiq worker src.app.core:broker --workers 1 --no-configure-logging --fs-discover --tasks-pattern "**/tasks" 
 
+```
 ## Запуск
 
 Для запуска сервера разработки:
@@ -44,9 +48,9 @@ poetry run alembic upgrade head
 poetry run uvicorn src.app.main:app --reload
 ```
 
-API будет доступен по адресу: http://localhost:8000
+API будет доступен по адресу: http://localhost:8080
 
-Документация API: http://localhost:8000/docs
+Документация API: http://localhost:8080/docs
 
 ## Тестирование
 

@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import Literal, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, AmqpDsn, RedisDsn
 from pydantic import PostgresDsn
 from pydantic_settings import (
     BaseSettings,
@@ -12,8 +12,10 @@ from pydantic_settings import (
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 LOG_DEFAULT_FORMAT = (
-    "[%(asctime)s] %(name)24s:%(lineno)-4d %(levelname)-7s - %(message)s"
+    "[%(asctime)s.%(msecs)03d] %(name)24s:%(lineno)-4d %(levelname)-7s - %(message)s"
 )
+
+WORKER_LOG_DEFAULT_FORMAT = "[%(asctime)s.%(msecs)03d] [%(processName)s] %(module)16s:%(lineno)-3d %(levelname)-7s - %(message)s"
 
 
 class AuthConfig(BaseModel):
@@ -38,7 +40,7 @@ class CORSConfig(BaseModel):
 
 
 class RedisConfig(BaseModel):
-    url: str
+    url: RedisDsn
     salt: str
     password: str
 
@@ -52,7 +54,8 @@ class LoggingConfig(BaseModel):
         "critical",
     ] = "info"
     log_format: str = LOG_DEFAULT_FORMAT
-    log_file: str = str(BASE_DIR / "logs" / "app.log") # Путь к файлу логов
+    log_date_format: str = "%Y-%m-%d %H:%M:%S"
+    log_file: str = str(BASE_DIR / "logs" / "app.log")  # Путь к файлу логов
     log_file_max_size: int = 5 * 1024 * 1024  # 5 MB
     log_file_backup_count: int = 3  # Количество backup файлов
 
@@ -92,6 +95,19 @@ class DatabaseConfig(BaseModel):
     }
 
 
+class SMTPConfig(BaseModel):
+    host: str
+    port: int
+    username: str
+    password: str | None
+    use_tls: bool
+
+
+class TaskiqConfig(BaseModel):
+    url: AmqpDsn
+    log_format: str = WORKER_LOG_DEFAULT_FORMAT
+
+
 class Settings(BaseSettings):
     DEBUG: bool = False
 
@@ -109,6 +125,8 @@ class Settings(BaseSettings):
     auth: AuthConfig
     redis: RedisConfig
     cors: CORSConfig
+    mail: SMTPConfig
+    taskiq: TaskiqConfig
 
     @property
     def effective_db_url(self) -> PostgresDsn:

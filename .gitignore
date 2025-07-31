@@ -168,3 +168,4 @@ src/app/utils/certs/README.md
 src/app/docker-compose.dev.yml
 src/app/lifespan.py
 structure.py
+/.env.prod
