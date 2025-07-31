@@ -45,22 +45,13 @@ async def send_email(
             hostname=settings.mail.host,
             username=settings.mail.username,
             password=settings.mail.password,
-            use_tls=settings.mail.use_tls,
+            use_tls=settings.mail.use_ssl,
             timeout=30,
         )
         log.info("Email sent successfully to: %s", recipient)
     except SMTPException as e:
         log.error("Error sending email to %s: %s", recipient, str(e))
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "message": "Error sending email",
-                "details": {
-                    "field": "email",
-                    "message": str(e),
-                },
-            },
-        )
+        raise Exception(f"Failed to send email to {recipient}: {str(e)}")
 
 
 async def send_welcome_email(user) -> None:
