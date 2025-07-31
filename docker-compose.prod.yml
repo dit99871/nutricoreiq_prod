@@ -112,7 +112,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: taskiq_worker
-    command: bash -c "sleep 30 && taskiq worker src.app.core:broker --workers 1 --no-configure-logging --fs-discover --tasks-pattern '**/tasks'"
+    command: bash -c "sleep 10 && taskiq worker src.app.core:broker --workers 1 --fs-discover --tasks-pattern '**/tasks'"
     env_file:
       - .env
     depends_on:
