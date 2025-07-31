@@ -382,9 +382,7 @@ async def authenticate_user(
         )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                "message": "Введён неверный пароль"
-            },
+            detail={"message": "Введён неверный пароль"},
         )
 
     return UserResponse.model_validate(user)
