@@ -56,10 +56,7 @@ async def get_access_token_from_cookies(request: Request):
     :return: The access token as a string if present, otherwise None.
     """
     token = request.cookies.get("access_token")
-<<<<<<< HEAD
-=======
     # log.info("Полученный токен: %s", token)
->>>>>>> develop
     return token
 
 
