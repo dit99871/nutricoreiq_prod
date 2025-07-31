@@ -110,7 +110,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: taskiq_worker
-    command: poetry run taskiq worker src.app.core:broker --workers 1 --no-configure-logging --fs-discover --tasks-pattern "**/tasks"
+    command: taskiq worker src.app.core:broker --workers 1 --no-configure-logging --fs-discover --tasks-pattern "**/tasks"
     env_file:
       - .env
     depends_on:
