@@ -14,7 +14,7 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U user -d nutricoreiq" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -102,6 +102,27 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    networks:
+      - app-network
+
+  taskiq_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: taskiq_worker
+    command: poetry run taskiq worker src.app.core:broker --workers 1 --no-configure-logging --fs-discover --tasks-pattern "**/tasks"
+    env_file:
+      - .env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./src/app/utils/certs:/nutricoreiq/src/app/utils/certs
+      - ./src/app/logs:/nutricoreiq/src/app/logs
     networks:
       - app-network
 
