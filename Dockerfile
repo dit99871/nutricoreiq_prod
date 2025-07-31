@@ -17,6 +17,7 @@ WORKDIR /nutricoreiq
 COPY --from=builder /nutricoreiq/requirements.txt .
 RUN pip install --no-cache-dir --root-user-action=ignore -r requirements.txt gunicorn
 COPY . .
+
 # Создаем пользователя и директорию логов
 RUN useradd -m appuser && \
     mkdir -p /nutricoreiq/src/app/logs && \
@@ -25,4 +26,8 @@ RUN useradd -m appuser && \
     chown -R appuser:appuser /nutricoreiq
 COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh
+
+# Настройка PYTHONPATH
+ENV PYTHONPATH=/nutricoreiq
+
 CMD ["./entrypoint.sh"]
