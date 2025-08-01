@@ -1,3 +1,4 @@
+import ssl
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
@@ -36,6 +37,11 @@ async def send_email(
         html_part = MIMEText(html_content, "html")
         message.attach(html_part)
 
+        # Создание SSL-контекста для порта 465
+        tls_context = ssl.create_default_context()
+        tls_context.check_hostname = True
+        tls_context.verify_mode = ssl.CERT_REQUIRED
+
         # Отправка письма
         await aiosmtplib.send(
             message,
@@ -46,15 +52,27 @@ async def send_email(
             username=settings.mail.username,
             password=settings.mail.password,
             use_tls=settings.mail.use_tls,
+            tls_context=tls_context,
             timeout=30,
         )
         log.info("Email sent successfully to: %s", recipient)
+
     except SMTPException as e:
         log.error("Error sending email to %s: %s", recipient, str(e))
         raise Exception(f"Failed to send email to {recipient}: {str(e)}")
 
 
 async def send_welcome_email(user) -> None:
+    """
+    Sends a welcome email to a new user.
+
+    This function sends an email to the specified user using the `send_email`
+    function. The email contains a welcome message and an unsubscribe link.
+
+    :param user: The user object containing email and username information.
+    :type user: User
+    :return: None
+    """
     await send_email(
         recipient=str(user.email),
         sender=settings.mail.username,
