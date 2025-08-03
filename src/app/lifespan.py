@@ -11,7 +11,7 @@ from src.app.db import db_helper
 log = get_logger("lifespan")
 
 
-@retry(stop=stop_after_attempt(13), wait=wait_fixed(4))
+@retry(stop=stop_after_attempt(15), wait=wait_fixed(4))
 async def check_rabbitmq():
     try:
         await broker.startup()
@@ -22,8 +22,6 @@ async def check_rabbitmq():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await init_redis()
-
     if not broker.is_worker_process:
         await check_rabbitmq()
     try:

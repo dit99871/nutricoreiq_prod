@@ -37,11 +37,6 @@ async def send_email(
         html_part = MIMEText(html_content, "html")
         message.attach(html_part)
 
-        # Создание SSL-контекста для порта 465
-        tls_context = ssl.create_default_context()
-        tls_context.check_hostname = True
-        tls_context.verify_mode = ssl.CERT_REQUIRED
-
         # Отправка письма
         await aiosmtplib.send(
             message,
@@ -52,8 +47,7 @@ async def send_email(
             username=settings.mail.username,
             password=settings.mail.password,
             use_tls=settings.mail.use_tls,
-            tls_context=tls_context,
-            timeout=30,
+            timeout=60,
         )
         log.info("Email sent successfully to: %s", recipient)
 

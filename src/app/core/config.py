@@ -40,7 +40,7 @@ class CORSConfig(BaseModel):
 
 
 class RedisConfig(BaseModel):
-    url: RedisDsn
+    url: str
     salt: str
     password: str
 
