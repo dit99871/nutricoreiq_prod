@@ -43,10 +43,9 @@ async def send_email(
             sender=sender,
             hostname=settings.mail.host,
             port=settings.mail.port,
-            hostname=settings.mail.host,
-            username=settings.mail.username,
-            password=settings.mail.password,
-            use_tls=settings.mail.use_tls,
+            # username=settings.mail.username,
+            # password=settings.mail.password,
+            # use_tls=settings.mail.use_tls,
             timeout=30,
         )
         log.info("Email sent successfully to: %s", recipient)
@@ -84,7 +83,7 @@ async def send_welcome_email(user) -> None:
         context={
             "username": user.username,
             "button_link": settings.mail.button_link,
-            "unsubscribe_link": settings.mail.unsubscribe_url,
+            "unsubscribe_link": settings.mail.unsubscribe_link,
         },
     )
     log.info("Welcome email sent successfully to: %s", user.email)
