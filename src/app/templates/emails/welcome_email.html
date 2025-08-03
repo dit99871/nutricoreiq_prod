@@ -3,12 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f4; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; background-color: #ffffff; border-radius: 8px; }
-        h1 { color: #333; }
-        p { color: #555; }
-        .button { display: inline-block; background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; }
-        .footer { font-size: 12px; color: #888; margin-top: 20px; }
+        :root {
+            --earth: #8B5A2B;
+            --sage: #8A9B6E;
+            --moss: #4A7C59;
+            --sand: #D7C0A9;
+            --clay: #D77A61;
+            --sky: #A7C4C2;
+            --stone: #9da2a0;
+            --light-sand: #F0E8DE;
+            --light-stone: #E8E8E8;
+            --bg-primary: #B8D1C6;
+            --card-bg: #C5D9C1;
+            --header-bg: #D7C0A9;
+            --footer-bg: #D7C0A9;
+            --input-bg: #D7C0A9;
+            --text-primary: #2F4858;
+            --link-color: #4A7C59;
+            --border-color: #8A9B6E;
+            --border-radius: 12px;
+            --card-padding: 1rem;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background-color: var(--bg-primary);
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 600px;
+            min-width: 300px;
+            height: auto;
+            min-height: 50vh;
+            margin: 20px auto;
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+        }
+
+        h1 {
+            color: var(--text-primary);
+            font-size: max(1.5rem, 3vw); /* Адаптивный размер шрифта */
+            margin-bottom: 1rem;
+            overflow-wrap: break-word; /* Перенос длинных слов */
+            text-align: center; /* Равномерное распределение текста */
+        }
+
+        p {
+            color: var(--stone);
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .btn-primary {
+            display: inline-block;
+            background-color: var(--moss);
+            border: 2px solid var(--moss);
+            color: white;
+            padding: 0.6rem 1.5rem;
+            text-decoration: none;
+            border-radius: var(--border-radius);
+            transition: all 0.3s ease;
+            font-weight: normal;
+            text-align: center;
+        }
+
+        .btn-primary:hover {
+            background-color: #3a6b4a;
+            border-color: #3a6b4a;
+            transform: translateY(-2px);
+        }
+
+        .button-container {
+            text-align: center;
+            margin: 1rem 0;
+        }
+
+        .footer {
+            font-size: 0.4rem;
+            color: var(--stone);
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+
+        .footer a {
+            color: var(--link-color);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+            color: #3a6b4a;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                width: 95%;
+                min-width: 250px;
+                padding: 1rem;
+                min-height: 40vh;
+            }
+
+            h1 {
+                font-size: max(1.25rem, 2.5vw); /* Меньший размер шрифта для мобильных */
+                text-align: left; /* Для мобильных лучше левое выравнивание */
+            }
+
+            .btn-primary {
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .footer {
+                font-size: 0.4rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -16,9 +133,11 @@
         <h1>{{ username }}, рады Вас приветствовать в NutricoreIQ!</h1>
         <p>Спасибо за регистрацию! Желаем приятного пользования!</p>
         <p>Начните использовать наш сервис прямо сейчас!</p>
-        <a href="https://nutricoreiq.ru" class="button">Перейти к сервису</a>
+        <div class="button-container">
+            <a href="{{ button_link }}" class="btn-primary">Перейти к сервису</a>
+        </div>
         <div class="footer">
-            <p>Если вы не хотите получать наши письма, <a href="{{ unsubscribe_link }}">отпишитесь</a>.</p>
+            <p>Вы можете отказаться от рассылки в <a href="{{ unsubscribe_link }}">личном кабинете</a>.</p>
         </div>
     </div>
 </body>
