@@ -57,7 +57,6 @@ async def _get_user_by_filter(
         )
 
 
-
 async def get_user_by_uid(
     session: AsyncSession,
     uid: str,
@@ -138,9 +137,7 @@ async def get_user_by_name(
         log.error("User not found in db by name")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail={
-                "message": "Пользователь с таким именем не найден"
-            },
+            detail={"message": "Пользователь с таким именем не найден"},
         )
     return user
 
@@ -190,7 +187,8 @@ async def create_user(
     except SQLAlchemyError as e:
         log.error(
             "Database error creating user_in with email %s: %s",
-            user_in.email, str(e),
+            user_in.email,
+            str(e),
         )
         await session.rollback()
         raise HTTPException(
@@ -202,43 +200,17 @@ async def create_user(
         )
 
 
-#
-#
-# async def delete_user(
-#     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-#     user_email: EmailStr,
-#     user: UserDelete,
-# ) -> Optional[DeletedUser]:
-#     """Удаление пользователя."""
-#     try:
-#         db_user = await get_user_by_email(db, user_email)
-#         if db_user:
-#             # Создаем запись в таблице deleted_users
-#             deleted_user = DeletedUser(
-#                 username=db_user.username,
-#                 email=db_user.email,
-#                 hashed_password=db_user.hashed_password,
-#                 gender=db_user.gender,
-#                 age=db_user.age,
-#                 weight=db_user.weight,
-#                 is_active=db_user.is_active,
-#             )
-#             db.add(deleted_user)
-#             await db.commit()
-#             await db.refresh(deleted_user)
-#
-#             # Удаляем пользователя из таблицы users
-#             await db.delete(db_user)
-#             await db.commit()
-#             log.info("User deleted with email: %s", user_email)
-#             return deleted_user
-#         log.warning("User not found for deletion with email: %s", user_email)
-#         return None
-#     except SQLAlchemyError as e:
-#         log.error("Database error deleting user with email %s: %s", user_email, e)
-#         await db.rollback()
-#         return None
-#     except Exception as e:
-#         log.exception("Unexpected error deleting user with email %s: %s", user_email, e)
-#         await db.rollback()
-#         return None
+async def unsubscribe_email(
+    user: UserResponse,
+    session: AsyncSession,
+) -> None:
+    """
+    Unsubscribes a user from the database.
+
+    :param user: The user to unsubscribe.
+    :param session: The database session to use for the query.
+    :return: None.
+    """
+    unsubscribed_user = await get_user_by_uid(session, user.uid)
+    unsubscribed_user.is_subscribed = False
+    await session.commit()

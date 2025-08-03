@@ -13,10 +13,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.core.logger import get_logger
 from src.app.crud.profile import update_user_profile, get_user_profile
+from src.app.crud.user import unsubscribe_email
 from src.app.db import db_helper
 from src.app.schemas.user import UserProfile, UserResponse
 from src.app.services.auth import get_current_auth_user
-from src.app.utils.security import generate_csp_nonce
 from src.app.utils.templates import templates
 
 router = APIRouter(
@@ -131,14 +131,10 @@ async def update_profile(
 
     return {"message": "Profile updated successfully"}
 
-#
-#
-# @router.delete("/me/", response_model=UserDelete)
-# async def delete_current_user(
-#     db: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-#     user: Annotated[UserRead, Depends(get_current_user)],
-# ):
-#     deleted_user = await delete_user(db, user)
-#     if deleted_user is None:
-#         raise HTTPException(status_code=404, detail="User not found")
-#     return deleted_user
+
+@router.post("/unsubscribe")
+async def unsubscribe_email_notification(
+    user: Annotated[UserResponse, Depends(get_current_auth_user)],
+    db_session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+):
+    await unsubscribe_email(user, db_session)

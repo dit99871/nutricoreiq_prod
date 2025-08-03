@@ -74,7 +74,7 @@ async def send_welcome_email(user) -> None:
         template="emails/welcome_email.html",
         context={
             "username": user.username,
-            "unsubscribe_link": "https://nutricoreiq.ru/unsubscribe",
+            "unsubscribe_link": "https://nutricoreiq.ru/api/v1/user/unsubscribe",
         },
     )
     log.info("Welcome email sent successfully to: %s", user.email)
