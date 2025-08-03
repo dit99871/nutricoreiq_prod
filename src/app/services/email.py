@@ -41,6 +41,7 @@ async def send_email(
             message,
             recipients=[recipient],
             sender=sender,
+            hostname=settings.mail.host,
             port=settings.mail.port,
             hostname=settings.mail.host,
             username=settings.mail.username,
@@ -82,6 +83,7 @@ async def send_welcome_email(user) -> None:
         template="emails/welcome_email.html",
         context={
             "username": user.username,
+            "button_link": settings.mail.button_link,
             "unsubscribe_link": settings.mail.unsubscribe_url,
         },
     )
