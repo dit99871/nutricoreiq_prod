@@ -98,6 +98,8 @@ class DatabaseConfig(BaseModel):
 class SMTPConfig(BaseModel):
     host: str
     port: int
+    button_link: str
+    unsubscribe_link: str
     username: str
     password: str | None
     use_tls: bool

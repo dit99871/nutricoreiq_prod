@@ -1,4 +1,3 @@
-import ssl
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
@@ -42,8 +41,8 @@ async def send_email(
             message,
             recipients=[recipient],
             sender=sender,
-            port=settings.mail.port,
             hostname=settings.mail.host,
+            port=settings.mail.port,
             username=settings.mail.username,
             password=settings.mail.password,
             use_tls=settings.mail.use_tls,
@@ -74,7 +73,8 @@ async def send_welcome_email(user) -> None:
         template="emails/welcome_email.html",
         context={
             "username": user.username,
-            "unsubscribe_link": "https://nutricoreiq.ru/api/v1/user/unsubscribe",
+            "button_link": settings.mail.button_link,
+            "unsubscribe_link": settings.mail.unsubscribe_link,
         },
     )
     log.info("Welcome email sent successfully to: %s", user.email)

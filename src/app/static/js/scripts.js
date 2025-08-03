@@ -113,7 +113,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         try {
             const response = await fetch(url, {
-                method: 'HEAD', // Попробуйте заменить на 'GET' для теста
                 credentials: 'include',
                 headers: { 'X-CSRF-Token': csrfToken },
             });
