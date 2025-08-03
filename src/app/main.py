@@ -21,7 +21,6 @@ from src.app.core.middleware.csrf_middleware import CSRFMiddleware
 from src.app.core.middleware.redis_session_middleware import RedisSessionMiddleware
 from src.app.lifespan import lifespan
 from src.app.services.auth import get_current_auth_user
-from src.app.utils.security import generate_csp_nonce
 from src.app.utils.templates import templates
 
 setup_logging()
