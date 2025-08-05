@@ -18,6 +18,7 @@ class UserResponse(UserBase):
     id: int
     uid: str
     hashed_password: bytes | None = None
+    is_subscribed: bool
 
 
 class UserAccount(UserBase):
