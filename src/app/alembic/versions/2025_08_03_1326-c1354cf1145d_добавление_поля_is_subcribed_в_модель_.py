@@ -22,9 +22,7 @@ def upgrade() -> None:
     """Upgrade schema."""
     op.add_column(
         "users",
-        sa.Column(
-            "is_subscribed", sa.Boolean(), nullable=False, server_default="FALSE"
-        ),
+        sa.Column("is_subscribed", sa.Boolean(), nullable=False, server_default="TRUE"),
     )
 
 
