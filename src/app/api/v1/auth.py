@@ -12,6 +12,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.app.core.exceptions import ExpiredTokenException
 from src.app.db import db_helper
 from src.app.core.logger import get_logger
 from src.app.core.redis import get_redis
@@ -124,19 +125,14 @@ async def logout(
     :raises HTTPException: If the refresh token is not found in the request
                            cookies.
     """
+    if user is None:
+        raise ExpiredTokenException()
     refresh_jwt = request.cookies.get("refresh_token")
+
     if not refresh_jwt:
         log.error("Refresh token not found in cookies")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                "message": "Внутренняя ошибка сервера",
-                "details": {
-                    "field": "logout",
-                    "message": "Refresh token not found in cookies",
-                },
-            },
-        )
+        ExpiredTokenException()
+
     await revoke_refresh_token(user.uid, refresh_jwt, redis)
 
     session_id = request.cookies.get("redis_session_id")
@@ -226,6 +222,9 @@ async def change_password(
     :raises HTTPException: If an unexpected error occurs while changing the
                            password.
     """
+    if user is None:
+        raise ExpiredTokenException()
+
     authenticated_user = await authenticate_user(
         session, user.username, password_data.current_password
     )
