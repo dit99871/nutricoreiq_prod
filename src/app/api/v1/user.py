@@ -11,6 +11,7 @@ from fastapi import (
 from fastapi.responses import ORJSONResponse, HTMLResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.app.core.exceptions import ExpiredTokenException
 from src.app.core.logger import get_logger
 from src.app.crud.profile import update_user_profile, get_user_profile
 from src.app.crud.user import choose_subscribe_status
@@ -25,11 +26,6 @@ router = APIRouter(
 )
 
 log = get_logger("user_api")
-
-UNAUTHORIZED_EXCEPTION = HTTPException(
-    status_code=status.HTTP_401_UNAUTHORIZED,
-    detail={"message": "Время сессии истекло. Пожалуйста, войдите заново"},
-)
 
 
 @router.get("/me")
@@ -47,7 +43,7 @@ async def read_current_user(
     :raises HTTPException: If the user is not authenticated.
     """
     if user is None:
-        raise UNAUTHORIZED_EXCEPTION
+        raise ExpiredTokenException
 
     return {
         "username": user.username,
@@ -76,7 +72,7 @@ async def get_profile(
     """
     if user is None:
         log.error("Пользователь не авторизован")
-        raise UNAUTHORIZED_EXCEPTION
+        raise ExpiredTokenException
 
     user = await get_user_profile(db_session, user.id)
 
@@ -119,7 +115,7 @@ async def update_profile(
     :raises HTTPException: If the user is not authenticated or if the provided data is invalid.
     """
     if user is None:
-        raise UNAUTHORIZED_EXCEPTION
+        raise ExpiredTokenException
 
     if not data_in:
         raise HTTPException(
@@ -153,6 +149,9 @@ async def unsubscribe_email_notification(
     :return: A JSON response indicating the success of the unsubscription.
     :raises HTTPException: If the user is not authenticated.
     """
+    if user is None:
+        raise ExpiredTokenException
+
     await choose_subscribe_status(user, db_session, False)
 
 
@@ -176,4 +175,7 @@ async def subscribe_email_notification(
     :return: A JSON response indicating the success of the subscription.
     :raises HTTPException: If the user is not authenticated.
     """
+    if user is None:
+        raise ExpiredTokenException
+
     await choose_subscribe_status(user, db_session, True)
