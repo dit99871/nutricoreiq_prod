@@ -39,7 +39,7 @@ REFRESH_TOKEN_TYPE = "refresh"
 
 CREDENTIAL_EXCEPTION = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
-    detail={"message": "Неверные учетные данные"},
+    detail={"message": "Неверные учетные данные. Пожалуйста, войдите заново"},
     headers={"WWW-Authenticate": "Bearer"},
 )
 
@@ -88,13 +88,8 @@ def get_current_token_payload(
             "No match for token type in token payload: %s",
             payload,
         )
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                "message": "",
-                "details": f"Invalid token type {token_type!r} expected {ACCESS_TOKEN_TYPE!r}",
-            },
-        )
+        raise CREDENTIAL_EXCEPTION
+
     uid: str | None = payload.get("sub")
     if uid is None:
         log.error(
