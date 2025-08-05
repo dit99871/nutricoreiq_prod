@@ -26,7 +26,7 @@ class User(IntIdPkMixin, Base):
         mapped_column(nullable=True)
     )
 
-    is_subscribed: Mapped[bool] = mapped_column(default=False)
+    is_subscribed: Mapped[bool] = mapped_column(default=True)
     is_active: Mapped[bool] = mapped_column(default=True)
     role: Mapped[str] = mapped_column(default="user")
     created_at: Mapped[str] = mapped_column(
