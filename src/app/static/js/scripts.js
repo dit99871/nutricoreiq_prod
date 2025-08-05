@@ -338,7 +338,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     modal._element.addEventListener('hidden.bs.modal', () => {
                         showSuccess("Регистрация прошла успешно! Теперь вы можете войти.");
                         const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
-                        setTimeout(() => loginModal.show(), 3000);
+                        setTimeout(() => loginModal.show(), 1500);
                     }, { once: true });
                 } else {
                     showSuccess("Регистрация прошла успешно! Теперь вы можете войти.");
