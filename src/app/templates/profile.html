@@ -32,6 +32,9 @@
                 <button type="button" class="btn btn-change-password" data-bs-toggle="modal" data-bs-target="#changePasswordModal" aria-label="Сменить пароль">
                     <i class="bi bi-shield-lock"></i>
                 </button>
+                <button type="button" class="btn unsubscribe-btn btn-icon" data-bs-toggle="modal" data-bs-target="#unsubscribeModal" aria-label="Отписаться от рассылки">
+                    <i class="bi bi-envelope-slash"></i>
+                </button>
             </div>
         </div>
 
@@ -269,6 +272,31 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
                 <button type="button" class="btn btn-primary" id="savePasswordBtn">Изменить пароль</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно отписки от рассылки -->
+<div class="modal fade" id="unsubscribeModal" tabindex="-1" aria-labelledby="unsubscribeModalLabel" aria-hidden="true" data-bs-theme="light">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="unsubscribeModalLabel">
+                    <i class="bi bi-envelope-slash me-2"></i>Отписаться от рассылки
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <form id="unsubscribeForm">
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                    <p>Вы уверены, что хотите отписаться от email-рассылки? Вы больше не будете получать уведомления и обновления от NutriCoreIQ.</p>
+                    <div id="unsubscribeError" class="alert alert-danger d-none"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="confirmUnsubscribeBtn">Отписаться</button>
             </div>
         </div>
     </div>
