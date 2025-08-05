@@ -14,7 +14,9 @@ from src.app.core.exception_handlers import (
     generic_exception_handler,
     http_exception_handler,
     validation_exception_handler,
+    expired_token_exception_handler,
 )
+from src.app.core.exceptions import ExpiredTokenException
 from src.app.core.logger import setup_logging
 from src.app.core.middleware.csp_middleware import CSPMiddleware
 from src.app.core.middleware.csrf_middleware import CSRFMiddleware
@@ -49,6 +51,7 @@ app.add_middleware(RedisSessionMiddleware)
 
 app.include_router(api_router)
 
+app.add_exception_handler(ExpiredTokenException, expired_token_exception_handler)
 app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(Exception, generic_exception_handler)
