@@ -87,7 +87,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         headers: { 'X-CSRF-Token': csrfToken },
                     });
                     if (refreshResponse.ok) {
-                        // Повторяем запрос после успешного обновления токенов
                         return secureFetch(url, options);
                     }
                     throw new Error('Ваша сессия истекла. Пожалуйста, войдите заново.');
@@ -455,41 +454,44 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }
 
-        // Отписка от рассылки
-        const unsubscribeModal = document.getElementById('unsubscribeModal');
-        if (unsubscribeModal) {
-            const unsubscribeForm = document.getElementById('unsubscribeForm');
-            const confirmUnsubscribeBtn = document.getElementById('confirmUnsubscribeBtn');
+        // Подписка/отписка
+        const subscribeModal = document.getElementById('subscribeModal');
+        if (subscribeModal) {
+            const subscribeForm = document.getElementById('subscribeForm');
+            const confirmSubscribeBtn = document.getElementById('confirmSubscribeBtn');
 
-            confirmUnsubscribeBtn?.addEventListener('click', async () => {
-                confirmUnsubscribeBtn.disabled = true;
-                const originalText = confirmUnsubscribeBtn.textContent;
-                confirmUnsubscribeBtn.textContent = "Отписка...";
+            confirmSubscribeBtn?.addEventListener('click', async () => {
+                confirmSubscribeBtn.disabled = true;
+                const originalText = confirmSubscribeBtn.textContent;
+                const isSubscribing = originalText === 'Подписаться';
+                confirmSubscribeBtn.textContent = isSubscribing ? 'Подписка...' : 'Отписка...';
 
-                clearFormErrors('unsubscribeForm');
-                showError('unsubscribeError', '');
+                clearFormErrors('subscribeForm');
+                showError('subscribeError', '');
 
                 try {
-                    await secureFetch('/api/v1/user/unsubscribe', {
+                    await secureFetch(`/api/v1/user/${isSubscribing ? 'subscribe' : 'unsubscribe'}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ _csrf_token: unsubscribeForm.querySelector('[name="_csrf_token"]').value })
+                        body: JSON.stringify({ _csrf_token: subscribeForm.querySelector('[name="_csrf_token"]').value })
                     });
 
-                    const modal = bootstrap.Modal.getInstance(unsubscribeModal);
+                    const modal = bootstrap.Modal.getInstance(subscribeModal);
                     if (modal) {
                         modal.hide();
                         modal._element.addEventListener('hidden.bs.modal', () => {
-                            showSuccess('Вы успешно отписались от рассылки!');
+                            showSuccess(isSubscribing ? 'Вы успешно подписались на рассылку!' : 'Вы успешно отписались от рассылки!');
+                            setTimeout(() => window.location.reload(), 1500);
                         }, { once: true });
                     } else {
-                        showSuccess('Вы успешно отписались от рассылки!');
+                        showSuccess(isSubscribing ? 'Вы успешно подписались на рассылку!' : 'Вы успешно отписались от рассылки!');
+                        setTimeout(() => window.location.reload(), 1500);
                     }
                 } catch (error) {
-                    showError('unsubscribeError', error.message || 'Ошибка при отписке от рассылки');
+                    showError('subscribeError', error.message || `Ошибка при ${isSubscribing ? 'подписке' : 'отписке'} от рассылки`);
                 } finally {
-                    confirmUnsubscribeBtn.disabled = false;
-                    confirmUnsubscribeBtn.textContent = originalText;
+                    confirmSubscribeBtn.disabled = false;
+                    confirmSubscribeBtn.textContent = originalText;
                 }
             });
         }
