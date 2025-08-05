@@ -1,11 +1,36 @@
 from fastapi import Request, status
 from fastapi.responses import ORJSONResponse
 from fastapi.exceptions import HTTPException, RequestValidationError
-from src.app.schemas.responses import ErrorResponse, ErrorDetail
-from src.app.core.logger import get_logger
+
 from src.app.core.config import settings
+from src.app.core.exceptions import ExpiredTokenException
+from src.app.core.logger import get_logger
+from src.app.schemas.responses import ErrorResponse, ErrorDetail
 
 log = get_logger("exc_handlers")
+
+
+def expired_token_exception_handler(request: Request, exc: ExpiredTokenException):
+    error_detail = ErrorDetail(
+        message=exc.detail,
+        details=None,
+    )
+    error_response = ErrorResponse(status="error", error=error_detail)
+    log.error(
+        "HTTP-ошибка по адресу %s: сообщение=%s, статус=%s",
+        request.url,
+        exc.detail,
+        exc.status_code,
+    )
+    headers = {
+        "X-Error-Type": "authentication_error",
+        "Access-Control-Expose-Headers": "X-Error-Type",
+    }
+    return ORJSONResponse(
+        status_code=exc.status_code,
+        content=error_response.model_dump(),
+        headers=headers,
+    )
 
 
 def http_exception_handler(
@@ -31,23 +56,17 @@ def http_exception_handler(
         message=message,
         details=details,
     )
-    error_response = ErrorResponse(
-        status="error",
-        error=error_detail
-    )
+    error_response = ErrorResponse(status="error", error=error_detail)
     log.error(
         "HTTP-ошибка по адресу %s: сообщение=%s, статус=%s",
-        request.url, message, exc.status_code
+        request.url,
+        message,
+        exc.status_code,
     )
-    headers = {}
-    if exc.status_code == status.HTTP_401_UNAUTHORIZED:
-        headers["X-Error-Type"] = "authentication_error"
-        headers["Access-Control-Expose-Headers"] = "X-Error-Type"
 
     return ORJSONResponse(
         status_code=exc.status_code,
         content=error_response.model_dump(),
-        headers=headers,
     )
 
 
@@ -63,26 +82,19 @@ def validation_exception_handler(
     :param exc: объект RequestValidationError, содержащий информацию о возникшей ошибке
     :return: объект ORJSONResponse, содержащий структурированную информацию об ошибке
     """
-    errors = [
-        {"field": err["loc"][-1], "message": err["msg"]}
-        for err in exc.errors()
-    ]
+    errors = [{"field": err["loc"][-1], "message": err["msg"]} for err in exc.errors()]
     error_response = ErrorResponse(
         status="error",
         error=ErrorDetail(
-            message="Некорректные входные данные",
-            details={"fields": errors}
-        )
+            message="Некорректные входные данные", details={"fields": errors}
+        ),
     )
 
-    log.error(
-        "Ошибка валидации по адресу: %s, ошибки: %s",
-        request.url, errors
-    )
+    log.error("Ошибка валидации по адресу: %s, ошибки: %s", request.url, errors)
 
     return ORJSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        content=error_response.model_dump()
+        content=error_response.model_dump(),
     )
 
 
@@ -97,23 +109,14 @@ def generic_exception_handler(
     :param exc: объект Exception, содержащий информацию об возникшей ошибке
     :return: объект ORJSONResponse, содержащий структурированную информацию об ошибке
     """
-    details = (
-        {"field": "server", "message": str(exc)}
-        if settings.DEBUG
-        else None
-    )
+    details = {"field": "server", "message": str(exc)} if settings.DEBUG else None
     error_response = ErrorResponse(
         status="error",
-        error=ErrorDetail(
-            message="Внутренняя ошибка сервера",
-            details=details
-        )
+        error=ErrorDetail(message="Внутренняя ошибка сервера", details=details),
     )
 
     log.error(
-        "Непредвиденная ошибка по адресу %s: %s",
-        request.url, str(exc),
-        exc_info=True
+        "Непредвиденная ошибка по адресу %s: %s", request.url, str(exc), exc_info=True
     )
 
     return ORJSONResponse(
