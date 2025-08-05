@@ -43,7 +43,7 @@ async def read_current_user(
     :raises HTTPException: If the user is not authenticated.
     """
     if user is None:
-        raise ExpiredTokenException
+        raise ExpiredTokenException()
 
     return {
         "username": user.username,
@@ -72,7 +72,7 @@ async def get_profile(
     """
     if user is None:
         log.error("Пользователь не авторизован")
-        raise ExpiredTokenException
+        raise ExpiredTokenException()
 
     user = await get_user_profile(db_session, user.id)
 
@@ -115,7 +115,7 @@ async def update_profile(
     :raises HTTPException: If the user is not authenticated or if the provided data is invalid.
     """
     if user is None:
-        raise ExpiredTokenException
+        raise ExpiredTokenException()
 
     if not data_in:
         raise HTTPException(
@@ -150,7 +150,7 @@ async def unsubscribe_email_notification(
     :raises HTTPException: If the user is not authenticated.
     """
     if user is None:
-        raise ExpiredTokenException
+        raise ExpiredTokenException()
 
     await choose_subscribe_status(user, db_session, False)
 
@@ -176,6 +176,6 @@ async def subscribe_email_notification(
     :raises HTTPException: If the user is not authenticated.
     """
     if user is None:
-        raise ExpiredTokenException
+        raise ExpiredTokenException()
 
     await choose_subscribe_status(user, db_session, True)
