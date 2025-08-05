@@ -8,6 +8,7 @@ from .base import BaseSchema
 class UserBase(BaseSchema):
     username: Annotated[str, MinLen(3), MaxLen(20)]
     email: EmailStr
+    is_subscribed: bool
 
 
 class UserCreate(UserBase):
@@ -18,7 +19,6 @@ class UserResponse(UserBase):
     id: int
     uid: str
     hashed_password: bytes | None = None
-    is_subscribed: bool
 
 
 class UserAccount(UserBase):
