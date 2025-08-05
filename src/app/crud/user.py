@@ -177,10 +177,6 @@ async def create_user(
         session.add(db_user)
         await session.commit()
         await session.refresh(db_user)
-        # log.info(
-        #     "User created with email: %s",
-        #     user_in.email,
-        # )
 
         return user_in
 
@@ -195,22 +191,51 @@ async def create_user(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={
                 "message": "Ошибка при создании пользователя",
-                # "details": str(e),
             },
         )
 
 
-async def unsubscribe_email(
+async def choose_subscribe_status(
     user: UserResponse,
     session: AsyncSession,
-) -> None:
+    condition: bool,
+):
     """
-    Unsubscribes a user from the database.
+    Updates the subscription status for the given user.
 
-    :param user: The user to unsubscribe.
-    :param session: The database session to use for the query.
-    :return: None.
+    :param user: The user object (Pydantic UserResponse) whose subscription status is to be updated.
+    :param session: The current database session.
+    :param condition: A boolean value indicating the desired subscription status.
+    :return: None
+    :raises HTTPException: If the user is not found or the database operation fails.
     """
-    unsubscribed_user = await get_user_by_uid(session, user.uid)
-    unsubscribed_user.is_subscribed = False
-    await session.commit()
+    stmt = select(User).filter(User.uid == user.uid, User.is_active == True)
+    result = await session.execute(stmt)
+    target_user = result.scalar_one_or_none()
+
+    if not target_user:
+        log.error(
+            "Пользователь с uid %s не найден или неактивен",
+            user.uid,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"message": "Пользователь не найден"},
+        )
+    target_user.is_subscribed = condition
+
+    try:
+        await session.commit()
+        await session.refresh(target_user)
+    except SQLAlchemyError as e:
+        await session.rollback()
+        log.error(
+            "Ошибка при фиксации изменений: %s",
+            str(e),
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "message": "Внутренняя ошибка обновления данных",
+            },
+        )

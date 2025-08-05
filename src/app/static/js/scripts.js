@@ -87,7 +87,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         headers: { 'X-CSRF-Token': csrfToken },
                     });
                     if (refreshResponse.ok) {
-                        // Повторяем запрос после успешного обновления токенов
                         return secureFetch(url, options);
                     }
                     throw new Error('Ваша сессия истекла. Пожалуйста, войдите заново.');
@@ -355,6 +354,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 8. Модальные окна профиля
     const initProfileModals = () => {
+        // Редактирование профиля
         const editProfileModal = document.getElementById('editProfileModal');
         if (editProfileModal) {
             const editForm = document.getElementById('editProfileForm');
@@ -403,6 +403,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }
 
+        // Смена пароля
         const changePasswordModal = document.getElementById('changePasswordModal');
         if (changePasswordModal) {
             const changePasswordForm = document.getElementById('changePasswordForm');
@@ -449,6 +450,48 @@ document.addEventListener("DOMContentLoaded", () => {
                 } finally {
                     savePasswordBtn.disabled = false;
                     savePasswordBtn.textContent = originalText;
+                }
+            });
+        }
+
+        // Подписка/отписка
+        const subscribeModal = document.getElementById('subscribeModal');
+        if (subscribeModal) {
+            const subscribeForm = document.getElementById('subscribeForm');
+            const confirmSubscribeBtn = document.getElementById('confirmSubscribeBtn');
+
+            confirmSubscribeBtn?.addEventListener('click', async () => {
+                confirmSubscribeBtn.disabled = true;
+                const originalText = confirmSubscribeBtn.textContent;
+                const isSubscribing = originalText === 'Подписаться';
+                confirmSubscribeBtn.textContent = isSubscribing ? 'Подписка...' : 'Отписка...';
+
+                clearFormErrors('subscribeForm');
+                showError('subscribeError', '');
+
+                try {
+                    await secureFetch(`/api/v1/user/${isSubscribing ? 'subscribe' : 'unsubscribe'}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ _csrf_token: subscribeForm.querySelector('[name="_csrf_token"]').value })
+                    });
+
+                    const modal = bootstrap.Modal.getInstance(subscribeModal);
+                    if (modal) {
+                        modal.hide();
+                        modal._element.addEventListener('hidden.bs.modal', () => {
+                            showSuccess(isSubscribing ? 'Вы успешно подписались на рассылку!' : 'Вы успешно отписались от рассылки!');
+                            setTimeout(() => window.location.reload(), 1500);
+                        }, { once: true });
+                    } else {
+                        showSuccess(isSubscribing ? 'Вы успешно подписались на рассылку!' : 'Вы успешно отписались от рассылки!');
+                        setTimeout(() => window.location.reload(), 1500);
+                    }
+                } catch (error) {
+                    showError('subscribeError', error.message || `Ошибка при ${isSubscribing ? 'подписке' : 'отписке'} от рассылки`);
+                } finally {
+                    confirmSubscribeBtn.disabled = false;
+                    confirmSubscribeBtn.textContent = originalText;
                 }
             });
         }
@@ -609,7 +652,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         } else {
                             openPendingProductModal(query);
                         }
-                    } catch (error) {с
+                    } catch (error) {
                     }
                 }
             });
@@ -713,7 +756,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 checkAuthAndRedirect('/api/v1/user/profile/data');
             });
         }
-
 
         // Кнопка выхода
         const logoutBtn = document.querySelector('.logout-btn');

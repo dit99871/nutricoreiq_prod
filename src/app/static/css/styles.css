@@ -76,6 +76,68 @@ main.container.d-flex.flex-column.flex-grow-1.py-4 {
 /* 5. Компоненты */
 
 /* 5.1 Кнопки */
+/* Добавлено в раздел 5.1 Кнопки */
+.unsubscribe-btn {
+    background: transparent;
+    border: 2px solid var(--stone);
+    color: var(--stone);
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--border-radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+}
+
+.unsubscribe-btn:hover {
+    background: var(--stone);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.unsubscribe-btn[aria-label]::after {
+    content: attr(aria-label);
+    position: absolute;
+    top: -2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--light-sand);
+    color: var(--text-primary);
+    padding: 4px 8px;
+    border-radius: 5px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0s ease 0.2s;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    pointer-events: none;
+}
+
+.unsubscribe-btn:hover[aria-label]::after {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.2s ease, visibility 0s;
+}
+
+body.dark-mode .unsubscribe-btn {
+    border-color: var(--sage);
+    color: var(--sage);
+}
+
+body.dark-mode .unsubscribe-btn:hover {
+    background-color: var(--sage);
+    color: white;
+}
+
+body.dark-mode .unsubscribe-btn[aria-label]::after {
+    background-color: var(--light-sand);
+    color: var(--text-primary);
+}
+
 .btn {
     border-radius: var(--border-radius);
     padding: 0.6rem 1.5rem;
