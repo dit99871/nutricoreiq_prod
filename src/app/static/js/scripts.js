@@ -355,6 +355,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 8. Модальные окна профиля
     const initProfileModals = () => {
+        // Редактирование профиля
         const editProfileModal = document.getElementById('editProfileModal');
         if (editProfileModal) {
             const editForm = document.getElementById('editProfileForm');
@@ -403,6 +404,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }
 
+        // Смена пароля
         const changePasswordModal = document.getElementById('changePasswordModal');
         if (changePasswordModal) {
             const changePasswordForm = document.getElementById('changePasswordForm');
@@ -449,6 +451,45 @@ document.addEventListener("DOMContentLoaded", () => {
                 } finally {
                     savePasswordBtn.disabled = false;
                     savePasswordBtn.textContent = originalText;
+                }
+            });
+        }
+
+        // Отписка от рассылки
+        const unsubscribeModal = document.getElementById('unsubscribeModal');
+        if (unsubscribeModal) {
+            const unsubscribeForm = document.getElementById('unsubscribeForm');
+            const confirmUnsubscribeBtn = document.getElementById('confirmUnsubscribeBtn');
+
+            confirmUnsubscribeBtn?.addEventListener('click', async () => {
+                confirmUnsubscribeBtn.disabled = true;
+                const originalText = confirmUnsubscribeBtn.textContent;
+                confirmUnsubscribeBtn.textContent = "Отписка...";
+
+                clearFormErrors('unsubscribeForm');
+                showError('unsubscribeError', '');
+
+                try {
+                    await secureFetch('/api/v1/user/unsubscribe', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ _csrf_token: unsubscribeForm.querySelector('[name="_csrf_token"]').value })
+                    });
+
+                    const modal = bootstrap.Modal.getInstance(unsubscribeModal);
+                    if (modal) {
+                        modal.hide();
+                        modal._element.addEventListener('hidden.bs.modal', () => {
+                            showSuccess('Вы успешно отписались от рассылки!');
+                        }, { once: true });
+                    } else {
+                        showSuccess('Вы успешно отписались от рассылки!');
+                    }
+                } catch (error) {
+                    showError('unsubscribeError', error.message || 'Ошибка при отписке от рассылки');
+                } finally {
+                    confirmUnsubscribeBtn.disabled = false;
+                    confirmUnsubscribeBtn.textContent = originalText;
                 }
             });
         }
@@ -609,7 +650,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         } else {
                             openPendingProductModal(query);
                         }
-                    } catch (error) {с
+                    } catch (error) {
                     }
                 }
             });
@@ -713,7 +754,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 checkAuthAndRedirect('/api/v1/user/profile/data');
             });
         }
-
 
         // Кнопка выхода
         const logoutBtn = document.querySelector('.logout-btn');
