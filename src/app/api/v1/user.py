@@ -90,6 +90,7 @@ async def get_profile(
             "csrf_token": redis_session.get("csrf_token"),
             "csp_nonce": request.state.csp_nonce,
             "user": user,
+            "is_subscribed": user.is_subscribed,
             "is_filled": all(
                 (user.gender, user.age, user.weight, user.height, user.kfa)
             ),
