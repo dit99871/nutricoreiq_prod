@@ -164,7 +164,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - /etc/nginx/conf.d:/etc/nginx/conf.d
+      - /etc/nginx/sites-enabled:/etc/nginx/sites-enabled
       - /etc/letsencrypt:/etc/letsencrypt
       - /var/log/nginx:/var/log/nginx
     depends_on:

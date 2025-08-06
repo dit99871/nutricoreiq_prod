@@ -3,3 +3,5 @@ FROM nginx:latest
 # Копируем статические файлы и страницу ошибки
 COPY ./src/app/static /usr/share/nginx/html/static
 COPY ./error.html /usr/share/nginx/html/error.html
+COPY ./429.html /usr/share/nginx/html/429.html
+COPY ./nginx.conf /etc/nginx/nginx.conf
