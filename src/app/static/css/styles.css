@@ -76,7 +76,6 @@ main.container.d-flex.flex-column.flex-grow-1.py-4 {
 /* 5. Компоненты */
 
 /* 5.1 Кнопки */
-/* Добавлено в раздел 5.1 Кнопки */
 .unsubscribe-btn {
     background: transparent;
     border: 2px solid var(--stone);
@@ -1232,10 +1231,15 @@ div.card.welcome-card.shadow-sm.p-4.text-center {
     border-radius: var(--border-radius);
 }
 
-#globalSuccess {
+#globalSuccess,
+#globalError {
     z-index: 1050;
     max-width: 600px;
     top: 20px;
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 1rem;
 }
 
 /* 5.13 Общие текстовые стили */
