@@ -60,10 +60,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 3. Универсальный fetch
     const secureFetch = async (url, options = {}) => {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+        const csrfToken = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('csrf_token='))
+            ?.split('=')[1];
+
+        if (!csrfToken) {
+            throw new Error('CSRF token not found');
+        }
+
         const headers = {
             'Accept': 'application/json',
-            ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+            'X-CSRF-Token': csrfToken,
             ...options.headers,
         };
 
@@ -108,7 +116,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 4. Функция для работы с HTMLResponse
     const checkAuthAndRedirect = async (url) => {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+        const csrfToken = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('csrf_token='))
+            ?.split('=')[1];
+
+        if (!csrfToken) {
+            throw new Error('CSRF token not found');
+        }
 
         try {
             const response = await fetch(url, {
@@ -167,20 +182,46 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const showSuccess = (message, elementId = 'globalSuccess') => {
-        const successElement = document.getElementById(elementId);
-        if (!successElement) return;
+        const subscribeModal = document.getElementById('subscribeModal');
+        if (subscribeModal) {
+            const subscribeForm = document.getElementById('subscribeForm');
+            const confirmSubscribeBtn = document.getElementById('confirmSubscribeBtn');
 
-        const textElement = successElement.querySelector('#globalSuccessText') || successElement.querySelector('span');
-        if (!textElement) return;
+            confirmSubscribeBtn?.addEventListener('click', async () => {
+                confirmSubscribeBtn.disabled = true;
+                const originalText = confirmSubscribeBtn.textContent;
+                const isSubscribing = originalText === 'Подписаться';
+                confirmSubscribeBtn.textContent = isSubscribing ? 'Подписка...' : 'Отписка...';
 
-        textElement.textContent = message;
-        successElement.classList.remove('d-none');
-        successElement.classList.add('show');
+                clearFormErrors('subscribeForm');
+                showError('subscribeError', '');
 
-        setTimeout(() => {
-            successElement.classList.remove('show');
-            successElement.classList.add('d-none');
-        }, 3000);
+                try {
+                    await secureFetch(`/api/v1/user/${isSubscribing ? 'subscribe' : 'unsubscribe'}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ _csrf_token: subscribeForm.querySelector('[name="_csrf_token"]').value })
+                    });
+
+                    const modal = bootstrap.Modal.getInstance(subscribeModal);
+                    if (modal) {
+                        modal.hide();
+                        modal._element.addEventListener('hidden.bs.modal', () => {
+                            showSuccess(isSubscribing ? 'Вы успешно подписались на рассылку!' : 'Вы успешно отписались от рассылки!');
+                            setTimeout(() => window.location.reload(), 1500);
+                        }, { once: true });
+                    } else {
+                        showSuccess(isSubscribing ? 'Вы успешно подписались на рассылку!' : 'Вы успешно отписались от рассылки!');
+                        setTimeout(() => window.location.reload(), 1500);
+                    }
+                } catch (error) {
+                    showError('subscribeError', error.message || `Ошибка при ${isSubscribing ? 'подписке' : 'отписке'} от рассылки`);
+                } finally {
+                    confirmSubscribeBtn.disabled = false;
+                    confirmSubscribeBtn.textContent = originalText;
+                }
+            });
+        }
     };
 
     const clearFormErrors = (formId) => {
