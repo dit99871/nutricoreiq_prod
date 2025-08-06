@@ -107,6 +107,11 @@ services:
         condition: service_healthy
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   taskiq_worker:
     build:
@@ -164,7 +169,9 @@ services:
       - "80:80"
       - "443:443"
     volumes:
+      - /etc/nginx/nginx.conf:/etc/nginx/nginx.conf
       - /etc/nginx/sites-enabled:/etc/nginx/sites-enabled
+      - /etc/nginx/sites-available:/etc/nginx/sites-available
       - /etc/letsencrypt:/etc/letsencrypt
       - /var/log/nginx:/var/log/nginx
     depends_on:
