@@ -128,7 +128,7 @@ def encode_jwt(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={
                 "message": "Ошибка авторизации",
-                "details": f"File with private key not found: {str(e)}.",
+                "details": "File with private key not found.",
             },
         )
 
@@ -158,7 +158,7 @@ def encode_jwt(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
                 "message": "Ошибка авторизации",
-                "details": f"JWT error encoding token: {str(e)}",
+                "details": "JWT error encoding token",
             },
         )
 
@@ -214,7 +214,7 @@ def create_response(
             value=value,
             httponly=True,
             secure=True,
-            samesite="lax",  # than use csrf tokens else "strict"
+            samesite="strict",
             expires=expires,
         )
 
