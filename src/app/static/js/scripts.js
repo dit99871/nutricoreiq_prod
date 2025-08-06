@@ -110,6 +110,10 @@ document.addEventListener("DOMContentLoaded", () => {
             if (error.name === 'AbortError') {
                 throw new Error('Превышено время ожидания запроса');
             }
+            if (error.message === 'Ваша сессия истекла. Пожалуйста, войдите заново.') {
+                const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+                loginModal.show();
+            }
             throw error;
         }
     };
@@ -170,6 +174,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const container = document.getElementById(containerId);
         if (!container) return;
 
+        if (!errorData || (typeof errorData === 'string' && errorData.trim() === '')) {
+            container.textContent = '';
+            container.classList.add('d-none');
+            return;
+        }
+
         if (typeof errorData === 'string') {
             container.textContent = errorData;
         } else if (errorData.code === 'validation_error' && errorData.details?.fields) {
@@ -182,46 +192,24 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const showSuccess = (message, elementId = 'globalSuccess') => {
-        const subscribeModal = document.getElementById('subscribeModal');
-        if (subscribeModal) {
-            const subscribeForm = document.getElementById('subscribeForm');
-            const confirmSubscribeBtn = document.getElementById('confirmSubscribeBtn');
+        const container = document.getElementById(elementId);
+        if (!container) return;
 
-            confirmSubscribeBtn?.addEventListener('click', async () => {
-                confirmSubscribeBtn.disabled = true;
-                const originalText = confirmSubscribeBtn.textContent;
-                const isSubscribing = originalText === 'Подписаться';
-                confirmSubscribeBtn.textContent = isSubscribing ? 'Подписка...' : 'Отписка...';
-
-                clearFormErrors('subscribeForm');
-                showError('subscribeError', '');
-
-                try {
-                    await secureFetch(`/api/v1/user/${isSubscribing ? 'subscribe' : 'unsubscribe'}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ _csrf_token: subscribeForm.querySelector('[name="_csrf_token"]').value })
-                    });
-
-                    const modal = bootstrap.Modal.getInstance(subscribeModal);
-                    if (modal) {
-                        modal.hide();
-                        modal._element.addEventListener('hidden.bs.modal', () => {
-                            showSuccess(isSubscribing ? 'Вы успешно подписались на рассылку!' : 'Вы успешно отписались от рассылки!');
-                            setTimeout(() => window.location.reload(), 1500);
-                        }, { once: true });
-                    } else {
-                        showSuccess(isSubscribing ? 'Вы успешно подписались на рассылку!' : 'Вы успешно отписались от рассылки!');
-                        setTimeout(() => window.location.reload(), 1500);
-                    }
-                } catch (error) {
-                    showError('subscribeError', error.message || `Ошибка при ${isSubscribing ? 'подписке' : 'отписке'} от рассылки`);
-                } finally {
-                    confirmSubscribeBtn.disabled = false;
-                    confirmSubscribeBtn.textContent = originalText;
-                }
-            });
+        const textContainer = document.getElementById(`${elementId}Text`);
+        if (textContainer) {
+            textContainer.textContent = message;
+        } else {
+            container.textContent = message;
         }
+        container.classList.remove('d-none');
+        container.classList.add('d-block');
+
+        // Автоматически скрывать уведомление через 3 секунды
+        setTimeout(() => {
+            container.classList.remove('d-block');
+            container.classList.add('d-none');
+            if (textContainer) textContainer.textContent = '';
+        }, 3000);
     };
 
     const clearFormErrors = (formId) => {
@@ -245,7 +233,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const emailElement = document.querySelector('.profile-header p');
         if (emailElement && userData.email) {
-            emailElement.textContent = userData.email;
+            emailElement.textContent = escapeHtml(userData.email);
         }
 
         document.querySelectorAll('.detail-item').forEach(item => {
@@ -254,21 +242,25 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!valueSpan) return;
 
             if (label === 'Пол:') {
-                if (userData.gender === 'male') valueSpan.textContent = 'Мужской';
-                else if (userData.gender === 'female') valueSpan.textContent = 'Женский';
-                else valueSpan.textContent = 'Не указан';
+                const genderText = userData.gender === 'male' ? 'Мужской' :
+                                   userData.gender === 'female' ? 'Женский' : 'Не указан';
+                valueSpan.textContent = escapeHtml(genderText);
             } else if (label === 'Возраст:') {
-                valueSpan.textContent = userData.age ? `${userData.age} лет` : 'Не указано';
+                const ageText = userData.age ? `${escapeHtml(String(userData.age))} лет` : 'Не указано';
+                valueSpan.textContent = ageText;
             } else if (label === 'Рост:') {
-                valueSpan.textContent = userData.height ? `${userData.height} см` : 'Не указано';
+                const heightText = userData.height ? `${escapeHtml(String(userData.height))} см` : 'Не указано';
+                valueSpan.textContent = heightText;
             } else if (label === 'Вес:') {
-                valueSpan.textContent = userData.weight ? `${userData.weight} кг` : 'Не указано';
+                const weightText = userData.weight ? `${escapeHtml(String(userData.weight))} кг` : 'Не указано';
+                valueSpan.textContent = weightText;
             } else if (label === 'Цель:') {
-                valueSpan.textContent = userData.goal || 'Не указана';
+                valueSpan.textContent = escapeHtml(userData.goal || 'Не указана');
             } else if (label === 'Уровень физической активности:') {
-                valueSpan.textContent = userData.kfa ? `${userData.kfa}-й уровень` : 'Не указано';
+                const kfaText = userData.kfa ? `${escapeHtml(String(userData.kfa))}-й уровень` : 'Не указано';
+                valueSpan.textContent = kfaText;
             } else if (label === 'Регистрация:') {
-                valueSpan.textContent = userData.created_at || 'Не указано';
+                valueSpan.textContent = escapeHtml(userData.created_at || 'Не указано');
             }
         });
     };
@@ -312,10 +304,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
                 if (modal) {
                     modal.hide();
-                    modal._element.addEventListener('hidden.bs.modal', () => {
-                        showSuccess(`Добро пожаловать, ${userData.username || 'Пользователь'}!`);
-                        setTimeout(() => window.location.reload(), 700);
-                    }, { once: true });
+                    showSuccess(`Добро пожаловать, ${userData.username || 'Пользователь'}!`);
+                    setTimeout(() => window.location.reload(), 700);
                 } else {
                     showSuccess(`Добро пожаловать, ${userData.username || 'Пользователь'}!`);
                     setTimeout(() => window.location.reload(), 700);
@@ -376,11 +366,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 const modal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
                 if (modal) {
                     modal.hide();
-                    modal._element.addEventListener('hidden.bs.modal', () => {
-                        showSuccess("Регистрация прошла успешно! Теперь вы можете войти.");
-                        const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
-                        setTimeout(() => loginModal.show(), 1500);
-                    }, { once: true });
+                    showSuccess("Регистрация прошла успешно! Теперь вы можете войти.");
+                    const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+                    setTimeout(() => loginModal.show(), 1500);
                 } else {
                     showSuccess("Регистрация прошла успешно! Теперь вы можете войти.");
                 }
@@ -429,9 +417,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     const modal = bootstrap.Modal.getInstance(editProfileModal);
                     if (modal) {
                         modal.hide();
-                        modal._element.addEventListener('hidden.bs.modal', () => {
-                            showSuccess('Профиль успешно обновлен!');
-                        }, { once: true });
+                        showSuccess('Профиль успешно обновлен!');
                     } else {
                         showSuccess('Профиль успешно обновлен!');
                     }
@@ -478,10 +464,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     const modal = bootstrap.Modal.getInstance(changePasswordModal);
                     if (modal) {
                         modal.hide();
-                        modal._element.addEventListener('hidden.bs.modal', () => {
-                            showSuccess('Пароль успешно изменён!');
-                            changePasswordForm.reset();
-                        }, { once: true });
+                        showSuccess('Пароль успешно изменён!');
+                        changePasswordForm.reset();
                     } else {
                         showSuccess('Пароль успешно изменён!');
                         changePasswordForm.reset();
@@ -520,10 +504,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     const modal = bootstrap.Modal.getInstance(subscribeModal);
                     if (modal) {
                         modal.hide();
-                        modal._element.addEventListener('hidden.bs.modal', () => {
-                            showSuccess(isSubscribing ? 'Вы успешно подписались на рассылку!' : 'Вы успешно отписались от рассылки!');
-                            setTimeout(() => window.location.reload(), 1500);
-                        }, { once: true });
+                        showSuccess(isSubscribing ? 'Вы успешно подписались на рассылку!' : 'Вы успешно отписались от рассылки!');
+                        setTimeout(() => window.location.reload(), 1500);
                     } else {
                         showSuccess(isSubscribing ? 'Вы успешно подписались на рассылку!' : 'Вы успешно отписались от рассылки!');
                         setTimeout(() => window.location.reload(), 1500);
@@ -679,6 +661,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             openPendingProductModal(query);
                         }
                     } catch (error) {
+                        showError(errorId, error.message || 'Ошибка при выполнении поиска');
                     } finally {
                         analyzeBtn.disabled = false;
                         analyzeBtn.textContent = originalText;
