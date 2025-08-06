@@ -66,7 +66,8 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
 
         except Exception as e:
             log.error(
-                "Ошибка в выполнении RedisSessionMiddleware",
+                "Ошибка в выполнении RedisSessionMiddleware: %s",
+                str(e),
             )
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
