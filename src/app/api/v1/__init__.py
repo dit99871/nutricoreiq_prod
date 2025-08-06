@@ -4,6 +4,7 @@ from src.app.core.config import settings
 from .auth import router as auth_router
 from .info import router as info_router
 from .product import router as product_router
+from .security import router as security_router
 from .user import router as users_router
 
 router = APIRouter(
@@ -16,6 +17,10 @@ router.include_router(
 router.include_router(
     product_router,
     prefix=settings.api.v1.product,
+)
+router.include_router(
+    security_router,
+    prefix=settings.api.v1.security,
 )
 router.include_router(
     users_router,
