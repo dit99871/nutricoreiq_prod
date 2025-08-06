@@ -13,18 +13,23 @@ class CSPMiddleware(BaseHTTPMiddleware):
 
         response = await call_next(request)
 
-        response.headers["Content-Security-Policy"] = (
+        response.headers["Content-Security-Policy-Report-Only"] = (
             "default-src 'self'; "
             f"script-src 'self' 'nonce-{csp_nonce}' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
             f"style-src 'self' 'nonce-{csp_nonce}' https://cdn.jsdelivr.net; "
-            "style-src-attr 'self'; "
+            f"style-src-attr 'nonce-{csp_nonce}'; "
             "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
             "img-src 'self' data:; "
-            f"connect-src 'self' {' '.join(settings.cors.allow_origins)}; "
+            f"connect-src 'self'; "
             "frame-src 'none'; "
             "object-src 'none'; "
             "form-action 'self'; "
             "upgrade-insecure-requests;"
+            "report-uri /api/v1/security/csp-report;"
         )
+        response.headers["Cache-Control"] = (
+            "no-store, no-cache, must-revalidate, max-age=0"
+        )
+        response.headers["Pragma"] = "no-cache"
 
         return response
