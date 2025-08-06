@@ -22,6 +22,7 @@ async def check_rabbitmq():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    await init_redis()
     if not broker.is_worker_process:
         await check_rabbitmq()
     try:
