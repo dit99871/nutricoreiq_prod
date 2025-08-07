@@ -128,7 +128,7 @@
             </div>
             <div class="modal-body">
                 <form id="editProfileForm">
-                    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="_csrf_token">
 
                     <!-- Пол -->
                     <div class="mb-3">
@@ -233,7 +233,7 @@
             </div>
             <div class="modal-body">
                 <form id="changePasswordForm">
-                    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="_csrf_token">
 
                     <div class="mb-3">
                         <label for="currentPassword" class="form-label">Текущий пароль</label>
@@ -290,7 +290,7 @@
             </div>
             <div class="modal-body">
                 <form id="subscribeForm">
-                    <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="_csrf_token">
                     <p>{% if is_subscribed %}Вы уверены, что хотите отписаться от email-рассылки? Вы больше не будете получать уведомления и обновления.{% else %}Подтведите, что хотите подписаться на email-рассылку. Вы будете получать уведомления и обновления.{% endif %}</p>
                     <div id="subscribeError" class="alert alert-danger d-none"></div>
                 </form>
