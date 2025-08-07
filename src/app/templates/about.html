@@ -9,7 +9,9 @@
         {% else %}
             <a href="/api/v1/user/profile/data" class="btn btn-profile btn-icon" aria-label="Профиль"><i class="bi bi-person"></i></a>
         {% endif %}
-        <a href="/api/v1/auth/logout" class="btn btn-logout btn-icon" aria-label="Выйти"><i class="bi bi-box-arrow-right"></i></a>
+        <button type="button" class="btn btn-logout btn-icon logout-btn" aria-label="Выйти">
+            <i class="bi bi-box-arrow-right"></i>
+        </button>
     {% else %}
         <a href="/" class="btn btn-profile btn-icon" aria-label="Главная"><i class="bi bi-house"></i></a>
     {% endif %}
