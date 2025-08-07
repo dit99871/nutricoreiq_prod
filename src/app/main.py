@@ -1,11 +1,13 @@
-from datetime import datetime
 import os
+from datetime import datetime
+from typing import Annotated
 
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from prometheus_client import Counter
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from src.app.api import router as api_router
@@ -22,6 +24,7 @@ from src.app.core.middleware.csp_middleware import CSPMiddleware
 from src.app.core.middleware.csrf_middleware import CSRFMiddleware
 from src.app.core.middleware.redis_session_middleware import RedisSessionMiddleware
 from src.app.lifespan import lifespan
+from src.app.schemas.user import UserResponse
 from src.app.services.auth import get_current_auth_user
 from src.app.utils.templates import templates
 
@@ -30,6 +33,11 @@ setup_logging()
 app = FastAPI(lifespan=lifespan)
 
 Instrumentator().instrument(app).expose(app, endpoint="/metrics")
+csrf_errors_counter = Counter(
+    "csrf_errors_total",
+    "Total number of CSRF errors",
+    ["endpoint", "client_ip"],
+)
 
 base_dir = os.path.dirname(os.path.dirname(__file__))
 static_dir = os.path.join(base_dir, "app", "static")
@@ -64,16 +72,14 @@ app.add_exception_handler(Exception, generic_exception_handler)
 )
 def start_page(
     request: Request,
-    current_user: str | None = Depends(get_current_auth_user),
+    current_user: Annotated[UserResponse, Depends(get_current_auth_user)],
 ):
-    redis_session = request.scope.get("redis_session", {})
     return templates.TemplateResponse(
         request=request,
         name="index.html",
         context={
             "current_year": datetime.now().year,
             "user": current_user,
-            "csrf_token": redis_session.get("csrf_token"),
             "csp_nonce": request.state.csp_nonce,
         },
     )
