@@ -1,27 +1,40 @@
 from datetime import datetime
+from typing import Annotated
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Depends
+from fastapi.responses import HTMLResponse
 
+from src.app.schemas.user import UserResponse
+from src.app.services.auth import get_current_auth_user
 from src.app.utils.templates import templates
 
-router = APIRouter(tags=["Info"])
+router = APIRouter(
+    tags=["Info"],
+    default_response_class=HTMLResponse,
+)
 
 
 @router.get("/privacy")
-def get_privacy_info(request: Request):
+def get_privacy_info(
+    request: Request,
+    current_user: Annotated[UserResponse, Depends(get_current_auth_user)],
+):
     """
-    Returns the privacy policy page.
+    Retrieves the privacy policy information of the NutriCoreIQ project.
 
-    This page is a static HTML template that displays the privacy policy.
+    This endpoint renders an HTML template with the privacy policy details,
+    including information on data collection, usage, and protection.
 
     :param request: The incoming request object.
-    :return: A rendered HTML template with the privacy policy.
+    :param current_user: The authenticated user object obtained from the dependency.
+    :return: A rendered HTML template with the privacy policy information.
     """
 
     return templates.TemplateResponse(
         request=request,
         name="privacy.html",
-        content={
+        context={
+            "user": current_user,
             "current_year": datetime.now().year,
             "csp_nonce": request.state.csp_nonce,
         },
@@ -29,20 +42,26 @@ def get_privacy_info(request: Request):
 
 
 @router.get("/about")
-def get_info_about_project(request: Request):
+def get_info_about_project(
+    request: Request,
+    current_user: Annotated[UserResponse, Depends(get_current_auth_user)],
+):
     """
-    Returns the about page.
+    Retrieves information about the NutriCoreIQ project.
 
-    This page is a static HTML template that displays the description of the project.
+    This endpoint renders an HTML template with information about the project,
+    including its goals, features, and team.
 
     :param request: The incoming request object.
-    :return: A rendered HTML template with the about page.
+    :param current_user: The authenticated user object obtained from the dependency.
+    :return: A rendered HTML template with information about the project.
     """
 
     return templates.TemplateResponse(
         request=request,
         name="about.html",
-        content={
+        context={
+            "user": current_user,
             "current_year": datetime.now().year,
             "csp_nonce": request.state.csp_nonce,
         },
