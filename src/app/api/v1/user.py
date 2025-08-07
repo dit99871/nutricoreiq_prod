@@ -76,14 +76,11 @@ async def get_profile(
 
     user = await get_user_profile(db_session, user.id)
 
-    redis_session = request.scope.get("redis_session", {})
-
     return templates.TemplateResponse(
         name="profile.html",
         request=request,
         context={
             "current_year": datetime.now().year,
-            "csrf_token": redis_session.get("csrf_token"),
             "csp_nonce": request.state.csp_nonce,
             "user": user,
             "is_subscribed": user.is_subscribed,
