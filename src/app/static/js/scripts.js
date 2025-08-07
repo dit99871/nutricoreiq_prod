@@ -4,7 +4,25 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
-    // 1. Тема
+    // Инициализация CSRF-токена в формах
+    const initCsrfToken = () => {
+        const getCsrfToken = () => {
+            return document.cookie
+                .split('; ')
+                .find(row => row.startsWith('csrf_token='))
+                ?.split('=')[1] || '';
+        };
+
+        const forms = document.querySelectorAll('form');
+        forms.forEach(form => {
+            const csrfInput = form.querySelector('input[name="_csrf_token"]');
+            if (csrfInput) {
+                csrfInput.value = getCsrfToken();
+            }
+        });
+    };
+
+    // Тема
     const initTheme = () => {
         const savedTheme = localStorage.getItem('theme') ||
             (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
@@ -36,7 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    // 2. Переключатели пароля
+    // Переключатели пароля
     const initPasswordToggles = () => {
         document.addEventListener('click', e => {
             const toggleBtn = e.target.closest('.toggle-password');
@@ -58,7 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }, { capture: true });
     };
 
-    // 3. Универсальный fetch
+    // Универсальный fetch
     const secureFetch = async (url, options = {}) => {
         const csrfToken = document.cookie
             .split('; ')
@@ -66,7 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
             ?.split('=')[1];
 
         if (!csrfToken) {
-            throw new Error('CSRF token not found');
+            throw new Error('CSRF токен не найден. Пожалуйста, обновите страницу.');
         }
 
         const headers = {
@@ -98,6 +116,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         return secureFetch(url, options);
                     }
                     throw new Error('Ваша сессия истекла. Пожалуйста, войдите заново.');
+                } else if (response.status === 403) {
+                    throw new Error('Недействительный CSRF-токен. Пожалуйста, обновите страницу и попробуйте снова.');
                 } else if (response.status === 500) {
                     window.location.href = '/error';
                 }
@@ -110,7 +130,10 @@ document.addEventListener("DOMContentLoaded", () => {
             if (error.name === 'AbortError') {
                 throw new Error('Превышено время ожидания запроса');
             }
-            if (error.message === 'Ваша сессия истекла. Пожалуйста, войдите заново.') {
+            if (error.message.includes('CSRF')) {
+                showError('globalError', error.message);
+                setTimeout(() => window.location.reload(), 3000);
+            } else if (error.message === 'Ваша сессия истекла. Пожалуйста, войдите заново.') {
                 const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
                 loginModal.show();
             }
@@ -118,7 +141,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    // 4. Функция для работы с HTMLResponse
+    // Функция для работы с HTMLResponse
     const checkAuthAndRedirect = async (url) => {
         const csrfToken = document.cookie
             .split('; ')
@@ -169,7 +192,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    // 5. UI-утилиты
+    // UI-утилиты
     const showError = (containerId, errorData) => {
         const container = document.getElementById(containerId);
         if (!container) return;
@@ -204,7 +227,6 @@ document.addEventListener("DOMContentLoaded", () => {
         container.classList.remove('d-none');
         container.classList.add('d-block');
 
-        // Автоматически скрывать уведомление через 3 секунды
         setTimeout(() => {
             container.classList.remove('d-block');
             container.classList.add('d-none');
@@ -274,7 +296,7 @@ document.addEventListener("DOMContentLoaded", () => {
             .replace(/'/g, "&#039;");
     };
 
-    // 6. Форма логина
+    // Форма логина
     const initLoginForm = () => {
         const form = document.getElementById('loginForm');
         if (!form) return;
@@ -319,7 +341,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    // 7. Форма регистрации
+    // Форма регистрации
     const initRegisterForm = () => {
         const form = document.getElementById('registerForm');
         if (!form) return;
@@ -381,7 +403,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    // 8. Модальные окна профиля
+    // Модальные окна профиля
     const initProfileModals = () => {
         // Редактирование профиля
         const editProfileModal = document.getElementById('editProfileModal');
@@ -520,7 +542,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
-    // 9. Поиск продуктов
+    // Поиск продуктов
     const initProductSearch = () => {
         const searchConfigs = [
             {
@@ -626,7 +648,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 };
             };
 
-            searchInput.addEventListener('input', _.debounce((e) => {
+            searchInput.addEventListener('input', (e) => {
                 const query = e.target.value.trim();
                 if (query.length < 2) {
                     searchResults.innerHTML = '';
@@ -634,8 +656,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     lastSearchData = null;
                     return;
                 }
-                performSearch(query);
-            }, 300));
+                setTimeout(() => performSearch(query), 300);
+            });
 
             searchForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -707,7 +729,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    // 10. Tooltips
+    // Tooltips
     const initTooltips = () => {
         document.querySelectorAll('.custom-info-icon').forEach(icon => {
             icon.addEventListener('click', (e) => {
@@ -725,7 +747,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    // 11. Кастомные выпадающие списки
+    // Кастомные выпадающие списки
     const initCustomSelects = () => {
         const customSelects = document.querySelectorAll('.custom-select');
 
@@ -771,7 +793,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    // 12. Обработчики для новых кнопок
+    // Обработчики для новых кнопок
     const initNavigationButtons = () => {
         // Кнопка профиля
         const profileBtn = document.querySelector('.profile-btn');
@@ -800,6 +822,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // Инициализация
+    initCsrfToken();
     initTheme();
     initPasswordToggles();
     initLoginForm();
