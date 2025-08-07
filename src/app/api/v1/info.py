@@ -2,7 +2,6 @@ from datetime import datetime
 
 from fastapi import APIRouter, Request
 
-from src.app.utils.security import generate_csp_nonce
 from src.app.utils.templates import templates
 
 router = APIRouter(tags=["Info"])
@@ -18,12 +17,13 @@ def get_privacy_info(request: Request):
     :param request: The incoming request object.
     :return: A rendered HTML template with the privacy policy.
     """
+
     return templates.TemplateResponse(
         request=request,
         name="privacy.html",
         content={
             "current_year": datetime.now().year,
-            "csp_nonce": generate_csp_nonce(),
+            "csp_nonce": request.state.csp_nonce,
         },
     )
 
@@ -38,11 +38,12 @@ def get_info_about_project(request: Request):
     :param request: The incoming request object.
     :return: A rendered HTML template with the about page.
     """
+
     return templates.TemplateResponse(
         request=request,
         name="about.html",
         content={
             "current_year": datetime.now().year,
-            "csp_nonce": generate_csp_nonce(),
+            "csp_nonce": request.state.csp_nonce,
         },
     )
