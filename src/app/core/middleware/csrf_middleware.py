@@ -8,12 +8,12 @@ log = get_logger("csrf_middleware")
 
 class CSRFMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        if request.url.path == "/api/v1/security/csp-report":
-            return await call_next(request)
-
+        # Пропуск публичных маршрутов
         if request.url.path in [
             f"{settings.api.prefix}{settings.api.v1.prefix}{settings.api.v1.auth}/login",
             f"{settings.api.prefix}{settings.api.v1.prefix}{settings.api.v1.auth}/register",
+            f"{settings.api.prefix}{settings.api.v1.prefix}{settings.api.v1.auth}/refresh",
+            f"{settings.api.prefix}{settings.api.v1.prefix}{settings.api.v1.security}/csp-report",
         ]:
             return await call_next(request)
 
@@ -24,45 +24,82 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 origin.startswith(allowed) for allowed in settings.cors.allow_origins
             ):
                 log.error(
-                    "Invalid origin for request: %s",
+                    "Invalid origin for request: %s, IP: %s, User-Agent: %s",
                     request.url,
+                    request.client.host,
+                    request.headers.get("user-agent", "unknown"),
                 )
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail={
-                        "message": "Invalid origin",
+                        "message": "Invalid origin. Please ensure you are accessing from an authorized domain.",
                     },
                 )
 
-            # Извлечение CSRF-токена
+            # Извлечение CSRF-токена из cookie
+            csrf_token_cookie = request.cookies.get("csrf_token")
+            if not csrf_token_cookie:
+                log.error(
+                    "CSRF token missing in cookie for request: %s, IP: %s, User-Agent: %s",
+                    request.url,
+                    request.client.host,
+                    request.headers.get("user-agent", "unknown"),
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail={
+                        "message": "CSRF токен отсутствует. Пожалуйста, обновите страницу и попробуйте ещё раз.",
+                    },
+                )
+
+            # Извлечение CSRF-токена из сессии
+            session = request.scope.get("redis_session", {})
+            session_csrf_token = session.get("csrf_token")
+            if not session_csrf_token:
+                log.error(
+                    "CSRF token missing in session for request: %s, IP: %s, User-Agent: %s",
+                    request.url,
+                    request.client.host,
+                    request.headers.get("user-agent", "unknown"),
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail={
+                        "message": "CSRF токен отсутствует в сессии. Пожалуйста, обновите страницу и попробуйте ещё раз.",
+                    },
+                )
+
+            # Извлечение CSRF-токена из заголовка или формы
             csrf_token = request.headers.get("X-CSRF-Token")
             if not csrf_token and request.method == "POST":
                 form_data = await request.form()
                 csrf_token = form_data.get("_csrf_token")
 
-            redis_session = request.scope.get("redis_session", {})
-            if not redis_session or "csrf_token" not in redis_session:
-                log.error(
-                    "Invalid session for request: %s",
-                    request.url,
-                )
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail={
-                        "message": "Invalid session",
-                    },
-                )
+            # Отладочный лог для проверки токенов
+            log.debug(
+                "CSRF check: cookie=%s, header/form=%s, session=%s, URL=%s",
+                csrf_token_cookie,
+                csrf_token,
+                session_csrf_token,
+                request.url,
+            )
 
-            session_csrf_token = redis_session.get("csrf_token")
-            if not csrf_token or csrf_token != session_csrf_token:
+            # Проверка совпадения токенов
+            if (
+                not csrf_token
+                or csrf_token != csrf_token_cookie
+                or csrf_token != session_csrf_token
+            ):
                 log.error(
-                    "Invalid CSRF token for request: %s",
+                    "Invalid CSRF token for request: %s, IP: %s, User-Agent: %s",
                     request.url,
+                    request.client.host,
+                    request.headers.get("user-agent", "unknown"),
                 )
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail={
-                        "message": "Invalid CSRF token",
+                        "message": "Неверный CSRF токен. Пожалуйста, обновите страницу и попробуйте ещё раз.",
                     },
                 )
 
