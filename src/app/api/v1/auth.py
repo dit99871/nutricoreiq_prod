@@ -64,7 +64,10 @@ async def register_user(
     db_user = await get_user_by_email(session, user_in.email)
 
     if db_user:
-        log.warning("Registration failed: Email already registered: %s", user_in.email)
+        log.error(
+            "Registration failed: Email already registered: %s",
+            user_in.email,
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={
@@ -131,7 +134,7 @@ async def logout(
 
     if not refresh_jwt:
         log.error("Refresh token not found in cookies")
-        ExpiredTokenException()
+        raise ExpiredTokenException()
 
     await revoke_refresh_token(user.uid, refresh_jwt, redis)
 
