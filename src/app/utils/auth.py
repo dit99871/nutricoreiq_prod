@@ -81,13 +81,17 @@ def decode_jwt(token: str) -> dict[str, Any] | None:
         log.error("Token has expired: %s", e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Token has expired: {str(e)}.",
+            detail={
+                "message": "Срок действия токена истек. Пожалуйста, войдите заново.",
+            },
         )
     except JWTError as e:
         log.error("Invalid token: %s", e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid token: {str(e)}",
+            detail={
+                "message": "Неверный токен. Пожалуйста, войдите заново.",
+            },
         )
 
 
