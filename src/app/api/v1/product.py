@@ -15,7 +15,6 @@ from src.app.services.pending_product import (
 )
 from src.app.services.product import handle_product_search, handle_product_details
 from src.app.schemas.product import UnifiedProductResponse, PendingProductCreate
-from src.app.utils.security import generate_csp_nonce
 from src.app.utils.templates import templates
 
 log = get_logger("product_api")
@@ -110,5 +109,3 @@ async def add_pending_product(
             },
         )
     await create_pending_product(session, data.name)
-
-    return {"status": "success"}
