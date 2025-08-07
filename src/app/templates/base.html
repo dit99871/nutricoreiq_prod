@@ -108,7 +108,7 @@
                 </div>
                 <div class="modal-body">
                     <form id="loginForm" method="POST">
-                        <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                        <input type="hidden" name="_csrf_token">
                         <div class="mb-3">
                             <label for="username" class="form-label">Логин</label>
                             <input type="text" id="username" name="username" class="form-control" required>
@@ -149,7 +149,7 @@
                 </div>
                 <div class="modal-body">
                     <form id="registerForm" method="POST">
-                        <input type="hidden" name="_csrf_token" value="{{ csrf_token }}">
+                        <input type="hidden" name="_csrf_token">
                         <div class="mb-3">
                             <label for="regUsername" class="form-label">Логин</label>
                             <input type="text" id="regUsername" name="username" class="form-control" required>
