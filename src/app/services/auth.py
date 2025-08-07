@@ -39,7 +39,7 @@ REFRESH_TOKEN_TYPE = "refresh"
 
 CREDENTIAL_EXCEPTION = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
-    detail={"message": "Неверные учетные данные. Пожалуйста, войдите заново"},
+    detail={"message": "Oшибка аутентификации. Пожалуйста, войдите заново"},
     headers={"WWW-Authenticate": "Bearer"},
 )
 
@@ -60,21 +60,22 @@ async def get_access_token_from_cookies(request: Request):
     return token
 
 
-def get_current_token_payload(
+def get_current_access_token_payload(
     token: str,
-) -> dict | None:
+) -> dict:
     """
-    Retrieves the payload of a JWT token.
+    Retrieves the payload of the current access token.
 
-    This function takes a JWT token as an argument, decodes it, and returns
-    the payload as a dictionary. If the token is invalid or has expired, it
-    raises an HTTPException with a 401 status code and an appropriate error
-    message.
+    This function takes the given access token and attempts to decode it
+    using the `decode_jwt` function. If the decoding fails, a 401 HTTP
+    exception is raised with an appropriate error message. If the
+    "type" field in the payload is not "access", a 401 HTTP exception is
+    also raised.
 
-    :param token: The JWT token string to be decoded.
-    :return: The decoded payload as a dictionary, or None if the token is
-             invalid.
-    :raises HTTPException: If the token is invalid or has expired.
+    :param token: The access token to be decoded.
+    :return: The payload of the access token as a dictionary.
+    :raises HTTPException: If the decoding fails or the "type" field is
+                           not "access".
     """
     log.debug("Attempting to decode token: %s", token)
     payload: dict | None = decode_jwt(token)
@@ -86,14 +87,6 @@ def get_current_token_payload(
     if token_type is None or token_type != ACCESS_TOKEN_TYPE:
         log.error(
             "No match for token type in token payload: %s",
-            payload,
-        )
-        raise CREDENTIAL_EXCEPTION
-
-    uid: str | None = payload.get("sub")
-    if uid is None:
-        log.error(
-            "User uid not found in token payload: %s",
             payload,
         )
         raise CREDENTIAL_EXCEPTION
@@ -225,6 +218,7 @@ async def update_password(
     result = await session.execute(stmt)
     db_user = result.scalar_one_or_none()
     if db_user is None:
+        log.error("Пользователь с uid %s не найден", user.uid)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={
@@ -276,25 +270,22 @@ async def get_current_auth_user(
     """
     if token is None:
         return None
-    try:
-        payload: dict = get_current_token_payload(token)
-        uid: str | None = payload.get("sub")
-        log.debug(
-            "Looking for user with uid: %s",
+
+    payload: dict = get_current_access_token_payload(token)
+    uid: str | None = payload.get("sub")
+    if uid is None:
+        log.error("Ошибка получения uid из payload")
+        raise CREDENTIAL_EXCEPTION
+
+    user = await get_user_by_uid(session, uid)
+    if user is None:
+        log.error(
+            "Пользователь не найден по uid: %s",
             uid,
         )
-        user = await get_user_by_uid(session, uid)
-    except HTTPException as e:
-        raise e
-    else:
-        if user is None:
-            log.error(
-                "User not found for uid: %s",
-                uid,
-            )
-            raise CREDENTIAL_EXCEPTION
+        raise CREDENTIAL_EXCEPTION
 
-        return user
+    return user
 
 
 async def get_current_auth_user_for_refresh(
@@ -315,34 +306,18 @@ async def get_current_auth_user_for_refresh(
     """
     payload = decode_jwt(token)
     if payload is None:
-        log.error("Failed to decode refresh token")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                "message": "Ошибка аутентификации. Пожалуйста, войдите заново",
-                "details": "Failed to decode refresh token",
-            },
-        )
+        log.error("Ошибка декодирования refresh токена")
+        raise CREDENTIAL_EXCEPTION
 
     uid: str | None = payload.get("sub")
     if uid is None:
-        log.error("User id not found in refresh token")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                "message": "Ошибка аутентификации. Пожалуйста, войдите заново",
-                "details": "User id not found in refresh token",
-            },
-        )
+        log.error("id пользователя не найден в refresh токене")
+        raise CREDENTIAL_EXCEPTION
+
     if not await validate_refresh_jwt(uid, token, redis):
-        log.error("Refresh token is invalid or has expired")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                "message": "Ошибка аутентификации. Пожалуйста, войдите заново",
-                "details": "Refresh token is invalid or has expired",
-            },
-        )
+        log.error("refresh токен невалиден или устарел")
+        raise CREDENTIAL_EXCEPTION
+
     user = await get_user_by_uid(session, uid)
 
     return user
@@ -372,7 +347,7 @@ async def authenticate_user(
 
     if not verify_password(password, user.hashed_password):
         log.error(
-            "Invalid password for user: %s",
+            "Неверный пароль для пользователя: %s",
             username,
         )
         raise HTTPException(
