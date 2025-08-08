@@ -4,7 +4,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.core.logger import get_logger
-from src.app.db.models import User
+from src.app.models import User
 from src.app.schemas.user import UserResponse, UserProfile, UserAccount
 
 log = get_logger("profile_crud")
@@ -44,9 +44,7 @@ async def get_user_profile(
         return UserAccount.model_construct(**user.__dict__)
 
     except SQLAlchemyError as e:
-        log.error(
-            "Ошибка БД при получении пользователя: %s",
-            e)
+        log.error("Ошибка БД при получении пользователя: %s", e)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={
@@ -94,7 +92,7 @@ async def update_user_profile(
                 detail={
                     "field": "Update user profile",
                     "message": "При обновлении профиля произошла ошибка",
-                }
+                },
             )
         await session.commit()
         # log.info("User updated with name: %s", current_user.username)
@@ -104,7 +102,8 @@ async def update_user_profile(
     except SQLAlchemyError as e:
         log.error(
             "Ошибка БД при обновлении профиля пользователя %s: %s",
-            current_user.username, e
+            current_user.username,
+            e,
         )
         await session.rollback()
         raise HTTPException(

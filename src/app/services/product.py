@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
 from src.app.core.logger import get_logger
-from src.app.db.models import Product, PendingProduct, ProductNutrient
+from src.app.models import Product, PendingProduct, ProductNutrient
 from src.app.schemas.product import (
     ProductDetailResponse,
     ProductSuggestion,
@@ -155,9 +155,9 @@ async def handle_product_details(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={
-                    "message": "Продукт не найден",
-                    "details": f"Product with id {product_id} not found",
-            }
+                "message": "Продукт не найден",
+                "details": f"Product with id {product_id} not found",
+            },
         )
 
     return map_to_schema(product)
