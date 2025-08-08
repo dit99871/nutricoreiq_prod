@@ -26,7 +26,7 @@ from src.app.core.middleware.redis_session_middleware import RedisSessionMiddlew
 from src.app.core.utils import templates
 from src.app.lifespan import lifespan
 from src.app.schemas.user import UserResponse
-from src.app.services.auth import get_current_auth_user
+from src.app.core.services.auth import get_current_auth_user
 
 setup_logging()
 
