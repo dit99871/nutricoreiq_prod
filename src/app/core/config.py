@@ -23,8 +23,6 @@ class AuthConfig(BaseModel):
     algorithm: str
     access_token_expires: int = 7  # 7 minutes
     refresh_token_expires: int = 7  # 7 days
-    private_key_path: Path = BASE_DIR / "utils" / "certs" / "jwt-private.pem"
-    public_key_path: Path = BASE_DIR / "utils" / "certs" / "jwt-public.pem"
     private_key_path: Path = BASE_DIR / "core" / "certs" / "jwt-private.pem"
     public_key_path: Path = BASE_DIR / "core" / "certs" / "jwt-public.pem"
 
