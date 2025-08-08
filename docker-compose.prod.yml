@@ -130,7 +130,7 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./src/app/utils/certs:/nutricoreiq/src/app/utils/certs
+      - ./src/app/core/certs:/nutricoreiq/src/app/core/certs
       - ./src/app/logs:/nutricoreiq/src/app/logs
     networks:
       - app-network
