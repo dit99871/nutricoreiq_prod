@@ -8,7 +8,7 @@ from src.app.core import broker
 from src.app.core import db_helper
 from src.app.core.logger import get_logger
 from src.app.crud.user import get_user_by_email
-from src.app.services.email import send_welcome_email as send_welcome
+from src.app.core.services.email import send_welcome_email as send_welcome
 
 log = get_logger("email_tasks")
 

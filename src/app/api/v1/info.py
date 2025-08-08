@@ -4,9 +4,9 @@ from typing import Annotated
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import HTMLResponse
 
-from src.app.schemas.user import UserResponse
-from src.app.services.auth import get_current_auth_user
+from src.app.core.services.auth import get_current_auth_user
 from src.app.core.utils import templates
+from src.app.schemas.user import UserResponse
 
 router = APIRouter(
     tags=["Info"],

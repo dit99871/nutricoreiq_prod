@@ -18,7 +18,7 @@ from src.app.core.logger import get_logger
 from src.app.core.redis import get_redis
 from src.app.crud.user import create_user, get_user_by_email
 from src.app.schemas.user import PasswordChange, UserCreate, UserResponse
-from src.app.services.auth import (
+from src.app.core.services.auth import (
     add_tokens_to_response,
     create_access_jwt,
     create_refresh_jwt,
@@ -28,7 +28,7 @@ from src.app.services.auth import (
     authenticate_user,
 )
 from src.app.core.utils.auth import create_response
-from src.app.services.redis import revoke_refresh_token
+from src.app.core.services.redis import revoke_refresh_token
 from src.app.tasks import send_welcome_email
 
 log = get_logger("auth_api")

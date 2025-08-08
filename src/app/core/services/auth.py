@@ -14,7 +14,7 @@ from src.app.core.logger import get_logger
 from src.app.crud.user import get_user_by_uid, get_user_by_name
 from src.app.models import User
 from src.app.schemas.user import UserResponse
-from src.app.services.redis import (
+from src.app.core.services.redis import (
     add_refresh_to_redis,
     revoke_all_refresh_tokens,
     validate_refresh_jwt,
