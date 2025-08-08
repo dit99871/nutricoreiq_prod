@@ -23,10 +23,10 @@ from src.app.core.logger import setup_logging
 from src.app.core.middleware.csp_middleware import CSPMiddleware
 from src.app.core.middleware.csrf_middleware import CSRFMiddleware
 from src.app.core.middleware.redis_session_middleware import RedisSessionMiddleware
+from src.app.core.utils import templates
 from src.app.lifespan import lifespan
 from src.app.schemas.user import UserResponse
 from src.app.services.auth import get_current_auth_user
-from src.app.utils.templates import templates
 
 setup_logging()
 
