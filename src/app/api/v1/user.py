@@ -11,11 +11,11 @@ from fastapi import (
 from fastapi.responses import ORJSONResponse, HTMLResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.app.core import db_helper
 from src.app.core.exceptions import ExpiredTokenException
 from src.app.core.logger import get_logger
 from src.app.crud.profile import update_user_profile, get_user_profile
 from src.app.crud.user import choose_subscribe_status
-from src.app.db import db_helper
 from src.app.schemas.user import UserProfile, UserResponse
 from src.app.services.auth import get_current_auth_user
 from src.app.utils.templates import templates

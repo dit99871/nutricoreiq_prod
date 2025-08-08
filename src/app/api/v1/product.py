@@ -5,8 +5,8 @@ from fastapi import APIRouter, Depends, Request, Query, HTTPException, status
 from fastapi.responses import ORJSONResponse, HTMLResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.app.core import db_helper
 from src.app.core.logger import get_logger
-from src.app.db import db_helper
 from src.app.schemas.user import UserResponse
 from src.app.services.auth import get_current_auth_user
 from src.app.services.pending_product import (

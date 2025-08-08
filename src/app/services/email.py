@@ -3,7 +3,6 @@ from email.mime.multipart import MIMEMultipart
 
 import aiosmtplib
 from aiosmtplib.errors import SMTPException
-from fastapi import HTTPException, status
 from jinja2 import Environment, FileSystemLoader
 
 from src.app.core.config import settings
@@ -21,6 +20,22 @@ async def send_email(
     template: str,
     context: dict,
 ) -> None:
+    """
+    Asynchronously sends an email to the recipient using the given template.
+
+    The template will be rendered with the given context dictionary.
+    The rendered HTML content is then sent as a MIME message with an
+    "alternative" type, which allows the recipient's email client to decide
+    whether to render the HTML or not.
+
+    :param recipient: The recipient's email address
+    :param sender: The sender's email address
+    :param subject: The email's subject
+    :param template: The name of the template to use (should be in the
+                     templates directory)
+    :param context: The dictionary of values to use when rendering the template
+    :raises Exception: If there is an error sending the email
+    """
     try:
         # Рендеринг HTML-шаблона
         template_obj = env.get_template(template)

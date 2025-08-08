@@ -4,9 +4,9 @@ from fastapi import FastAPI
 from tenacity import retry, stop_after_attempt, wait_fixed
 
 from src.app.core import broker
+from src.app.core import db_helper
 from src.app.core.logger import get_logger
 from src.app.core.redis import init_redis, close_redis
-from src.app.db import db_helper
 
 log = get_logger("lifespan")
 

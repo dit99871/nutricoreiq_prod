@@ -13,7 +13,7 @@ from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.core.exceptions import ExpiredTokenException
-from src.app.db import db_helper
+from src.app.core import db_helper
 from src.app.core.logger import get_logger
 from src.app.core.redis import get_redis
 from src.app.crud.user import create_user, get_user_by_email
