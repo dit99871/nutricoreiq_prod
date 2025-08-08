@@ -10,7 +10,7 @@ from src.app.schemas.product import (
     ProductSuggestion,
     UnifiedProductResponse,
 )
-from src.app.utils.product import map_to_schema
+from src.app.core.utils import map_to_schema
 
 log = get_logger("product_services")
 

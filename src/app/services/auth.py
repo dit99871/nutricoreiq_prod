@@ -19,7 +19,7 @@ from src.app.services.redis import (
     revoke_all_refresh_tokens,
     validate_refresh_jwt,
 )
-from src.app.utils.auth import (
+from src.app.core.utils.auth import (
     create_response,
     decode_jwt,
     encode_jwt,

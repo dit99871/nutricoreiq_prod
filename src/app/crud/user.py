@@ -8,7 +8,7 @@ from sqlalchemy.future import select
 from src.app.core.logger import get_logger
 from src.app.models import User
 from src.app.schemas.user import UserCreate, UserResponse
-from src.app.utils.auth import get_password_hash
+from src.app.core.utils.auth import get_password_hash
 
 log = get_logger("user_crud")
 

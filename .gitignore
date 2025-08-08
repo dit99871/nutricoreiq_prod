@@ -152,7 +152,7 @@ cython_debug/
 
 # Custom certificate paths
 /src/app/core/certs/
-/src/app/utils/certs/
+/src/app/core/certs/
 postgresql.conf
 /.env
 config/postgres_exporter.yml
@@ -161,9 +161,9 @@ postgres/pg_hba.conf
 postgres_exporter.yml
 prometheus.yml
 redis.conf
-src/app/utils/certs/jwt-private.pem
-src/app/utils/certs/jwt-public.pem
-src/app/utils/certs/README.md
+src/app/core/certs/jwt-private.pem
+src/app/core/certs/jwt-public.pem
+src/app/core/certs/README.md
 .idea/
 src/app/docker-compose.dev.yml
 src/app/lifespan.py

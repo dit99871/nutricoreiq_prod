@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.core import db_helper
 from src.app.core.logger import get_logger
+from src.app.core.utils import templates
 from src.app.schemas.user import UserResponse
 from src.app.services.auth import get_current_auth_user
 from src.app.services.pending_product import (
@@ -15,7 +16,6 @@ from src.app.services.pending_product import (
 )
 from src.app.services.product import handle_product_search, handle_product_details
 from src.app.schemas.product import UnifiedProductResponse, PendingProductCreate
-from src.app.utils.templates import templates
 
 log = get_logger("product_api")
 

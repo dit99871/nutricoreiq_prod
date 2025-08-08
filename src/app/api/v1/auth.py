@@ -27,9 +27,9 @@ from src.app.services.auth import (
     get_current_auth_user_for_refresh,
     authenticate_user,
 )
-from src.app.tasks import send_welcome_email
+from src.app.core.utils.auth import create_response
 from src.app.services.redis import revoke_refresh_token
-from src.app.utils.auth import create_response
+from src.app.tasks import send_welcome_email
 
 log = get_logger("auth_api")
 

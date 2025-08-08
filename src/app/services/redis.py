@@ -6,7 +6,7 @@ from fastapi import HTTPException, status
 
 from src.app.core.logger import get_logger
 from src.app.core.redis import get_redis
-from src.app.utils.security import generate_hash_token
+from src.app.core.utils.security import generate_hash_token
 
 log = get_logger("redis_service")
 

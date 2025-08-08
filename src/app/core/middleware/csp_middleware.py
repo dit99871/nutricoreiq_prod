@@ -1,7 +1,7 @@
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from src.app.utils.security import generate_csp_nonce
+from src.app.core.utils.security import generate_csp_nonce
 
 
 class CSPMiddleware(BaseHTTPMiddleware):

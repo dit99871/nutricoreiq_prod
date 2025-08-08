@@ -6,7 +6,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.app.core.logger import get_logger
 from src.app.core.redis import redis_client
-from src.app.utils.security import generate_redis_session_id, generate_csrf_token
+from src.app.core.utils.security import generate_redis_session_id, generate_csrf_token
 
 log = get_logger("redis_session_middleware")
 
