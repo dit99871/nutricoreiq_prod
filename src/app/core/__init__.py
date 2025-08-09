@@ -5,5 +5,5 @@ __all__ = (
 )
 
 from .db_helper import db_helper
-from .taskiq_broker import broker
+from src.app.core.services.taskiq_broker import broker
 from .utils.templates import templates
