@@ -7,7 +7,7 @@ from fastapi import (
     status,
     Request,
 )
-from fastapi.responses import ORJSONResponse
+from fastapi.responses import ORJSONResponse, RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -37,6 +37,19 @@ router = APIRouter(
     tags=["Authentication"],
     default_response_class=ORJSONResponse,
 )
+
+
+@router.get("/login")
+async def login_get() -> RedirectResponse:
+    """
+    Redirects the user to the homepage with an action parameter set to unsubscribe.
+
+    This endpoint is used to handle login requests to the `/login` endpoint.
+    It returns a 302 redirect response to the homepage with an action parameter set to unsubscribe.
+
+    :return: A 302 redirect response.
+    """
+    return RedirectResponse(url="/?action=unsubscribe")
 
 
 @router.post(
