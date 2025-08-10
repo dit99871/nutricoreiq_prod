@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from prometheus_client import Counter
 from prometheus_fastapi_instrumentator import Instrumentator
 
-from src.app.api import router as api_router
+from src.app.routers import routers
 from src.app.core.config import settings
 from src.app.core.exception_handlers import (
     generic_exception_handler,
@@ -57,7 +57,7 @@ app.add_middleware(CSPMiddleware)
 app.add_middleware(CSRFMiddleware)
 app.add_middleware(RedisSessionMiddleware)
 
-app.include_router(api_router)
+app.include_router(routers)
 
 app.add_exception_handler(ExpiredTokenException, expired_token_exception_handler)
 app.add_exception_handler(HTTPException, http_exception_handler)

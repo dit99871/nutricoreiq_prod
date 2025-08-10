@@ -8,23 +8,23 @@ from .security import router as security_router
 from .user import router as users_router
 
 router = APIRouter(
-    prefix=settings.api.v1.prefix,
+    prefix=settings.router.v1.prefix,
 )
 router.include_router(
     auth_router,
-    prefix=settings.api.v1.auth,
+    prefix=settings.router.v1.auth,
 )
 router.include_router(
     product_router,
-    prefix=settings.api.v1.product,
+    prefix=settings.router.v1.product,
 )
 router.include_router(
     security_router,
-    prefix=settings.api.v1.security,
+    prefix=settings.router.v1.security,
 )
 router.include_router(
     users_router,
-    prefix=settings.api.v1.user,
+    prefix=settings.router.v1.user,
 )
 router.include_router(
     info_router,
