@@ -107,7 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (!response.ok) {
                 if (response.status === 401 && response.headers.get('X-Error-Type') === 'authentication_error') {
-                    const refreshResponse = await fetch('/api/v1/auth/refresh', {
+                    const refreshResponse = await fetch('/router/v1/auth/refresh', {
                         method: 'POST',
                         credentials: 'include',
                         headers: { 'X-CSRF-Token': csrfToken },
@@ -161,7 +161,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (response.ok) {
                 window.location.href = url;
             } else if (response.status === 401 && response.headers.get('X-Error-Type') === 'authentication_error') {
-                const refreshResponse = await fetch('/api/v1/auth/refresh', {
+                const refreshResponse = await fetch('/router/v1/auth/refresh', {
                     method: 'POST',
                     credentials: 'include',
                     headers: { 'X-CSRF-Token': csrfToken },
@@ -314,13 +314,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
             try {
                 const formData = new FormData(form);
-                await secureFetch('/api/v1/auth/login', {
+                await secureFetch('/router/v1/auth/login', {
                     method: 'POST',
                     body: new URLSearchParams(formData),
                     headers: { "Content-Type": "application/x-www-form-urlencoded" }
                 });
 
-                const userData = await secureFetch("/api/v1/user/me");
+                const userData = await secureFetch("/router/v1/user/me");
                 updateProfileUI(userData);
 
                 const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
@@ -375,7 +375,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             try {
-                await secureFetch("/api/v1/auth/register", {
+                await secureFetch("/router/v1/auth/register", {
                     method: 'POST',
                     body: JSON.stringify({
                         username: form.username.value,
@@ -426,15 +426,15 @@ document.addEventListener("DOMContentLoaded", () => {
                         jsonData[key] = ['age', 'height', 'weight'].includes(key) && value ? Number(value) : value || null;
                     });
 
-                    await secureFetch('/api/v1/user/profile/update', {
+                    await secureFetch('/router/v1/user/profile/update', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(jsonData)
                     });
 
-                    const updatedUserData = await secureFetch('/api/v1/user/me');
+                    const updatedUserData = await secureFetch('/router/v1/user/me');
                     updateProfileUI(updatedUserData);
-                    window.location.href = '/api/v1/user/profile/data'
+                    window.location.href = '/router/v1/user/profile/data'
 
                     const modal = bootstrap.Modal.getInstance(editProfileModal);
                     if (modal) {
@@ -474,7 +474,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         throw new Error('Новый пароль и подтверждение не совпадают');
                     }
 
-                    await secureFetch('/api/v1/auth/password/change', {
+                    await secureFetch('/router/v1/auth/password/change', {
                         method: "POST",
                         body: JSON.stringify({
                             current_password: document.getElementById('currentPassword').value,
@@ -517,7 +517,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 showError('subscribeError', '');
 
                 try {
-                    await secureFetch(`/api/v1/user/${isSubscribing ? 'subscribe' : 'unsubscribe'}`, {
+                    await secureFetch(`/router/v1/user/${isSubscribing ? 'subscribe' : 'unsubscribe'}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ _csrf_token: subscribeForm.querySelector('[name="_csrf_token"]').value })
@@ -577,7 +577,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 abortController = new AbortController();
 
                 try {
-                    const data = await secureFetch(`/api/v1/product/search?query=${encodeURIComponent(query)}`, {
+                    const data = await secureFetch(`/router/v1/product/search?query=${encodeURIComponent(query)}`, {
                         signal: abortController.signal,
                     });
 
@@ -613,7 +613,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 searchResults.querySelectorAll('.suggestion-item').forEach(item => {
                     item.addEventListener('click', () => {
-                        checkAuthAndRedirect(`/api/v1/product/${item.dataset.id}`);
+                        checkAuthAndRedirect(`/router/v1/product/${item.dataset.id}`);
                     });
                 });
             };
@@ -635,7 +635,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 confirmBtn.onclick = async () => {
                     try {
-                        await secureFetch('/api/v1/product/pending', {
+                        await secureFetch('/router/v1/product/pending', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ name: query }),
@@ -678,7 +678,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         const id = data.exact_match?.id || lastSearchData?.exact_match?.id;
 
                         if (id) {
-                            checkAuthAndRedirect(`/api/v1/product/${id}`);
+                            checkAuthAndRedirect(`/router/v1/product/${id}`);
                         } else {
                             openPendingProductModal(query);
                         }
@@ -694,7 +694,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         const id = data.exact_match?.id || lastSearchData?.exact_match?.id;
 
                         if (id) {
-                            checkAuthAndRedirect(`/api/v1/product/${id}`);
+                            checkAuthAndRedirect(`/router/v1/product/${id}`);
                         } else {
                             openPendingProductModal(query);
                         }
@@ -799,7 +799,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const profileBtn = document.querySelector('.profile-btn');
         if (profileBtn) {
             profileBtn.addEventListener('click', () => {
-                checkAuthAndRedirect('/api/v1/user/profile/data');
+                checkAuthAndRedirect('/router/v1/user/profile/data');
             });
         }
 
@@ -808,7 +808,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (logoutBtn) {
             logoutBtn.addEventListener('click', async () => {
                 try {
-                    await secureFetch('/api/v1/auth/logout', {
+                    await secureFetch('/router/v1/auth/logout', {
                         method: 'POST',
                         credentials: 'include',
                     });

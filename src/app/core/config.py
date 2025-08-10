@@ -73,7 +73,7 @@ class ApiV1Prefix(BaseModel):
 
 
 class ApiPrefix(BaseModel):
-    prefix: str = "/api"
+    prefix: str = "/router"
     v1: ApiV1Prefix = ApiV1Prefix()
 
 
