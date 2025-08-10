@@ -29,7 +29,7 @@
                 <div class="ms-auto d-flex align-items-center gap-2">
                     {% block navbar_buttons %}
                         {% if user %}
-                            {% if request.path == '/router/v1/user/profile/data' %}
+                            {% if request.path == '/user/profile/data' %}
                                 <a href="/" class="btn btn-profile btn-icon" aria-label="Главная">
                                     <i class="bi bi-house"></i>
                                 </a>
@@ -85,8 +85,8 @@
                 </div>
                 <div class="col-lg-8">
                     <div class="d-flex flex-column flex-lg-row justify-content-lg-end gap-3">
-                        <a href="/router/v1/about" class="text-decoration-none small text-dark about-btn">О проекте</a>
-                        <a href="/router/v1/privacy" class="text-decoration-none small text-dark privacy-btn">Политика конфиденциальности</a>
+                        <a href="/about" class="text-decoration-none small text-dark about-btn">О проекте</a>
+                        <a href="/privacy" class="text-decoration-none small text-dark privacy-btn">Политика конфиденциальности</a>
                         <a href="mailto:support@nutricoreiq.ru" class="text-dark text-decoration-none small mailto-btn">
                             <i class="bi bi-envelope me-1"></i>support@nutricoreiq.ru
                         </a>

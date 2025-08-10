@@ -17,7 +17,7 @@ from src.app.core.utils import templates
 from src.app.schemas.product import UnifiedProductResponse, PendingProductCreate
 from src.app.schemas.user import UserResponse
 
-log = get_logger("product_api")
+log = get_logger("product_router")
 
 router = APIRouter(
     tags=["Product"],

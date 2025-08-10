@@ -10,10 +10,10 @@ class CSRFMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         # Пропуск публичных маршрутов
         if request.url.path in [
-            f"{settings.router.prefix}{settings.router.v1.prefix}{settings.router.v1.auth}/login",
-            f"{settings.router.prefix}{settings.router.v1.prefix}{settings.router.v1.auth}/register",
-            f"{settings.router.prefix}{settings.router.v1.prefix}{settings.router.v1.auth}/refresh",
-            f"{settings.router.prefix}{settings.router.v1.prefix}{settings.router.v1.security}/csp-report",
+            f"{settings.router.auth}/login",
+            f"{settings.router.auth}/register",
+            f"{settings.router.auth}/refresh",
+            f"{settings.router.security}/csp-report",
         ]:
             return await call_next(request)
 

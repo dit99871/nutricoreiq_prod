@@ -59,8 +59,8 @@ async def send_email(
             hostname=settings.mail.host,
             port=settings.mail.port,
             username=settings.mail.username,
-            password=settings.mail.password,
-            use_tls=settings.mail.use_tls,
+            # password=settings.mail.password,
+            # use_tls=settings.mail.use_tls,
             timeout=60,
         )
         log.info("Email sent successfully to: %s", recipient)

@@ -4,12 +4,12 @@
 
 {% block navbar_buttons %}
     {% if user %}
-        {% if request.path == '/router/v1/user/profile/data' %}
+        {% if request.path == '/user/profile/data' %}
             <a href="/" class="btn btn-profile btn-icon" aria-label="Главная">
                 <i class="bi bi-house"></i>
             </a>
         {% else %}
-            <a href="/router/v1/user/profile/data" class="btn btn-profile btn-icon" aria-label="Профиль">
+            <a href="/user/profile/data" class="btn btn-profile btn-icon" aria-label="Профиль">
                 <i class="bi bi-person"></i>
             </a>
         {% endif %}

@@ -25,7 +25,7 @@ router = APIRouter(
     default_response_class=ORJSONResponse,
 )
 
-log = get_logger("user_api")
+log = get_logger("user_router")
 
 
 @router.get("/me")

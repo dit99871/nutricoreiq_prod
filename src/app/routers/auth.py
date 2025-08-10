@@ -31,7 +31,7 @@ from src.app.core.utils.auth import create_response
 from src.app.core.services.redis import revoke_refresh_token
 from src.app.tasks import send_welcome_email
 
-log = get_logger("auth_api")
+log = get_logger("auth_router")
 
 router = APIRouter(
     tags=["Authentication"],

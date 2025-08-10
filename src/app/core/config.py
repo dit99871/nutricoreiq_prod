@@ -64,17 +64,11 @@ class LoggingConfig(BaseModel):
         return logging.getLevelNamesMapping()[self.log_level.upper()]
 
 
-class ApiV1Prefix(BaseModel):
-    prefix: str = "/v1"
+class RouterPrefix(BaseModel):
     auth: str = "/auth"
     product: str = "/product"
     user: str = "/user"
     security: str = "/security"
-
-
-class ApiPrefix(BaseModel):
-    prefix: str = "/router"
-    v1: ApiV1Prefix = ApiV1Prefix()
 
 
 class DatabaseConfig(BaseModel):
@@ -123,7 +117,7 @@ class Settings(BaseSettings):
 
     run: RunConfig
     logging: LoggingConfig = LoggingConfig()
-    api: ApiPrefix = ApiPrefix()
+    router: RouterPrefix = RouterPrefix()
     db: DatabaseConfig
     auth: AuthConfig
     redis: RedisConfig

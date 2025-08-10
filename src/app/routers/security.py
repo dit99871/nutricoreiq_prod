@@ -9,7 +9,7 @@ router = APIRouter(
     default_response_class=ORJSONResponse,
 )
 
-log = get_logger("security_api")
+log = get_logger("security_router")
 
 
 @router.post("/csp-report")
