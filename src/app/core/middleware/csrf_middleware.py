@@ -32,7 +32,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail={
-                        "message": "Invalid origin. Please ensure you are accessing from an authorized domain.",
+                        "message": "Нет доступа. Пожалуйста, убедитесь, что вы обращаетесь с авторизованного домена.",
                     },
                 )
 
@@ -48,7 +48,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail={
-                        "message": "CSRF токен отсутствует. Пожалуйста, обновите страницу и попробуйте ещё раз.",
+                        "message": "Нет доступа. Пожалуйста, обновите страницу и попробуйте ещё раз.",
                     },
                 )
 
@@ -65,7 +65,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail={
-                        "message": "CSRF токен отсутствует в сессии. Пожалуйста, обновите страницу и попробуйте ещё раз.",
+                        "message": "Нет доступа. Пожалуйста, обновите страницу и попробуйте ещё раз.",
                     },
                 )
 
@@ -99,7 +99,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail={
-                        "message": "Неверный CSRF токен. Пожалуйста, обновите страницу и попробуйте ещё раз.",
+                        "message": "Нет доступа. Пожалуйста, обновите страницу и попробуйте ещё раз.",
                     },
                 )
 
