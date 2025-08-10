@@ -832,4 +832,42 @@ document.addEventListener("DOMContentLoaded", () => {
     initTooltips();
     initCustomSelects();
     initNavigationButtons();
+
+    // Обработка действия отписки из параметра URL
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('action') === 'unsubscribe') {
+        secureFetch("/user/me")
+            .then(userData => {
+                // Пользователь авторизован
+                if (window.location.pathname !== '/user/profile/data') {
+                    // Перенаправляем на профиль с параметром
+                    window.location.href = '/user/profile/data?action=unsubscribe';
+                } else {
+                    // Уже на профиле, открываем модальное окно
+                    const subscribeModal = new bootstrap.Modal(document.getElementById('subscribeModal'));
+                    subscribeModal.show();
+
+                    // Удаляем параметр из URL
+                    const url = new URL(window.location.href);
+                    url.searchParams.delete('action');
+                    window.history.replaceState({}, '', url.toString());
+                }
+            })
+            .catch(error => {
+                // Пользователь не авторизован, открываем модальное окно логина
+                const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+                loginModal.show();
+
+                // Обработчик закрытия модального окна логина (если закрыто без входа, удаляем параметр)
+                loginModal._element.addEventListener('hidden.bs.modal', () => {
+                    secureFetch("/user/me")
+                        .catch(() => {
+                            // Всё ещё не авторизован, удаляем параметр
+                            const url = new URL(window.location.href);
+                            url.searchParams.delete('action');
+                            window.history.replaceState({}, '', url.toString());
+                        });
+                }, { once: true });
+            });
+    }
 });
