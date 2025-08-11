@@ -1,34 +1,37 @@
-version: "3.8"
+version: "3.9"
 services:
   db:
     image: postgres:17
     container_name: postgre
     ports:
-      - "127.0.0.1:5432:5432"
+      - "127.0.0.1:${DB_PORT}:${DB_PORT}"
     env_file:
       - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./postgres/pg_hba.conf:/var/lib/postgresql/pg_hba.conf
-      - ./postgresql.conf:/var/lib/postgresql/data/postgresql.conf
+      - ./postgres/pg_hba.conf:/var/lib/postgresql/pg_hba.conf:ro
+      - ./postgresql.conf:/var/lib/postgresql/data/postgresql.conf:ro
     command: -c config_file=/var/lib/postgresql/data/postgresql.conf
     networks:
-      - app-network
+      - db-network
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 5s
       timeout: 5s
       retries: 5
+    user: "999:999"
+    cap_drop:
+      - ALL
 
   postgres_exporter:
-    image: quay.io/prometheuscommunity/postgres-exporter:v0.10.0
+    image: quay.io/prometheuscommunity/postgres-exporter:latest
     container_name: postgres_exporter
     env_file:
       - .env
     environment:
-      - DATA_SOURCE_NAME=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?sslmode=disable
+      - DATA_SOURCE_NAME=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${DB_PORT}/${POSTGRES_DB}?sslmode=${POSTGRES_SSL_MODE}
     volumes:
-      - ./postgres_exporter.yml:/postgres_exporter.yml
+      - ./postgres_exporter.yml:/postgres_exporter.yml:ro
     command:
       - "--web.listen-address=:9187"
       - "--extend.query-path=/postgres_exporter.yml"
@@ -36,44 +39,54 @@ services:
       db:
         condition: service_healthy
     networks:
-      - app-network
+      - db-network
+      - monitoring-network
+    user: "1000:1000"  # Non-root
+    cap_drop:
+      - ALL
 
   redis:
     image: redis:7
     container_name: redis
     ports:
-      - "127.0.0.1:6379:6379"
+      - "127.0.0.1:${REDIS_PORT}:${REDIS_PORT}"
     volumes:
       - redis_data:/data
-      - ./redis.conf:/usr/local/etc/redis/redis.conf
+      - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
     command: redis-server /usr/local/etc/redis/redis.conf
     networks:
-      - app-network
+      - db-network
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
       timeout: 3s
       retries: 5
+    user: "999:999"
+    cap_drop:
+      - ALL
 
   redis_exporter:
-    image: oliver006/redis_exporter
+    image: oliver006/redis_exporter:latest
     container_name: redis_exporter
     environment:
-      - REDIS_ADDR=redis:6379
-      - LOG_LEVEL=debug
+      - REDIS_ADDR=${REDIS_ADDR}
+      - LOG_LEVEL=${REDIS_LOG_LEVEL}
     depends_on:
       redis:
         condition: service_healthy
     networks:
-      - app-network
+      - db-network
+      - monitoring-network
+    user: "1000:1000"
+    cap_drop:
+      - ALL
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
     hostname: rabbitmq
     container_name: rabbitmq
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "127.0.0.1:${RABBITMQ_PORT}:${RABBITMQ_PORT}"
     env_file:
       - .env
     volumes:
@@ -84,16 +97,19 @@ services:
       timeout: 5s
       retries: 10
     networks:
-      - app-network
+      - db-network
+    user: "1000:1000"
+    cap_drop:
+      - ALL
 
   fastapi:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "0.0.0.0:8080:8080"
+      - "0.0.0.0:${APP_PORT}:${APP_PORT}"
     volumes:
-      - ./src/app/utils/certs:/nutricoreiq/src/app/utils/certs
+      - ./src/app/utils/certs:/nutricoreiq/src/app/utils/certs:ro
       - ./src/app/logs:/nutricoreiq/src/app/logs
     container_name: web_app
     env_file:
@@ -106,12 +122,21 @@ services:
       redis:
         condition: service_healthy
     networks:
+      - db-network
       - app-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      test: ["CMD", "curl", "-f", "http://localhost:${APP_PORT}"]
       interval: 5s
       timeout: 5s
       retries: 5
+    user: "1000:1000"
+    read_only: true  # Если app не пишет в fs
+    tmpfs:
+      - /tmp:size=100M
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
 
   taskiq_worker:
     build:
@@ -130,35 +155,44 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./src/app/core/certs:/nutricoreiq/src/app/core/certs
+      - ./src/app/core/certs:/nutricoreiq/src/app/core/certs:ro
       - ./src/app/logs:/nutricoreiq/src/app/logs
     networks:
-      - app-network
+      - db-network
+    user: "1000:1000"
+    cap_drop:
+      - ALL
 
   prometheus:
-    image: prom/prometheus:v2.54.1
+    image: prom/prometheus:latest
     container_name: prometheus
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     ports:
       - "127.0.0.1:9090:9090"
     networks:
-      - app-network
+      - monitoring-network
+    user: "1000:1000"
+    cap_drop:
+      - ALL
 
   grafana:
-    image: grafana/grafana:11.2.2
+    image: grafana/grafana:latest
     container_name: grafana
     ports:
       - "127.0.0.1:3000:3000"
     environment:
-      - GF_SERVER_PROTOCOL=http
-      - GF_SERVER_DOMAIN=nutricoreiq.ru
-      - GF_SERVER_ROOT_URL=http://nutricoreiq.ru/grafana/
+      - GF_SERVER_PROTOCOL=${GF_SERVER_PROTOCOL}
+      - GF_SERVER_DOMAIN=${GF_SERVER_DOMAIN}
+      - GF_SERVER_ROOT_URL=${GF_SERVER_ROOT_URL}
     volumes:
       - grafana_data:/var/lib/grafana
     networks:
-      - app-network
+      - monitoring-network
+    user: "472:472"  # Grafana default UID
+    cap_drop:
+      - ALL
 
   nginx:
     build:
@@ -166,33 +200,44 @@ services:
       dockerfile: Dockerfile.nginx
     container_name: nginx
     ports:
-      - "80:80"
-      - "443:443"
+      - "${HTTP_PORT}:${HTTP_PORT}"
+      - "${HTTPS_PORT}:${HTTPS_PORT}"
     volumes:
-      - /etc/nginx/nginx.conf:/etc/nginx/nginx.conf
-      - /etc/nginx/sites-enabled:/etc/nginx/sites-enabled
-      - /etc/nginx/sites-available:/etc/nginx/sites-available
-      - /etc/letsencrypt:/etc/letsencrypt
+      - /etc/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/nginx/sites-enabled:/etc/nginx/sites-enabled:ro
+      - /etc/nginx/sites-available:/etc/nginx/sites-available:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
       - /var/log/nginx:/var/log/nginx
     depends_on:
       - fastapi
     networks:
       - app-network
+    user: "101:101"
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
 
   node_exporter:
-    image: prom/node-exporter:v1.8.2
+    image: prom/node-exporter:latest
     container_name: node_exporter
     ports:
       - "127.0.0.1:9100:9100"
     networks:
-      - app-network
+      - monitoring-network
+    user: "1000:1000"
+    cap_drop:
+      - ALL
 
   nginx_exporter:
-    image: nginx/nginx-prometheus-exporter:1.1.0
+    image: nginx/nginx-prometheus-exporter:latest
     container_name: nginx_exporter
-    command: --nginx.scrape-uri=http://nginx:80/stub_status
+    command: --nginx.scrape-uri=http://nginx:${HTTP_PORT}/stub_status
     networks:
-      - app-network
+      - monitoring-network
+    user: "1000:1000"
+    cap_drop:
+      - ALL
 
 volumes:
   postgres_data:
@@ -204,3 +249,7 @@ volumes:
 networks:
   app-network:
     driver: bridge
+  db-network:
+    driver: bridge  # Для DB, Redis, RabbitMQ, App
+  monitoring-network:
+    driver: bridge  # Для exporters, Prometheus, Grafana
