@@ -151,8 +151,6 @@ cython_debug/
 .pypirc
 
 # Custom certificate paths
-/src/app/core/certs/
-/src/app/core/certs/
 postgresql.conf
 /.env
 config/postgres_exporter.yml
