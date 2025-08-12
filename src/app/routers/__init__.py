@@ -7,6 +7,8 @@ from src.app.routers.product import router as product_router
 from src.app.routers.security import router as security_router
 from src.app.routers.user import router as users_router
 
+__all__ = ("routers",)
+
 routers = APIRouter()
 
 routers.include_router(

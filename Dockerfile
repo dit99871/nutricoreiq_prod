@@ -9,25 +9,23 @@ RUN poetry export -f requirements.txt --output requirements.txt --without-hashes
 FROM python:3.13-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
-    gcc \
-    postgresql-client \
-    redis-tools \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /nutricoreiq
 COPY --from=builder /nutricoreiq/requirements.txt .
 RUN pip install --no-cache-dir --root-user-action=ignore -r requirements.txt gunicorn
 COPY . .
 
-# Создаем пользователя и директорию логов
+# Создаем пользователя, директории logs и certs с правильными правами
 RUN useradd -m appuser && \
     mkdir -p /nutricoreiq/src/app/logs && \
     chown appuser:appuser /nutricoreiq/src/app/logs && \
     chmod 770 /nutricoreiq/src/app/logs && \
     chown -R appuser:appuser /nutricoreiq
+
 COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh
 
-# Настройка PYTHONPATH
+# Настройка PYTHONPATH и запуск от non-root
 ENV PYTHONPATH=/nutricoreiq
 
 CMD ["./entrypoint.sh"]

@@ -1,4 +1,4 @@
-from fastapi import Request, status
+from fastapi import Request, status, FastAPI
 from fastapi.responses import ORJSONResponse
 from fastapi.exceptions import HTTPException, RequestValidationError
 
@@ -6,6 +6,8 @@ from src.app.core.config import settings
 from src.app.core.exceptions import ExpiredTokenException
 from src.app.core.logger import get_logger
 from src.app.schemas.responses import ErrorResponse, ErrorDetail
+
+__all__ = ("setup_exception_handlers",)
 
 log = get_logger("exc_handlers")
 
@@ -123,3 +125,10 @@ def generic_exception_handler(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content=error_response.model_dump(),
     )
+
+
+def setup_exception_handlers(app: FastAPI) -> None:
+    app.add_exception_handler(ExpiredTokenException, expired_token_exception_handler)
+    app.add_exception_handler(HTTPException, http_exception_handler)
+    app.add_exception_handler(RequestValidationError, validation_exception_handler)
+    app.add_exception_handler(Exception, generic_exception_handler)
