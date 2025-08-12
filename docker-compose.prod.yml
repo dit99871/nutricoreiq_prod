@@ -180,6 +180,7 @@ services:
       - fastapi
     networks:
       - app-network
+      - monitoring-network
 
   node_exporter:
     image: prom/node-exporter:latest
@@ -188,7 +189,6 @@ services:
       - "127.0.0.1:9100:9100"
     networks:
       - monitoring-network
-      - app-network
 
   nginx_exporter:
     image: nginx/nginx-prometheus-exporter:latest
