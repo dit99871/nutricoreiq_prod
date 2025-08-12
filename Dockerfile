@@ -20,8 +20,7 @@ RUN useradd -m appuser && \
     mkdir -p /nutricoreiq/src/app/logs && \
     chown appuser:appuser /nutricoreiq/src/app/logs && \
     chmod 770 /nutricoreiq/src/app/logs && \
-    chown -R appuser:appuser /nutricoreiq \
-    chmod -R 500 /nutricoreiq/src/app/core/certs
+    chown -R appuser:appuser /nutricoreiq 
 
 COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh
