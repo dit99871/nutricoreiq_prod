@@ -161,9 +161,7 @@ prometheus.yml
 redis.conf
 src/app/core/certs/jwt-private.pem
 src/app/core/certs/jwt-public.pem
-src/app/core/certs/README.md
 .idea/
 src/app/docker-compose.dev.yml
-src/app/lifespan.py
 structure.py
 /.env.prod

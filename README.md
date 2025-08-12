@@ -1,64 +1,116 @@
-# NutricoreIQ
+NutriCoreIQ
+Описание
+NutriCoreIQ — это веб-приложение, которое помогает пользователям анализировать ценность продуктов питания, предоставляя информацию о питательных веществах и их влиянии на здоровье. Проект направлен на упрощение принятия осознанных решений о питании.
+Технологии
 
-NutricoreIQ - это API сервис для работы с информацией о продуктах питания и их пищевой ценности.
+Python 3.13
+FastAPI — для создания API
+SQLAlchemy и asyncpg — для работы с базой данных
+Redis — для кэширования и сессий
+Jinja2 — для шаблонов
+Prometheus — для мониторинга
+Uvicorn и Gunicorn — для запуска сервера
+Alembic — для миграций базы данных
+Pydantic — для валидации данных
+Taskiq — для асинхронных задач
+Poetry — для управления зависимостями
+Тестирование: pytest, pytest-asyncio, pytest-cov
+Линтеры и форматтеры: black, ruff, mypy, pylint
+Прочее: python-jose, bcrypt, httpx, aiosmtplib
 
-## Технологии
+Установка
 
-- Python 3.13+
-- FastAPI
-- SQLAlchemy (с поддержкой asyncio)
-- PostgreSQL (asyncpg)
-- Redis
-- Poetry для управления зависимостями
-- Alembic для миграций базы данных
+Клонируйте репозиторий:
+git clone https://github.com/username/NutriCoreIQ.git
 
-## Установка
 
-1. Клонируйте репозиторий:
-```bash
-git clone https://github.com/yourusername/nutricoreiq.git
-cd nutricoreiq
-```
+Установите Poetry, если еще не установлен:
+pip install poetry
 
-2. Установите Poetry (если еще не установлен):
-```bash
-curl -sSL https://install.python-poetry.org | python3 -
-```
 
-3. Установите зависимости:
-```bash
+Установите зависимости:
 poetry install
-```
 
-4. Создайте файл .env в корневой директории проекта и настройте переменные окружения.
 
-5. Примените миграции базы данных:
-```bash
+Настройте окружение:
+cp .env.example .env
+
+Укажите в .env необходимые переменные (например, настройки базы данных, Redis, ключи JWT).
+
+Сгенерируйте пару ключей RSA для подписи JWT:
+# Generate an RSA private key, of size 2048
+openssl genrsa -out src/app/core/certs/jwt-private.pem 2048
+
+# Extract the public key from the key pair
+openssl rsa -in src/app/core/certs/jwt-private.pem -outform PEM -pubout -out src/app/core/certs/jwt-public.pem
+
+
+Примените миграции базы данных:
 poetry run alembic upgrade head
-```
-6. Запустите worker taskiq:
-```bash
-taskiq worker src.app.core:broker --workers 1 --no-configure-logging --fs-discover --tasks-pattern "**/tasks" 
 
-```
-## Запуск
 
-Для запуска сервера разработки:
-```bash
+Запустите приложение:
+poetry run uvicorn src.app.main:app --host 0.0.0.0 --port 8000
+
+
+Использование
+
+Запуск сервера:
 poetry run uvicorn src.app.main:app --reload
-```
 
-API будет доступен по адресу: http://localhost:8080
+Для продакшена используйте Gunicorn:
+poetry run gunicorn -w 4 -k uvicorn.workers.UvicornWorker src.app.main:app
 
-Документация API: http://localhost:8080/docs
 
-## Тестирование
+Доступ к API: Откройте http://localhost:8000/docs для интерактивной документации Swagger.
 
-Для запуска тестов:
-```bash
-poetry run pytest
-```
+Основные эндпоинты:
 
-## Лицензия
+/auth/register — регистрация нового пользователя
+/product — информация о продуктах и их питательной ценности
+/user — управление профилем пользователя
 
-MIT
+
+Пример запроса: Регистрация нового пользователя:
+curl -X POST "http://localhost:8000/auth/register" \
+-H "Content-Type: application/json" \
+-d '{
+    "username": "john_doe",
+    "email": "john@example.com",
+    "password": "securepassword123",
+}'
+
+Ожидаемый ответ:
+{
+    "username": "john_doe",
+    "email": "john@example.com",
+    "is_subscribed": true
+}
+
+
+Структура репозитория
+
+src/app/ — Основной код приложения
+core/ — Конфигурации, логика сервисов, middleware (CSP, CSRF, Redis)
+crud/ — Операции с базой данных (пользователи, профили)
+models/ — Модели базы данных (продукты, питательные вещества, пользователи)
+routers/ — Маршруты API (аутентификация, поиск продуктов, пользователи)
+schemas/ — Схемы Pydantic для валидации
+static/ — Статические файлы (CSS, JS, изображения)
+templates/ — HTML-шаблоны (Jinja2)
+tasks/ — Асинхронные задачи (например, отправка приветственных писем)
+
+
+alembic/ — Миграции базы данных
+docker-compose.prod.yml — Конфигурация для продакшена
+Dockerfile, Dockerfile.nginx — Контейнеры для приложения и Nginx
+
+Лицензия
+MIT License
+Контакты
+
+Email: dit99871@gmail.com
+Telegram: di_99871
+
+Статус проекта
+Проект активно поддерживается.

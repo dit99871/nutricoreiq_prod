@@ -1,10 +1,10 @@
 version: "3.9"
 services:
   db:
-    image: postgres:17
+    image: postgres:latest
     container_name: postgre
     ports:
-      - "127.0.0.1:${DB_PORT}:${DB_PORT}"
+      - "127.0.0.1:${POSTGRES_PORT}:${POSTGRES_PORT}"
     env_file:
       - .env
     volumes:
@@ -19,9 +19,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    user: "999:999"
-    cap_drop:
-      - ALL
 
   postgres_exporter:
     image: quay.io/prometheuscommunity/postgres-exporter:latest
@@ -29,9 +26,9 @@ services:
     env_file:
       - .env
     environment:
-      - DATA_SOURCE_NAME=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${DB_PORT}/${POSTGRES_DB}?sslmode=${POSTGRES_SSL_MODE}
+      - DATA_SOURCE_NAME=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=${POSTGRES_SSL_MODE}
     volumes:
-      - ./postgres_exporter.yml:/postgres_exporter.yml:ro
+      - ./postgres_exporter.yml:/postgres_exporter.yml
     command:
       - "--web.listen-address=:9187"
       - "--extend.query-path=/postgres_exporter.yml"
@@ -41,12 +38,9 @@ services:
     networks:
       - db-network
       - monitoring-network
-    user: "1000:1000"  # Non-root
-    cap_drop:
-      - ALL
 
   redis:
-    image: redis:7
+    image: redis:latest
     container_name: redis
     ports:
       - "127.0.0.1:${REDIS_PORT}:${REDIS_PORT}"
@@ -61,9 +55,6 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
-    user: "999:999"
-    cap_drop:
-      - ALL
 
   redis_exporter:
     image: oliver006/redis_exporter:latest
@@ -77,9 +68,6 @@ services:
     networks:
       - db-network
       - monitoring-network
-    user: "1000:1000"
-    cap_drop:
-      - ALL
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
@@ -98,18 +86,15 @@ services:
       retries: 10
     networks:
       - db-network
-    user: "1000:1000"
-    cap_drop:
-      - ALL
 
   fastapi:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "0.0.0.0:${APP_PORT}:${APP_PORT}"
+      - "0.0.0.0:${APP_CONFIG__RUN__PORT}:${APP_CONFIG__RUN__PORT}"
     volumes:
-      - ./src/app/utils/certs:/nutricoreiq/src/app/utils/certs:ro
+      - ./src/app/core/certs:/nutricoreiq/src/app/core/certs:ro
       - ./src/app/logs:/nutricoreiq/src/app/logs
     container_name: web_app
     env_file:
@@ -125,18 +110,10 @@ services:
       - db-network
       - app-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${APP_PORT}"]
+      test: ["CMD", "curl", "-f", "http://localhost:${APP_CONFIG__RUN__PORT}"]
       interval: 5s
       timeout: 5s
       retries: 5
-    user: "1000:1000"
-    read_only: true  # Если app не пишет в fs
-    tmpfs:
-      - /tmp:size=100M
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
 
   taskiq_worker:
     build:
@@ -159,9 +136,6 @@ services:
       - ./src/app/logs:/nutricoreiq/src/app/logs
     networks:
       - db-network
-    user: "1000:1000"
-    cap_drop:
-      - ALL
 
   prometheus:
     image: prom/prometheus:latest
@@ -173,9 +147,6 @@ services:
       - "127.0.0.1:9090:9090"
     networks:
       - monitoring-network
-    user: "1000:1000"
-    cap_drop:
-      - ALL
 
   grafana:
     image: grafana/grafana:latest
@@ -190,9 +161,6 @@ services:
       - grafana_data:/var/lib/grafana
     networks:
       - monitoring-network
-    user: "472:472"  # Grafana default UID
-    cap_drop:
-      - ALL
 
   nginx:
     build:
@@ -212,11 +180,7 @@ services:
       - fastapi
     networks:
       - app-network
-    user: "101:101"
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
+      - monitoring-network
 
   node_exporter:
     image: prom/node-exporter:latest
@@ -225,19 +189,13 @@ services:
       - "127.0.0.1:9100:9100"
     networks:
       - monitoring-network
-    user: "1000:1000"
-    cap_drop:
-      - ALL
 
   nginx_exporter:
     image: nginx/nginx-prometheus-exporter:latest
     container_name: nginx_exporter
-    command: --nginx.scrape-uri=http://nginx:${HTTP_PORT}/stub_status
+    command: --nginx.scrape-uri=http://nginx:${APP_CONFIG__RUN__PORT}/stub_status
     networks:
       - monitoring-network
-    user: "1000:1000"
-    cap_drop:
-      - ALL
 
 volumes:
   postgres_data:

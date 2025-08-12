@@ -11,7 +11,7 @@ from src.app.core.redis import init_redis, close_redis
 log = get_logger("lifespan")
 
 
-@retry(stop=stop_after_attempt(15), wait=wait_fixed(4))
+@retry(stop=stop_after_attempt(4), wait=wait_fixed(15))
 async def check_rabbitmq():
     try:
         await broker.startup()
