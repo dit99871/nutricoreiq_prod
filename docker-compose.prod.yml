@@ -4,11 +4,7 @@ services:
     image: postgres:latest
     container_name: postgre
     ports:
-<<<<<<< HEAD
       - "127.0.0.1:${POSTGRES_PORT}:${POSTGRES_PORT}"
-=======
-      - "127.0.0.1:${DB_PORT}:${DB_PORT}"
->>>>>>> e3b443e074f1d0db28babd3af9a45dc4c6b9fa51
     env_file:
       - .env
     volumes:
@@ -23,9 +19,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    user: "999:999"
-    cap_drop:
-      - ALL
 
   postgres_exporter:
     image: quay.io/prometheuscommunity/postgres-exporter:latest
@@ -33,13 +26,9 @@ services:
     env_file:
       - .env
     environment:
-<<<<<<< HEAD
       - DATA_SOURCE_NAME=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=${POSTGRES_SSL_MODE}
-=======
-      - DATA_SOURCE_NAME=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${DB_PORT}/${POSTGRES_DB}?sslmode=${POSTGRES_SSL_MODE}
->>>>>>> e3b443e074f1d0db28babd3af9a45dc4c6b9fa51
     volumes:
-      - ./postgres_exporter.yml:/postgres_exporter.yml:ro
+      - ./postgres_exporter.yml:/postgres_exporter.yml
     command:
       - "--web.listen-address=:9187"
       - "--extend.query-path=/postgres_exporter.yml"
@@ -49,12 +38,6 @@ services:
     networks:
       - db-network
       - monitoring-network
-<<<<<<< HEAD
-=======
-    user: "1000:1000"  # Non-root
-    cap_drop:
-      - ALL
->>>>>>> e3b443e074f1d0db28babd3af9a45dc4c6b9fa51
 
   redis:
     image: redis:latest
@@ -72,9 +55,6 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
-    user: "999:999"
-    cap_drop:
-      - ALL
 
   redis_exporter:
     image: oliver006/redis_exporter:latest
@@ -88,12 +68,6 @@ services:
     networks:
       - db-network
       - monitoring-network
-<<<<<<< HEAD
-=======
-    user: "1000:1000"
-    cap_drop:
-      - ALL
->>>>>>> e3b443e074f1d0db28babd3af9a45dc4c6b9fa51
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
@@ -112,27 +86,15 @@ services:
       retries: 10
     networks:
       - db-network
-<<<<<<< HEAD
-=======
-    user: "1000:1000"
-    cap_drop:
-      - ALL
->>>>>>> e3b443e074f1d0db28babd3af9a45dc4c6b9fa51
 
   fastapi:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-<<<<<<< HEAD
       - "0.0.0.0:${APP_CONFIG__RUN__PORT}:${APP_CONFIG__RUN__PORT}"
     volumes:
       - ./src/app/core/certs:/nutricoreiq/src/app/core/certs:ro
-=======
-      - "0.0.0.0:${APP_PORT}:${APP_PORT}"
-    volumes:
-      - ./src/app/utils/certs:/nutricoreiq/src/app/utils/certs:ro
->>>>>>> e3b443e074f1d0db28babd3af9a45dc4c6b9fa51
       - ./src/app/logs:/nutricoreiq/src/app/logs
     container_name: web_app
     env_file:
@@ -148,22 +110,10 @@ services:
       - db-network
       - app-network
     healthcheck:
-<<<<<<< HEAD
       test: ["CMD", "curl", "-f", "http://localhost:${APP_CONFIG__RUN__PORT}"]
-=======
-      test: ["CMD", "curl", "-f", "http://localhost:${APP_PORT}"]
->>>>>>> e3b443e074f1d0db28babd3af9a45dc4c6b9fa51
       interval: 5s
       timeout: 5s
       retries: 5
-    user: "1000:1000"
-    read_only: true  # Если app не пишет в fs
-    tmpfs:
-      - /tmp:size=100M
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
 
   taskiq_worker:
     build:
@@ -186,12 +136,6 @@ services:
       - ./src/app/logs:/nutricoreiq/src/app/logs
     networks:
       - db-network
-<<<<<<< HEAD
-=======
-    user: "1000:1000"
-    cap_drop:
-      - ALL
->>>>>>> e3b443e074f1d0db28babd3af9a45dc4c6b9fa51
 
   prometheus:
     image: prom/prometheus:latest
@@ -203,12 +147,6 @@ services:
       - "127.0.0.1:9090:9090"
     networks:
       - monitoring-network
-<<<<<<< HEAD
-=======
-    user: "1000:1000"
-    cap_drop:
-      - ALL
->>>>>>> e3b443e074f1d0db28babd3af9a45dc4c6b9fa51
 
   grafana:
     image: grafana/grafana:latest
@@ -223,12 +161,6 @@ services:
       - grafana_data:/var/lib/grafana
     networks:
       - monitoring-network
-<<<<<<< HEAD
-=======
-    user: "472:472"  # Grafana default UID
-    cap_drop:
-      - ALL
->>>>>>> e3b443e074f1d0db28babd3af9a45dc4c6b9fa51
 
   nginx:
     build:
@@ -248,15 +180,6 @@ services:
       - fastapi
     networks:
       - app-network
-<<<<<<< HEAD
-      - monitoring-network
-=======
-    user: "101:101"
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
->>>>>>> e3b443e074f1d0db28babd3af9a45dc4c6b9fa51
 
   node_exporter:
     image: prom/node-exporter:latest
@@ -265,28 +188,13 @@ services:
       - "127.0.0.1:9100:9100"
     networks:
       - monitoring-network
-<<<<<<< HEAD
-=======
-    user: "1000:1000"
-    cap_drop:
-      - ALL
->>>>>>> e3b443e074f1d0db28babd3af9a45dc4c6b9fa51
 
   nginx_exporter:
     image: nginx/nginx-prometheus-exporter:latest
     container_name: nginx_exporter
-<<<<<<< HEAD
     command: --nginx.scrape-uri=http://nginx:${APP_CONFIG__RUN__PORT}/stub_status
     networks:
       - monitoring-network
-=======
-    command: --nginx.scrape-uri=http://nginx:${HTTP_PORT}/stub_status
-    networks:
-      - monitoring-network
-    user: "1000:1000"
-    cap_drop:
-      - ALL
->>>>>>> e3b443e074f1d0db28babd3af9a45dc4c6b9fa51
 
 volumes:
   postgres_data:
@@ -301,8 +209,4 @@ networks:
   db-network:
     driver: bridge  # Для DB, Redis, RabbitMQ, App
   monitoring-network:
-<<<<<<< HEAD
     driver: bridge  # Для exporters, Prometheus, Grafana
-=======
-    driver: bridge  # Для exporters, Prometheus, Grafana
->>>>>>> e3b443e074f1d0db28babd3af9a45dc4c6b9fa51
