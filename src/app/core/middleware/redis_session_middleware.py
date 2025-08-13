@@ -38,7 +38,7 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
             await redis_client.set(
                 f"redis_session:{session_id}",
                 json.dumps(session),
-                ex=1800,  # сессия живёт 30 минут
+                ex=3600,  # сессия живёт 1 час
             )
 
             # установка куков для session_id
