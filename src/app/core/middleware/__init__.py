@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 
 from src.app.core.config import settings
 from .csp_middleware import CSPMiddleware
@@ -18,6 +19,7 @@ def setup_middleware(app: FastAPI) -> None:
         allow_headers=settings.cors.allow_headers,
         max_age=600,
     )
+    app.add_middleware(SentryAsgiMiddleware)
     app.add_middleware(CSPMiddleware)
     app.add_middleware(CSRFMiddleware)
     app.add_middleware(RedisSessionMiddleware)
