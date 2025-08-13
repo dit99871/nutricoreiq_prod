@@ -1,0 +1,26 @@
+auth_enabled: false
+server:
+  http_listen_port: 3100
+ingester:
+  lifecycler:
+    ring:
+      kvstore:
+        store: inmemory
+  wal:
+    enabled: true
+    dir: /loki/wal
+storage:
+  filesystem:
+    directory: /loki/chunks
+schema_config:
+  configs:
+    - from: 2020-01-01
+      store: loki
+      object_store: filesystem
+      schema: v11
+      index:
+        prefix: index_
+        period: 24h
+limits_config:
+  max_cache_entries: 100000
+  retention_period: 168h  # Очистка раз в неделю
