@@ -7,8 +7,11 @@ from taskiq import TaskiqEvents, TaskiqState
 from taskiq_aio_pika import AioPikaBroker
 
 from src.app.core.config import settings
+from src.app.core.services.sentry import init_sentry
 
 log = logging.getLogger("taskiq_broker")
+
+init_sentry()
 
 broker = AioPikaBroker(
     url=str(settings.taskiq.url),
