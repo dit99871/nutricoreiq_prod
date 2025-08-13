@@ -1,7 +1,7 @@
 version: "3.9"
 services:
   db:
-    image: postgres:latest
+    image: postgres:17
     container_name: postgre
     ports:
       - "127.0.0.1:${POSTGRES_PORT}:${POSTGRES_PORT}"
@@ -178,6 +178,8 @@ services:
       - /var/log/nginx:/var/log/nginx
     depends_on:
       - fastapi
+    dns:
+    - 127.0.0.11
     networks:
       - app-network
       - monitoring-network
@@ -193,9 +195,10 @@ services:
   nginx_exporter:
     image: nginx/nginx-prometheus-exporter:latest
     container_name: nginx_exporter
-    command: --nginx.scrape-uri=http://nginx:${APP_CONFIG__RUN__PORT}/stub_status
+    command: --nginx.scrape-uri=http://nginx:${HTTP_PORT}/stub_status
     networks:
       - monitoring-network
+      - app-network
 
 volumes:
   postgres_data:
