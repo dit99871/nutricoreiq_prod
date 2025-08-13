@@ -15,7 +15,7 @@ services:
     networks:
       - db-network
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -51,7 +51,7 @@ services:
     networks:
       - db-network
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -80,7 +80,7 @@ services:
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
     healthcheck:
-      test: [ "CMD-SHELL", "rabbitmq-diagnostics -q ping && rabbitmqctl status" ]
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping && rabbitmqctl status"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -178,8 +178,6 @@ services:
       - /var/log/nginx:/var/log/nginx
     depends_on:
       - fastapi
-    dns:
-    - 127.0.0.11
     networks:
       - app-network
       - monitoring-network
