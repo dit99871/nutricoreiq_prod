@@ -1,20 +1,42 @@
 import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+import json
 from typing import Optional
+from datetime import datetime
 
 from src.app.core.config import settings
+
+
+class JsonFormatter(logging.Formatter):
+    """Форматирует логи в JSON для Loki."""
+
+    def format(self, record):
+        log_entry = {
+            "time": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3],
+            "level": record.levelname,
+            "message": record.getMessage(),
+            "source": "app",
+            "name": record.name,
+            "lineno": record.lineno,
+        }
+        return json.dumps(log_entry)
 
 
 def setup_logging() -> None:
     """
     Настройка логирования на основе конфигурации из settings.
+    Логи записываются в JSON для Loki и в текстовом формате для консоли.
     """
     # Создание директории для логов
     log_dir = Path(settings.logging.log_file).parent
     log_dir.mkdir(parents=True, exist_ok=True)
 
-    formatter = logging.Formatter(
+    # JSON форматтер для файла
+    json_formatter = JsonFormatter()
+
+    # Текстовый форматтер для консоли
+    text_formatter = logging.Formatter(
         fmt=settings.logging.log_format,
         datefmt=settings.logging.log_date_format,
     )
@@ -25,12 +47,11 @@ def setup_logging() -> None:
         maxBytes=settings.logging.log_file_max_size,
         backupCount=settings.logging.log_file_backup_count,
     )
-
-    file_handler.setFormatter(formatter)
+    file_handler.setFormatter(json_formatter)
 
     # Хэндлер для вывода в консоль
     console_handler = logging.StreamHandler()
-    console_handler.setFormatter(formatter)
+    console_handler.setFormatter(text_formatter)
 
     # Настройка корневого логгера
     logging.basicConfig(
