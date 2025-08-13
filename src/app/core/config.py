@@ -106,6 +106,14 @@ class TaskiqConfig(BaseModel):
     log_format: str = WORKER_LOG_DEFAULT_FORMAT
 
 
+class SentyConfig(BaseModel):
+    dsn: str = None  # отредактировать после получения реального dsn
+
+
+class LokiConfig(BaseModel):
+    url: str
+
+
 class Settings(BaseSettings):
     DEBUG: bool = False
 
@@ -125,6 +133,8 @@ class Settings(BaseSettings):
     cors: CORSConfig
     mail: SMTPConfig
     taskiq: TaskiqConfig
+    sentry: SentyConfig
+    loki: LokiConfig
 
     @property
     def effective_db_url(self) -> PostgresDsn:
