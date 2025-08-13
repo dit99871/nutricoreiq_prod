@@ -43,6 +43,7 @@ class RedisConfig(BaseModel):
     url: str
     salt: str
     password: str
+    session_ttl: int
 
 
 class LoggingConfig(BaseModel):
