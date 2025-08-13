@@ -28,10 +28,10 @@ services:
     environment:
       - DATA_SOURCE_NAME=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=${POSTGRES_SSL_MODE}
     volumes:
-      - ./postgres_exporter.yml:/postgres_exporter.yml
+      - ./postgres_exporter.yaml:/postgres_exporter.yaml
     command:
       - "--web.listen-address=:9187"
-      - "--extend.query-path=/postgres_exporter.yml"
+      - "--extend.query-path=/postgres_exporter.yaml"
     depends_on:
       db:
         condition: service_healthy
