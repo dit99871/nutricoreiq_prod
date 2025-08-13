@@ -21,6 +21,8 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
             session_data = await redis_client.get(f"redis_session:{session_id}")
             if session_data:
                 session = json.loads(session_data)
+                # обновление времени жизни сессии
+                await redis_client.expire(f"redis_session:{session_id}", 3600)
             else:
                 session = {
                     "redis_session_id": session_id,
@@ -38,7 +40,7 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
             await redis_client.set(
                 f"redis_session:{session_id}",
                 json.dumps(session),
-                ex=3600,  # сессия живёт 1 час
+                ex=3600 if not session_data else None,  # сессия живёт 1 час
             )
 
             # установка куков для session_id
