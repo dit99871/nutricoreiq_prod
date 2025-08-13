@@ -189,6 +189,8 @@ services:
     container_name: node_exporter
     ports:
       - "127.0.0.1:9100:9100"
+    dns:
+      - 127.0.0.11
     networks:
       - monitoring-network
 
@@ -200,17 +202,108 @@ services:
       - monitoring-network
       - app-network
 
+  # Sentry Services
+  sentry:
+    image: getsentry/sentry:latest
+    container_name: sentry
+    ports:
+      - "127.0.0.1:9000:9000"
+    environment:
+      SENTRY_SECRET_KEY: ${SENTRY_SECRET_KEY}
+      SENTRY_POSTGRES_HOST: db
+      SENTRY_POSTGRES_PORT: ${POSTGRES_PORT}
+      SENTRY_DB_NAME: ${POSTGRES_DB}
+      SENTRY_DB_USER: ${POSTGRES_USER}
+      SENTRY_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      SENTRY_REDIS_HOST: redis
+      SENTRY_REDIS_PORT: ${REDIS_PORT}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - sentry_data:/var/lib/sentry/files
+    networks:
+      - db-network
+      - monitoring-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  sentry-worker:
+    image: getsentry/sentry:latest
+    container_name: sentry_worker
+    command: run worker
+    environment:
+      SENTRY_SECRET_KEY: ${SENTRY_SECRET_KEY}
+      SENTRY_POSTGRES_HOST: db
+      SENTRY_POSTGRES_PORT: ${POSTGRES_PORT}
+      SENTRY_DB_NAME: ${POSTGRES_DB}
+      SENTRY_DB_USER: ${POSTGRES_USER}
+      SENTRY_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      SENTRY_REDIS_HOST: redis
+      SENTRY_REDIS_PORT: ${REDIS_PORT}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - db-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Loki Services
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    ports:
+      - "127.0.0.1:3100:3100"
+    command: -config.file=/etc/loki/loki-config.yaml
+    volumes:
+      - ./loki-config.yaml:/etc/loki/loki-config.yaml
+      - loki_data:/loki
+    networks:
+      - monitoring-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3100/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: promtail
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./promtail-config.yaml:/etc/promtail/promtail-config.yaml
+      - /var/log/nginx:/var/log/nginx:ro
+      - ./src/app/logs:/nutricoreiq/src/app/logs:ro
+    command: -config.file=/etc/promtail/promtail-config.yaml
+    depends_on:
+      - loki
+    networks:
+      - monitoring-network
+
 volumes:
   postgres_data:
   redis_data:
   prometheus_data:
   grafana_data:
   rabbitmq-data:
+  sentry_data:
+  loki_data:
 
 networks:
   app-network:
     driver: bridge
   db-network:
-    driver: bridge  # Для DB, Redis, RabbitMQ, App
+    driver: bridge
   monitoring-network:
-    driver: bridge  # Для exporters, Prometheus, Grafana
+    driver: bridge
