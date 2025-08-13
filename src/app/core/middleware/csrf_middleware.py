@@ -54,6 +54,14 @@ class CSRFMiddleware(BaseHTTPMiddleware):
 
             # Извлечение CSRF-токена из сессии
             session = request.scope.get("redis_session", {})
+            if session is None:
+                log.error("Session not found for request: %s", request.url)
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail={
+                        "message": "Время сессии истекло. Пожалуйста, войдите снова.",
+                    },
+                )
             session_csrf_token = session.get("csrf_token")
             if not session_csrf_token:
                 log.error(
