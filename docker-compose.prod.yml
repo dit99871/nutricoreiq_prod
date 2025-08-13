@@ -94,7 +94,7 @@ services:
     ports:
       - "0.0.0.0:${APP_CONFIG__RUN__PORT}:${APP_CONFIG__RUN__PORT}"
     volumes:
-      - ./src/app/core/certs:/nutricoreiq/src/app/core/certs:ro
+      - ./src/app/core/certs:/nutricoreiq/src/app/core/certs
       - ./src/app/logs:/nutricoreiq/src/app/logs
     container_name: web_app
     env_file:
@@ -132,7 +132,7 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./src/app/core/certs:/nutricoreiq/src/app/core/certs:ro
+      - ./src/app/core/certs:/nutricoreiq/src/app/core/certs
       - ./src/app/logs:/nutricoreiq/src/app/logs
     networks:
       - db-network
@@ -239,7 +239,7 @@ services:
       SENTRY_SECRET_KEY: ${SENTRY_SECRET_KEY}
       SENTRY_POSTGRES_HOST: db
       SENTRY_POSTGRES_PORT: ${POSTGRES_PORT}
-      SENTRY_DB_NAME: ${POSTGRES_DB}
+      SENTRY_DB_NAME: sentry
       SENTRY_DB_USER: ${POSTGRES_USER}
       SENTRY_DB_PASSWORD: ${POSTGRES_PASSWORD}
       SENTRY_REDIS_HOST: redis

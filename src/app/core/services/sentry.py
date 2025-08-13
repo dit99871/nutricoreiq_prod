@@ -73,8 +73,13 @@ def init_sentry():
 
     Note: If `settings.sentry.dsn` is not provided, a default DSN is used.
     """
+    dsn = settings.sentry.dsn
+    if not dsn:
+        log.error("Sentry DSN not configured, skipping initialization")
+        return
+
     sentry_sdk.init(
-        dsn=settings.sentry.dsn or "http://sentry:9000/1",  # DSN
+        dsn=dsn,  # DSN
         traces_sample_rate=1.0,  # Мониторинг производительности
         environment="production",
         release="1.0.0",
