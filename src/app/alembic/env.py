@@ -18,6 +18,13 @@ from src.app.models import (
     User,
 )
 
+from src.app.core.config import settings
+from src.app.core.services.sentry import init_sentry
+
+if settings.sentry.dsn:
+    init_sentry()
+
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
