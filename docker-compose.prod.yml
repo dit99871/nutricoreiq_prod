@@ -1,4 +1,5 @@
 version: "3.9"
+
 services:
   db:
     image: postgres:17
@@ -122,6 +123,8 @@ services:
     container_name: taskiq_worker
     command: >
       bash -c "sleep 30 && taskiq worker src.app.core.services.taskiq_broker:broker --workers 1 --fs-discover --tasks-pattern '**/tasks'"
+    environment:
+      - SENTRY_DSN=${APP_CONFIG__SENTRY__DSN}
     env_file:
       - .env
     depends_on:
@@ -200,64 +203,6 @@ services:
       - monitoring-network
       - app-network
 
-  # Sentry Services
-  sentry:
-    image: getsentry/sentry:latest
-    container_name: sentry
-    ports:
-      - "127.0.0.1:9000:9000"
-    environment:
-      SENTRY_SECRET_KEY: ${SENTRY_SECRET_KEY}
-      SENTRY_POSTGRES_HOST: db
-      SENTRY_POSTGRES_PORT: ${POSTGRES_PORT}
-      SENTRY_DB_NAME: sentry
-      SENTRY_DB_USER: ${POSTGRES_USER}
-      SENTRY_DB_PASSWORD: ${POSTGRES_PASSWORD}
-      SENTRY_REDIS_HOST: redis
-      SENTRY_REDIS_PORT: ${REDIS_PORT}
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    volumes:
-      - sentry_data:/var/lib/sentry/files
-    networks:
-      - db-network
-      - monitoring-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  sentry-worker:
-    image: getsentry/sentry:latest
-    container_name: sentry_worker
-    command: run worker
-    environment:
-      SENTRY_SECRET_KEY: ${SENTRY_SECRET_KEY}
-      SENTRY_POSTGRES_HOST: db
-      SENTRY_POSTGRES_PORT: ${POSTGRES_PORT}
-      SENTRY_DB_NAME: sentry
-      SENTRY_DB_USER: ${POSTGRES_USER}
-      SENTRY_DB_PASSWORD: ${POSTGRES_PASSWORD}
-      SENTRY_REDIS_HOST: redis
-      SENTRY_REDIS_PORT: ${REDIS_PORT}
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - db-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # Loki Services
   loki:
     image: grafana/loki:latest
     container_name: loki
@@ -295,7 +240,6 @@ volumes:
   prometheus_data:
   grafana_data:
   rabbitmq-data:
-  sentry_data:
   loki_data:
 
 networks:
