@@ -1,26 +1,39 @@
 auth_enabled: false
+
 server:
   http_listen_port: 3100
-ingester:
-  lifecycler:
-    ring:
-      kvstore:
-        store: inmemory
-  wal:
-    enabled: true
-    dir: /loki/wal
-storage:
-  filesystem:
-    directory: /loki/chunks
+
+common:
+  ring:
+    instance_addr: 127.0.0.1
+    kvstore:
+      store: inmemory
+  replication_factor: 1
+  path_prefix: /loki
+
 schema_config:
   configs:
     - from: 2020-01-01
-      store: loki
+      store: tsdb
       object_store: filesystem
-      schema: v11
+      schema: v13
       index:
         prefix: index_
         period: 24h
+
+storage_config:
+  filesystem:
+    directory: /loki/chunks
+
 limits_config:
-  max_cache_entries: 100000
   retention_period: 168h  # Очистка раз в неделю
+
+ingester:
+  wal:
+    enabled: true
+    dir: /loki/wal
+
+compactor:
+  working_directory: /loki/compactor
+  retention_enabled: true
+  delete_request_store: filesystem

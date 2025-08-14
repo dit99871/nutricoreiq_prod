@@ -195,7 +195,7 @@ services:
   nginx_exporter:
     image: nginx/nginx-prometheus-exporter:latest
     container_name: nginx_exporter
-    command: --nginx.scrape-uri=http://nginx:${HTTP_PORT}/stub_status
+    command: --nginx.scrape-uri=http://172.18.0.4:${HTTP_PORT}/stub_status
     networks:
       - monitoring-network
       - app-network
@@ -210,7 +210,7 @@ services:
       SENTRY_SECRET_KEY: ${SENTRY_SECRET_KEY}
       SENTRY_POSTGRES_HOST: db
       SENTRY_POSTGRES_PORT: ${POSTGRES_PORT}
-      SENTRY_DB_NAME: ${POSTGRES_DB}
+      SENTRY_DB_NAME: sentry
       SENTRY_DB_USER: ${POSTGRES_USER}
       SENTRY_DB_PASSWORD: ${POSTGRES_PASSWORD}
       SENTRY_REDIS_HOST: redis
@@ -263,7 +263,7 @@ services:
     container_name: loki
     ports:
       - "127.0.0.1:3100:3100"
-    command: -config.file=/etc/loki/loki-config.yaml
+    command: -config.file=/etc/loki/loki-config.yaml -config.expand-env=true
     volumes:
       - ./loki-config.yaml:/etc/loki/loki-config.yaml
       - loki_data:/loki
