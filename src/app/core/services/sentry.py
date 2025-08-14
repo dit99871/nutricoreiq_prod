@@ -4,6 +4,8 @@ import json
 from datetime import datetime
 
 import sentry_sdk
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.starlette import StarletteIntegration
 
 from src.app.core.logger import get_logger
 from src.app.core.config import settings
@@ -46,7 +48,8 @@ def sentry_to_loki(event, hint):
         ]
     }
     try:
-        requests.post(loki_url, json=log_entry)
+        response =requests.post(loki_url, json=log_entry)
+        response.raise_for_status()  # вызывает исключение при HTTP-ошибке
     except Exception as e:
         log.error(
             "Failed to send to Loki: %s, error: %s",
@@ -88,6 +91,11 @@ def init_sentry():
         send_default_pii=False  ,  # GDPR
         before_send=sentry_to_loki,  # Вебхук для Loki
         integrations=[
-            sentry_sdk.integrations.fastapi.FastApiIntegration(),
+            StarletteIntegration(
+                transaction_style="endpoint",
+            ),
+            FastApiIntegration(
+                transaction_style="endpoint",
+            ),
         ],
     )
