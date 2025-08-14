@@ -87,4 +87,7 @@ def init_sentry():
         profile_lifecycle="trace",
         send_default_pii=False  ,  # GDPR
         before_send=sentry_to_loki,  # Вебхук для Loki
+        integrations=[
+            sentry_sdk.integrations.fastapi.FastApiIntegration(),
+        ],
     )
