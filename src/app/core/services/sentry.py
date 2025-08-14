@@ -83,6 +83,8 @@ def init_sentry():
         traces_sample_rate=1.0,  # Мониторинг производительности
         environment="production",
         release="1.0.0",
-        send_default_pii=False,  # GDPR
+        profile_session_sample_rate=1.0,
+        profile_lifecycle="trace",
+        send_default_pii=False  ,  # GDPR
         before_send=sentry_to_loki,  # Вебхук для Loki
     )
