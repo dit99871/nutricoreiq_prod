@@ -48,7 +48,8 @@ def sentry_to_loki(event, hint):
         ]
     }
     try:
-        requests.post(loki_url, json=log_entry)
+        response =requests.post(loki_url, json=log_entry)
+        response.raise_for_status()  # вызывает исключение при HTTP-ошибке
     except Exception as e:
         log.error(
             "Failed to send to Loki: %s, error: %s",
