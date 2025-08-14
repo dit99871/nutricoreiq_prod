@@ -107,7 +107,7 @@ class TaskiqConfig(BaseModel):
 
 
 class SentyConfig(BaseModel):
-    dsn: str = None  # отредактировать после получения реального dsn
+    dsn: str
 
 
 class LokiConfig(BaseModel):
