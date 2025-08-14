@@ -10,6 +10,7 @@ from fastapi import (
 )
 from fastapi.responses import ORJSONResponse, HTMLResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.responses import RedirectResponse
 
 from src.app.core import db_helper
 from src.app.core.exceptions import ExpiredTokenException
@@ -18,6 +19,7 @@ from src.app.core.services.auth import get_current_auth_user
 from src.app.core.utils import templates
 from src.app.crud.profile import update_user_profile, get_user_profile
 from src.app.crud.user import choose_subscribe_status
+from src.app.routers.auth import router
 from src.app.schemas.user import UserProfile, UserResponse
 
 router = APIRouter(
@@ -176,3 +178,16 @@ async def subscribe_email_notification(
         raise ExpiredTokenException()
 
     await choose_subscribe_status(user, db_session, True)
+
+
+@router.get("/login")
+async def login_get() -> RedirectResponse:
+    """
+    Redirects the user to the homepage with an action parameter set to unsubscribe.
+
+    This endpoint is used to handle login requests to the `/login` endpoint.
+    It returns a 302 redirect response to the homepage with an action parameter set to unsubscribe.
+
+    :return: A 302 redirect response.
+    """
+    return RedirectResponse(url="/?action=unsubscribe")
