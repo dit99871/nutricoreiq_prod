@@ -314,7 +314,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             try {
                 const formData = new FormData(form);
-                await secureFetch('/auth/login', {
+                await secureFetch('/routers/auth/login', {
                     method: 'POST',
                     body: new URLSearchParams(formData),
                     headers: { "Content-Type": "application/x-www-form-urlencoded" }
