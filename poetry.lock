@@ -2267,6 +2267,7 @@ files = [
 
 [package.dependencies]
 certifi = "*"
+fastapi = {version = ">=0.79.0", optional = true, markers = "extra == \"fastapi\""}
 urllib3 = ">=1.26.11"
 
 [package.extras]
@@ -3136,4 +3137,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.13"
-content-hash = "ac752f1e02405e2634053be55f25d056befd4b063c39fa7cb684c59f4c66d556"
+content-hash = "527c21be92fe6360613417f6ee6d1b94655f75b5a33b0cedfe0ced1ad3dc39bb"
