@@ -1,4 +1,5 @@
 version: "3.9"
+
 services:
   db:
     image: postgres:17
@@ -13,7 +14,7 @@ services:
       - ./postgresql.conf:/var/lib/postgresql/data/postgresql.conf:ro
     command: -c config_file=/var/lib/postgresql/data/postgresql.conf
     networks:
-      - db-network
+      - app-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
@@ -36,8 +37,7 @@ services:
       db:
         condition: service_healthy
     networks:
-      - db-network
-      - monitoring-network
+      - app-network
 
   redis:
     image: redis:latest
@@ -49,7 +49,7 @@ services:
       - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
     command: redis-server /usr/local/etc/redis/redis.conf
     networks:
-      - db-network
+      - app-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -66,8 +66,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - db-network
-      - monitoring-network
+      - app-network
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
@@ -85,7 +84,7 @@ services:
       timeout: 5s
       retries: 10
     networks:
-      - db-network
+      - app-network
 
   fastapi:
     build:
@@ -107,7 +106,6 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - db-network
       - app-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${APP_CONFIG__RUN__PORT}"]
@@ -122,6 +120,8 @@ services:
     container_name: taskiq_worker
     command: >
       bash -c "sleep 30 && taskiq worker src.app.core.services.taskiq_broker:broker --workers 1 --fs-discover --tasks-pattern '**/tasks'"
+    environment:
+      - SENTRY_DSN=${APP_CONFIG__SENTRY__DSN}
     env_file:
       - .env
     depends_on:
@@ -135,7 +135,7 @@ services:
       - ./src/app/core/certs:/nutricoreiq/src/app/core/certs
       - ./src/app/logs:/nutricoreiq/src/app/logs
     networks:
-      - db-network
+      - app-network
 
   prometheus:
     image: prom/prometheus:latest
@@ -146,7 +146,7 @@ services:
     ports:
       - "127.0.0.1:9090:9090"
     networks:
-      - monitoring-network
+      - app-network
 
   grafana:
     image: grafana/grafana:latest
@@ -160,7 +160,7 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
     networks:
-      - monitoring-network
+      - app-network
 
   nginx:
     build:
@@ -180,7 +180,6 @@ services:
       - fastapi
     networks:
       - app-network
-      - monitoring-network
 
   node_exporter:
     image: prom/node-exporter:latest
@@ -190,74 +189,15 @@ services:
     dns:
       - 127.0.0.11
     networks:
-      - monitoring-network
+      - app-network
 
   nginx_exporter:
     image: nginx/nginx-prometheus-exporter:latest
     container_name: nginx_exporter
     command: --nginx.scrape-uri=http://172.18.0.4:${HTTP_PORT}/stub_status
     networks:
-      - monitoring-network
       - app-network
 
-  # Sentry Services
-  sentry:
-    image: getsentry/sentry:latest
-    container_name: sentry
-    ports:
-      - "127.0.0.1:9000:9000"
-    environment:
-      SENTRY_SECRET_KEY: ${SENTRY_SECRET_KEY}
-      SENTRY_POSTGRES_HOST: db
-      SENTRY_POSTGRES_PORT: ${POSTGRES_PORT}
-      SENTRY_DB_NAME: sentry
-      SENTRY_DB_USER: ${POSTGRES_USER}
-      SENTRY_DB_PASSWORD: ${POSTGRES_PASSWORD}
-      SENTRY_REDIS_HOST: redis
-      SENTRY_REDIS_PORT: ${REDIS_PORT}
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    volumes:
-      - sentry_data:/var/lib/sentry/files
-    networks:
-      - db-network
-      - monitoring-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  sentry-worker:
-    image: getsentry/sentry:latest
-    container_name: sentry_worker
-    command: run worker
-    environment:
-      SENTRY_SECRET_KEY: ${SENTRY_SECRET_KEY}
-      SENTRY_POSTGRES_HOST: db
-      SENTRY_POSTGRES_PORT: ${POSTGRES_PORT}
-      SENTRY_DB_NAME: sentry
-      SENTRY_DB_USER: ${POSTGRES_USER}
-      SENTRY_DB_PASSWORD: ${POSTGRES_PASSWORD}
-      SENTRY_REDIS_HOST: redis
-      SENTRY_REDIS_PORT: ${REDIS_PORT}
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - db-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # Loki Services
   loki:
     image: grafana/loki:latest
     container_name: loki
@@ -268,7 +208,7 @@ services:
       - ./loki-config.yaml:/etc/loki/loki-config.yaml
       - loki_data:/loki
     networks:
-      - monitoring-network
+      - app-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3100/ready"]
       interval: 10s
@@ -287,7 +227,7 @@ services:
     depends_on:
       - loki
     networks:
-      - monitoring-network
+      - app-network
 
 volumes:
   postgres_data:
@@ -295,13 +235,8 @@ volumes:
   prometheus_data:
   grafana_data:
   rabbitmq-data:
-  sentry_data:
   loki_data:
 
 networks:
   app-network:
-    driver: bridge
-  db-network:
-    driver: bridge
-  monitoring-network:
     driver: bridge
