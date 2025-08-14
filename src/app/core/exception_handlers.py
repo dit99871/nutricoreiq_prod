@@ -1,3 +1,4 @@
+import sentry_sdk
 from fastapi import Request, status, FastAPI
 from fastapi.responses import ORJSONResponse
 from fastapi.exceptions import HTTPException, RequestValidationError
@@ -24,6 +25,9 @@ def expired_token_exception_handler(request: Request, exc: ExpiredTokenException
         exc.detail,
         exc.status_code,
     )
+    # отправка ошибки в sentry
+    sentry_sdk.capture_exception(exc)
+
     headers = {
         "X-Error-Type": "authentication_error",
         "Access-Control-Expose-Headers": "X-Error-Type",
@@ -65,6 +69,8 @@ def http_exception_handler(
         message,
         exc.status_code,
     )
+    # отправка ошибки в sentry
+    sentry_sdk.capture_exception(exc)
 
     return ORJSONResponse(
         status_code=exc.status_code,
@@ -91,8 +97,10 @@ def validation_exception_handler(
             message="Некорректные входные данные", details={"fields": errors}
         ),
     )
-
     log.error("Ошибка валидации по адресу: %s, ошибки: %s", request.url, errors)
+
+    # отправка ошибки в sentry
+    sentry_sdk.capture_exception(exc)
 
     return ORJSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -116,10 +124,11 @@ def generic_exception_handler(
         status="error",
         error=ErrorDetail(message="Внутренняя ошибка сервера", details=details),
     )
-
     log.error(
         "Непредвиденная ошибка по адресу %s: %s", request.url, str(exc), exc_info=True
     )
+    # отправка ошибки в sentry
+    sentry_sdk.capture_exception(exc)
 
     return ORJSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
