@@ -2,6 +2,8 @@ auth_enabled: false
 
 server:
   http_listen_port: 3100
+  log_format: json  # Добавлено: Логи в JSON для лёгкого парсинга Promtail
+  log_level: info   # Добавлено: Уровень логирования (можно изменить на debug для больше деталей)
 
 common:
   ring:

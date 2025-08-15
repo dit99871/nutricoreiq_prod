@@ -1,9 +1,11 @@
 server:
   http_listen_port: 9080
+
 clients:
   - url: http://loki:3100/loki/api/v1/push
+
 scrape_configs:
-  # FastAPI logs
+  # Ваши существующие job'ы
   - job_name: fastapi
     static_configs:
       - targets:
@@ -23,7 +25,7 @@ scrape_configs:
           format: RFC3339Nano
       - labels:
           source: app
-  # Nginx logs
+
   - job_name: nginx
     static_configs:
       - targets:
@@ -43,3 +45,57 @@ scrape_configs:
           format: RFC3339
       - labels:
           source: system
+
+  # Новый: Логи Loki (предполагаем stdout в Docker или файл)
+  - job_name: loki
+    docker_sd_configs:  # Если в Docker; иначе используйте static_configs с __path__
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 15s
+    relabel_configs:
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/loki.*'  # Имя контейнера Loki
+        action: keep
+      - source_labels: ['__meta_docker_container_name']
+        target_label: 'container_name'
+      - target_label: 'app'
+        replacement: 'loki'  # Ключевой лейбл для дашборда
+    pipeline_stages:
+      - json:
+          expressions:
+            time: timestamp
+            message: msg
+            level: level
+      - timestamp:
+          source: time
+          format: RFC3339Nano
+      - labels:
+          level:  # Извлекаем level для error/warn
+      - output:
+          source: message
+
+  # Новый: Логи Promtail (самого себя)
+  - job_name: promtail
+    docker_sd_configs:  # Если в Docker
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 15s
+    relabel_configs:
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/promtail.*'  # Имя контейнера Promtail
+        action: keep
+      - source_labels: ['__meta_docker_container_name']
+        target_label: 'container_name'
+      - target_label: 'app'
+        replacement: 'promtail'  # Ключевой лейбл для дашборда (дашборд ожидает app_kubernetes_io_name, но мы используем app и relabel в Prometheus)
+    pipeline_stages:
+      - json:
+          expressions:
+            time: timestamp
+            message: msg
+            level: level
+      - timestamp:
+          source: time
+          format: RFC3339Nano
+      - labels:
+          level:
+      - output:
+          source: message
