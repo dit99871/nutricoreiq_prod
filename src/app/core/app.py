@@ -40,11 +40,11 @@ def create_app() -> FastAPI:
     # настройка Sentry
     init_sentry()
 
-    # настройка мидлвари
-    setup_middleware(app)
-
     # настройка обработчиков исключений
     setup_exception_handlers(app)
+
+    # настройка мидлвари
+    setup_middleware(app)
 
     # подключение роутеров
     app.include_router(routers)
