@@ -11,6 +11,16 @@ __all__ = ("setup_middleware",)
 
 
 def setup_middleware(app: FastAPI) -> None:
+    """
+    Add middleware to the FastAPI application.
+
+    This function adds various middleware to the provided FastAPI application.
+    The middleware includes CORSMiddleware, SentryAsgiMiddleware, RedisSessionMiddleware,
+    CSPMiddleware, and CSRFMiddleware.
+
+    :param app: The FastAPI application to add middleware to.
+    :return: None
+    """
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors.allow_origins,
@@ -20,6 +30,6 @@ def setup_middleware(app: FastAPI) -> None:
         max_age=600,
     )
     app.add_middleware(SentryAsgiMiddleware)
+    app.add_middleware(RedisSessionMiddleware)
     app.add_middleware(CSPMiddleware)
     app.add_middleware(CSRFMiddleware)
-    app.add_middleware(RedisSessionMiddleware)
