@@ -18,7 +18,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         if request.method in ["POST", "PUT", "DELETE", "PATCH"]:
-            # Проверка Origin/Referer
+            # проверка Origin/Referer
             origin = request.headers.get("origin") or request.headers.get("referer")
             if origin and not any(
                 origin.startswith(allowed) for allowed in settings.cors.allow_origins
@@ -36,7 +36,6 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                     },
                 )
 
-            # Извлечение CSRF-токена из cookie
             csrf_token_cookie = request.cookies.get("csrf_token")
             if not csrf_token_cookie:
                 log.error(
@@ -52,7 +51,6 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                     },
                 )
 
-            # Извлечение CSRF-токена из сессии
             session = request.scope.get("redis_session", {})
             if session is None:
                 log.error("Session not found for request: %s", request.url)
@@ -77,13 +75,12 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                     },
                 )
 
-            # Извлечение CSRF-токена из заголовка или формы
+            # извлечение CSRF-токена из заголовка или формы
             csrf_token = request.headers.get("X-CSRF-Token")
             if not csrf_token and request.method == "POST":
                 form_data = await request.form()
                 csrf_token = form_data.get("_csrf_token")
 
-            # Отладочный лог для проверки токенов
             log.debug(
                 "CSRF check: cookie=%s, header/form=%s, session=%s, URL=%s",
                 csrf_token_cookie,
@@ -92,7 +89,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 request.url,
             )
 
-            # Проверка совпадения токенов
+            # проверка совпадения токенов
             if (
                 not csrf_token
                 or csrf_token != csrf_token_cookie
