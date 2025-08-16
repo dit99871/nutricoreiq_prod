@@ -28,7 +28,7 @@ def create_app() -> FastAPI:
 
     app = FastAPI(lifespan=lifespan)
 
-    # настройка Prometheus
+    # настройка prometheus
     Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
     # Монтирование статических файлов
@@ -37,7 +37,7 @@ def create_app() -> FastAPI:
     if os.path.exists(static_dir) and os.path.isdir(static_dir):
         app.mount("/static/", StaticFiles(directory=static_dir), name="static")
 
-    # настройка Sentry
+    # настройка sentry
     init_sentry()
 
     # настройка обработчиков исключений

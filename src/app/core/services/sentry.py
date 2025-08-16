@@ -49,7 +49,7 @@ def sentry_to_loki(event, hint):
     }
     try:
         response =requests.post(loki_url, json=log_entry)
-        response.raise_for_status()  # вызывает исключение при HTTP-ошибке
+        response.raise_for_status()  # вызывает исключение при http-ошибке
         log.info(
             "Successfully sent event to Loki: %s",
             event.get("event_id"),
@@ -86,14 +86,14 @@ def init_sentry():
         return
 
     sentry_sdk.init(
-        dsn=dsn,  # DSN
-        traces_sample_rate=1.0,  # Мониторинг производительности
+        dsn=dsn,
+        traces_sample_rate=1.0,  # мониторинг производительности
         environment="production",
         release="1.0.0",
-        profile_session_sample_rate=1.0,
+        profile_session_sample_rate=1.0,  # мониторинг профилей
         profile_lifecycle="trace",
-        send_default_pii=False  ,  # GDPR
-        before_send=sentry_to_loki,  # Вебхук для Loki
+        send_default_pii=False  ,  # отправка персональных данных
+        before_send=sentry_to_loki,  # вебхук для loki
         integrations=[
             StarletteIntegration(
                 transaction_style="endpoint",
