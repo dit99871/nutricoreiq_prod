@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 
 from fastapi import Request, Response, HTTPException, status
+from redis.asyncio import RedisError
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.app.core.config import settings
@@ -14,6 +15,22 @@ log = get_logger("redis_session_middleware")
 
 class RedisSessionMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
+        """
+        Middleware for handling redis session.
+
+        This middleware gets or generates session id from cookies and retrieves session data from redis.
+        If session data exists, it extends session expiration time and stores the session in request scope.
+        If session data doesn't exist, it creates a new session.
+        If session data has changed or it's a new session, it saves the session in redis.
+        CSRF token is generated if it's not present in the session.
+        After processing of the request, the session is saved in redis.
+        Session id and CSRF token are set in response cookies.
+        If an exception occurs during the process, it is logged and an HTTP exception with a 503 status code is raised.
+
+        :param request: The current request object.
+        :param call_next: The next middleware in the chain.
+        :return: The response object.
+        """
         session_id = (
             request.cookies.get("redis_session_id") or generate_redis_session_id()
         )
@@ -34,7 +51,7 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
                 }
             request.scope["redis_session"] = session
 
-            # генерация CSRF-токена, если он отсутствует в сессии
+            # генерация csrf-токена, если он отсутствует в сессии
             csrf_token = session.get("csrf_token") or generate_csrf_token()
             session["csrf_token"] = csrf_token
 
@@ -58,11 +75,11 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
                 samesite="strict",
             )
 
-            # установка CSRF-токена в куки
+            # установка csrf-токена в куки
             response.set_cookie(
                 key="csrf_token",
                 value=csrf_token,
-                httponly=False,  # доступно для JS
+                httponly=False,  # доступно для js
                 secure=True,
                 samesite="strict",
                 max_age=3600,  # токен живёт 1 час
@@ -71,7 +88,7 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
             return response
         except HTTPException as e:
             if e.status_code == status.HTTP_403_FORBIDDEN:
-                raise  # пропускаем ошибки CSRF для обработки в CSRFMiddleware
+                raise  # пропускаем ошибки csrf для обработки в CSRFMiddleware
             log.error(
                 "Ошибка в RedisSessionMiddleware: %s, IP: %s, User-Agent: %s",
                 str(e),
@@ -84,7 +101,7 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
                     "message": "Сервис недоступен. Пожалуйста, попробуйте позже.",
                 },
             )
-        except Exception as e:
+        except RedisError as e:
             log.error(
                 "Ошибка в RedisSessionMiddleware: %s, IP: %s, User-Agent: %s",
                 str(e),
