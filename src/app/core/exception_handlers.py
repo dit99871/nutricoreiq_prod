@@ -35,8 +35,6 @@ def expired_token_exception_handler(
         exc.detail,
         exc.status_code,
     )
-    # отправка ошибки в sentry
-    sentry_sdk.capture_exception(exc)
 
     headers = {
         "X-Error-Type": "authentication_error",
@@ -79,8 +77,6 @@ def http_exception_handler(
         message,
         exc.status_code,
     )
-    # отправка ошибки в sentry
-    sentry_sdk.capture_exception(exc)
 
     return ORJSONResponse(
         status_code=exc.status_code,
@@ -109,9 +105,6 @@ def validation_exception_handler(
     )
     log.error("Ошибка валидации по адресу: %s, ошибки: %s", request.url, errors)
 
-    # отправка ошибки в sentry
-    sentry_sdk.capture_exception(exc)
-
     return ORJSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content=error_response.model_dump(),
@@ -137,8 +130,6 @@ def generic_exception_handler(
     log.error(
         "Непредвиденная ошибка по адресу %s: %s", request.url, str(exc), exc_info=True
     )
-    # отправка ошибки в sentry
-    sentry_sdk.capture_exception(exc)
 
     return ORJSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
