@@ -77,7 +77,7 @@ def http_exception_handler(
         message,
         exc.status_code,
     )
-
+    log.info("Handling HTTPException: type=%s, status=%s", type(exc).__name__, exc.status_code)
     return ORJSONResponse(
         status_code=exc.status_code,
         content=error_response.model_dump(),

@@ -9,13 +9,13 @@ log = get_logger("unwrap_exception_middleware")
 
 class UnwrapExceptionMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
-        log.debug("Processing request: %s", request.url)
+        log.info("Processing request: %s", request.url)
         try:
             response = await call_next(request)
-            log.debug("Request processed successfully: %s", request.url)
+            log.info("Request processed successfully: %s", request.url)
             return response
         except Exception as exc:
-            log.debug("Caught exception: type=%s, message=%s", type(exc).__name__, str(exc))
+            log.info("Caught exception: type=%s, message=%s", type(exc).__name__, str(exc))
 
             # Проверяем chain исключений
             original_exc = exc
@@ -23,7 +23,7 @@ class UnwrapExceptionMiddleware(BaseHTTPMiddleware):
             while True:
                 chain_log.append(f"type={type(original_exc).__name__}, message={str(original_exc)}")
                 if isinstance(original_exc, HTTPException):
-                    log.debug("Unwrapped to HTTPException: status=%s, detail=%s",
+                    log.info("Unwrapped to HTTPException: status=%s, detail=%s",
                               original_exc.status_code, original_exc.detail)
                     raise original_exc
                 # Проверяем __cause__
@@ -39,4 +39,5 @@ class UnwrapExceptionMiddleware(BaseHTTPMiddleware):
                 break
 
             log.error("No HTTPException found in chain: %s", "; ".join(chain_log))
+            log.error("Final exception before raise: type=%s, message=%s", type(exc).__name__, str(exc))
             raise  # Re-raise исходное исключение
