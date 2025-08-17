@@ -21,10 +21,11 @@ def sentry_to_loki(event, hint):
     :param hint: The Sentry event hint
     :return: The original event
     """
-    if hint.get("seen", False):
-        log.info("Skipping duplicate Sentry event: %s", event.get("event_id"))
+    request_id = hint.get("request_id")
+    if request_id and request_id in hint.get("processed_requests", set()):
+        log.debug("Skipping duplicate Sentry event for request_id=%s: %s", request_id, event.get("event_id"))
         return None
-    hint["seen"] = True
+    hint["processed_requests"] = hint.get("processed_requests", set()) | {request_id}
     loki_url = settings.loki.url
     log_entry = {
         "streams": [
@@ -33,17 +34,17 @@ def sentry_to_loki(event, hint):
                     "source": "sentry",
                     "level": event.get("level", "error"),
                     "app": "fastapi",
+                    "request_id": request_id or "unknown",
                 },
                 "values": [
                     [
                         str(int(time.time() * 1e9)),
                         json.dumps(
                             {
-                                "time": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")[
-                                    :-3
-                                ],
+                                "time": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3],
                                 "message": event.get("message", "Sentry event"),
                                 "event_id": event.get("event_id"),
+                                "exception": str(event.get("exception")),
                             }
                         ),
                     ]
@@ -52,18 +53,11 @@ def sentry_to_loki(event, hint):
         ]
     }
     try:
-        response =requests.post(loki_url, json=log_entry)
-        response.raise_for_status()  # вызывает исключение при http-ошибке
-        log.info(
-            "Successfully sent event to Loki: %s",
-            event.get("event_id"),
-        )
+        response = requests.post(loki_url, json=log_entry)
+        response.raise_for_status()
+        log.info("Successfully sent event to Loki: %s", event.get("event_id"))
     except Exception as e:
-        log.error(
-            "Failed to send to Loki: %s, error: %s",
-            loki_url,
-            str(e),
-        )
+        log.error("Failed to send to Loki: %s, error: %s", loki_url, str(e))
     return event
 
 
