@@ -8,7 +8,11 @@ log = get_logger("csrf_middleware")
 
 class CSRFMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        # Пропуск публичных маршрутов
+        # используем X-Forwarded-Proto для определения схемы
+        scheme = request.headers.get("X-Forwarded-Proto", request.scope.get("scheme", "http"))
+        request_url = str(request.url).replace(f"{request.scope['scheme']}://", f"{scheme}://")
+
+        # пропуск публичных маршрутов
         if request.url.path in [
             f"{settings.router.auth}/login",
             f"{settings.router.auth}/register",
@@ -25,7 +29,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             ):
                 log.error(
                     "Invalid origin for request: %s, IP: %s, User-Agent: %s",
-                    request.url,
+                    request_url,
                     request.client.host,
                     request.headers.get("user-agent", "unknown"),
                 )
@@ -40,7 +44,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             if not csrf_token_cookie:
                 log.error(
                     "CSRF token missing in cookie for request: %s, IP: %s, User-Agent: %s",
-                    request.url,
+                    request_url,
                     request.client.host,
                     request.headers.get("user-agent", "unknown"),
                 )
@@ -53,7 +57,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
 
             session = request.scope.get("redis_session", {})
             if session is None:
-                log.error("Session not found for request: %s", request.url)
+                log.error("Session not found for request: %s", request_url)
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail={
@@ -64,7 +68,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             if not session_csrf_token:
                 log.error(
                     "CSRF token missing in session for request: %s, IP: %s, User-Agent: %s",
-                    request.url,
+                    request_url,
                     request.client.host,
                     request.headers.get("user-agent", "unknown"),
                 )
@@ -75,7 +79,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                     },
                 )
 
-            # извлечение CSRF-токена из заголовка или формы
+            # извлечение csrf-токена из заголовка или формы
             csrf_token = request.headers.get("X-CSRF-Token")
             if not csrf_token and request.method == "POST":
                 form_data = await request.form()
@@ -86,7 +90,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 csrf_token_cookie,
                 csrf_token,
                 session_csrf_token,
-                request.url,
+                request_url,
             )
 
             # проверка совпадения токенов
@@ -97,7 +101,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             ):
                 log.error(
                     "Invalid CSRF token for request: %s, IP: %s, User-Agent: %s",
-                    request.url,
+                    request_url,
                     request.client.host,
                     request.headers.get("user-agent", "unknown"),
                 )
