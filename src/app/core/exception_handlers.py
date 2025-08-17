@@ -125,13 +125,17 @@ def generic_exception_handler(
     :param exc: объект Exception, содержащий информацию об возникшей ошибке
     :return: объект ORJSONResponse, содержащий структурированную информацию об ошибке
     """
+    # используем X-Forwarded-Proto для определения схемы
+    scheme = request.headers.get("X-Forwarded-Proto", request.scope.get("scheme", "http"))
+    request_url = str(request.url).replace(f"{request.scope['scheme']}://", f"{scheme}://")
+
     details = {"field": "server", "message": str(exc)} if settings.DEBUG else None
     error_response = ErrorResponse(
         status="error",
         error=ErrorDetail(message="Внутренняя ошибка сервера", details=details),
     )
     log.error(
-        "Непредвиденная ошибка по адресу %s: %s", request.url, str(exc), exc_info=True
+        "Непредвиденная ошибка по адресу %s: %s", request_url, str(exc), exc_info=True
     )
 
     return ORJSONResponse(
