@@ -138,18 +138,33 @@ def validation_exception_handler(
 
 
 def universal_exception_handler(request: Request, exc: Exception):
-    """
-    Универсальный обработчик исключений, проверяющий тип исключения.
-    Обрабатывает HTTPException и другие типы, возвращая корректный ErrorResponse.
-    """
-    log.debug("Caught in universal handler: type=%s, message=%s", type(exc).__name__, str(exc))
+    log.info("Caught in universal handler: type=%s, message=%s", type(exc).__name__, str(exc))
 
-    if isinstance(exc, HTTPException):
-        if isinstance(exc.detail, dict):
-            message = exc.detail.get("message", "Произошла ошибка")
-            details = exc.detail.get("details")
+    # Разворачиваем исключение
+    original_exc = exc
+    chain_log = []
+    while True:
+        chain_log.append(f"type={type(original_exc).__name__}, message={str(original_exc)}")
+        if isinstance(original_exc, HTTPException):
+            log.info("Unwrapped to HTTPException: status=%s, detail=%s",
+                      original_exc.status_code, original_exc.detail)
+            break
+        if hasattr(original_exc, '__cause__') and original_exc.__cause__:
+            original_exc = original_exc.__cause__
+            chain_log.append("Following __cause__")
+            continue
+        if hasattr(original_exc, '__context__') and original_exc.__context__:
+            original_exc = original_exc.__context__
+            chain_log.append("Following __context__")
+            continue
+        break
+
+    if isinstance(original_exc, HTTPException):
+        if isinstance(original_exc.detail, dict):
+            message = original_exc.detail.get("message", "Произошла ошибка")
+            details = original_exc.detail.get("details")
         else:
-            message = exc.detail or "Произошла ошибка"
+            message = original_exc.detail or "Произошла ошибка"
             details = None
         error_detail = ErrorDetail(message=message, details=details)
         error_response = ErrorResponse(status="error", error=error_detail)
@@ -157,10 +172,12 @@ def universal_exception_handler(request: Request, exc: Exception):
             "HTTP-ошибка по адресу %s: сообщение=%s, статус=%s",
             request.url,
             message,
-            exc.status_code,
+            original_exc.status_code,
         )
+        sentry_sdk.set_tag("exception_type", type(original_exc).__name__)  # Для анализа в Sentry/Loki
+        sentry_sdk.capture_exception(original_exc)  # Явный capture
         return ORJSONResponse(
-            status_code=exc.status_code,
+            status_code=original_exc.status_code,
             content=error_response.model_dump(),
         )
 
@@ -171,8 +188,11 @@ def universal_exception_handler(request: Request, exc: Exception):
         error=ErrorDetail(message="Внутренняя ошибка сервера", details=details),
     )
     log.error(
-        "Непредвиденная ошибка по адресу %s: %s", request.url, str(exc), exc_info=True
+        "Непредвиденная ошибка по адресу %s: %s, chain: %s",
+        request.url, str(exc), "; ".join(chain_log), exc_info=True
     )
+    sentry_sdk.set_tag("exception_type", type(exc).__name__)
+    sentry_sdk.capture_exception(exc)  # Явный capture
     return ORJSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content=error_response.model_dump(),
