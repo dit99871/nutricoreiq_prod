@@ -47,41 +47,41 @@ def expired_token_exception_handler(
     )
 
 
-def http_exception_handler(
-    request: Request,
-    exc: HTTPException,
-):
-    """
-    Обработка http-exception, которые могут возникнуть
-    при выполнении запросов к API.
-
-    :param request: Объект Request, содержащий информацию о запросе
-    :param exc: объект HTTPException, содержащий информацию о возникшей ошибке
-    :return: объект ORJSONResponse, содержащий структурированную информацию об ошибке
-    """
-    if isinstance(exc.detail, dict):
-        message = exc.detail.get("message", "Произошла ошибка")
-        details = exc.detail.get("details")
-    else:
-        message = exc.detail or "Произошла ошибка"
-        details = None
-
-    error_detail = ErrorDetail(
-        message=message,
-        details=details,
-    )
-    error_response = ErrorResponse(status="error", error=error_detail)
-    log.error(
-        "HTTP-ошибка по адресу %s: сообщение=%s, статус=%s",
-        request.url,
-        message,
-        exc.status_code,
-    )
-    log.info("Handling HTTPException: type=%s, status=%s", type(exc).__name__, exc.status_code)
-    return ORJSONResponse(
-        status_code=exc.status_code,
-        content=error_response.model_dump(),
-    )
+# def http_exception_handler(
+#     request: Request,
+#     exc: HTTPException,
+# ):
+#     """
+#     Обработка http-exception, которые могут возникнуть
+#     при выполнении запросов к API.
+#
+#     :param request: Объект Request, содержащий информацию о запросе
+#     :param exc: объект HTTPException, содержащий информацию о возникшей ошибке
+#     :return: объект ORJSONResponse, содержащий структурированную информацию об ошибке
+#     """
+#     if isinstance(exc.detail, dict):
+#         message = exc.detail.get("message", "Произошла ошибка")
+#         details = exc.detail.get("details")
+#     else:
+#         message = exc.detail or "Произошла ошибка"
+#         details = None
+#
+#     error_detail = ErrorDetail(
+#         message=message,
+#         details=details,
+#     )
+#     error_response = ErrorResponse(status="error", error=error_detail)
+#     log.error(
+#         "HTTP-ошибка по адресу %s: сообщение=%s, статус=%s",
+#         request.url,
+#         message,
+#         exc.status_code,
+#     )
+#     log.info("Handling HTTPException: type=%s, status=%s", type(exc).__name__, exc.status_code)
+#     return ORJSONResponse(
+#         status_code=exc.status_code,
+#         content=error_response.model_dump(),
+#     )
 
 
 def validation_exception_handler(
@@ -111,17 +111,60 @@ def validation_exception_handler(
     )
 
 
-def generic_exception_handler(
-    request: Request,
-    exc: Exception,
-):
-    """
-    Обработка необработанных Exception, которые могут возникнуть при выполнении запросов к API.
+# def generic_exception_handler(
+#     request: Request,
+#     exc: Exception,
+# ):
+#     """
+#     Обработка необработанных Exception, которые могут возникнуть при выполнении запросов к API.
+#
+#     :param request: Объект Request, содержащий информацию о запросе
+#     :param exc: объект Exception, содержащий информацию об возникшей ошибке
+#     :return: объект ORJSONResponse, содержащий структурированную информацию об ошибке
+#     """
+#     details = {"field": "server", "message": str(exc)} if settings.DEBUG else None
+#     error_response = ErrorResponse(
+#         status="error",
+#         error=ErrorDetail(message="Внутренняя ошибка сервера", details=details),
+#     )
+#     log.error(
+#         "Непредвиденная ошибка по адресу %s: %s", request.url, str(exc), exc_info=True
+#     )
+#
+#     return ORJSONResponse(
+#         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#         content=error_response.model_dump(),
+#     )
 
-    :param request: Объект Request, содержащий информацию о запросе
-    :param exc: объект Exception, содержащий информацию об возникшей ошибке
-    :return: объект ORJSONResponse, содержащий структурированную информацию об ошибке
+
+def universal_exception_handler(request: Request, exc: Exception):
     """
+    Универсальный обработчик исключений, проверяющий тип исключения.
+    Обрабатывает HTTPException и другие типы, возвращая корректный ErrorResponse.
+    """
+    log.debug("Caught in universal handler: type=%s, message=%s", type(exc).__name__, str(exc))
+
+    if isinstance(exc, HTTPException):
+        if isinstance(exc.detail, dict):
+            message = exc.detail.get("message", "Произошла ошибка")
+            details = exc.detail.get("details")
+        else:
+            message = exc.detail or "Произошла ошибка"
+            details = None
+        error_detail = ErrorDetail(message=message, details=details)
+        error_response = ErrorResponse(status="error", error=error_detail)
+        log.error(
+            "HTTP-ошибка по адресу %s: сообщение=%s, статус=%s",
+            request.url,
+            message,
+            exc.status_code,
+        )
+        return ORJSONResponse(
+            status_code=exc.status_code,
+            content=error_response.model_dump(),
+        )
+
+    # Fallback для других исключений
     details = {"field": "server", "message": str(exc)} if settings.DEBUG else None
     error_response = ErrorResponse(
         status="error",
@@ -130,7 +173,6 @@ def generic_exception_handler(
     log.error(
         "Непредвиденная ошибка по адресу %s: %s", request.url, str(exc), exc_info=True
     )
-
     return ORJSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content=error_response.model_dump(),
@@ -138,7 +180,8 @@ def generic_exception_handler(
 
 
 def setup_exception_handlers(app: FastAPI) -> None:
+    app.add_exception_handler(Exception, universal_exception_handler)
     app.add_exception_handler(ExpiredTokenException, expired_token_exception_handler)
-    app.add_exception_handler(HTTPException, http_exception_handler)
+    # app.add_exception_handler(HTTPException, http_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
-    app.add_exception_handler(Exception, generic_exception_handler)
+    # app.add_exception_handler(Exception, generic_exception_handler)
