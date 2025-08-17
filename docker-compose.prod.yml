@@ -91,7 +91,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "0.0.0.0:${APP_CONFIG__RUN__PORT}:${APP_CONFIG__RUN__PORT}"
+      - "127.0.0.1:${APP_CONFIG__RUN__PORT}:${APP_CONFIG__RUN__PORT}"
     volumes:
       - ./src/app/core/certs:/nutricoreiq/src/app/core/certs
       - ./src/app/logs:/nutricoreiq/src/app/logs
