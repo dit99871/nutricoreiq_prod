@@ -2,7 +2,6 @@ from fastapi import APIRouter
 
 from src.app.core.config import settings
 from src.app.routers.auth import router as auth_router
-from src.app.routers.debug import router as debug_router
 from src.app.routers.info import router as info_router
 from src.app.routers.product import router as product_router
 from src.app.routers.security import router as security_router
@@ -16,7 +15,6 @@ routers.include_router(
     auth_router,
     prefix=settings.router.auth,
 )
-routers.include_router(debug_router)
 routers.include_router(
     product_router,
     prefix=settings.router.product,
