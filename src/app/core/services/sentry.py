@@ -98,8 +98,5 @@ def init_sentry():
             StarletteIntegration(
                 transaction_style="endpoint",
             ),
-            FastApiIntegration(
-                transaction_style="endpoint",
-            ),
         ],
     )
