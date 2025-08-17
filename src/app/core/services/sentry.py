@@ -22,7 +22,7 @@ def sentry_to_loki(event, hint):
     :return: The original event
     """
     if hint.get("seen", False):
-        log.debug("Skipping duplicate Sentry event: %s", event.get("event_id"))
+        log.info("Skipping duplicate Sentry event: %s", event.get("event_id"))
         return None
     hint["seen"] = True
     loki_url = settings.loki.url
