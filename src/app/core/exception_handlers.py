@@ -138,70 +138,73 @@ def validation_exception_handler(
 
 
 def universal_exception_handler(request: Request, exc: Exception):
-    log.info("Caught in universal handler: type=%s, message=%s", type(exc).__name__, str(exc))
+    def universal_exception_handler(request: Request, exc: Exception):
+        request_id = str(uuid.uuid4())  # Генерируем request_id
+        sentry_sdk.set_tag("request_id", request_id)  # Устанавливаем для Sentry/Loki
 
-    # Разворачиваем исключение
-    original_exc = exc
-    chain_log = []
-    while True:
-        chain_log.append(f"type={type(original_exc).__name__}, message={str(original_exc)}")
-        if isinstance(original_exc, HTTPException):
-            log.info("Unwrapped to HTTPException: status=%s, detail=%s",
-                      original_exc.status_code, original_exc.detail)
+        log.debug("Caught in universal handler: type=%s, message=%s, request_id=%s",
+                  type(exc).__name__, str(exc), request_id)
+
+        # Разворачиваем исключение
+        original_exc = exc
+        chain_log = []
+        while True:
+            chain_log.append(f"type={type(original_exc).__name__}, message={str(original_exc)}")
+            if isinstance(original_exc, HTTPException):
+                log.debug("Unwrapped to HTTPException: status=%s, detail=%s",
+                          original_exc.status_code, original_exc.detail)
+                break
+            if hasattr(original_exc, '__cause__') and original_exc.__cause__:
+                original_exc = original_exc.__cause__
+                chain_log.append("Following __cause__")
+                continue
+            if hasattr(original_exc, '__context__') and original_exc.__context__:
+                original_exc = original_exc.__context__
+                chain_log.append("Following __context__")
+                continue
             break
-        if hasattr(original_exc, '__cause__') and original_exc.__cause__:
-            original_exc = original_exc.__cause__
-            chain_log.append("Following __cause__")
-            continue
-        if hasattr(original_exc, '__context__') and original_exc.__context__:
-            original_exc = original_exc.__context__
-            chain_log.append("Following __context__")
-            continue
-        break
 
-    if isinstance(original_exc, HTTPException):
-        if isinstance(original_exc.detail, dict):
-            message = original_exc.detail.get("message", "Произошла ошибка")
-            details = original_exc.detail.get("details")
-        else:
-            message = original_exc.detail or "Произошла ошибка"
-            details = None
-        error_detail = ErrorDetail(message=message, details=details)
-        error_response = ErrorResponse(status="error", error=error_detail)
-        log.error(
-            "HTTP-ошибка по адресу %s: сообщение=%s, статус=%s",
-            request.url,
-            message,
-            original_exc.status_code,
+        if isinstance(original_exc, HTTPException):
+            if isinstance(original_exc.detail, dict):
+                message = original_exc.detail.get("message", "Произошла ошибка")
+                details = original_exc.detail.get("details")
+            else:
+                message = original_exc.detail or "Произошла ошибка"
+                details = None
+            error_detail = ErrorDetail(message=message, details=details)
+            error_response = ErrorResponse(status="error", error=error_detail)
+            log.error(
+                "HTTP-ошибка по адресу %s: сообщение=%s, статус=%s, request_id=%s",
+                request.url, message, original_exc.status_code, request_id
+            )
+            sentry_sdk.set_tag("exception_type", type(original_exc).__name__)
+            sentry_sdk.capture_exception(original_exc)  # Явный capture
+            return ORJSONResponse(
+                status_code=original_exc.status_code,
+                content=error_response.model_dump(),
+            )
+
+        # Fallback для других исключений
+        details = {"field": "server", "message": str(exc)} if settings.DEBUG else None
+        error_response = ErrorResponse(
+            status="error",
+            error=ErrorDetail(message="Внутренняя ошибка сервера", details=details),
         )
-        sentry_sdk.set_tag("exception_type", type(original_exc).__name__)  # Для анализа в Sentry/Loki
-        sentry_sdk.capture_exception(original_exc)  # Явный capture
+        log.error(
+            "Непредвиденная ошибка по адресу %s: %s, chain: %s, request_id=%s",
+            request.url, str(exc), "; ".join(chain_log), request_id, exc_info=True
+        )
+        sentry_sdk.set_tag("exception_type", type(exc).__name__)
+        sentry_sdk.capture_exception(exc)  # Явный capture
         return ORJSONResponse(
-            status_code=original_exc.status_code,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content=error_response.model_dump(),
         )
 
-    # Fallback для других исключений
-    details = {"field": "server", "message": str(exc)} if settings.DEBUG else None
-    error_response = ErrorResponse(
-        status="error",
-        error=ErrorDetail(message="Внутренняя ошибка сервера", details=details),
-    )
-    log.error(
-        "Непредвиденная ошибка по адресу %s: %s, chain: %s",
-        request.url, str(exc), "; ".join(chain_log), exc_info=True
-    )
-    sentry_sdk.set_tag("exception_type", type(exc).__name__)
-    sentry_sdk.capture_exception(exc)  # Явный capture
-    return ORJSONResponse(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        content=error_response.model_dump(),
-    )
-
 
 def setup_exception_handlers(app: FastAPI) -> None:
-    app.add_exception_handler(Exception, universal_exception_handler)
     app.add_exception_handler(ExpiredTokenException, expired_token_exception_handler)
     # app.add_exception_handler(HTTPException, http_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
     # app.add_exception_handler(Exception, generic_exception_handler)
+    app.add_exception_handler(Exception, universal_exception_handler)
