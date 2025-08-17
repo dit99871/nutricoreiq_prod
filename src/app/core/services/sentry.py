@@ -14,17 +14,20 @@ log = get_logger("sentry_service")
 
 
 def sentry_to_loki(event, hint):
-    """
-    Converts a Sentry event to a format suitable for Loki and sends it there.
-
-    :param event: The Sentry event
-    :param hint: The Sentry event hint
-    :return: The original event
-    """
     request_id = hint.get("request_id")
-    if request_id and request_id in hint.get("processed_requests", set()):
-        log.debug("Skipping duplicate Sentry event for request_id=%s: %s", request_id, event.get("event_id"))
+    exception_type = hint.get("exception_type")
+
+    # Пропускаем события без явного request_id или если событие уже обработано
+    if not request_id or request_id in hint.get("processed_requests", set()):
+        log.debug("Skipping Sentry event: request_id=%s, event_id=%s",
+                 request_id or "none", event.get("event_id"))
         return None
+
+    # Пропускаем события без exception_type (автоматические от middleware)
+    if not exception_type:
+        log.debug("Skipping event without exception_type: event_id=%s", event.get("event_id"))
+        return None
+
     hint["processed_requests"] = hint.get("processed_requests", set()) | {request_id}
     loki_url = settings.loki.url
     log_entry = {
@@ -34,7 +37,8 @@ def sentry_to_loki(event, hint):
                     "source": "sentry",
                     "level": event.get("level", "error"),
                     "app": "fastapi",
-                    "request_id": request_id or "unknown",
+                    "request_id": request_id,
+                    "exception_type": exception_type or "unknown",
                 },
                 "values": [
                     [
@@ -59,7 +63,6 @@ def sentry_to_loki(event, hint):
     except Exception as e:
         log.error("Failed to send to Loki: %s, error: %s", loki_url, str(e))
     return event
-
 
 def init_sentry():
     """
@@ -96,6 +99,7 @@ def init_sentry():
         integrations=[
             StarletteIntegration(
                 transaction_style="endpoint",
+                middleware_spans=False,
             ),
         ],
     )
