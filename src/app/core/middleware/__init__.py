@@ -6,6 +6,7 @@ from src.app.core.config import settings
 from .csp_middleware import CSPMiddleware
 from .csrf_middleware import CSRFMiddleware
 from .redis_session_middleware import RedisSessionMiddleware
+from .unwrap_exception_middleware import UnwrapExceptionMiddleware
 
 __all__ = ("setup_middleware",)
 
@@ -30,6 +31,7 @@ def setup_middleware(app: FastAPI) -> None:
         max_age=600,
     )
     app.add_middleware(SentryAsgiMiddleware)
+    app.add_middleware(UnwrapExceptionMiddleware)
     app.add_middleware(RedisSessionMiddleware)
     app.add_middleware(CSPMiddleware)
     app.add_middleware(CSRFMiddleware)
