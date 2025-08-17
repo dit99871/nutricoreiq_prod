@@ -9,40 +9,34 @@ log = get_logger("unwrap_exception_middleware")
 
 class UnwrapExceptionMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
+        log.debug("Processing request: %s", request.url)
         try:
-            return await call_next(request)
+            response = await call_next(request)
+            log.debug("Request processed successfully: %s", request.url)
+            return response
         except Exception as exc:
-            log.debug("Caught exception: %s", type(exc).__name__)
+            log.debug("Caught exception: type=%s, message=%s", type(exc).__name__, str(exc))
 
-            # Проверяем chain исключений (__cause__ и __context__)
+            # Проверяем chain исключений
             original_exc = exc
+            chain_log = []
             while True:
+                chain_log.append(f"type={type(original_exc).__name__}, message={str(original_exc)}")
                 if isinstance(original_exc, HTTPException):
                     log.debug("Unwrapped to HTTPException: status=%s, detail=%s",
-                              original_exc.status_code, original_exc.detail,
-                    )
+                              original_exc.status_code, original_exc.detail)
                     raise original_exc
-                # проверяем __cause__
+                # Проверяем __cause__
                 if hasattr(original_exc, '__cause__') and original_exc.__cause__:
                     original_exc = original_exc.__cause__
-                    log.debug(
-                        "Following __cause__: %s",
-                        type(original_exc).__name__,
-                    )
+                    chain_log.append("Following __cause__")
                     continue
-                # проверяем __context__
+                # Проверяем __context__
                 if hasattr(original_exc, '__context__') and original_exc.__context__:
                     original_exc = original_exc.__context__
-                    log.debug(
-                        "Following __context__: %s",
-                        type(original_exc).__name__,
-                    )
+                    chain_log.append("Following __context__")
                     continue
-                # если ничего не нашли, выходим
                 break
 
-            log.debug(
-                "No HTTPException found, re-raising original: %s",
-                type(exc).__name__,
-            )
-            raise  # ре-райзим исходное исключение, если оно не хттп
+            log.error("No HTTPException found in chain: %s", "; ".join(chain_log))
+            raise  # Re-raise исходное исключение

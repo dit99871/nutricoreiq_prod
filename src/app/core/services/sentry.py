@@ -21,6 +21,10 @@ def sentry_to_loki(event, hint):
     :param hint: The Sentry event hint
     :return: The original event
     """
+    if hint.get("seen", False):
+        log.debug("Skipping duplicate Sentry event: %s", event.get("event_id"))
+        return None
+    hint["seen"] = True
     loki_url = settings.loki.url
     log_entry = {
         "streams": [
@@ -87,12 +91,13 @@ def init_sentry():
 
     sentry_sdk.init(
         dsn=dsn,
-        traces_sample_rate=1.0,  # мониторинг производительности
+        traces_sample_rate=0.1,  # мониторинг производительности
         environment="production",
         release="1.0.0",
         profile_session_sample_rate=1.0,  # мониторинг профилей
         profile_lifecycle="trace",
         send_default_pii=False  ,  # отправка персональных данных
+        auto_enabling_integrations=False,  # Отключаем авто-capture
         before_send=sentry_to_loki,  # вебхук для loki
         integrations=[
             StarletteIntegration(
