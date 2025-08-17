@@ -1,30 +1,48 @@
-from fastapi import Request
+from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.exceptions import HTTPException
 
+from src.app.core.logger import get_logger
+
+log = get_logger("unwrap_exception_middleware")
+
 
 class UnwrapExceptionMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        """
-        Dispatches the request to the next middleware, unwrapping wrapped exceptions.
-
-        This middleware catches exceptions, checks the __cause__ chain,
-        and re-raises the original exception if it is an HTTPException.
-
-        :param request: The incoming request.
-        :type request: Request
-        :param call_next: The next middleware to call.
-        :type call_next: Callable[[Request], Awaitable[Response]]
-        :return: The response from the next middleware.
-        :rtype: Awaitable[Response]
-        """
+    async def dispatch(self, request: Request, call_next) -> Response:
         try:
             return await call_next(request)
         except Exception as exc:
-            # находим оригинальное исключение
+            log.debug("Caught exception: %s", type(exc).__name__)
+
+            # Проверяем chain исключений (__cause__ и __context__)
             original_exc = exc
-            while hasattr(original_exc, '__cause__') and original_exc.__cause__:
-                original_exc = original_exc.__cause__
-            if isinstance(original_exc, HTTPException):
-                raise original_exc  # райзим найденное хттп-исключение
-            raise  # или ре-райзим оригинальное
+            while True:
+                if isinstance(original_exc, HTTPException):
+                    log.debug("Unwrapped to HTTPException: status=%s, detail=%s",
+                              original_exc.status_code, original_exc.detail,
+                    )
+                    raise original_exc
+                # проверяем __cause__
+                if hasattr(original_exc, '__cause__') and original_exc.__cause__:
+                    original_exc = original_exc.__cause__
+                    log.debug(
+                        "Following __cause__: %s",
+                        type(original_exc).__name__,
+                    )
+                    continue
+                # проверяем __context__
+                if hasattr(original_exc, '__context__') and original_exc.__context__:
+                    original_exc = original_exc.__context__
+                    log.debug(
+                        "Following __context__: %s",
+                        type(original_exc).__name__,
+                    )
+                    continue
+                # если ничего не нашли, выходим
+                break
+
+            log.debug(
+                "No HTTPException found, re-raising original: %s",
+                type(exc).__name__,
+            )
+            raise  # ре-райзим исходное исключение, если оно не хттп
