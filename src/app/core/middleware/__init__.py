@@ -31,7 +31,7 @@ def setup_middleware(app: FastAPI) -> None:
         max_age=600,
     )
     app.add_middleware(UnwrapExceptionMiddleware)
-    app.add_middleware(SentryAsgiMiddleware)
+    # app.add_middleware(SentryAsgiMiddleware)
     app.add_middleware(RedisSessionMiddleware)
     app.add_middleware(CSPMiddleware)
     app.add_middleware(CSRFMiddleware)
