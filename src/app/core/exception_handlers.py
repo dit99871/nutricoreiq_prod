@@ -13,7 +13,17 @@ __all__ = ("setup_exception_handlers",)
 log = get_logger("exc_handlers")
 
 
-def expired_token_exception_handler(request: Request, exc: ExpiredTokenException):
+def expired_token_exception_handler(
+    request: Request,
+    exc: ExpiredTokenException,
+):
+    """
+    Handle an exception of type ExpiredTokenException.
+
+    :param request: The request object.
+    :param exc: The exception object.
+    :return: An ORJSONResponse object with the error details and headers.
+    """
     error_detail = ErrorDetail(
         message=exc.detail,
         details=None,
