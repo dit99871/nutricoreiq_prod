@@ -10,7 +10,7 @@ services:
       - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./postgres/pg_hba.conf:/var/lib/postgresql/pg_hba.conf:ro
+      - ./config/pg_hba.conf:/var/lib/postgresql/pg_hba.conf:ro
       - ./config/postgresql.conf:/var/lib/postgresql/data/postgresql.conf:ro
     command: -c config_file=/var/lib/postgresql/data/postgresql.conf
     networks:
@@ -29,10 +29,10 @@ services:
     environment:
       - DATA_SOURCE_NAME=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=${POSTGRES_SSL_MODE}
     volumes:
-      - ./config/postgres_exporter.yaml:/postgres_exporter.yaml
+      - ./config/postgres_exporter.yml:/postgres_exporter.yml
     command:
       - "--web.listen-address=:9187"
-      - "--extend.query-path=/postgres_exporter.yaml"
+      - "--extend.query-path=/postgres_exporter.yml"
     depends_on:
       db:
         condition: service_healthy
