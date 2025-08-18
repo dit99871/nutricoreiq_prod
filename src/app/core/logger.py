@@ -13,7 +13,7 @@ class JsonFormatter(logging.Formatter):
 
     def format(self, record):
         log_entry = {
-            "time": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3],
+            "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],
             "level": record.levelname,
             "message": record.getMessage(),
             "source": "app",
