@@ -18,6 +18,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             f"{settings.router.auth}/register",
             f"{settings.router.auth}/refresh",
             f"{settings.router.security}/csp-report",
+            f"{settings.router.product}/pending",
         ]:
             return await call_next(request)
 
