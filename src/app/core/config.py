@@ -10,13 +10,12 @@ from pydantic_settings import (
 )
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 LOG_DEFAULT_FORMAT = (
-    "[%(asctime)s.%(msecs)03d] %(name)24s:%(lineno)-4d %(levelname)-7s - %(message)s"
-)
-
-WORKER_LOG_DEFAULT_FORMAT = "[%(asctime)s.%(msecs)03d] [%(processName)s] %(module)16s:%(lineno)-3d %(levelname)-7s - %(message)s"
-
+        "[%(asctime)s.%(msecs)03d] %(name)24s:%(lineno)-4d %(levelname)-7s - %(message)s"
+    )
+WORKER_LOG_DEFAULT_FORMAT = (
+        "[%(asctime)s.%(msecs)03d] [%(processName)s] %(module)16s:%(lineno)-3d %(levelname)-7s - %(message)s"
+    )
 
 class AuthConfig(BaseModel):
     secret_key: str
@@ -48,12 +47,13 @@ class RedisConfig(BaseModel):
 
 class LoggingConfig(BaseModel):
     log_level: Literal[
-        "debug",
-        "info",
-        "warning",
-        "error",
-        "critical",
-    ] = "info"
+        "DEBUG",
+        "INFO",
+        "WARNING",
+        "ERROR",
+        "CRITICAL",
+    ] = "INFO"
+    log_stage: Literal["DEV", "PROD"] = "DEV"
     log_format: str = LOG_DEFAULT_FORMAT
     log_taskiq_format: str = WORKER_LOG_DEFAULT_FORMAT
     log_date_format: str = "%Y-%m-%d %H:%M:%S"
