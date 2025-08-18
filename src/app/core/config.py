@@ -55,6 +55,7 @@ class LoggingConfig(BaseModel):
         "critical",
     ] = "info"
     log_format: str = LOG_DEFAULT_FORMAT
+    log_taskiq_format: str = WORKER_LOG_DEFAULT_FORMAT
     log_date_format: str = "%Y-%m-%d %H:%M:%S"
     log_file: str = str(BASE_DIR / "logs" / "app.log")  # Путь к файлу логов
     log_file_max_size: int = 5 * 1024 * 1024  # 5 MB
@@ -103,7 +104,6 @@ class SMTPConfig(BaseModel):
 
 class TaskiqConfig(BaseModel):
     url: AmqpDsn
-    log_format: str = WORKER_LOG_DEFAULT_FORMAT
 
 
 class SentyConfig(BaseModel):
