@@ -178,6 +178,9 @@ services:
       - /var/log/nginx:/var/log/nginx
     depends_on:
       - fastapi
+      - prometheus
+      - grafana
+      - loki
     networks:
       - app-network
 
