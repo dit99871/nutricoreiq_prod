@@ -201,6 +201,8 @@ services:
   loki:
     image: grafana/loki:latest
     container_name: loki
+    labels:
+      com.grafana.monitoring: "true"
     ports:
       - "127.0.0.1:3100:3100"
     command: -config.file=/etc/loki/loki-config.yaml -config.expand-env=true
@@ -218,8 +220,10 @@ services:
   promtail:
     image: grafana/promtail:latest
     container_name: promtail
+    labels:
+      com.grafana.monitoring: "true"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./promtail-config.yaml:/etc/promtail/promtail-config.yaml
       - /var/log/nginx:/var/log/nginx:ro
       - ./src/app/logs:/nutricoreiq/src/app/logs:ro
@@ -228,6 +232,11 @@ services:
       - loki
     networks:
       - app-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9080/ready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:
