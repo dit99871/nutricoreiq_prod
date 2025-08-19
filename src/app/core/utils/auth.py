@@ -47,7 +47,7 @@ def verify_password(
     )
 
 
-def decode_jwt(token: str) -> dict[str, Any] | None:
+def decode_jwt(token: str | None) -> dict[str, Any] | None:
     """
     Decodes a JWT token using the public key.
 
