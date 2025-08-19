@@ -30,13 +30,21 @@ async def init_redis():
     """
     Initialize Redis connection at application startup.
     """
-    await redis_client.ping()
-    # log.info("Redis connection established")
+    log.info("Attempting to connect to Redis...")
+    try:
+        await redis_client.ping()
+        log.info("Redis connection established successfully")
+    except Exception as e:
+        log.error(f"Redis connection failed: {e}")
+        raise
 
 
 async def close_redis():
     """
     Close Redis connection at application shutdown.
     """
-    await redis_client.aclose()
-    # log.info("Redis connection closed")
+    try:
+        await redis_client.aclose()
+        log.info("Redis connection closed successfully")
+    except Exception as e:
+        log.error(f"Error closing Redis connection: {e}")

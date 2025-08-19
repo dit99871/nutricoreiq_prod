@@ -22,13 +22,32 @@ async def check_rabbitmq():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await init_redis()
+    log.info("Starting application lifespan...")
+
+    try:
+        log.info("Initializing Redis connection...")
+        await init_redis()
+        log.info("Redis connection initialized successfully")
+    except Exception as e:
+        log.error(f"Failed to initialize Redis: {e}")
+        raise
+
     if not broker.is_worker_process:
-        await check_rabbitmq()
+        try:
+            log.info("Checking RabbitMQ connection...")
+            # await check_rabbitmq()
+            log.info("RabbitMQ connection established successfully")
+        except Exception as e:
+            log.error(f"Failed to connect to RabbitMQ: {e}")
+            raise
+
+    log.info("Application startup completed successfully")
     try:
         yield
     finally:
+        log.info("Shutting down application...")
         await close_redis()
         await db_helper.dispose()
         if not broker.is_worker_process:
             await broker.shutdown()
+        log.info("Application shutdown completed")

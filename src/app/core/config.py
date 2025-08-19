@@ -98,8 +98,8 @@ class SMTPConfig(BaseModel):
     button_link: str
     unsubscribe_link: str
     username: str
-    password: str | None
-    use_tls: bool
+    # password: Union[str, None]
+    # use_tls: bool
 
 
 class TaskiqConfig(BaseModel):
