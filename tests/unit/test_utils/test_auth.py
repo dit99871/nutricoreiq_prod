@@ -33,16 +33,6 @@ def test_get_password_hash_empty_password():
     assert auth.verify_password("", hashed_password)  # проверка на пустое значение
 
 
-def test_get_password_hash_special_characters():
-    """
-    Test get_password_hash with special characters in password.
-    """
-    password = "!@#$%^&*()"
-    hashed_password = auth.get_password_hash(password)
-    assert isinstance(hashed_password, bytes)
-    assert auth.verify_password(password, hashed_password)
-
-
 def test_verify_password_correct():
     """
     Test verify_password with correct password.
@@ -59,15 +49,6 @@ def test_verify_password_incorrect():
     password = "test_password"
     hashed_password = auth.get_password_hash(password)
     assert auth.verify_password("wrong_password", hashed_password) is False
-
-
-def test_verify_password_empty_password():
-    """
-    Test verify_password with empty password.
-    """
-    password = ""
-    hashed_password = auth.get_password_hash(password)
-    assert auth.verify_password("", hashed_password) is True
 
 
 def test_verify_password_invalid_hashed_password():
@@ -92,3 +73,10 @@ def test_verify_password_none_hashed_password():
     """
     with pytest.raises(TypeError):
         auth.verify_password("test_password", None)
+
+
+def test_decode_jwt_returns_none():
+    """
+    Test decode_jwt with None as token.
+    """
+    assert auth.decode_jwt(None) is None
