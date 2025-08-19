@@ -197,7 +197,7 @@ services:
   nginx_exporter:
     image: nginx/nginx-prometheus-exporter:latest
     container_name: nginx_exporter
-    command: --nginx.scrape-uri=http://172.19.0.15:${HTTP_PORT}/stub_status
+    command: --nginx.scrape-uri=http://nginx:${HTTP_PORT}/stub_status
     networks:
       - app-network
 
@@ -252,3 +252,6 @@ volumes:
 networks:
   app-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
