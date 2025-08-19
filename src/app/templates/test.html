@@ -1,0 +1,95 @@
+{% extends "base-test.html" %}
+
+{% block title %}Тестовая страница - NutriCoreIQ{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="hero-content">
+        <div class="hero-card">
+            <div class="brand-header">
+                <div class="logo-container">
+                    <div class="logo-icon">🌱</div>
+                    <h1 class="brand-title">NutriCore<span class="brand-accent">IQ</span></h1>
+                </div>
+                <p class="brand-tagline">Революционный подход к анализу питания</p>
+            </div>
+
+            <div class="search-section">
+                <h2 class="search-title">Откройте секреты здорового питания</h2>
+                <p class="search-subtitle">Получите персональный анализ питательной ценности любого продукта</p>
+
+                <form id="searchProductForm" class="modern-search-form">
+                    <div class="search-input-container">
+                        <div class="search-icon">🔍</div>
+                        <input type="text"
+                               name="query"
+                               id="productQuery"
+                               class="modern-search-input"
+                               placeholder="Введите название продукта..."
+                               required
+                               minlength="3"
+                               maxlength="40"
+                               autocomplete="off"
+                               aria-autocomplete="list"
+                               aria-controls="searchResults">
+                        <div id="searchResults" class="modern-autocomplete-dropdown"></div>
+                    </div>
+                    <button type="submit" class="modern-analyze-btn">
+                        <span class="btn-text">Анализировать</span>
+                        <span class="btn-icon">→</span>
+                    </button>
+                </form>
+
+                <div id="searchError" class="modern-alert d-none"></div>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Детальный анализ</h3>
+                    <p>Полная информация о витаминах, минералах и питательных веществах</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Персональные рекомендации</h3>
+                    <p>Индивидуальные советы на основе ваших потребностей</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌟</div>
+                    <h3>Научный подход</h3>
+                    <p>Данные основаны на последних научных исследованиях</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Декоративные элементы -->
+    <div class="bg-decoration decoration-1"></div>
+    <div class="bg-decoration decoration-2"></div>
+    <div class="bg-decoration decoration-3"></div>
+</div>
+
+<!-- Модальное окно для добавления нового продукта -->
+<div class="modal fade" id="addPendingProductModal" tabindex="-1" aria-labelledby="addPendingProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modern-modal">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addPendingProductModalLabel">Добавить новый продукт</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <p>Продукт "<span id="pendingProductName"></span>" не найден в базе данных.</p>
+                <p>Хотите добавить его в очередь на добавление?</p>
+                <p>После проверки продукт станет доступен для анализа.</p>
+                <form id="addPendingProductForm">
+                    <input type="hidden" id="pendingProductInput" name="name">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-primary" id="confirmPendingProductBtn">Добавить</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

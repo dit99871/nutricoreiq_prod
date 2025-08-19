@@ -35,3 +35,22 @@ def start_page(
         },
     )
 
+
+@app.get(
+    "/test1",
+    name="test1",
+    response_class=HTMLResponse,
+)
+def test_page(
+    request: Request,
+    current_user: Annotated[UserResponse, Depends(get_current_auth_user)],
+):
+    return templates.TemplateResponse(
+        request=request,
+        name="test.html",
+        context={
+            "current_year": datetime.now().year,
+            "user": current_user,
+            "csp_nonce": request.state.csp_nonce,
+        },
+    )
