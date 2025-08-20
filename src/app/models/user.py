@@ -12,7 +12,7 @@ from .base import Base
 
 
 class User(IntIdPkMixin, Base):
-    uid: Mapped[str] = mapped_column(default=str(uuid4()))
+    uid: Mapped[str] = mapped_column(default_factory=lambda: str(uuid4()))
     username: Mapped[str] = mapped_column(unique=True, index=True)
     email: Mapped[str] = mapped_column(unique=True, index=True)
     hashed_password: Mapped[bytes]
@@ -29,6 +29,4 @@ class User(IntIdPkMixin, Base):
     is_subscribed: Mapped[bool] = mapped_column(default=True)
     is_active: Mapped[bool] = mapped_column(default=True)
     role: Mapped[str] = mapped_column(default="user")
-    created_at: Mapped[str] = mapped_column(
-        default=dt.datetime.now(dt.UTC).strftime("%d.%m.%Y %H:%M:%S")
-    )
+    created_at: Mapped[str] = mapped_column(default=dt.datetime.now().date())
