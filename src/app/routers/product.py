@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.app.core import db_helper
 from src.app.core.logger import get_logger
 from src.app.core.services.auth import get_current_auth_user
+from src.app.core.services.redis import get_redis_session_from_request
 from src.app.core.utils.pending_product import (
     check_pending_exists,
     create_pending_product,
@@ -70,7 +71,7 @@ async def get_product_details(
 
     product_data = await handle_product_details(session, product_id)
     # log.info("Rendering template")
-    redis_session = request.scope.get("redis_session", {})
+    redis_session = get_redis_session_from_request(request)
 
     return templates.TemplateResponse(
         request=request,
