@@ -31,7 +31,7 @@ class GoalType(Enum):
 
 class User(IntIdPkMixin, Base):
     uid: Mapped[str] = mapped_column(
-        unique=True, index=True, default_factory=lambda: str(uuid4())
+        unique=True, index=True, default=lambda: str(uuid4())
     )
     username: Mapped[str] = mapped_column(unique=True, index=True)
     email: Mapped[str] = mapped_column(unique=True, index=True)
@@ -49,5 +49,5 @@ class User(IntIdPkMixin, Base):
     role: Mapped[UserRole] = mapped_column(default=UserRole.USER)
 
     created_at: Mapped[datetime.datetime] = mapped_column(
-        default_factory=lambda: datetime.datetime.now().date(), index=True
+        default=lambda: datetime.datetime.now().date(), index=True
     )
