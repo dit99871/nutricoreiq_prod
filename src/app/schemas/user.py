@@ -22,22 +22,22 @@ class UserResponse(UserBase):
 
 
 class UserAccount(UserBase):
-    gender: Literal["female", "male"] | None
+    gender: Literal["female", "male"] | None = None
     age: int | None
     weight: float | None
     height: float | None
     kfa: str | None
-    goal: str = Literal["Снижение веса", "Увеличение веса", "Поддержание веса"] | None
+    goal: Literal["Снижение веса", "Увеличение веса", "Поддержание веса"] | None = None
     created_at: str
 
 
 class UserProfile(BaseSchema):
-    gender: Literal["female", "male"]
+    gender: Literal["female", "male"] = None
     age: int = Field(gt=0)
     weight: float = Field(gt=0)
     height: float = Field(gt=0)
-    kfa: str = Literal["1", "2", "3", "4", "5"]
-    goal: str = Literal["Снижение веса", "Увеличение веса", "Поддержание веса"]
+    kfa: Literal["1", "2", "3", "4", "5"] = None
+    goal: Literal["Снижение веса", "Увеличение веса", "Поддержание веса"] = None
 
     model_config = ConfigDict(strict=True)
 
