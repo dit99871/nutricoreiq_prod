@@ -3,9 +3,13 @@ from typing import Annotated
 
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import HTMLResponse
+from starlette.requests import Request
+from starlette.responses import HTMLResponse
 
+from src.app.core import templates
 from src.app.core.services.auth import get_current_auth_user
 from src.app.core.utils import templates
+from src.app.main import app
 from src.app.schemas.user import UserResponse
 
 router = APIRouter(
@@ -63,6 +67,36 @@ def get_info_about_project(
         context={
             "user": current_user,
             "current_year": datetime.now().year,
+            "csp_nonce": request.state.csp_nonce,
+        },
+    )
+
+
+@app.get(
+    "/",
+    name="home",
+    response_class=HTMLResponse,
+)
+def start_page(
+    request: Request,
+    current_user: Annotated[UserResponse, Depends(get_current_auth_user)],
+):
+    """
+    Retrieves the home page of NutriCoreIQ.
+
+    This endpoint renders an HTML template for the home page, which
+    displays a welcome message and the current year.
+
+    :param request: The incoming request object.
+    :param current_user: The authenticated user object obtained from the dependency.
+    :return: A rendered HTML template for the home page.
+    """
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={
+            "current_year": datetime.now().year,
+            "user": current_user,
             "csp_nonce": request.state.csp_nonce,
         },
     )
