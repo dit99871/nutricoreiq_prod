@@ -3,13 +3,9 @@ from typing import Annotated
 
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import HTMLResponse
-from starlette.requests import Request
-from starlette.responses import HTMLResponse
 
 from src.app.core import templates
 from src.app.core.services.auth import get_current_auth_user
-from src.app.core.utils import templates
-from src.app.main import app
 from src.app.schemas.user import UserResponse
 
 router = APIRouter(
@@ -72,7 +68,7 @@ def get_info_about_project(
     )
 
 
-@app.get(
+@router.get(
     "/",
     name="home",
     response_class=HTMLResponse,
