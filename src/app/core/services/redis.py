@@ -2,7 +2,7 @@ import datetime as dt
 import time
 
 from redis.asyncio import RedisError, Redis
-from fastapi import HTTPException, status
+from fastapi import HTTPException, Request, status
 
 from src.app.core.logger import get_logger
 from src.app.core.redis import get_redis
@@ -174,3 +174,15 @@ async def revoke_all_refresh_tokens(
                 },
             },
         )
+
+
+def get_redis_session_from_request(request: Request) -> Redis:
+    """
+    Get the Redis session associated with a given request.
+
+    :param request: The request object.
+    :type request: Request
+    :return: The Redis session associated with the request, or an empty dict.
+    :rtype: Redis
+    """
+    return request.scope.get("redis_session", {})
