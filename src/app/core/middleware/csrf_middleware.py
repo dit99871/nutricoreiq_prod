@@ -9,8 +9,12 @@ log = get_logger("csrf_middleware")
 class CSRFMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         # используем X-Forwarded-Proto для определения схемы
-        scheme = request.headers.get("X-Forwarded-Proto", request.scope.get("scheme", "http"))
-        request_url = str(request.url).replace(f"{request.scope['scheme']}://", f"{scheme}://")
+        scheme = request.headers.get(
+            "X-Forwarded-Proto", request.scope.get("scheme", "http")
+        )
+        request_url = str(request.url).replace(
+            f"{request.scope['scheme']}://", f"{scheme}://"
+        )
 
         # пропуск публичных маршрутов
         if request.url.path in [
@@ -19,7 +23,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             f"{settings.router.auth}/refresh",
             f"{settings.router.security}/csp-report",
             f"{settings.router.product}/pending",
-        ]:
+        ] or request.url.path.endswith("/login"):
             return await call_next(request)
 
         if request.method in ["POST", "PUT", "DELETE", "PATCH"]:
