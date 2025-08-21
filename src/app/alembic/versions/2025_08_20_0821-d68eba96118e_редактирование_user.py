@@ -22,17 +22,15 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     """Upgrade schema."""
     # Create enum types first
-    kfalevel_enum = postgresql.ENUM(
-        "VERY_LOW", "LOW", "MEDIUM", "HIGH", "VERY_HIGH", name="kfalevel"
-    )
+    kfalevel_enum = postgresql.ENUM("1", "2", "3", "4", "5", name="kfalevel")
     kfalevel_enum.create(op.get_bind())
 
     goaltype_enum = postgresql.ENUM(
-        "LOSE_WEIGHT", "GAIN_WEIGHT", "MAINTAIN_WEIGHT", name="goaltype"
+        "Снижение веса", "Увеличение веса", "Поддержание веса", name="goaltype"
     )
     goaltype_enum.create(op.get_bind())
 
-    userrole_enum = postgresql.ENUM("USER", "ADMIN", "MODERATOR", name="userrole")
+    userrole_enum = postgresql.ENUM("user", "admin", "moderator", name="userrole")
     userrole_enum.create(op.get_bind())
 
     # Now alter the columns to use the new enum types
@@ -41,7 +39,7 @@ def upgrade() -> None:
         "users",
         "role",
         type_=userrole_enum,
-        postgresql_using="upper(role)::userrole",  # Convert to uppercase before casting
+        postgresql_using="lower(role)::userrole",
         existing_type=sa.VARCHAR(),
         existing_nullable=False,
     )
@@ -51,7 +49,7 @@ def upgrade() -> None:
         "users",
         "goal",
         type_=goaltype_enum,
-        postgresql_using="upper(replace(goal, ' ', '_'))::goaltype",
+        postgresql_using="goal::goaltype",
         existing_type=sa.VARCHAR(length=16),
         existing_nullable=True,
     )
@@ -61,7 +59,7 @@ def upgrade() -> None:
         "users",
         "kfa",
         type_=kfalevel_enum,
-        postgresql_using="upper(kfa)::kfalevel",  # Convert to uppercase before casting
+        postgresql_using="kfa::kfalevel",
         existing_type=sa.VARCHAR(length=1),
         existing_nullable=True,
     )
@@ -83,12 +81,10 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Downgrade schema."""
-    # First drop indexes
     op.drop_index(op.f("ix_users_uid"), table_name="users")
     op.drop_index(op.f("ix_users_is_active"), table_name="users")
     op.drop_index(op.f("ix_users_created_at"), table_name="users")
 
-    # Convert enums back to strings
     op.alter_column(
         "users",
         "created_at",
@@ -101,14 +97,14 @@ def downgrade() -> None:
         "users",
         "role",
         type_=sa.VARCHAR(),
-        postgresql_using="lower(role::text)",
+        postgresql_using="role::text",
         existing_nullable=False,
     )
 
     op.alter_column(
         "users",
         "goal",
-        type_=sa.VARCHAR(length=16),
+        type_=sa.Text(),
         postgresql_using="goal::text",
         existing_nullable=True,
     )
@@ -116,7 +112,7 @@ def downgrade() -> None:
     op.alter_column(
         "users",
         "kfa",
-        type_=sa.VARCHAR(length=1),
+        type_=sa.Text(),
         postgresql_using="kfa::text",
         existing_nullable=True,
     )
