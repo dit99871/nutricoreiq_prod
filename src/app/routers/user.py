@@ -19,7 +19,6 @@ from src.app.core.services.auth import get_current_auth_user
 from src.app.core.utils import templates
 from src.app.crud.profile import update_user_profile, get_user_profile
 from src.app.crud.user import choose_subscribe_status
-from src.app.routers.auth import router
 from src.app.schemas.user import UserProfile, UserResponse
 
 router = APIRouter(
@@ -44,6 +43,7 @@ async def read_current_user(
     :return: A dictionary containing the username and email of the user.
     :raises HTTPException: If the user is not authenticated.
     """
+
     if user is None:
         raise ExpiredTokenException()
 
@@ -72,6 +72,7 @@ async def get_profile(
     :return: A rendered HTML template with the user's profile information.
     :raises HTTPException: If the user is not authenticated.
     """
+
     if user is None:
         log.error("Пользователь не авторизован")
         raise ExpiredTokenException()
@@ -113,6 +114,7 @@ async def update_profile(
     :return: A JSON response indicating the success of the profile update.
     :raises HTTPException: If the user is not authenticated or if the provided data is invalid.
     """
+
     if user is None:
         raise ExpiredTokenException()
 
@@ -148,6 +150,7 @@ async def unsubscribe_email_notification(
     :return: A JSON response indicating the success of the unsubscription.
     :raises HTTPException: If the user is not authenticated.
     """
+
     if user is None:
         raise ExpiredTokenException()
 
@@ -174,6 +177,7 @@ async def subscribe_email_notification(
     :return: A JSON response indicating the success of the subscription.
     :raises HTTPException: If the user is not authenticated.
     """
+
     if user is None:
         raise ExpiredTokenException()
 
@@ -190,4 +194,5 @@ async def login_get() -> RedirectResponse:
 
     :return: A 302 redirect response.
     """
+
     return RedirectResponse(url="/?action=unsubscribe")

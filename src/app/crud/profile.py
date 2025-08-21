@@ -43,7 +43,7 @@ async def get_user_profile(
                     "user_id": user_id,
                 },
             )
-        return UserAccount.model_construct(**user.__dict__)
+        return UserAccount.model_validate(user, from_attributes=True)
 
     except SQLAlchemyError as e:
         log.error("Ошибка БД при получении пользователя: %s", e)
@@ -128,7 +128,8 @@ async def update_user_profile(
             )
         await session.commit()
 
-        return UserAccount.model_construct(**updated_user.__dict__)
+        # Возвращаем через Pydantic-валидацию, используя атрибуты ORM
+        return UserAccount.model_validate(updated_user, from_attributes=True)
 
     except SQLAlchemyError as e:
         log.error(
