@@ -29,7 +29,8 @@ def setup_middleware(app: FastAPI) -> None:
         allow_headers=settings.cors.allow_headers,
         max_age=600,
     )
-    app.add_middleware(SentryAsgiMiddleware)
-    app.add_middleware(RedisSessionMiddleware)
+    if settings.env.env == "prod":
+        app.add_middleware(SentryAsgiMiddleware)
     app.add_middleware(CSPMiddleware)
     app.add_middleware(CSRFMiddleware)
+    app.add_middleware(RedisSessionMiddleware)

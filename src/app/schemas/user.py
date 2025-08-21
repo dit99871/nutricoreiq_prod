@@ -1,8 +1,11 @@
+from datetime import datetime
+
 from annotated_types import MinLen, MaxLen
 from pydantic import ConfigDict, EmailStr, Field
 from typing import Annotated, Literal
 
 from .base import BaseSchema
+from src.app.models.user import GoalType, KFALevel
 
 
 class UserBase(BaseSchema):
@@ -26,9 +29,9 @@ class UserAccount(UserBase):
     age: int | None
     weight: float | None
     height: float | None
-    kfa: str | None
-    goal: Literal["Снижение веса", "Увеличение веса", "Поддержание веса"] | None = None
-    created_at: str
+    kfa: KFALevel | None
+    goal: GoalType | None
+    created_at: datetime
 
 
 class UserProfile(BaseSchema):

@@ -1,5 +1,6 @@
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from pathlib import Path
 
 import aiosmtplib
 from aiosmtplib.errors import SMTPException
@@ -10,7 +11,9 @@ from src.app.core.logger import get_logger
 
 log = get_logger("email_services")
 
-env = Environment(loader=FileSystemLoader("src/app/templates"))
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+env = Environment(loader=FileSystemLoader(str((BASE_DIR / "templates").resolve())))
 
 
 async def send_email(
@@ -36,6 +39,7 @@ async def send_email(
     :param context: The dictionary of values to use when rendering the template
     :raises Exception: If there is an error sending the email
     """
+
     try:
         # Рендеринг HTML-шаблона
         template_obj = env.get_template(template)
@@ -51,17 +55,25 @@ async def send_email(
         html_part = MIMEText(html_content, "html")
         message.attach(html_part)
 
-        # Отправка письма
-        await aiosmtplib.send(
-            message,
+        # Подготовка аргументов для SMTP: без AUTH, если не заданы и логин, и пароль
+        send_kwargs = dict(
             recipients=[recipient],
             sender=sender,
             hostname=settings.mail.host,
             port=settings.mail.port,
-            username=settings.mail.username,
-            password=settings.mail.password,
             use_tls=settings.mail.use_tls,
             timeout=60,
+        )
+        if getattr(settings.mail, "username", None) and getattr(
+            settings.mail, "password", None
+        ):
+            send_kwargs["username"] = settings.mail.username
+            send_kwargs["password"] = settings.mail.password
+
+        # Отправка письма
+        await aiosmtplib.send(
+            message,
+            **send_kwargs,
         )
         log.info("Email sent successfully to: %s", recipient)
 
@@ -81,6 +93,7 @@ async def send_welcome_email(user) -> None:
     :type user: User
     :return: None
     """
+
     await send_email(
         recipient=str(user.email),
         sender=settings.mail.username,

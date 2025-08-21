@@ -5,6 +5,7 @@ from tenacity import retry, stop_after_attempt, wait_fixed
 
 from src.app.core import broker
 from src.app.core import db_helper
+from src.app.core.config import settings
 from src.app.core.logger import get_logger
 from src.app.core.redis import init_redis, close_redis
 
@@ -23,7 +24,7 @@ async def check_rabbitmq():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_redis()
-    if not broker.is_worker_process:
+    if not broker.is_worker_process and settings.env.env == "prod":
         await check_rabbitmq()
     try:
         yield

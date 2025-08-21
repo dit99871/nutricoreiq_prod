@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.core.logger import get_logger
 from src.app.models import User
+from src.app.models.user import KFALevel, GoalType
 from src.app.schemas.user import UserResponse, UserProfile, UserAccount
 
 log = get_logger("profile_crud")
@@ -22,6 +23,7 @@ async def get_user_profile(
     :return: The user's profile information.
     :raises HTTPException: If the user is not found in the database.
     """
+
     stmt = select(User).filter(
         User.id == user_id,
         User.is_active == True,
@@ -41,7 +43,7 @@ async def get_user_profile(
                     "user_id": user_id,
                 },
             )
-        return UserAccount.model_construct(**user.__dict__)
+        return UserAccount.model_validate(user, from_attributes=True)
 
     except SQLAlchemyError as e:
         log.error("Ошибка БД при получении пользователя: %s", e)
@@ -50,7 +52,6 @@ async def get_user_profile(
             detail={
                 "field": "DB error",
                 "message": "Внутренняя ошибка сервера",
-                # "details": str(e),
             },
         )
 
@@ -70,7 +71,38 @@ async def update_user_profile(
     :raises HTTPException: If the user is not found in the database or
                            if an error occurs during the update.
     """
+
     update_data = data_in.model_dump()
+
+    try:
+        kfa_val = update_data.get("kfa")
+        if kfa_val is not None:
+            if kfa_val == "":
+                update_data["kfa"] = None
+            else:
+                # Найти enum по value ("1".."5")
+                update_data["kfa"] = next(
+                    (m for m in KFALevel if m.value == str(kfa_val)), None
+                )
+                if update_data["kfa"] is None:
+                    raise ValueError(f"Недопустимое значение kfa: {kfa_val}")
+
+        goal_val = update_data.get("goal")
+        if goal_val is not None:
+            if goal_val == "":
+                update_data["goal"] = None
+            else:
+                # GoalType значения — русские строки; получаем enum по value
+                update_data["goal"] = GoalType(goal_val)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "field": "profile",
+                "message": str(e),
+            },
+        )
+
     try:
         stmt = (
             update(User)
@@ -95,9 +127,9 @@ async def update_user_profile(
                 },
             )
         await session.commit()
-        # log.info("User updated with name: %s", current_user.username)
 
-        return UserAccount.model_construct(**updated_user.__dict__)
+        # Возвращаем через Pydantic-валидацию, используя атрибуты ORM
+        return UserAccount.model_validate(updated_user, from_attributes=True)
 
     except SQLAlchemyError as e:
         log.error(
@@ -111,6 +143,5 @@ async def update_user_profile(
             detail={
                 "field": "Update user profile",
                 "message": "Внутренняя ошибка сервера",
-                # "details": str(e),
             },
         )
