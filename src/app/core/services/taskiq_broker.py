@@ -11,7 +11,7 @@ from src.app.core.services.sentry import init_sentry
 
 log = logging.getLogger("taskiq_broker")
 
-init_sentry()
+# init_sentry()
 
 broker = AioPikaBroker(
     url=str(settings.taskiq.url),
