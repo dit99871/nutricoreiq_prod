@@ -71,7 +71,13 @@ def upgrade() -> None:
         type_=sa.DateTime(),
         existing_type=sa.VARCHAR(),
         existing_nullable=False,
-        postgresql_using="created_at::timestamp",
+        postgresql_using=(
+            "CASE "
+            "WHEN created_at ~ '^[0-9]{2}[.][0-9]{2}[.][0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2}$' "
+            "THEN to_timestamp(created_at, 'DD.MM.YYYY HH24:MI:SS')::timestamp "
+            "ELSE created_at::timestamp "
+            "END"
+        ),
     )
 
     op.create_index(op.f("ix_users_created_at"), "users", ["created_at"], unique=False)
