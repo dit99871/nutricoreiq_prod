@@ -37,9 +37,6 @@ def create_app() -> FastAPI:
     if os.path.exists(static_dir) and os.path.isdir(static_dir):
         app.mount("/static/", StaticFiles(directory=static_dir), name="static")
 
-    # настройка sentry
-    init_sentry()
-
     # настройка обработчиков исключений
     setup_exception_handlers(app)
 
