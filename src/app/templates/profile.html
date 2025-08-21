@@ -92,7 +92,8 @@
                         <div class="d-flex justify-content-between">
                             <strong>Цель:</strong>
                             <span id="goal-field" class="fw-medium">
-                                {% if user.goal %}{{ user.goal }}{% else %}Не указано{% endif %}
+                                {% set goal_val = (user.goal.value if user.goal is not string and user.goal is not none else user.goal) %}
+                                {% if goal_val %}{{ goal_val }}{% else %}Не указано{% endif %}
                             </span>
                         </div>
                     </div>
@@ -100,7 +101,8 @@
                         <div class="d-flex justify-content-between">
                             <strong>Уровень физической активности:</strong>
                             <span id="kfa-field" class="fw-medium">
-                                {% if user.kfa %}{{ user.kfa }}-й уровень{% else %}Не указано{% endif %}
+                                {% set kfa_val = (user.kfa.value if user.kfa is not string and user.kfa is not none else user.kfa) %}
+                                {% if kfa_val %}{{ kfa_val }}-й уровень{% else %}Не указано{% endif %}
                             </span>
                         </div>
                     </div>
@@ -108,7 +110,7 @@
                         <div class="d-flex justify-content-between">
                             <strong>Регистрация:</strong>
                             <span id="registration-date-field" class="fw-medium">
-                                {{ user.created_at|default('Не указано', true) }}
+                                {% if user.created_at %}{{ user.created_at.strftime('%d.%m.%Y') }}{% else %}Не указано{% endif %}
                             </span>
                         </div>
                     </div>
@@ -181,7 +183,8 @@
                         <div class="custom-select-wrapper">
                             <div class="custom-select" data-name="goal">
                                 <div class="custom-select-display">
-                                    {% if user.goal %}{{ user.goal }}{% else %}Не указана{% endif %}
+                                    {% set goal_val = (user.goal.value if user.goal is not string and user.goal is not none else user.goal) %}
+                                    {% if goal_val %}{{ goal_val }}{% else %}Не указана{% endif %}
                                 </div>
                                 <ul class="custom-select-options">
                                     <li data-value="">Не указана</li>
@@ -190,7 +193,7 @@
                                     <li data-value="Поддержание веса">Поддержание веса</li>
                                 </ul>
                             </div>
-                            <input type="hidden" name="goal" id="editGoal" value="{{ user.goal if user.goal else '' }}">
+                            <input type="hidden" name="goal" id="editGoal" value="{{ (user.goal.value if user.goal is not string and user.goal is not none else user.goal) or '' }}">
                         </div>
                     </div>
 
@@ -200,7 +203,8 @@
                         <div class="custom-select-wrapper">
                             <div class="custom-select" data-name="kfa">
                                 <div class="custom-select-display">
-                                    {% if user.kfa %}{{ user.kfa }}-й уровень{% else %}Не указан{% endif %}
+                                    {% set kfa_val = (user.kfa.value if user.kfa is not string and user.kfa is not none else user.kfa) %}
+                                    {% if kfa_val %}{{ kfa_val }}-й уровень{% else %}Не указан{% endif %}
                                 </div>
                                 <ul class="custom-select-options">
                                     <li data-value="">Не указан</li>
@@ -209,7 +213,7 @@
                                     {% endfor %}
                                 </ul>
                             </div>
-                            <input type="hidden" name="kfa" id="editKfa" value="{{ user.kfa if user.kfa else '' }}">
+                            <input type="hidden" name="kfa" id="editKfa" value="{{ (user.kfa.value if user.kfa is not string and user.kfa is not none else user.kfa) or '' }}">
                         </div>
                     </div>
                     <div id="editProfileError" class="alert alert-danger d-none"></div>
@@ -291,7 +295,7 @@
             <div class="modal-body">
                 <form id="subscribeForm">
                     <input type="hidden" name="_csrf_token">
-                    <p>{% if is_subscribed %}Вы уверены, что хотите отписаться от email-рассылки? Вы больше не будете получать уведомления и обновления.{% else %}Подтведите, что хотите подписаться на email-рассылку. Вы будете получать уведомления и обновления.{% endif %}</p>
+                    <p>{% if is_subscribed %}Вы уверены, что хотите отписаться от email-рассылки? Вы больше не будете получать уведомления и обновления.{% else %}Подтвердите, что хотите подписаться на email-рассылку. Вы будете получать уведомления и обновления.{% endif %}</p>
                     <div id="subscribeError" class="alert alert-danger d-none"></div>
                 </form>
             </div>
