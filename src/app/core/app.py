@@ -6,7 +6,6 @@ from prometheus_fastapi_instrumentator import Instrumentator
 
 from src.app.core.middleware import setup_middleware
 from src.app.core.exception_handlers import setup_exception_handlers
-from src.app.core.services.sentry import init_sentry
 from src.app.routers import routers
 from src.app.lifespan import lifespan
 
