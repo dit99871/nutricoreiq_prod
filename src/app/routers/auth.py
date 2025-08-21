@@ -12,12 +12,11 @@ from fastapi.security import OAuth2PasswordRequestForm
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.app.core.exceptions import ExpiredTokenException
 from src.app.core import db_helper
+from src.app.core.config import settings
+from src.app.core.exceptions import ExpiredTokenException
 from src.app.core.logger import get_logger
 from src.app.core.redis import get_redis
-from src.app.crud.user import create_user, get_user_by_email
-from src.app.schemas.user import PasswordChange, UserCreate, UserResponse
 from src.app.core.services.auth import (
     add_tokens_to_response,
     create_access_jwt,
@@ -27,8 +26,11 @@ from src.app.core.services.auth import (
     get_current_auth_user_for_refresh,
     authenticate_user,
 )
-from src.app.core.utils.auth import create_response
+from src.app.core.services.email import send_welcome_email as send_welcome
 from src.app.core.services.redis import revoke_refresh_token
+from src.app.core.utils.auth import create_response
+from src.app.crud.user import create_user, get_user_by_email
+from src.app.schemas.user import PasswordChange, UserCreate, UserResponse
 from src.app.tasks import send_welcome_email
 
 log = get_logger("auth_router")
@@ -37,6 +39,8 @@ router = APIRouter(
     tags=["Authentication"],
     default_response_class=ORJSONResponse,
 )
+
+
 @router.post(
     "/register",
     response_model=UserCreate,
@@ -58,6 +62,7 @@ async def register_user(
     :return: The registered user object.
     :raises HTTPException: If the user is already registered.
     """
+
     # log.info("Attempting to register user with email: %s", user_in.email)
     db_user = await get_user_by_email(session, user_in.email)
 
@@ -75,7 +80,12 @@ async def register_user(
     user = await create_user(session, user_in)
     log.info("User registered successfully: %s", user.email)
 
-    await send_welcome_email.kiq(user.email)
+    if settings.env.env == "prod":
+        # На проде отправляем письмо в фоне через брокер
+        await send_welcome_email.kiq(user.email)
+    else:
+        # В dev выполняем быстрый синхронный вызов для maildev
+        await send_welcome(user)
 
     return user
 
@@ -95,6 +105,7 @@ async def login(
     :param session: The current database session.
     :return: A response containing an access and refresh token.
     """
+
     user = await authenticate_user(
         session,
         form_data.username,
@@ -126,6 +137,7 @@ async def logout(
     :raises HTTPException: If the refresh token is not found in the request
                            cookies.
     """
+
     if user is None:
         raise ExpiredTokenException()
     refresh_jwt = request.cookies.get("refresh_token")
@@ -177,6 +189,7 @@ async def refresh_token(
                            cookies, or if the refresh token is invalid or has
                            expired.
     """
+
     refresh_jwt = request.cookies.get("refresh_token")
     if not refresh_jwt:
         log.error("Refresh token not found in cookies")
@@ -225,6 +238,7 @@ async def change_password(
     :raises HTTPException: If an unexpected error occurs while changing the
                            password.
     """
+
     if user is None:
         raise ExpiredTokenException()
 
