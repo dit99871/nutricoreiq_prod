@@ -31,6 +31,6 @@ def setup_middleware(app: FastAPI) -> None:
     )
     if settings.env.env == "prod":
         app.add_middleware(SentryAsgiMiddleware)
-    app.add_middleware(RedisSessionMiddleware)
     app.add_middleware(CSPMiddleware)
     app.add_middleware(CSRFMiddleware)
+    app.add_middleware(RedisSessionMiddleware)
