@@ -65,13 +65,14 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
                     json.dumps(session),
                     ex=settings.redis.session_ttl,
                 )
+            secure = True if settings.env.env == "prod" else False
 
             # установка куков для session_id
             response.set_cookie(
                 key="redis_session_id",
                 value=session_id,
                 httponly=True,
-                secure=True,
+                secure=secure,
                 samesite="strict",
             )
 
@@ -80,7 +81,7 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
                 key="csrf_token",
                 value=csrf_token,
                 httponly=False,  # доступно для js
-                secure=True,
+                secure=secure,
                 samesite="strict",
                 max_age=3600,  # токен живёт 1 час
             )
