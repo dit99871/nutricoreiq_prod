@@ -301,6 +301,17 @@ document.addEventListener("DOMContentLoaded", () => {
         const form = document.getElementById('loginForm');
         if (!form) return;
 
+        const csrfInput = form.querySelector('input[name="_csrf_token"]');
+        if (csrfInput) {
+            const csrfToken = document.cookie
+                .split('; ')
+                .find(row => row.startsWith('csrf_token='))
+                ?.split('=')[1];
+            if (csrfToken) {
+                csrfInput.value = csrfToken;
+            }
+        }
+
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = form.querySelector('button[type="submit"]');
@@ -314,7 +325,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             try {
                 const formData = new FormData(form);
-                await secureFetch('/routers/auth/login', {
+                await secureFetch('/auth/login', {
                     method: 'POST',
                     body: new URLSearchParams(formData),
                     headers: { "Content-Type": "application/x-www-form-urlencoded" }
