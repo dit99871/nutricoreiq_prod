@@ -29,24 +29,6 @@ services:
       options:
         max-size: "1m"
 
-#  rabbitmq:
-#    image: rabbitmq:3-management-alpine
-#    hostname: rabbitmq
-#    container_name: rabbitmq
-#    ports:
-#      - "5672:5672"
-#      - "15672:15672"
-#    environment:
-#      RABBITMQ_DEFAULT_USER: "guest"
-#      RABBITMQ_DEFAULT_PASS: "guest"
-#    volumes:
-#      - rabbitmq-data:/var/lib/rabbitmq
-#    healthcheck:
-#      test: [ "CMD", "rabbitmqctl", "status" ]
-#      interval: 5s
-#      timeout: 3s
-#      retries: 5
-
 #  test_db:
 #    image: postgres
 #    environment:
