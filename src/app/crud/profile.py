@@ -5,7 +5,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.core.logger import get_logger
 from src.app.models import User
-from src.app.models.user import KFALevel, GoalType
 from src.app.schemas.user import UserResponse, UserProfile, UserAccount
 
 log = get_logger("profile_crud")
@@ -72,36 +71,8 @@ async def update_user_profile(
                            if an error occurs during the update.
     """
 
-    update_data = data_in.model_dump()
-
-    try:
-        kfa_val = update_data.get("kfa")
-        if kfa_val is not None:
-            if kfa_val == "":
-                update_data["kfa"] = None
-            else:
-                # Найти enum по value ("1".."5")
-                update_data["kfa"] = next(
-                    (m for m in KFALevel if m.value == str(kfa_val)), None
-                )
-                if update_data["kfa"] is None:
-                    raise ValueError(f"Недопустимое значение kfa: {kfa_val}")
-
-        goal_val = update_data.get("goal")
-        if goal_val is not None:
-            if goal_val == "":
-                update_data["goal"] = None
-            else:
-                # GoalType значения — русские строки; получаем enum по value
-                update_data["goal"] = GoalType(goal_val)
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={
-                "field": "profile",
-                "message": str(e),
-            },
-        )
+    # обновляем только переданные поля
+    update_data = data_in.model_dump(exclude_unset=True)
 
     try:
         stmt = (
@@ -128,7 +99,7 @@ async def update_user_profile(
             )
         await session.commit()
 
-        # Возвращаем через Pydantic-валидацию, используя атрибуты ORM
+        # возвращаем через Pydantic-валидацию, используя атрибуты ORM
         return UserAccount.model_validate(updated_user, from_attributes=True)
 
     except SQLAlchemyError as e:

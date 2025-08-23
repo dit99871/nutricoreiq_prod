@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from annotated_types import MinLen, MaxLen
-from pydantic import ConfigDict, EmailStr, Field
+from pydantic import ConfigDict, EmailStr, Field, field_validator
 from typing import Annotated, Literal
 
 from .base import BaseSchema
@@ -100,3 +100,16 @@ class UserProfile(BaseSchema):
 class PasswordChange(BaseSchema):
     current_password: Annotated[str, MinLen(8)]
     new_password: Annotated[str, MinLen(8)]
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_password_strength(cls, v: str) -> str:
+        has_lower = any(c.islower() for c in v)
+        has_upper = any(c.isupper() for c in v)
+        has_digit = any(c.isdigit() for c in v)
+        has_special = any(not c.isalnum() for c in v)
+        if not (has_lower and has_upper and has_digit and has_special):
+            raise ValueError(
+                "Пароль должен содержать строчные и прописные буквы, цифры и спецсимволы"
+            )
+        return v
