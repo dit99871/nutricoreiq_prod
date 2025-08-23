@@ -30,7 +30,7 @@ from src.app.core.services.email import send_welcome_email as send_welcome
 from src.app.core.services.redis import revoke_refresh_token
 from src.app.core.utils.auth import create_response
 from src.app.crud.user import create_user, get_user_by_email
-from src.app.schemas.user import PasswordChange, UserCreate, UserResponse
+from src.app.schemas.user import PasswordChange, UserCreate, UserResponse, UserPublic
 from src.app.tasks import send_welcome_email
 
 log = get_logger("auth_router")
@@ -43,13 +43,13 @@ router = APIRouter(
 
 @router.post(
     "/register",
-    response_model=UserCreate,
+    response_model=UserPublic,
     status_code=status.HTTP_201_CREATED,
 )
 async def register_user(
     user_in: UserCreate,
     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-) -> UserCreate | None:
+) -> UserPublic:
     """
     Registers a new user in the database.
 
@@ -81,13 +81,14 @@ async def register_user(
     log.info("User registered successfully: %s", user.email)
 
     if settings.env.env == "prod":
-        # На проде отправляем письмо в фоне через брокер
+        # на проде отправляем письмо в фоне через брокер
         await send_welcome_email.kiq(user.email)
     else:
-        # В dev выполняем быстрый синхронный вызов для maildev
+        # в dev выполняем быстрый синхронный вызов для maildev
         await send_welcome(user)
 
-    return user
+    # возвращаем только публичные данные, без пароля
+    return UserPublic.model_validate(user)
 
 
 @router.post("/login")
