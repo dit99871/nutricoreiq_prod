@@ -37,6 +37,7 @@ async def _get_user_by_filter(
         is not found.
     :raises HTTPException: If a database error or unexpected error occurs.
     """
+
     try:
         stmt = select(User).filter(filter_condition, User.is_active == True)
         result = await session.execute(stmt)
@@ -79,6 +80,7 @@ async def get_user_by_uid(
         `HTTPException` if the user is not found.
     :raises HTTPException: If the user is not found or an unexpected error occurs.
     """
+
     user = await _get_user_by_filter(session, User.uid == uid)
     if user is None:
         log.error("User not found in db by uid")
@@ -109,6 +111,7 @@ async def get_user_by_email(
     :return: A `UserResponse` object containing the user's data, or `None` if the user
         is not found.
     """
+
     user = await _get_user_by_filter(session, User.email == email)
 
     return user
@@ -132,6 +135,7 @@ async def get_user_by_name(
         `HTTPException` if the user is not found.
     :raises HTTPException: If the user is not found in the database.
     """
+
     user = await _get_user_by_filter(session, User.username == user_name)
     if user is None:
         log.error("User not found in db by name")
@@ -145,7 +149,7 @@ async def get_user_by_name(
 async def create_user(
     session: AsyncSession,
     user_in: UserCreate,
-) -> UserCreate | None:
+) -> UserResponse:
     """
     Creates a new user in the database.
 
@@ -154,7 +158,7 @@ async def create_user(
     algorithm, then creates a new `User` object with the input data and the hashed
     password. The object is then added to the database and committed.
 
-    On success, returns the `UserCreate` object that was passed in. If the user is not
+    On success, returns a `UserResponse` object containing the user's data. If the user is not
     found, raises an `HTTPException` with a 500 status code and a detail string
     containing the error message. If an unexpected error occurs, raises an
     `HTTPException` with a 500 status code and a detail string containing the error
@@ -162,9 +166,10 @@ async def create_user(
 
     :param session: The current database session.
     :param user_in: The user data to create.
-    :return: The created user, or `None` if an error occurs.
+    :return: A `UserResponse` object containing the user's data.
     :raises HTTPException: If an error occurs during the creation of the user.
     """
+
     try:
         hashed_password = get_password_hash(user_in.password)
         db_user = User(
@@ -178,7 +183,8 @@ async def create_user(
         await session.commit()
         await session.refresh(db_user)
 
-        return user_in
+        # возвращаем валидированную pydantic-модель пользователя (без пароля)
+        return UserResponse.model_validate(db_user)
 
     except SQLAlchemyError as e:
         log.error(
@@ -209,6 +215,7 @@ async def choose_subscribe_status(
     :return: None
     :raises HTTPException: If the user is not found or the database operation fails.
     """
+
     stmt = select(User).filter(User.uid == user.uid, User.is_active == True)
     result = await session.execute(stmt)
     target_user = result.scalar_one_or_none()
