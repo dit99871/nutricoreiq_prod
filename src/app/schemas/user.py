@@ -21,7 +21,17 @@ class UserCreate(UserBase):
 class UserResponse(UserBase):
     id: int
     uid: str
-    hashed_password: bytes | None = None
+    # хранится в pydantic-модели для внутреннего использования (аутентификация),
+    # но исключается из сериализации ответов/схем OpenAPI
+    hashed_password: bytes | None = Field(default=None, exclude=True)
+
+
+class UserPublic(BaseSchema):
+    id: int
+    uid: str
+    username: Annotated[str, MinLen(3), MaxLen(20)]
+    email: EmailStr
+    is_subscribed: bool
 
 
 class UserAccount(UserBase):
