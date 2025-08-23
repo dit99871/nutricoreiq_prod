@@ -10,13 +10,17 @@ def generate_csrf_token() -> str:
 
     :return: A string of 32 hexadecimal digits.
     """
+
     return token_hex(32)
 
 
 def generate_redis_session_id() -> str:
     """
+    Generates a random hexadecimal string of 16 characters to be used as a Redis session ID.
 
+    :return: A string of 16 hexadecimal characters.
     """
+
     return token_hex(16)
 
 
@@ -27,6 +31,7 @@ def generate_csp_nonce() -> str:
 
     :return: A URL-safe string of 32 characters.
     """
+
     return token_urlsafe(32)
 
 
@@ -40,5 +45,6 @@ def generate_hash_token(token: str) -> str:
     :param token: The token to be salted and hashed.
     :return: The hashed token as a hexadecimal string.
     """
+
     salted = f"{token}{settings.redis.salt}"
     return hashlib.sha256(salted.encode()).hexdigest()

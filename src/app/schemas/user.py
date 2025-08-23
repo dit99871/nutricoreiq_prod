@@ -1,11 +1,16 @@
 from datetime import datetime
 
 from annotated_types import MinLen, MaxLen
-from pydantic import ConfigDict, EmailStr, Field, field_validator
+from pydantic import ConfigDict, EmailStr, Field, BeforeValidator, AfterValidator
 from typing import Annotated, Literal
 
 from .base import BaseSchema
 from src.app.models.user import GoalType, KFALevel
+from src.app.core.utils.validators import (
+    coerce_goal,
+    coerce_kfa,
+    validate_password_strength,
+)
 
 
 class UserBase(BaseSchema):
@@ -15,21 +20,11 @@ class UserBase(BaseSchema):
 
 
 class UserCreate(UserBase):
-    password: Annotated[str, MinLen(8)]
-
-    @field_validator("password")
-    @classmethod
-    def validate_password_strength(cls, v: str) -> str:
-        # минимальные требования: буква в верхнем и нижнем регистре, цифра и спецсимвол
-        has_lower = any(c.islower() for c in v)
-        has_upper = any(c.isupper() for c in v)
-        has_digit = any(c.isdigit() for c in v)
-        has_special = any(not c.isalnum() for c in v)
-        if not (has_lower and has_upper and has_digit and has_special):
-            raise ValueError(
-                "Пароль должен содержать строчные и прописные буквы, цифры и спецсимволы"
-            )
-        return v
+    password: Annotated[
+        str,
+        MinLen(8),
+        AfterValidator(validate_password_strength),
+    ]
 
 
 class UserResponse(UserBase):
@@ -64,52 +59,16 @@ class UserProfile(BaseSchema):
     age: int | None = Field(default=None, gt=0)
     weight: float | None = Field(default=None, gt=0)
     height: float | None = Field(default=None, gt=0)
-    kfa: Literal["1", "2", "3", "4", "5"] | None = None
-    goal: Literal["Снижение веса", "Увеличение веса", "Поддержание веса"] | None = None
+    kfa: Annotated[KFALevel | None, BeforeValidator(coerce_kfa)] = None
+    goal: Annotated[GoalType | None, BeforeValidator(coerce_goal)] = None
 
     model_config = ConfigDict(strict=True)
-
-    # пре-валидатор: "" -> None, "1"/1 -> KFALevel, уже Enum -> как есть
-    @field_validator("kfa", mode="before")
-    @classmethod
-    def _coerce_kfa(cls, v):
-        if v in (None, ""):
-            return None
-        if isinstance(v, KFALevel):
-            return v
-        s = str(v)
-        for m in KFALevel:
-            if m.value == s:
-                return m
-        raise ValueError(f"Недопустимое значение kfa: {v}")
-
-    # Пре-валидатор: "" -> None, "Снижение веса" -> GoalType, уже Enum -> как есть
-    @field_validator("goal", mode="before")
-    @classmethod
-    def _coerce_goal(cls, v):
-        if v in (None, ""):
-            return None
-        if isinstance(v, GoalType):
-            return v
-        try:
-            return GoalType(v)
-        except Exception:
-            raise ValueError(f"Недопустимое значение goal: {v}")
 
 
 class PasswordChange(BaseSchema):
     current_password: Annotated[str, MinLen(8)]
-    new_password: Annotated[str, MinLen(8)]
-
-    @field_validator("new_password")
-    @classmethod
-    def validate_new_password_strength(cls, v: str) -> str:
-        has_lower = any(c.islower() for c in v)
-        has_upper = any(c.isupper() for c in v)
-        has_digit = any(c.isdigit() for c in v)
-        has_special = any(not c.isalnum() for c in v)
-        if not (has_lower and has_upper and has_digit and has_special):
-            raise ValueError(
-                "Пароль должен содержать строчные и прописные буквы, цифры и спецсимволы"
-            )
-        return v
+    new_password: Annotated[
+        str,
+        MinLen(8),
+        AfterValidator(validate_password_strength),
+    ]
