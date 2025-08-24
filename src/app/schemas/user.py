@@ -4,7 +4,7 @@ from annotated_types import MinLen, MaxLen
 from pydantic import ConfigDict, EmailStr, Field, BeforeValidator, AfterValidator
 from typing import Annotated, Literal
 
-from .base import BaseSchema
+from .base import BaseSchema, FormSchema
 from src.app.models.user import GoalType, KFALevel
 from src.app.core.utils.validators import (
     coerce_goal,
@@ -61,7 +61,7 @@ class UserAccount(UserBase):
     created_at: datetime
 
 
-class UserProfile(BaseSchema):
+class UserProfile(FormSchema):
     # все поля опциональны, строгие типы для переданных значений
     gender: Literal["female", "male"] | None = None
     age: int | None = Field(default=None, ge=MIN_AGE, le=MAX_AGE)
@@ -70,7 +70,11 @@ class UserProfile(BaseSchema):
     kfa: Annotated[KFALevel | None, BeforeValidator(coerce_kfa)] = None
     goal: Annotated[GoalType | None, BeforeValidator(coerce_goal)] = None
 
-    model_config = ConfigDict(strict=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        use_enum_values=True,
+        extra="forbid",  # запрещаем лишние поля, кроме унаследованных от FormSchema
+    )
 
 
 class PasswordChange(BaseSchema):
