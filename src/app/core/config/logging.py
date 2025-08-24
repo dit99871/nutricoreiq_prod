@@ -1,10 +1,10 @@
 import logging
-from pathlib import Path
 from typing import Literal
 
 from pydantic import BaseModel
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+from src.app.core.constants import BASE_DIR
+
 LOG_DEFAULT_FORMAT = (
     "[%(asctime)s.%(msecs)03d] %(name)24s:%(lineno)-4d %(levelname)-7s - %(message)s"
 )

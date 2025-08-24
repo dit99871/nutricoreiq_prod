@@ -1,17 +1,15 @@
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from pathlib import Path
 
 import aiosmtplib
 from aiosmtplib.errors import SMTPException
 from jinja2 import Environment, FileSystemLoader
 
 from src.app.core.config import settings
+from src.app.core.constants import BASE_DIR
 from src.app.core.logger import get_logger
 
 log = get_logger("email_services")
-
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 env = Environment(loader=FileSystemLoader(str((BASE_DIR / "templates").resolve())))
 

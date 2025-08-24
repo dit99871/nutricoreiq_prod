@@ -11,6 +11,14 @@ from src.app.core.utils.validators import (
     coerce_kfa,
     validate_password_strength,
 )
+from src.app.core.constants import (
+    MIN_AGE,
+    MAX_AGE,
+    MIN_HEIGHT_CM,
+    MAX_HEIGHT_CM,
+    MIN_WEIGHT_KG,
+    MAX_WEIGHT_KG,
+)
 
 
 class UserBase(BaseSchema):
@@ -56,9 +64,9 @@ class UserAccount(UserBase):
 class UserProfile(BaseSchema):
     # все поля опциональны, строгие типы для переданных значений
     gender: Literal["female", "male"] | None = None
-    age: int | None = Field(default=None, gt=0)
-    weight: float | None = Field(default=None, gt=0)
-    height: float | None = Field(default=None, gt=0)
+    age: int | None = Field(default=None, ge=MIN_AGE, le=MAX_AGE)
+    weight: float | None = Field(default=None, ge=MIN_WEIGHT_KG, le=MAX_WEIGHT_KG)
+    height: float | None = Field(default=None, ge=MIN_HEIGHT_CM, le=MAX_HEIGHT_CM)
     kfa: Annotated[KFALevel | None, BeforeValidator(coerce_kfa)] = None
     goal: Annotated[GoalType | None, BeforeValidator(coerce_goal)] = None
 
