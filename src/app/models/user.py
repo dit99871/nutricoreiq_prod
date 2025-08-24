@@ -2,7 +2,7 @@ import datetime
 from enum import Enum
 from typing import Literal
 from uuid import uuid4
-
+from sqlalchemy import CheckConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .mixins import IntIdPkMixin
@@ -30,6 +30,20 @@ class GoalType(Enum):
 
 
 class User(IntIdPkMixin, Base):
+    __table_args__ = (
+        CheckConstraint(
+            "age IS NULL OR (age >= 10 AND age <= 120)", name="ck_users_age_range"
+        ),
+        CheckConstraint(
+            "height IS NULL OR (height >= 50 AND height <= 300)",
+            name="ck_users_height_range",
+        ),
+        CheckConstraint(
+            "weight IS NULL OR (weight >= 20 AND weight <= 400)",
+            name="ck_users_weight_range",
+        ),
+    )
+
     uid: Mapped[str] = mapped_column(
         unique=True, index=True, default=lambda: str(uuid4())
     )

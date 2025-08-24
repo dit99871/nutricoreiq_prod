@@ -1,11 +1,10 @@
-from pathlib import Path
-
 from pydantic import PostgresDsn
 from pydantic_settings import (
     BaseSettings,
     SettingsConfigDict,
 )
 
+from src.app.core.constants import BASE_DIR
 from .auth import AuthConfig
 from .cors import CORSConfig
 from .db import DatabaseConfig
@@ -18,9 +17,6 @@ from .run import RunConfig
 from .sentry import SentyConfig
 from .smtp import SMTPConfig
 from .taskiq import TaskiqConfig
-
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-
 
 class Settings(BaseSettings):
     DEBUG: bool = False
