@@ -7,7 +7,7 @@ from sqlalchemy.future import select
 
 from src.app.core.logger import get_logger
 from src.app.models import User
-from src.app.schemas.user import UserCreate, UserResponse
+from src.app.schemas.user import UserCreate, UserPublic
 from src.app.core.utils.auth import get_password_hash
 
 log = get_logger("user_crud")
@@ -16,7 +16,7 @@ log = get_logger("user_crud")
 async def _get_user_by_filter(
     session: AsyncSession,
     filter_condition,
-) -> UserResponse | None:
+) -> UserPublic | None:
     """
     Helper function to get a user from the database using a filter condition.
 
@@ -43,7 +43,7 @@ async def _get_user_by_filter(
         result = await session.execute(stmt)
         user = result.scalar_one_or_none()
 
-        return UserResponse.model_validate(user) if user else None
+        return UserPublic.model_validate(user) if user else None
 
     except SQLAlchemyError as e:
         log.error(
@@ -61,7 +61,7 @@ async def _get_user_by_filter(
 async def get_user_by_uid(
     session: AsyncSession,
     uid: str,
-) -> UserResponse:
+) -> UserPublic:
     """
     Fetches a user from the database by their user ID (UID).
 
@@ -96,7 +96,7 @@ async def get_user_by_uid(
 async def get_user_by_email(
     session: AsyncSession,
     email: EmailStr,
-) -> UserResponse | None:
+) -> UserPublic | None:
     """
     Fetches a user from the database by their email address.
 
@@ -120,7 +120,7 @@ async def get_user_by_email(
 async def get_user_by_name(
     session: AsyncSession,
     user_name: str,
-) -> UserResponse:
+) -> UserPublic:
     """
     Fetches a user from the database by their username.
 
@@ -149,7 +149,7 @@ async def get_user_by_name(
 async def create_user(
     session: AsyncSession,
     user_in: UserCreate,
-) -> UserResponse:
+) -> UserPublic:
     """
     Creates a new user in the database.
 
@@ -184,7 +184,7 @@ async def create_user(
         await session.refresh(db_user)
 
         # возвращаем валидированную pydantic-модель пользователя (без пароля)
-        return UserResponse.model_validate(db_user)
+        return UserPublic.model_validate(db_user)
 
     except SQLAlchemyError as e:
         log.error(
@@ -202,7 +202,7 @@ async def create_user(
 
 
 async def choose_subscribe_status(
-    user: UserResponse,
+    user: UserPublic,
     session: AsyncSession,
     condition: bool,
 ):

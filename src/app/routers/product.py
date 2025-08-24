@@ -16,7 +16,7 @@ from src.app.core.utils.pending_product import (
 from src.app.core.services.product import handle_product_search, handle_product_details
 from src.app.core.utils import templates
 from src.app.schemas.product import UnifiedProductResponse, PendingProductCreate
-from src.app.schemas.user import UserResponse
+from src.app.schemas.user import UserPublic
 
 log = get_logger("product_router")
 
@@ -54,7 +54,7 @@ async def get_product_details(
     request: Request,
     product_id: int,
     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-    current_user: Annotated[UserResponse, Depends(get_current_auth_user)],
+    current_user: Annotated[UserPublic, Depends(get_current_auth_user)],
 ):
     """
     Retrieves the details of a product.

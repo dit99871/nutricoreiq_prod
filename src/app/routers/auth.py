@@ -30,7 +30,7 @@ from src.app.core.services.email import send_welcome_email as send_welcome
 from src.app.core.services.redis import revoke_refresh_token
 from src.app.core.utils.auth import create_response
 from src.app.crud.user import create_user, get_user_by_email
-from src.app.schemas.user import PasswordChange, UserCreate, UserResponse, UserPublic
+from src.app.schemas.user import PasswordChange, UserCreate, UserPublic, UserPublic
 from src.app.tasks import send_welcome_email
 
 log = get_logger("auth_router")
@@ -95,7 +95,7 @@ async def register_user(
 async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-) -> UserResponse:
+) -> UserPublic:
     """
     Logs a user in and returns a response containing an access and refresh token.
 
@@ -121,7 +121,7 @@ async def login(
 @router.post("/logout")
 async def logout(
     request: Request,
-    user: Annotated[UserResponse, Depends(get_current_auth_user)],
+    user: Annotated[UserPublic, Depends(get_current_auth_user)],
     redis: Redis = Depends(get_redis),
 ):
     """
@@ -220,7 +220,7 @@ async def refresh_token(
 async def change_password(
     password_data: PasswordChange,
     request: Request,
-    user: Annotated[UserResponse, Depends(get_current_auth_user)],
+    user: Annotated[UserPublic, Depends(get_current_auth_user)],
     session: AsyncSession = Depends(db_helper.session_getter),
 ):
     """

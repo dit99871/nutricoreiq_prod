@@ -1,11 +1,11 @@
 from src.app.core.logger import get_logger
 from src.app.models.user import KFALevel
-from src.app.schemas.user import UserAccount
+from src.app.schemas.user import UserProfile
 
 log = get_logger("user_utils")
 
 
-def calculate_bmr(user: UserAccount) -> float:
+def calculate_bmr(user: UserProfile) -> float:
     """
     Calculates the Basal Metabolic Rate (BMR) of the given user.
 
@@ -60,7 +60,7 @@ def calculate_bmr(user: UserAccount) -> float:
     return bmr
 
 
-def calculate_tdee(user: UserAccount) -> float:
+def calculate_tdee(user: UserProfile) -> float:
     """
     Calculates the Total Daily Energy Expenditure (TDEE) of the given user.
 
