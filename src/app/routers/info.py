@@ -71,7 +71,6 @@ def get_info_about_project(
 @router.get(
     "/",
     name="home",
-    response_class=HTMLResponse,
 )
 def start_page(
     request: Request,
