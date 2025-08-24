@@ -2,7 +2,7 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+from src.app.core.constants import BASE_DIR
 
 
 class AuthConfig(BaseModel):
