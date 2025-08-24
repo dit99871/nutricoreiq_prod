@@ -19,7 +19,7 @@ from src.app.core.services.auth import get_current_auth_user
 from src.app.core.utils import templates
 from src.app.crud.profile import update_user_profile, get_user_profile
 from src.app.crud.user import choose_subscribe_status
-from src.app.schemas.user import UserProfile, UserResponse
+from src.app.schemas.user import UserProfile, UserPublic
 
 router = APIRouter(
     tags=["User"],
@@ -31,7 +31,7 @@ log = get_logger("user_router")
 
 @router.get("/me")
 async def read_current_user(
-    user: Annotated[UserResponse, Depends(get_current_auth_user)],
+    user: Annotated[UserPublic, Depends(get_current_auth_user)],
 ):
     """
     Retrieves the current authenticated user's basic information.
@@ -57,7 +57,7 @@ async def read_current_user(
 @router.head("/profile/data")
 async def get_profile(
     request: Request,
-    user: Annotated[UserResponse, Depends(get_current_auth_user)],
+    user: Annotated[UserPublic, Depends(get_current_auth_user)],
     db_session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
 ):
     """
@@ -97,7 +97,7 @@ async def get_profile(
 @router.post("/profile/update")
 async def update_profile(
     data_in: UserProfile,
-    user: Annotated[UserResponse, Depends(get_current_auth_user)],
+    user: Annotated[UserPublic, Depends(get_current_auth_user)],
     db_session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
 ):
     """
@@ -132,7 +132,7 @@ async def update_profile(
 
 @router.post("/unsubscribe")
 async def unsubscribe_email_notification(
-    user: Annotated[UserResponse, Depends(get_current_auth_user)],
+    user: Annotated[UserPublic, Depends(get_current_auth_user)],
     db_session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
 ):
     """
@@ -159,7 +159,7 @@ async def unsubscribe_email_notification(
 
 @router.post("/subscribe")
 async def subscribe_email_notification(
-    user: Annotated[UserResponse, Depends(get_current_auth_user)],
+    user: Annotated[UserPublic, Depends(get_current_auth_user)],
     db_session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
 ):
     """

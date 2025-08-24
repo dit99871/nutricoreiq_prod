@@ -13,7 +13,7 @@ from src.app.core.config import settings
 from src.app.core.logger import get_logger
 from src.app.crud.user import get_user_by_uid, get_user_by_name
 from src.app.models import User
-from src.app.schemas.user import UserResponse
+from src.app.schemas.user import UserPublic
 from src.app.core.services.redis import (
     add_refresh_to_redis,
     revoke_all_refresh_tokens,
@@ -132,7 +132,7 @@ def create_jwt(
     return encoded
 
 
-def create_access_jwt(user: UserResponse) -> str:
+def create_access_jwt(user: UserPublic) -> str:
     """
     Creates an access token for the given user.
 
@@ -158,7 +158,7 @@ def create_access_jwt(user: UserResponse) -> str:
 
 
 async def create_refresh_jwt(
-    user: UserResponse,
+    user: UserPublic,
 ) -> str:
     """
     Creates a refresh token for the given user.
@@ -194,7 +194,7 @@ async def create_refresh_jwt(
 
 
 async def update_password(
-    user: UserResponse,
+    user: UserPublic,
     session: AsyncSession,
     new_password: str,
 ):
@@ -233,7 +233,7 @@ async def update_password(
     return await add_tokens_to_response(user)
 
 
-async def add_tokens_to_response(user: UserResponse):
+async def add_tokens_to_response(user: UserPublic):
     """
     Adds an access token and refresh token to a response for the given user.
 
@@ -257,7 +257,7 @@ async def add_tokens_to_response(user: UserResponse):
 async def get_current_auth_user(
     token: Annotated[str, Depends(get_access_token_from_cookies)],
     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-) -> UserResponse | None:
+) -> UserPublic | None:
     """
     Authenticates a user given a JWT token and returns the user object.
 
@@ -292,7 +292,7 @@ async def get_current_auth_user_for_refresh(
     token: str,
     session: AsyncSession,
     redis: Redis,
-) -> UserResponse:
+) -> UserPublic:
     """
     Authenticates a user given a refresh token and returns the user object.
 
@@ -327,7 +327,7 @@ async def authenticate_user(
     session: AsyncSession,
     username: str,
     password: str,
-) -> UserResponse | None:
+) -> UserPublic | None:
     """
     Authenticates a user by validating their username and password.
 
@@ -355,4 +355,4 @@ async def authenticate_user(
             detail={"message": "Введён неверный пароль"},
         )
 
-    return UserResponse.model_validate(user)
+    return UserPublic.model_validate(user)

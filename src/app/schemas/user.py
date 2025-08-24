@@ -1,7 +1,13 @@
 from datetime import datetime
 
 from annotated_types import MinLen, MaxLen
-from pydantic import ConfigDict, EmailStr, Field, BeforeValidator, AfterValidator
+from pydantic import (
+    ConfigDict,
+    EmailStr,
+    Field,
+    BeforeValidator,
+    AfterValidator,
+)
 from typing import Annotated, Literal
 
 from .base import BaseSchema, FormSchema
@@ -22,12 +28,24 @@ from src.app.core.constants import (
 
 
 class UserBase(BaseSchema):
+    """
+    Базовая схема пользователя.
+
+    Содержит только основные поля, общие для всех операций с пользователем.
+    """
+
     username: Annotated[str, MinLen(3), MaxLen(20)]
     email: EmailStr
-    is_subscribed: bool = True
+    is_subscribed: bool
 
 
 class UserCreate(UserBase):
+    """
+    Схема для создания пользователя.
+
+    Добавляет валидацию пароля к базовым полям.
+    """
+
     password: Annotated[
         str,
         MinLen(8),
@@ -35,30 +53,15 @@ class UserCreate(UserBase):
     ]
 
 
-class UserResponse(UserBase):
+class UserPublic(UserBase):
+    """
+    Публичная схема пользователя.
+
+    Содержит только публичные данные, которые можно показывать другим пользователям.
+    """
+
     id: int
     uid: str
-    # хранится в pydantic-модели для внутреннего использования (аутентификация),
-    # но исключается из сериализации ответов/схем OpenAPI
-    hashed_password: bytes | None = Field(default=None, exclude=True)
-
-
-class UserPublic(BaseSchema):
-    id: int
-    uid: str
-    username: Annotated[str, MinLen(3), MaxLen(20)]
-    email: EmailStr
-    is_subscribed: bool
-
-
-class UserAccount(UserBase):
-    gender: Literal["female", "male"] | None = None
-    age: int | None
-    weight: float | None
-    height: float | None
-    kfa: KFALevel | None
-    goal: GoalType | None
-    created_at: datetime
 
 
 class UserProfile(FormSchema):

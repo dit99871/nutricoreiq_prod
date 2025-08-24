@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.core.logger import get_logger
 from src.app.models import User
-from src.app.schemas.user import UserResponse, UserProfile, UserAccount
+from src.app.schemas.user import UserPublic, UserProfile, UserProfile
 
 log = get_logger("profile_crud")
 
@@ -13,7 +13,7 @@ log = get_logger("profile_crud")
 async def get_user_profile(
     session: AsyncSession,
     user_id: int,
-) -> UserAccount:
+) -> UserProfile:
     """
     Fetches a user's profile information from the database.
 
@@ -42,7 +42,7 @@ async def get_user_profile(
                     "user_id": user_id,
                 },
             )
-        return UserAccount.model_validate(user, from_attributes=True)
+        return UserProfile.model_validate(user, from_attributes=True)
 
     except SQLAlchemyError as e:
         log.error("Ошибка БД при получении пользователя: %s", e)
@@ -57,9 +57,9 @@ async def get_user_profile(
 
 async def update_user_profile(
     data_in: UserProfile,
-    current_user: UserResponse,
+    current_user: UserPublic,
     session: AsyncSession,
-) -> UserAccount:
+) -> UserProfile:
     """
     Updates the current authenticated user's profile information in the database.
 
@@ -100,7 +100,7 @@ async def update_user_profile(
         await session.commit()
 
         # возвращаем через Pydantic-валидацию, используя атрибуты ORM
-        return UserAccount.model_validate(updated_user, from_attributes=True)
+        return UserProfile.model_validate(updated_user, from_attributes=True)
 
     except SQLAlchemyError as e:
         log.error(

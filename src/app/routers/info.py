@@ -6,7 +6,7 @@ from fastapi.responses import HTMLResponse
 
 from src.app.core import templates
 from src.app.core.services.auth import get_current_auth_user
-from src.app.schemas.user import UserResponse
+from src.app.schemas.user import UserPublic
 
 router = APIRouter(
     tags=["Info"],
@@ -17,7 +17,7 @@ router = APIRouter(
 @router.get("/privacy")
 def get_privacy_info(
     request: Request,
-    current_user: Annotated[UserResponse, Depends(get_current_auth_user)],
+    current_user: Annotated[UserPublic, Depends(get_current_auth_user)],
 ):
     """
     Retrieves the privacy policy information of the NutriCoreIQ project.
@@ -44,7 +44,7 @@ def get_privacy_info(
 @router.get("/about")
 def get_info_about_project(
     request: Request,
-    current_user: Annotated[UserResponse, Depends(get_current_auth_user)],
+    current_user: Annotated[UserPublic, Depends(get_current_auth_user)],
 ):
     """
     Retrieves information about the NutriCoreIQ project.
@@ -74,7 +74,7 @@ def get_info_about_project(
 )
 def start_page(
     request: Request,
-    current_user: Annotated[UserResponse, Depends(get_current_auth_user)],
+    current_user: Annotated[UserPublic, Depends(get_current_auth_user)],
 ):
     """
     Retrieves the home page of NutriCoreIQ.
