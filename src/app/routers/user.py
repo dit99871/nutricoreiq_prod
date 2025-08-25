@@ -19,7 +19,7 @@ from src.app.core.services.auth import get_current_auth_user
 from src.app.core.utils import templates
 from src.app.crud.profile import update_user_profile, get_user_profile
 from src.app.crud.user import choose_subscribe_status
-from src.app.schemas.user import UserProfile, UserPublic
+from src.app.schemas.user import UserProfileUpdate, UserPublic
 
 router = APIRouter(
     tags=["User"],
@@ -96,7 +96,7 @@ async def get_profile(
 
 @router.post("/profile/update")
 async def update_profile(
-    data_in: UserProfile,
+    data_in: UserProfileUpdate,
     user: Annotated[UserPublic, Depends(get_current_auth_user)],
     db_session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
 ):

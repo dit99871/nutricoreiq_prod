@@ -1,5 +1,4 @@
 from datetime import datetime
-
 from annotated_types import MinLen, MaxLen
 from pydantic import (
     ConfigDict,
@@ -7,8 +6,9 @@ from pydantic import (
     Field,
     BeforeValidator,
     AfterValidator,
+    model_validator,
 )
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Optional
 
 from .base import BaseSchema, FormSchema
 from src.app.models.user import GoalType, KFALevel
@@ -27,23 +27,23 @@ from src.app.core.constants import (
 )
 
 
-class UserBase(BaseSchema):
-    """
-    Базовая схема пользователя.
-
-    Содержит только основные поля, общие для всех операций с пользователем.
-    """
-
+# базовая для input (create/update)
+class UserBaseIn(FormSchema):
     username: Annotated[str, MinLen(3), MaxLen(20)]
     email: EmailStr
-    is_subscribed: bool
 
 
-class UserCreate(UserBase):
+# базовая для output (read): сериализация, exclude sensitive
+class UserBaseOut(BaseSchema):
+    username: Annotated[str, MinLen(3), MaxLen(20)]
+    email: EmailStr
+    id: int
+    uid: str
+
+
+class UserCreate(UserBaseIn):
     """
     Схема для создания пользователя.
-
-    Добавляет валидацию пароля к базовым полям.
     """
 
     password: Annotated[
@@ -53,37 +53,64 @@ class UserCreate(UserBase):
     ]
 
 
-class UserPublic(UserBase):
+class UserPublic(UserBaseOut):
     """
-    Публичная схема пользователя.
-
-    Содержит только публичные данные, которые можно показывать другим пользователям.
+    Публичная схема пользователя (output).
     """
 
-    id: int
-    uid: str
+    # исключаем из сериализации
+    hashed_password: bytes | None = Field(default=None, exclude=True)
 
 
-class UserProfile(FormSchema):
-    # все поля опциональны, строгие типы для переданных значений
+class UserProfile(UserBaseOut):
+    """
+    Профиль пользователя (output, для чтения).
+    """
+
     gender: Literal["female", "male"] | None = None
     age: int | None = Field(default=None, ge=MIN_AGE, le=MAX_AGE)
     weight: float | None = Field(default=None, ge=MIN_WEIGHT_KG, le=MAX_WEIGHT_KG)
     height: float | None = Field(default=None, ge=MIN_HEIGHT_CM, le=MAX_HEIGHT_CM)
     kfa: Annotated[KFALevel | None, BeforeValidator(coerce_kfa)] = None
     goal: Annotated[GoalType | None, BeforeValidator(coerce_goal)] = None
-
-    model_config = ConfigDict(
-        from_attributes=True,
-        use_enum_values=True,
-        extra="forbid",  # запрещаем лишние поля, кроме унаследованных от FormSchema
-    )
+    created_at: datetime
+    is_subscribed: bool
 
 
-class PasswordChange(BaseSchema):
+class UserProfileUpdate(FormSchema):
+    """
+    Схема для обновления профиля (input).
+    """
+
+    gender: Optional[Literal["female", "male"]] = None
+    age: Optional[int] = Field(default=None, ge=MIN_AGE, le=MAX_AGE)
+    weight: Optional[float] = Field(default=None, ge=MIN_WEIGHT_KG, le=MAX_WEIGHT_KG)
+    height: Optional[float] = Field(default=None, ge=MIN_HEIGHT_CM, le=MAX_HEIGHT_CM)
+    kfa: Annotated[Optional[KFALevel], BeforeValidator(coerce_kfa)] = None
+    goal: Annotated[Optional[GoalType], BeforeValidator(coerce_goal)] = None
+
+    @model_validator(mode="after")
+    def check_consistency(cls, values):
+        # кросс-валидация (например, если age указан, проверить weight)
+        if values.age is not None and values.weight is None:
+            raise ValueError("Если указан возраст, укажите вес для полноты профиля")
+        return values
+
+
+class PasswordChange(FormSchema):
+    """
+    Схема для смены пароля.
+    """
+
     current_password: Annotated[str, MinLen(8)]
     new_password: Annotated[
         str,
         MinLen(8),
         AfterValidator(validate_password_strength),
     ]
+
+    @model_validator(mode="after")
+    def passwords_match(cls, values):
+        if values.current_password == values.new_password:
+            raise ValueError("Новый пароль должен отличаться от текущего")
+        return values
