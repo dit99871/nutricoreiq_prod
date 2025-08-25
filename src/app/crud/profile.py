@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.core.logger import get_logger
 from src.app.models import User
-from src.app.schemas.user import UserPublic, UserProfile, UserProfile
+from src.app.schemas.user import UserPublic, UserProfileUpdate, UserProfile
 
 log = get_logger("profile_crud")
 
@@ -56,7 +56,7 @@ async def get_user_profile(
 
 
 async def update_user_profile(
-    data_in: UserProfile,
+    data_in: UserProfileUpdate,
     current_user: UserPublic,
     session: AsyncSession,
 ) -> UserProfile:
