@@ -99,11 +99,29 @@ def validation_exception_handler(
     :param exc: объект RequestValidationError, содержащий информацию о возникшей ошибке
     :return: объект ORJSONResponse, содержащий структурированную информацию об ошибке
     """
-    errors = [{"field": err["loc"][-1], "message": err["msg"]} for err in exc.errors()]
+
+    errors = []
+    for err in exc.errors():
+        # Extract the original error message and clean it up
+        if err["type"] == "value_error":
+            # Remove "Value error, " prefix if it exists
+            message = str(err.get("msg", ""))
+            if message.startswith("Value error, "):
+                message = message[13:]  # Remove "Value error, "
+        else:
+            message = err["msg"]
+
+        errors.append({"field": ".".join(map(str, err["loc"])), "message": message})
+
     error_response = ErrorResponse(
         status="error",
         error=ErrorDetail(
-            message="Некорректные входные данные", details={"fields": errors}
+            message=(
+                "Некорректные входные данные"
+                if len(errors) > 1
+                else errors[0]["message"]
+            ),
+            details={"fields": errors} if len(errors) > 1 else None,
         ),
     )
     log.error("Ошибка валидации по адресу: %s, ошибки: %s", request.url, errors)
@@ -126,8 +144,12 @@ def generic_exception_handler(
     :return: объект ORJSONResponse, содержащий структурированную информацию об ошибке
     """
     # используем X-Forwarded-Proto для определения схемы
-    scheme = request.headers.get("X-Forwarded-Proto", request.scope.get("scheme", "http"))
-    request_url = str(request.url).replace(f"{request.scope['scheme']}://", f"{scheme}://")
+    scheme = request.headers.get(
+        "X-Forwarded-Proto", request.scope.get("scheme", "http")
+    )
+    request_url = str(request.url).replace(
+        f"{request.scope['scheme']}://", f"{scheme}://"
+    )
 
     details = {"field": "server", "message": str(exc)} if settings.DEBUG else None
     error_response = ErrorResponse(
