@@ -26,15 +26,12 @@ def coerce_kfa(v: Any) -> KFALevel | None:
     Преобразует вход в KFALevel или None.
     Допускает значения: None, "", экземпляр KFALevel, строковое/числовое значение Enum.
     """
-    if v in (None, ""):
+
+    if v is None or v == "":
         return None
     if isinstance(v, KFALevel):
         return v
-    s = str(v)
-    for m in KFALevel:
-        if m.value == s:
-            return m
-    raise ValueError(f"Недопустимое значение kfa: {v}")
+    return KFALevel.from_int(v)
 
 
 def coerce_goal(v: Any) -> GoalType | None:

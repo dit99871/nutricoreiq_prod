@@ -28,7 +28,7 @@ class KFALevel(Enum):
         for level in cls:
             if level.value == str_value:
                 return level
-        raise ValueError(f"Invalid KFA level: {value}")
+        raise ValueError(f"Недопустимое значение KFA: {value}")
 
 
 class GoalType(Enum):
