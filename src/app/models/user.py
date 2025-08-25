@@ -22,6 +22,14 @@ class KFALevel(Enum):
     HIGH = "4"
     VERY_HIGH = "5"
 
+    @classmethod
+    def from_int(cls, value: int | str) -> "KFALevel":
+        str_value = str(value).strip()
+        for level in cls:
+            if level.value == str_value:
+                return level
+        raise ValueError(f"Invalid KFA level: {value}")
+
 
 class GoalType(Enum):
     LOSE_WEIGHT = "Снижение веса"
