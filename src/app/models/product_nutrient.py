@@ -2,17 +2,17 @@ from sqlalchemy import ForeignKey
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 
 from .base import Base
-from .mixins.int_id_pk import IntIdPkMixin
 
 
-class ProductNutrient(IntIdPkMixin, Base):
+class ProductNutrient(Base):
+
     amount: Mapped[float] = mapped_column(default=0.0)
     product_id: Mapped[int] = mapped_column(
-        ForeignKey("products.id"),
+        ForeignKey("products.id", ondelete="CASCADE"),
         primary_key=True,
     )
     nutrient_id: Mapped[int] = mapped_column(
-        ForeignKey("nutrients.id"),
+        ForeignKey("nutrients.id", ondelete="CASCADE"),
         primary_key=True,
     )
 
