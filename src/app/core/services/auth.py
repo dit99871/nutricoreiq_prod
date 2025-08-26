@@ -277,15 +277,13 @@ async def get_current_auth_user(
         log.error("Ошибка получения uid из payload")
         raise CREDENTIAL_EXCEPTION
 
-    user = await get_user_by_uid(session, uid)
-    if user is None:
-        log.error(
-            "Пользователь не найден по uid: %s",
-            uid,
-        )
+    try:
+        # используем кешированную версию get_user_by_uid
+        user = await get_user_by_uid(session, uid)
+        return user
+    except Exception as e:
+        log.error("Ошибка при получении пользователя: %s", str(e))
         raise CREDENTIAL_EXCEPTION
-
-    return user
 
 
 async def get_current_auth_user_for_refresh(

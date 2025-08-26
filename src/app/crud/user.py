@@ -6,9 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from src.app.core.logger import get_logger
+from src.app.core.services.cache import CacheService
+from src.app.core.utils.auth import get_password_hash
 from src.app.models import User
 from src.app.schemas.user import UserCreate, UserPublic
-from src.app.core.utils.auth import get_password_hash
 
 log = get_logger("user_crud")
 
@@ -61,26 +62,24 @@ async def _get_user_by_filter(
 async def get_user_by_uid(
     session: AsyncSession,
     uid: str,
+    use_cache: bool = True,
 ) -> UserPublic:
     """
-    Fetches a user from the database by their user ID (UID).
-
-    Given a `session` and a `uid`, constructs a SQLAlchemy query to fetch a user
-    from the database. The query will only return active users.
-
-    On success, returns a `UserResponse` object containing the user's data. If the user
-    is not found, raises an `HTTPException` with a 404 status code and a detail string
-    containing the error message. If an unexpected error occurs, raises an
-    `HTTPException` with a 500 status code and a detail string containing the error
-    message.
+    Fetches a user from the database by their user ID (UID) with optional caching.
 
     :param session: The current database session.
     :param uid: The UID of the user to fetch.
-    :return: A `UserResponse` object containing the user's data, or raises an
-        `HTTPException` if the user is not found.
+    :param use_cache: Whether to use cache (default: True).
+    :return: A UserPublic object containing the user's data.
     :raises HTTPException: If the user is not found or an unexpected error occurs.
     """
+    # пытаемся получить из кеша
+    if use_cache:
+        cached_user = await CacheService.get_user(uid)
+        if cached_user:
+            return UserPublic.model_validate(cached_user)
 
+    # если нет в кеше или кеш отключен, идем в БД
     user = await _get_user_by_filter(session, User.uid == uid)
     if user is None:
         log.error("User not found in db by uid")
@@ -90,6 +89,11 @@ async def get_user_by_uid(
                 "message": "Пользователь не найден",
             },
         )
+
+    # обновляем кеш
+    if use_cache:
+        await CacheService.set_user(uid, user.model_dump())
+
     return user
 
 
