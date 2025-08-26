@@ -6,6 +6,7 @@ from pydantic_settings import (
 
 from src.app.core.constants import BASE_DIR
 from .auth import AuthConfig
+from .cache import CacheConfig
 from .cors import CORSConfig
 from .db import DatabaseConfig
 from .env import EnvConfig
@@ -40,6 +41,7 @@ class Settings(BaseSettings):
     taskiq: TaskiqConfig
     sentry: SentyConfig
     loki: LokiConfig
+    cache: CacheConfig
 
     @property
     def effective_db_url(self) -> PostgresDsn:
