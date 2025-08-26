@@ -1,3 +1,4 @@
+import json
 from typing import Optional
 
 from src.app.core.config import settings
@@ -30,10 +31,21 @@ class CacheService:
                 key = cls._get_user_cache_key(uid)
                 data = await redis.get(key)
                 if data:
-                    return data
+                    log.info("Данные пользователя %s получены из кеша", uid)
+                    return json.loads(data)
+
+        except json.JSONDecodeError as e:
+            log.error(
+                "Ошибка десериализации данных пользователя %s: %s",
+                uid,
+                e,
+            )
 
         except Exception as e:
-            log.error("Ошибка при получении пользователя из кеша: %s", e)
+            log.error(
+                "Ошибка при получении пользователя из кеша: %s",
+                e,
+            )
 
     @classmethod
     async def set_user(cls, uid: str, user_data: dict) -> None:
@@ -47,12 +59,27 @@ class CacheService:
         try:
             async for redis in get_redis():
                 key = cls._get_user_cache_key(uid)
+                # сериализуем словарь в json-строку
+                serialized_data = json.dumps(user_data, ensure_ascii=False)
                 await redis.setex(
-                    name=key, time=settings.cache.user_ttl, value=user_data
+                    name=key,
+                    time=settings.cache.user_ttl,
+                    value=serialized_data,
                 )
+                log.info("Данные пользователя %s сохранены в кеш", uid)
+
+        except (TypeError, OverflowError) as e:
+            log.error(
+                "Ошибка сериализации данных пользователя %s: %s",
+                uid,
+                e,
+            )
 
         except Exception as e:
-            log.error("Ошибка при сохранении пользователя в кеш: %s", e)
+            log.error(
+                "Ошибка при сохранении пользователя в кеш: %s",
+                e,
+            )
 
     @classmethod
     async def invalidate_user(cls, uid: str) -> None:
@@ -68,4 +95,7 @@ class CacheService:
                 await redis.delete(key)
 
         except Exception as e:
-            log.error("Ошибка при инвалидации кеша пользователя: %s", e)
+            log.error(
+                "Ошибка при инвалидации кеша пользователя: %s",
+                e,
+            )
