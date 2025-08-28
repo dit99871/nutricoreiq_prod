@@ -31,7 +31,7 @@ class CacheService:
                 key = cls._get_user_cache_key(uid)
                 data = await redis.get(key)
                 if data:
-                    log.info("Данные пользователя %s получены из кеша", uid)
+                    log.debug("Данные пользователя %s получены из кеша", uid)
                     return json.loads(data)
 
         except json.JSONDecodeError as e:
@@ -66,7 +66,7 @@ class CacheService:
                     time=settings.cache.user_ttl,
                     value=serialized_data,
                 )
-                log.info("Данные пользователя %s сохранены в кеш", uid)
+                log.debug("Данные пользователя %s сохранены в кеш", uid)
 
         except (TypeError, OverflowError) as e:
             log.error(

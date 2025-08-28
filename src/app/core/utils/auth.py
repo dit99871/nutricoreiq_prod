@@ -1,15 +1,13 @@
 import datetime as dt
-import uuid
-from typing import Any
 
 import bcrypt
 from fastapi import status
-from fastapi.exceptions import HTTPException
 from fastapi.responses import ORJSONResponse
-from jose import jwt, JWTError, ExpiredSignatureError
 
 from src.app.core.config import settings
 from src.app.core.logger import get_logger
+from src.app.core.services.jwt_service import create_access_jwt, create_refresh_jwt
+from src.app.schemas.user import UserPublic
 
 log = get_logger("auth_utils")
 
@@ -41,154 +39,24 @@ def verify_password(
     :param hashed_password: Hashed password to compare with.
     :return: `True` if password matches, `False` otherwise.
     """
+
     return bcrypt.checkpw(
         password=password.encode(),
         hashed_password=hashed_password,
     )
 
 
-def decode_jwt(token: str) -> dict[str, Any] | None:
+async def create_response(user: UserPublic) -> ORJSONResponse:
     """
-    Decodes a JWT token using the public key.
+    Creates an ORJSONResponse object with the user's access and refresh tokens.
 
-    This function attempts to decode a given JWT token using the public key
-    specified in the configuration. If successful, it returns the decoded
-    payload as a dictionary. If the public key file is not found, the token
-    has expired, or there is a JWT error, it raises an HTTPException with
-    an appropriate status code and error message.
-
-    :param token: The JWT token to be decoded.
-    :return: The decoded payload as a dictionary, or None if decoding fails.
-    :raises HTTPException: If the public key file is not found, the token
-                           has expired, or a JWT error occurs during decoding.
+    :param user: The user object for which to create the tokens.
+    :return: An ORJSONResponse object with the access and refresh tokens.
     """
-    if token is None:
-        return None
-    try:
-        decoded = jwt.decode(
-            token,
-            settings.auth.public_key_path.read_text(),
-            algorithms=settings.auth.algorithm,
-        )
-        return decoded
-    except FileNotFoundError as e:
-        log.error("File with public key not found: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"File with public key not found {str(e)}",
-        )
-    except ExpiredSignatureError as e:
-        log.error("Token has expired: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                "message": "Срок действия токена истек. Пожалуйста, войдите заново.",
-            },
-        )
-    except JWTError as e:
-        log.error("Invalid token: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                "message": "Неверный токен. Пожалуйста, войдите заново.",
-            },
-        )
 
+    access_token = create_access_jwt(user)
+    refresh_token = await create_refresh_jwt(user)
 
-def encode_jwt(
-    payload: dict,
-    algorithm: str = settings.auth.algorithm,
-    expire_minutes: int = settings.auth.access_token_expires,
-    expire_timedelta: dt.timedelta | None = None,
-) -> str:
-    """
-    Encodes a JWT token from the given payload and configuration.
-
-    This function encodes a JWT token using the private key specified in the
-    configuration and the given payload. If the private key file is not found,
-    a JWT error occurs during encoding, or the `expire_minutes` parameter is
-    invalid, it raises an HTTPException with an appropriate status code and
-    error message.
-
-    :param payload: The payload to be encoded into the JWT token.
-    :param algorithm: The algorithm to use for encoding the token, defaults to
-                      the algorithm specified in the configuration.
-    :param expire_minutes: The number of minutes before the token expires,
-                           defaults to the expiration time specified in the
-                           configuration.
-    :param expire_timedelta: The timedelta object representing the expiration
-                             time of the token, overrides the `expire_minutes`
-                             parameter if provided.
-    :return: The encoded JWT token as a string.
-    :raises HTTPException: If the private key file is not found, the token
-                           has expired, or a JWT error occurs during encoding.
-    """
-    try:
-        private_key = settings.auth.private_key_path.read_text()
-
-    except FileNotFoundError as e:
-        log.error("File with private key not found: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={
-                "message": "Ошибка авторизации",
-                "details": "File with private key not found.",
-            },
-        )
-
-    to_encode = payload.copy()
-    now = dt.datetime.now(dt.UTC)
-
-    expire = (
-        now + expire_timedelta
-        if expire_timedelta
-        else now + dt.timedelta(minutes=expire_minutes)
-    )
-    to_encode.update(
-        exp=expire,
-        iat=now,
-        jti=str(uuid.uuid4()),
-    )
-    try:
-        encoded = jwt.encode(
-            to_encode,
-            private_key,
-            algorithm=algorithm,
-        )
-        return encoded
-    except JWTError as e:
-        log.error("JWT error encoding token: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                "message": "Ошибка авторизации",
-                "details": "JWT error encoding token",
-            },
-        )
-
-
-def create_response(
-    access_token: str,
-    refresh_token: str,
-) -> ORJSONResponse:
-    """
-    Creates a response with the given access token and refresh token.
-
-    This function creates an instance of `ORJSONResponse` with the given access
-    token and refresh token. It sets the status code to HTTP 200 OK, the
-    Cache-Control header to "no-store", the Pragma header to "no-cache", and
-    the Content-Type header to "application/json". It sets the "access_token"
-    key in the response body to the given access token, and the "token_type"
-    key to "bearer". It also sets the Set-Cookie header with the given refresh
-    token, the "refresh_token" key in the cookie, the "httponly" and "secure"
-    flags set to True, and the "sameSite" flag set to "lax". The "domain" and
-    "path" parameters are not set by default but can be set if needed.
-
-    :param access_token: The access token to be set in the response.
-    :param refresh_token: The refresh token to be set in the response.
-    :return: The `ORJSONResponse` instance with the given access token and
-             refresh token.
-    """
     response = ORJSONResponse(
         status_code=status.HTTP_200_OK,
         headers={

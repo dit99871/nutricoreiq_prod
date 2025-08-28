@@ -18,9 +18,6 @@ from src.app.core.exceptions import ExpiredTokenException
 from src.app.core.logger import get_logger
 from src.app.core.redis import get_redis
 from src.app.core.services.auth import (
-    add_tokens_to_response,
-    create_access_jwt,
-    create_refresh_jwt,
     update_password,
     get_current_auth_user,
     get_current_auth_user_for_refresh,
@@ -63,7 +60,6 @@ async def register_user(
     :raises HTTPException: If the user is already registered.
     """
 
-    # log.info("Attempting to register user with email: %s", user_in.email)
     db_user = await get_user_by_email(session, user_in.email)
 
     if db_user:
@@ -84,7 +80,7 @@ async def register_user(
         # на проде отправляем письмо в фоне через брокер
         await send_welcome_email.kiq(user.email)
     else:
-        # в dev выполняем быстрый синхронный вызов для maildev
+        # в dev отправляем письмо в maildev
         await send_welcome(user)
 
     # возвращаем только публичные данные, без пароля
@@ -95,7 +91,7 @@ async def register_user(
 async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-) -> UserPublic:
+):
     """
     Logs a user in and returns a response containing an access and refresh token.
 
@@ -112,9 +108,8 @@ async def login(
         form_data.username,
         form_data.password,
     )
-    response = await add_tokens_to_response(user)
+    response = await create_response(user)
 
-    # log.info("User logged in successfully: %s", form_data.username)
     return response
 
 
@@ -205,13 +200,7 @@ async def refresh_token(
         )
 
     user = await get_current_auth_user_for_refresh(refresh_jwt, session, redis)
-    access_jwt = create_access_jwt(user)
-    refresh_jwt = await create_refresh_jwt(user)
-
-    response = create_response(
-        access_token=access_jwt,
-        refresh_token=refresh_jwt,
-    )
+    response = create_response(user)
 
     return response
 
