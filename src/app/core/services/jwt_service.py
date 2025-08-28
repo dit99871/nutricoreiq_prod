@@ -10,6 +10,7 @@ from jose import jwt, ExpiredSignatureError, JWTError
 from starlette import status
 
 from src.app.core.config import settings
+from src.app.core.exceptions import ExpiredTokenException
 from src.app.core.logger import get_logger
 from src.app.core.services.redis import add_refresh_to_redis
 from src.app.schemas.user import UserPublic
@@ -123,22 +124,23 @@ def decode_jwt(token: str) -> dict[str, Any] | None:
         return decoded
 
     except FileNotFoundError as e:
-        log.error("File with public key not found: %s", e)
+        log.error("Файл с публичным ключом не найден: %s", e)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"File with public key not found {str(e)}",
+            detail={
+                "message": "Ошибка авторизации",
+                "details": {
+                    "field": "file with public key",
+                    "message": "File with public key not found.",
+                },
+            },
         )
     except ExpiredSignatureError as e:
-        log.error("Token has expired: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                "message": "Срок действия токена истек. Пожалуйста, войдите заново.",
-            },
-            headers={"X-Error-Type": "authentication_error"},
-        )
+        log.error("Токен истек: %s", e)
+        raise ExpiredTokenException()
+
     except JWTError as e:
-        log.error("Invalid token: %s", e)
+        log.error("Неверный токен: %s", e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
@@ -180,12 +182,15 @@ def encode_jwt(
         private_key = settings.auth.private_key_path.read_text()
 
     except FileNotFoundError as e:
-        log.error("File with private key not found: %s", e)
+        log.error("Файл с приватным ключом не найден: %s", e)
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={
                 "message": "Ошибка авторизации",
-                "details": "File with private key not found.",
+                "details": {
+                    "field": "file with private key",
+                    "message": "File with private key not found.",
+                },
             },
         )
 
@@ -211,11 +216,14 @@ def encode_jwt(
         return encoded
 
     except JWTError as e:
-        log.error("JWT error encoding token: %s", e)
+        log.error("JWT ошибка при кодировании токена: %s", e)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
                 "message": "Ошибка авторизации",
-                "details": "JWT error encoding token",
+                "details": {
+                    "field": "encode token",
+                    "message": "JWT error encoding token",
+                },
             },
         )
