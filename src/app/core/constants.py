@@ -8,6 +8,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # User profile constants
 MIN_AGE: int = 10
+MAX_AGE: int = 120
+
+MIN_HEIGHT_CM: int = 50
+MAX_HEIGHT_CM: int = 300
+
+MIN_WEIGHT_KG: int = 20
+MAX_WEIGHT_KG: int = 400
 
 # JWT constants
 TOKEN_TYPE_FIELD = "type"
