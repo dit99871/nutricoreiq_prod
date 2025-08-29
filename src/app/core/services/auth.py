@@ -6,6 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.core import db_helper
+from src.app.core.constants import CREDENTIAL_EXCEPTION
 from src.app.core.logger import get_logger
 from src.app.crud.user import get_user_by_uid, get_user_by_name
 from src.app.models import User
@@ -26,12 +27,6 @@ from src.app.core.utils.auth import (
 )
 
 log = get_logger("auth_service")
-
-CREDENTIAL_EXCEPTION = HTTPException(
-    status_code=status.HTTP_401_UNAUTHORIZED,
-    detail={"message": "Oшибка аутентификации. Пожалуйста, войдите заново"},
-    headers={"WWW-Authenticate": "Bearer"},
-)
 
 
 async def get_access_token_from_cookies(request: Request):
