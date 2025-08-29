@@ -10,16 +10,17 @@ from jose import jwt, ExpiredSignatureError, JWTError
 from starlette import status
 
 from src.app.core.config import settings
+from src.app.core.constants import (
+    ACCESS_TOKEN_TYPE,
+    REFRESH_TOKEN_TYPE,
+    TOKEN_TYPE_FIELD,
+)
 from src.app.core.exceptions import ExpiredTokenException
 from src.app.core.logger import get_logger
 from src.app.core.services.redis import add_refresh_to_redis
 from src.app.schemas.user import UserPublic
 
 log = get_logger("jwt_service")
-
-TOKEN_TYPE_FIELD = "type"
-ACCESS_TOKEN_TYPE = "access"
-REFRESH_TOKEN_TYPE = "refresh"
 
 
 def create_jwt(
