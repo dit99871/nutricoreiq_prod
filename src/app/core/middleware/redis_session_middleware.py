@@ -65,7 +65,7 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
                     json.dumps(session),
                     ex=settings.redis.session_ttl,
                 )
-            secure = True if settings.env.env == "prod" else False
+            secure = settings.env.env == "prod"
 
             # установка куков для session_id
             response.set_cookie(
