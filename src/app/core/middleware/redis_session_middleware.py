@@ -66,6 +66,7 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
                     ex=settings.redis.session_ttl,
                 )
             secure = settings.env.env == "prod"
+            samesite = "lax" if secure else "strict"
 
             # установка куков для session_id
             response.set_cookie(
@@ -73,7 +74,8 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
                 value=session_id,
                 httponly=True,
                 secure=secure,
-                samesite="strict",
+                samesite=samesite,
+                max_age=settings.redis.session_ttl,
             )
 
             # установка csrf-токена в куки
@@ -82,7 +84,7 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
                 value=csrf_token,
                 httponly=False,  # доступно для js
                 secure=secure,
-                samesite="strict",
+                samesite=samesite,
                 max_age=3600,  # токен живёт 1 час
             )
 
