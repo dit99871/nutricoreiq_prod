@@ -200,7 +200,7 @@ async def refresh_token(
         )
 
     user = await get_current_auth_user_for_refresh(refresh_jwt, session, redis)
-    response = create_response(user)
+    response = await create_response(user)
 
     return response
 
