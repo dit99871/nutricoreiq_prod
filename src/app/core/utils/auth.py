@@ -75,6 +75,9 @@ async def create_response(user: UserPublic) -> ORJSONResponse:
         minutes=settings.auth.access_token_expires
     )
 
+    secure = settings.env.env == "prod"
+    samesite = "strict" if secure else "lax"
+
     def _set_cookies(
         key: str,
         value: str,
@@ -85,8 +88,8 @@ async def create_response(user: UserPublic) -> ORJSONResponse:
             key=key,
             value=value,
             httponly=True,
-            secure=True,
-            samesite="strict",
+            secure=secure,
+            samesite=samesite,
             expires=expires,
         )
 
