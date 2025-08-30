@@ -156,6 +156,7 @@ async def logout(
     response.delete_cookie("refresh_token")
     response.delete_cookie("access_token")
     response.delete_cookie("redis_session_id")
+    response.delete_cookie("csrf_token")
 
     return response
 
