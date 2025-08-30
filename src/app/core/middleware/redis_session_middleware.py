@@ -66,7 +66,7 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
                     ex=settings.redis.session_ttl,
                 )
             secure = settings.env.env == "prod"
-            samesite = "lax" if secure else "strict"
+            samesite = "strict" if secure else "lax"
 
             # установка куков для session_id
             response.set_cookie(
