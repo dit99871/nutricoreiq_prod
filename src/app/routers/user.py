@@ -74,7 +74,7 @@ async def get_profile(
     """
 
     if user is None:
-        log.error("Пользователь не авторизован")
+        log.warning("Пользователь не авторизован")
         raise ExpiredTokenException()
 
     user = await get_user_profile(db_session, user.id)
