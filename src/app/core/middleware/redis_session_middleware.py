@@ -31,6 +31,20 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
         :param call_next: The next middleware in the chain.
         :return: The response object.
         """
+
+        # пропуск статических ресурсов и сервисов не требующих сессии
+        path = request.url.path
+        if path.startswith("/static/") or path in {
+            "/metrics",
+            "/security/csp-report",
+            "/favicon.ico",
+            "/robots.txt",
+            "/openapi.json",
+            "/docs",
+            "/redoc",
+        }:
+            return await call_next(request)
+
         session_id = (
             request.cookies.get("redis_session_id") or generate_redis_session_id()
         )
