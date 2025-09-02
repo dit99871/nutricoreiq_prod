@@ -27,7 +27,7 @@ services:
         max-file: "3"
 
   postgres_exporter:
-    image: quay.io/prometheuscommunity/postgres-exporter:v0.15.0
+    image: quay.io/prometheuscommunity/postgres-exporter:latest
     container_name: postgres_exporter
     env_file:
       - .env
@@ -50,7 +50,7 @@ services:
         max-file: "3"
 
   redis:
-    image: redis:7.4-alpine
+    image: redis:latest
     container_name: redis
     ports:
       - "127.0.0.1:${REDIS_PORT}:${REDIS_PORT}"
@@ -72,7 +72,7 @@ services:
         max-file: "3"
 
   redis_exporter:
-    image: oliver006/redis_exporter:v1.62.0
+    image: oliver006/redis_exporter:latest
     container_name: redis_exporter
     environment:
       - REDIS_ADDR=${REDIS_ADDR}
@@ -89,7 +89,7 @@ services:
         max-file: "3"
 
   rabbitmq:
-    image: rabbitmq:3.13-management-alpine
+    image: rabbitmq:latest
     hostname: rabbitmq
     container_name: rabbitmq
     ports:
@@ -171,7 +171,7 @@ services:
         max-file: "3"
 
   prometheus:
-    image: prom/prometheus:v2.53.0
+    image: prom/prometheus:latest
     container_name: prometheus
     volumes:
       - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
@@ -187,7 +187,7 @@ services:
         max-file: "3"
 
   grafana:
-    image: grafana/grafana:11.1.0
+    image: grafana/grafana:latest
     container_name: grafana
     ports:
       - "127.0.0.1:3000:3000"
@@ -231,7 +231,7 @@ services:
         max-file: "3"
 
   node_exporter:
-    image: prom/node-exporter:v1.8.1
+    image: prom/node-exporter:latest
     container_name: node_exporter
     ports:
       - "127.0.0.1:9100:9100"
@@ -246,7 +246,7 @@ services:
         max-file: "3"
 
   nginx_exporter:
-    image: nginx/nginx-prometheus-exporter:1.1.0
+    image: nginx/nginx-prometheus-exporter:latest
     container_name: nginx_exporter
     depends_on:
       - nginx
@@ -260,7 +260,7 @@ services:
         max-file: "3"
 
   loki:
-    image: grafana/loki:2.9.8
+    image: grafana/loki:latest
     container_name: loki
     labels:
       com.grafana.monitoring: "true"
@@ -284,7 +284,7 @@ services:
         max-file: "3"
 
   promtail:
-    image: grafana/promtail:2.9.8
+    image: grafana/promtail:latest
     container_name: promtail
     labels:
       com.grafana.monitoring: "true"
