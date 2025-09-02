@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.app.core import db_helper
 from src.app.core.config import settings
 from src.app.core.exceptions import ExpiredTokenException
+from src.app.core.services.limiter import limiter
 from src.app.core.logger import get_logger
 from src.app.core.redis import get_redis
 from src.app.core.services.auth import (
@@ -27,7 +28,7 @@ from src.app.core.services.email import send_welcome_email as send_welcome
 from src.app.core.services.redis import revoke_refresh_token
 from src.app.core.utils.auth import create_response
 from src.app.crud.user import create_user, get_user_by_email
-from src.app.schemas.user import PasswordChange, UserCreate, UserPublic, UserPublic
+from src.app.schemas.user import PasswordChange, UserCreate, UserPublic
 from src.app.tasks import send_welcome_email
 
 log = get_logger("auth_router")
@@ -43,7 +44,9 @@ router = APIRouter(
     response_model=UserPublic,
     status_code=status.HTTP_201_CREATED,
 )
+@limiter.limit(settings.rate_limit.register_limit)
 async def register_user(
+    request: Request,
     user_in: UserCreate,
     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
 ) -> UserPublic:
@@ -88,7 +91,9 @@ async def register_user(
 
 
 @router.post("/login")
+@limiter.limit(settings.rate_limit.login_limit)
 async def login(
+    request: Request,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
 ):
@@ -207,6 +212,7 @@ async def refresh_token(
 
 
 @router.post("/password/change")
+@limiter.limit(settings.rate_limit.password_change_limit)
 async def change_password(
     password_data: PasswordChange,
     request: Request,
