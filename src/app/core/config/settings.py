@@ -12,6 +12,7 @@ from .db import DatabaseConfig
 from .env import EnvConfig
 from .logging import LoggingConfig
 from .loki import LokiConfig
+from .rate_limit import RateLimitConfig
 from .redis import RedisConfig
 from .routers_prefixs import RouterPrefix
 from .run import RunConfig
@@ -42,6 +43,7 @@ class Settings(BaseSettings):
     sentry: SentyConfig
     loki: LokiConfig
     cache: CacheConfig
+    rate_limit: RateLimitConfig = RateLimitConfig()
 
     @property
     def effective_db_url(self) -> PostgresDsn:
