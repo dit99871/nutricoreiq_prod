@@ -1,11 +1,11 @@
 from datetime import datetime
 from annotated_types import MinLen, MaxLen
 from pydantic import (
-    ConfigDict,
+    AfterValidator,
+    BeforeValidator,
     EmailStr,
     Field,
-    BeforeValidator,
-    AfterValidator,
+    SecretStr,
     model_validator,
 )
 from typing import Annotated, Literal, Optional
@@ -47,7 +47,7 @@ class UserCreate(UserBaseIn):
     """
 
     password: Annotated[
-        str,
+        SecretStr,
         MinLen(8),
         AfterValidator(validate_password_strength),
     ]
