@@ -1,6 +1,7 @@
 from fastapi import Request, status, FastAPI
 from fastapi.responses import ORJSONResponse
 from fastapi.exceptions import HTTPException, RequestValidationError
+from slowapi.errors import RateLimitExceeded
 
 from src.app.core.config import settings
 from src.app.core.exceptions import ExpiredTokenException
@@ -166,8 +167,29 @@ def generic_exception_handler(
     )
 
 
+def rate_limit_exceeded_handler(
+    request: Request,
+    exc: RateLimitExceeded,
+) -> ORJSONResponse:
+    error_detail = ErrorDetail(
+        message="Слишком много запросов. Подождите и попробуйте позже.",
+        details={"retry_after": exc.detail} if settings.DEBUG else None,
+    )
+    error_response = ErrorResponse(status="error", error=error_detail)
+    log.warning(
+        "Rate limit exceeded по адресу %s: %s",
+        request.url,
+        exc.detail,
+    )
+    return ORJSONResponse(
+        status_code=429,
+        content=error_response.model_dump(),
+    )
+
+
 def setup_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(ExpiredTokenException, expired_token_exception_handler)
+    app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
     app.add_exception_handler(HTTPException, http_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
     app.add_exception_handler(Exception, generic_exception_handler)
