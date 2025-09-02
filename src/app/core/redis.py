@@ -12,6 +12,10 @@ redis_client = Redis.from_url(
     decode_responses=True,
     socket_timeout=5,
     socket_connect_timeout=5,
+    max_connections=100,
+    health_check_interval=30,
+    retry_on_timeout=True,
+    socket_keepalive=True,
 )
 
 
@@ -19,6 +23,7 @@ async def get_redis() -> AsyncGenerator[Any, Redis]:
     """
     Yields a Redis connection object for dependency injection.
     """
+
     async with redis_client.client() as redis:
         try:
             yield redis
@@ -30,13 +35,13 @@ async def init_redis():
     """
     Initialize Redis connection at application startup.
     """
+
     await redis_client.ping()
-    # log.info("Redis connection established")
 
 
 async def close_redis():
     """
     Close Redis connection at application shutdown.
     """
+
     await redis_client.aclose()
-    # log.info("Redis connection closed")

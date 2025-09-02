@@ -4,3 +4,10 @@ FROM nginx:latest
 COPY ./src/app/static /usr/share/nginx/html/static
 COPY ./error.html /usr/share/nginx/html/error.html
 COPY ./429.html /usr/share/nginx/html/429.html
+
+# Наш основной конфиг
+COPY ./config/nginx/nginx.conf /etc/nginx/nginx.conf
+COPY ./config/nginx/sites-enabled/nutricoreiq /etc/nginx/sites-enabled/nutricoreiq
+
+# Удаляем дефолтный vhost, чтобы не конфликтовал с sites-enabled/nutricoreiq
+RUN rm -f /etc/nginx/conf.d/default.conf

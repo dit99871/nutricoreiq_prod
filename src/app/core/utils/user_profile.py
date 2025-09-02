@@ -1,10 +1,11 @@
-from src.app.schemas.user import UserAccount
 from src.app.core.logger import get_logger
+from src.app.models.user import KFALevel
+from src.app.schemas.user import UserProfile
 
-log = get_logger("user_service")
+log = get_logger("user_utils")
 
 
-def calculate_bmr(user: UserAccount) -> float:
+def calculate_bmr(user: UserProfile) -> float:
     """
     Calculates the Basal Metabolic Rate (BMR) of the given user.
 
@@ -17,7 +18,8 @@ def calculate_bmr(user: UserAccount) -> float:
     :return: The calculated BMR as a float.
     :raises ValueError: If required fields are missing or invalid (e.g., negative values).
     """
-    # Проверка на наличие всех необходимых полей
+
+    # проверка на наличие всех необходимых полей
     required_fields = ["gender", "age", "weight", "height"]
     missing_fields = [
         field for field in required_fields if getattr(user, field) is None
@@ -31,13 +33,13 @@ def calculate_bmr(user: UserAccount) -> float:
             f"Missing required fields for BMR calculation: {missing_fields}"
         )
 
-    # Извлечение данных
+    # извлечение данных
     gender = user.gender
     age = user.age
     weight = user.weight
     height = user.height
 
-    # Валидация значений
+    # валидация значений
     if age <= 0 or age > 120:
         raise ValueError(f"Invalid age: {age}. Must be between 1 and 120.")
     if weight <= 0 or weight > 500:
@@ -45,7 +47,7 @@ def calculate_bmr(user: UserAccount) -> float:
     if height <= 0 or height > 300:
         raise ValueError(f"Invalid height: {height}. Must be between 0 and 300 cm.")
 
-    # Расчёт BMR
+    # расчёт BMR
     bmr = 10 * weight + 6.25 * height - 5 * age
     if gender == "male":
         bmr += 5
@@ -58,7 +60,7 @@ def calculate_bmr(user: UserAccount) -> float:
     return bmr
 
 
-def calculate_tdee(user: UserAccount) -> float:
+def calculate_tdee(user: UserProfile) -> float:
     """
     Calculates the Total Daily Energy Expenditure (TDEE) of the given user.
 
@@ -70,36 +72,29 @@ def calculate_tdee(user: UserAccount) -> float:
     :return: The calculated TDEE as a float.
     :raises ValueError: If required fields are missing or invalid (e.g., kfa is not a valid number).
     """
-    # Проверка kfa
+
+    # проверка kfa
     if user.kfa is None:
-        log.error(
-            "Отсутствует kfa для пользователя: %s",
-            user,
-        )
+        log.error("Отсутствует kfa для пользователя: %s", user)
         raise ValueError("Activity factor (kfa) is required for TDEE calculation.")
 
     try:
-        kfa = float(
-            user.kfa
-        )  # Используем float вместо int для поддержки дробных значений
-    except ValueError as e:
-        log.error(
-            "Ошибка значения kfa: %s",
-            str(e),
-        )
+        if isinstance(user.kfa, KFALevel):
+            kfa = float(user.kfa.value)  # "1".."5" -> 1.0..5.0
+        else:
+            kfa = float(user.kfa)  # fallback на случай исторических значений
+    except Exception as e:
+        log.error("Ошибка значения kfa: %s", str(e))
         raise ValueError(
-            f"Invalid kfa: {user.kfa}. Must be a string representing a number (e.g., '1.5')."
+            f"Invalid kfa: {user.kfa}. Must be an enum or a string/number representing a number (e.g., '1')."
         )
 
-    # Валидация kfa
-    if kfa < 1.0 or kfa > 2.5:
+    if kfa < 1.0 or kfa > 5.0:
         log.error("Ошибка валидации kfa")
-        raise ValueError(f"Invalid kfa: {kfa}. Must be between 1.0 and 2.5.")
+        raise ValueError(f"Invalid kfa: {kfa}. Must be between 1.0 and 5.0.")
 
-    # Вычисление BMR
     bmr = calculate_bmr(user)
-
-    # Вычисление TDEE
     tdee = bmr * kfa
     log.debug(f"Calculated TDEE for user (bmr={bmr}, kfa={kfa}): {tdee}")
+
     return tdee

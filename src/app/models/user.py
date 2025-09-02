@@ -1,18 +1,60 @@
-import datetime as dt
+import datetime
+from enum import Enum
 from typing import Literal
 from uuid import uuid4
-
-from sqlalchemy.orm import (
-    Mapped,
-    mapped_column,
-)
+from sqlalchemy import CheckConstraint
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .mixins import IntIdPkMixin
 from .base import Base
 
 
+class UserRole(Enum):
+    USER = "user"
+    ADMIN = "admin"
+    MODERATOR = "moderator"
+
+
+class KFALevel(Enum):
+    VERY_LOW = "1"
+    LOW = "2"
+    MEDIUM = "3"
+    HIGH = "4"
+    VERY_HIGH = "5"
+
+    @classmethod
+    def from_int(cls, value: int | str) -> "KFALevel":
+        str_value = str(value).strip()
+        for level in cls:
+            if level.value == str_value:
+                return level
+        raise ValueError(f"Недопустимое значение KFA: {value}")
+
+
+class GoalType(Enum):
+    LOSE_WEIGHT = "Снижение веса"
+    GAIN_WEIGHT = "Увеличение веса"
+    MAINTAIN_WEIGHT = "Поддержание веса"
+
+
 class User(IntIdPkMixin, Base):
-    uid: Mapped[str] = mapped_column(default=str(uuid4()))
+    __table_args__ = (
+        CheckConstraint(
+            "age IS NULL OR (age >= 10 AND age <= 120)", name="ck_users_age_range"
+        ),
+        CheckConstraint(
+            "height IS NULL OR (height >= 50 AND height <= 300)",
+            name="ck_users_height_range",
+        ),
+        CheckConstraint(
+            "weight IS NULL OR (weight >= 20 AND weight <= 400)",
+            name="ck_users_weight_range",
+        ),
+    )
+
+    uid: Mapped[str] = mapped_column(
+        unique=True, index=True, default=lambda: str(uuid4())
+    )
     username: Mapped[str] = mapped_column(unique=True, index=True)
     email: Mapped[str] = mapped_column(unique=True, index=True)
     hashed_password: Mapped[bytes]
@@ -21,14 +63,13 @@ class User(IntIdPkMixin, Base):
     age: Mapped[int | None] = mapped_column(nullable=True)
     weight: Mapped[float | None] = mapped_column(nullable=True)
     height: Mapped[float | None] = mapped_column(nullable=True)
-    kfa: Mapped[Literal["1", "2", "3", "4", "5"]] = mapped_column(nullable=True)
-    goal: Mapped[Literal["Снижение веса", "Увеличение веса", "Поддержание веса"]] = (
-        mapped_column(nullable=True)
-    )
+    kfa: Mapped[KFALevel | None] = mapped_column(nullable=True)
+    goal: Mapped[GoalType | None] = mapped_column(nullable=True)
 
     is_subscribed: Mapped[bool] = mapped_column(default=True)
-    is_active: Mapped[bool] = mapped_column(default=True)
-    role: Mapped[str] = mapped_column(default="user")
-    created_at: Mapped[str] = mapped_column(
-        default=dt.datetime.now(dt.UTC).strftime("%d.%m.%Y %H:%M:%S")
+    is_active: Mapped[bool] = mapped_column(default=True, index=True)
+    role: Mapped[UserRole] = mapped_column(default=UserRole.USER)
+
+    created_at: Mapped[datetime.datetime] = mapped_column(
+        default=lambda: datetime.datetime.now().date(), index=True
     )

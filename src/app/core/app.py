@@ -4,9 +4,9 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from prometheus_fastapi_instrumentator import Instrumentator
 
+from src.app.core.services.limiter import limiter
 from src.app.core.middleware import setup_middleware
 from src.app.core.exception_handlers import setup_exception_handlers
-from src.app.core.services.sentry import init_sentry
 from src.app.routers import routers
 from src.app.lifespan import lifespan
 
@@ -37,9 +37,6 @@ def create_app() -> FastAPI:
     if os.path.exists(static_dir) and os.path.isdir(static_dir):
         app.mount("/static/", StaticFiles(directory=static_dir), name="static")
 
-    # настройка sentry
-    init_sentry()
-
     # настройка обработчиков исключений
     setup_exception_handlers(app)
 
@@ -48,5 +45,8 @@ def create_app() -> FastAPI:
 
     # подключение роутеров
     app.include_router(routers)
+
+    # подключение лимитера
+    app.state.limiter = limiter
 
     return app

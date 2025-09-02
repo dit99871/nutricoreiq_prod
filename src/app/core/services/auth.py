@@ -1,47 +1,32 @@
-import datetime as dt
-from datetime import timedelta, datetime
 from typing import Annotated
 
 from fastapi import HTTPException, status, Request, Depends
-from fastapi.security import OAuth2PasswordBearer
 from redis.asyncio import Redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.core import db_helper
-from src.app.core.config import settings
+from src.app.core.constants import CREDENTIAL_EXCEPTION
 from src.app.core.logger import get_logger
 from src.app.crud.user import get_user_by_uid, get_user_by_name
 from src.app.models import User
-from src.app.schemas.user import UserResponse
+from src.app.schemas.user import UserPublic
 from src.app.core.services.redis import (
-    add_refresh_to_redis,
     revoke_all_refresh_tokens,
     validate_refresh_jwt,
 )
+from src.app.core.services.jwt_service import (
+    ACCESS_TOKEN_TYPE,
+    TOKEN_TYPE_FIELD,
+    decode_jwt,
+)
 from src.app.core.utils.auth import (
     create_response,
-    decode_jwt,
-    encode_jwt,
-    get_password_hash,
     verify_password,
+    get_password_hash,
 )
 
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="api/v1/auth/login",
-    auto_error=False,
-)
 log = get_logger("auth_service")
-
-TOKEN_TYPE_FIELD = "type"
-ACCESS_TOKEN_TYPE = "access"
-REFRESH_TOKEN_TYPE = "refresh"
-
-CREDENTIAL_EXCEPTION = HTTPException(
-    status_code=status.HTTP_401_UNAUTHORIZED,
-    detail={"message": "Oшибка аутентификации. Пожалуйста, войдите заново"},
-    headers={"WWW-Authenticate": "Bearer"},
-)
 
 
 async def get_access_token_from_cookies(request: Request):
@@ -55,8 +40,9 @@ async def get_access_token_from_cookies(request: Request):
     :param request: The HTTP request object containing the cookies.
     :return: The access token as a string if present, otherwise None.
     """
+
     token = request.cookies.get("access_token")
-    # log.info("Полученный токен: %s", token)
+
     return token
 
 
@@ -67,7 +53,7 @@ def get_current_access_token_payload(
     Retrieves the payload of the current access token.
 
     This function takes the given access token and attempts to decode it
-    using the `decode_jwt` function. If the decoding fails, a 401 HTTP
+    using the decode_jwt function. If the decoding fails, a 401 HTTP
     exception is raised with an appropriate error message. If the
     "type" field in the payload is not "access", a 401 HTTP exception is
     also raised.
@@ -77,7 +63,9 @@ def get_current_access_token_payload(
     :raises HTTPException: If the decoding fails or the "type" field is
                            not "access".
     """
+
     log.debug("Attempting to decode token: %s", token)
+
     payload: dict | None = decode_jwt(token)
     if payload is None:
         log.error("Failed to decode token: payload is None")
@@ -94,107 +82,8 @@ def get_current_access_token_payload(
     return payload
 
 
-def create_jwt(
-    token_type: str,
-    token_data: dict,
-    expire_minutes: int = settings.auth.access_token_expires,
-    expire_timedelta: timedelta | None = None,
-) -> str:
-    """
-    Creates a JWT token with the given payload and expiration duration.
-
-    This function takes the given payload, adds the current time as the "iat"
-    claim, and creates a JWT token with the given expiration duration. If the
-    `expire_minutes` parameter is provided, it is used as the expiration
-    duration. If the `expire_timedelta` parameter is provided, it is used
-    instead of the expiration minutes. If there is an HTTP error during
-    encoding, it raises an HTTPException with an appropriate status code and
-    error message.
-
-    :param token_type: The type of the token to be created.
-    :param token_data: The payload to be added to the token.
-    :param expire_minutes: The number of minutes before the token expires.
-    :param expire_timedelta: The timedelta object representing the expiration
-                             time of the token.
-    :return: The encoded JWT token as a string.
-    :raises HTTPException: If there is an HTTP error during encoding.
-    """
-    jwt_payload = {
-        TOKEN_TYPE_FIELD: token_type,
-        "iat": datetime.now(dt.UTC),
-    }
-    jwt_payload.update(token_data)
-    encoded: str = encode_jwt(
-        payload=jwt_payload,
-        expire_minutes=expire_minutes,
-        expire_timedelta=expire_timedelta,
-    )
-    return encoded
-
-
-def create_access_jwt(user: UserResponse) -> str:
-    """
-    Creates an access token for the given user.
-
-    This function takes a user object and creates an access token with the
-    user's UID, username, and email as the payload. The token is set to expire
-    after the duration specified in the configuration.
-
-    :param user: The user object for which to create the token.
-    :return: The encoded JWT token as a string.
-    """
-    jwt_payload = {
-        "sub": user.uid,
-        "username": user.username,
-        "email": user.email,
-    }
-    jwt = create_jwt(
-        token_type=ACCESS_TOKEN_TYPE,
-        token_data=jwt_payload,
-        expire_minutes=settings.auth.access_token_expires,
-    )
-
-    return jwt
-
-
-async def create_refresh_jwt(
-    user: UserResponse,
-) -> str:
-    """
-    Creates a refresh token for the given user.
-
-    This function takes a user object and creates a refresh token with the
-    user's UID as the payload. The token is set to expire after the duration
-    specified in the configuration. The function also stores the token in Redis,
-    ensuring that no more than four tokens exist for the user by deleting the
-    oldest token if necessary.
-
-    :param user: The user object for which to create the token.
-    :return: The encoded JWT token as a string.
-    :raises HTTPException: If there is an HTTP error during encoding or storing
-                           the token in Redis.
-    """
-    jwt_payload = {
-        "sub": user.uid,
-    }
-    jwt_expires = timedelta(days=settings.auth.refresh_token_expires)
-
-    jwt = create_jwt(
-        token_type=REFRESH_TOKEN_TYPE,
-        token_data=jwt_payload,
-        expire_timedelta=jwt_expires,
-    )
-    await add_refresh_to_redis(
-        uid=user.uid,
-        jwt=jwt,
-        exp=jwt_expires,
-    )
-
-    return jwt
-
-
 async def update_password(
-    user: UserResponse,
+    user: UserPublic,
     session: AsyncSession,
     new_password: str,
 ):
@@ -230,34 +119,13 @@ async def update_password(
     await session.commit()
     await revoke_all_refresh_tokens(user.uid)
 
-    return await add_tokens_to_response(user)
-
-
-async def add_tokens_to_response(user: UserResponse):
-    """
-    Adds an access token and refresh token to a response for the given user.
-
-    This function creates an access token and a refresh token for the given user
-    object and adds them to a response object. It returns the response object.
-
-    :param user: The user object for which to add tokens to the response.
-    :return: The response object with the access token and refresh token added.
-    """
-    access_jwt = create_access_jwt(user)
-    refresh_jwt = await create_refresh_jwt(user)
-
-    response = create_response(
-        access_token=access_jwt,
-        refresh_token=refresh_jwt,
-    )
-
-    return response
+    return await create_response(user)
 
 
 async def get_current_auth_user(
     token: Annotated[str, Depends(get_access_token_from_cookies)],
     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-) -> UserResponse | None:
+) -> UserPublic | None:
     """
     Authenticates a user given a JWT token and returns the user object.
 
@@ -277,22 +145,21 @@ async def get_current_auth_user(
         log.error("Ошибка получения uid из payload")
         raise CREDENTIAL_EXCEPTION
 
-    user = await get_user_by_uid(session, uid)
-    if user is None:
-        log.error(
-            "Пользователь не найден по uid: %s",
-            uid,
-        )
-        raise CREDENTIAL_EXCEPTION
+    try:
+        # используем кешированную версию get_user_by_uid
+        user = await get_user_by_uid(session, uid)
+        return user
 
-    return user
+    except Exception as e:
+        log.error("Ошибка при получении пользователя: %s", str(e))
+        raise CREDENTIAL_EXCEPTION
 
 
 async def get_current_auth_user_for_refresh(
     token: str,
     session: AsyncSession,
     redis: Redis,
-) -> UserResponse:
+) -> UserPublic:
     """
     Authenticates a user given a refresh token and returns the user object.
 
@@ -327,7 +194,7 @@ async def authenticate_user(
     session: AsyncSession,
     username: str,
     password: str,
-) -> UserResponse | None:
+) -> UserPublic | None:
     """
     Authenticates a user by validating their username and password.
 
@@ -355,4 +222,4 @@ async def authenticate_user(
             detail={"message": "Введён неверный пароль"},
         )
 
-    return UserResponse.model_validate(user)
+    return UserPublic.model_validate(user)

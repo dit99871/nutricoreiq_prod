@@ -12,23 +12,23 @@ from fastapi.security import OAuth2PasswordRequestForm
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.app.core.exceptions import ExpiredTokenException
 from src.app.core import db_helper
+from src.app.core.config import settings
+from src.app.core.exceptions import ExpiredTokenException
+from src.app.core.services.limiter import limiter
 from src.app.core.logger import get_logger
 from src.app.core.redis import get_redis
-from src.app.crud.user import create_user, get_user_by_email
-from src.app.schemas.user import PasswordChange, UserCreate, UserResponse
 from src.app.core.services.auth import (
-    add_tokens_to_response,
-    create_access_jwt,
-    create_refresh_jwt,
     update_password,
     get_current_auth_user,
     get_current_auth_user_for_refresh,
     authenticate_user,
 )
-from src.app.core.utils.auth import create_response
+from src.app.core.services.email import send_welcome_email as send_welcome
 from src.app.core.services.redis import revoke_refresh_token
+from src.app.core.utils.auth import create_response
+from src.app.crud.user import create_user, get_user_by_email
+from src.app.schemas.user import PasswordChange, UserCreate, UserPublic
 from src.app.tasks import send_welcome_email
 
 log = get_logger("auth_router")
@@ -37,15 +37,19 @@ router = APIRouter(
     tags=["Authentication"],
     default_response_class=ORJSONResponse,
 )
+
+
 @router.post(
     "/register",
-    response_model=UserCreate,
+    response_model=UserPublic,
     status_code=status.HTTP_201_CREATED,
 )
+@limiter.limit(settings.rate_limit.register_limit)
 async def register_user(
+    request: Request,
     user_in: UserCreate,
     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-) -> UserCreate | None:
+) -> UserPublic:
     """
     Registers a new user in the database.
 
@@ -58,7 +62,7 @@ async def register_user(
     :return: The registered user object.
     :raises HTTPException: If the user is already registered.
     """
-    # log.info("Attempting to register user with email: %s", user_in.email)
+
     db_user = await get_user_by_email(session, user_in.email)
 
     if db_user:
@@ -75,16 +79,24 @@ async def register_user(
     user = await create_user(session, user_in)
     log.info("User registered successfully: %s", user.email)
 
-    await send_welcome_email.kiq(user.email)
+    if settings.env.env == "prod":
+        # на проде отправляем письмо в фоне через брокер
+        await send_welcome_email.kiq(user.email)
+    else:
+        # в dev отправляем письмо в maildev
+        await send_welcome(user)
 
-    return user
+    # возвращаем только публичные данные, без пароля
+    return UserPublic.model_validate(user)
 
 
 @router.post("/login")
+@limiter.limit(settings.rate_limit.login_limit)
 async def login(
+    request: Request,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-) -> UserResponse:
+):
     """
     Logs a user in and returns a response containing an access and refresh token.
 
@@ -95,21 +107,21 @@ async def login(
     :param session: The current database session.
     :return: A response containing an access and refresh token.
     """
+
     user = await authenticate_user(
         session,
         form_data.username,
         form_data.password,
     )
-    response = await add_tokens_to_response(user)
+    response = await create_response(user)
 
-    # log.info("User logged in successfully: %s", form_data.username)
     return response
 
 
 @router.post("/logout")
 async def logout(
     request: Request,
-    user: Annotated[UserResponse, Depends(get_current_auth_user)],
+    user: Annotated[UserPublic, Depends(get_current_auth_user)],
     redis: Redis = Depends(get_redis),
 ):
     """
@@ -126,6 +138,7 @@ async def logout(
     :raises HTTPException: If the refresh token is not found in the request
                            cookies.
     """
+
     if user is None:
         raise ExpiredTokenException()
     refresh_jwt = request.cookies.get("refresh_token")
@@ -148,6 +161,7 @@ async def logout(
     response.delete_cookie("refresh_token")
     response.delete_cookie("access_token")
     response.delete_cookie("redis_session_id")
+    response.delete_cookie("csrf_token")
 
     return response
 
@@ -177,6 +191,7 @@ async def refresh_token(
                            cookies, or if the refresh token is invalid or has
                            expired.
     """
+
     refresh_jwt = request.cookies.get("refresh_token")
     if not refresh_jwt:
         log.error("Refresh token not found in cookies")
@@ -191,22 +206,17 @@ async def refresh_token(
         )
 
     user = await get_current_auth_user_for_refresh(refresh_jwt, session, redis)
-    access_jwt = create_access_jwt(user)
-    refresh_jwt = await create_refresh_jwt(user)
-
-    response = create_response(
-        access_token=access_jwt,
-        refresh_token=refresh_jwt,
-    )
+    response = await create_response(user)
 
     return response
 
 
 @router.post("/password/change")
+@limiter.limit(settings.rate_limit.password_change_limit)
 async def change_password(
     password_data: PasswordChange,
     request: Request,
-    user: Annotated[UserResponse, Depends(get_current_auth_user)],
+    user: Annotated[UserPublic, Depends(get_current_auth_user)],
     session: AsyncSession = Depends(db_helper.session_getter),
 ):
     """
@@ -225,6 +235,7 @@ async def change_password(
     :raises HTTPException: If an unexpected error occurs while changing the
                            password.
     """
+
     if user is None:
         raise ExpiredTokenException()
 

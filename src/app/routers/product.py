@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.app.core import db_helper
 from src.app.core.logger import get_logger
 from src.app.core.services.auth import get_current_auth_user
+from src.app.core.services.redis import get_redis_session_from_request
 from src.app.core.utils.pending_product import (
     check_pending_exists,
     create_pending_product,
@@ -15,7 +16,7 @@ from src.app.core.utils.pending_product import (
 from src.app.core.services.product import handle_product_search, handle_product_details
 from src.app.core.utils import templates
 from src.app.schemas.product import UnifiedProductResponse, PendingProductCreate
-from src.app.schemas.user import UserResponse
+from src.app.schemas.user import UserPublic
 
 log = get_logger("product_router")
 
@@ -53,7 +54,7 @@ async def get_product_details(
     request: Request,
     product_id: int,
     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-    current_user: Annotated[UserResponse, Depends(get_current_auth_user)],
+    current_user: Annotated[UserPublic, Depends(get_current_auth_user)],
 ):
     """
     Retrieves the details of a product.
@@ -70,7 +71,7 @@ async def get_product_details(
 
     product_data = await handle_product_details(session, product_id)
     # log.info("Rendering template")
-    redis_session = request.scope.get("redis_session", {})
+    redis_session = get_redis_session_from_request(request)
 
     return templates.TemplateResponse(
         request=request,
