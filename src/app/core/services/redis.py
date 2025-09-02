@@ -11,6 +11,21 @@ from src.app.core.utils.security import generate_hash_token
 log = get_logger("redis_service")
 
 
+async def _scan_keys(redis: Redis, pattern: str, count: int = 100) -> list[str]:
+    """Non-blocking key scan helper using SCAN.
+
+    :param redis: Redis connection
+    :param pattern: glob-style pattern
+    :param count: scan page size hint
+    :return: list of keys matching pattern
+    """
+
+    keys: list[str] = []
+    async for k in redis.scan_iter(match=pattern, count=count):
+        keys.append(k)
+    return keys
+
+
 async def add_refresh_to_redis(
     uid: str,
     jwt: str,
@@ -29,11 +44,13 @@ async def add_refresh_to_redis(
     :param exp: The expiration duration for the token.
     :raises HTTPException: If there is an error interacting with Redis.
     """
+
     try:
         async for redis in get_redis():
             token_hash = generate_hash_token(jwt)
-            keys = await redis.keys(f"refresh_token:{uid}:*")
+            keys = await _scan_keys(redis, f"refresh_token:{uid}:*")
             if len(keys) >= 4:
+                # delete the oldest by timestamp in key suffix
                 oldest_key = min(keys, key=lambda k: int(k.rsplit(":", 1)[-1]))
                 await redis.delete(oldest_key)
             timestamp = time.time_ns()
@@ -79,10 +96,15 @@ async def validate_refresh_jwt(
     :raises HTTPException: If an unexpected error occurs.
     :return: True if the token is valid, False otherwise.
     """
+
     try:
         token_hash = generate_hash_token(refresh_token)
-        token_keys = await redis.keys(f"refresh_token:{uid}:{token_hash}:*")
-        return len(token_keys) > 0
+        # Fast existence check via SCAN
+        async for _ in redis.scan_iter(
+            match=f"refresh_token:{uid}:{token_hash}:*", count=100
+        ):
+            return True
+        return False
     except RedisError as e:
         log.error(
             "Redis error validating refresh token: %s",
@@ -117,11 +139,17 @@ async def revoke_refresh_token(
     :param redis: The Redis client to use for the query.
     :return: None
     """
+
     token_hash = generate_hash_token(refresh_token)
     try:
-        token_keys = await redis.keys(f"refresh_token:{uid}:{token_hash}:*")
-        if token_keys:
-            await redis.delete(*token_keys)
+        keys_to_delete = [
+            k
+            async for k in redis.scan_iter(
+                match=f"refresh_token:{uid}:{token_hash}:*", count=100
+            )
+        ]
+        if keys_to_delete:
+            await redis.delete(*keys_to_delete)
             # log.info("Refresh token revoked")
     except RedisError as e:
         log.error(
@@ -153,9 +181,15 @@ async def revoke_all_refresh_tokens(
     :param uid: The user id for which to revoke all refresh tokens.
     :type uid: str
     """
+
     try:
         async for redis in get_redis():
-            keys = await redis.keys(f"refresh_token:{uid}:*")
+            keys = [
+                k
+                async for k in redis.scan_iter(
+                    match=f"refresh_token:{uid}:*", count=200
+                )
+            ]
             if keys:
                 await redis.delete(*keys)
                 # log.info("All refresh tokens revoked")
@@ -185,4 +219,5 @@ def get_redis_session_from_request(request: Request) -> Redis:
     :return: The Redis session associated with the request, or an empty dict.
     :rtype: Redis
     """
+
     return request.scope.get("redis_session", {})
