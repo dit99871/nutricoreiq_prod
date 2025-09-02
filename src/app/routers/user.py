@@ -19,8 +19,7 @@ from src.app.core.services.auth import get_current_auth_user
 from src.app.core.utils import templates
 from src.app.crud.profile import update_user_profile, get_user_profile
 from src.app.crud.user import choose_subscribe_status
-from src.app.routers.auth import router
-from src.app.schemas.user import UserProfile, UserResponse
+from src.app.schemas.user import UserProfileUpdate, UserPublic
 
 router = APIRouter(
     tags=["User"],
@@ -32,7 +31,7 @@ log = get_logger("user_router")
 
 @router.get("/me")
 async def read_current_user(
-    user: Annotated[UserResponse, Depends(get_current_auth_user)],
+    user: Annotated[UserPublic, Depends(get_current_auth_user)],
 ):
     """
     Retrieves the current authenticated user's basic information.
@@ -44,6 +43,7 @@ async def read_current_user(
     :return: A dictionary containing the username and email of the user.
     :raises HTTPException: If the user is not authenticated.
     """
+
     if user is None:
         raise ExpiredTokenException()
 
@@ -57,7 +57,7 @@ async def read_current_user(
 @router.head("/profile/data")
 async def get_profile(
     request: Request,
-    user: Annotated[UserResponse, Depends(get_current_auth_user)],
+    user: Annotated[UserPublic, Depends(get_current_auth_user)],
     db_session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
 ):
     """
@@ -72,8 +72,9 @@ async def get_profile(
     :return: A rendered HTML template with the user's profile information.
     :raises HTTPException: If the user is not authenticated.
     """
+
     if user is None:
-        log.error("Пользователь не авторизован")
+        log.warning("Пользователь не авторизован")
         raise ExpiredTokenException()
 
     user = await get_user_profile(db_session, user.id)
@@ -95,8 +96,8 @@ async def get_profile(
 
 @router.post("/profile/update")
 async def update_profile(
-    data_in: UserProfile,
-    user: Annotated[UserResponse, Depends(get_current_auth_user)],
+    data_in: UserProfileUpdate,
+    user: Annotated[UserPublic, Depends(get_current_auth_user)],
     db_session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
 ):
     """
@@ -113,6 +114,7 @@ async def update_profile(
     :return: A JSON response indicating the success of the profile update.
     :raises HTTPException: If the user is not authenticated or if the provided data is invalid.
     """
+
     if user is None:
         raise ExpiredTokenException()
 
@@ -130,7 +132,7 @@ async def update_profile(
 
 @router.post("/unsubscribe")
 async def unsubscribe_email_notification(
-    user: Annotated[UserResponse, Depends(get_current_auth_user)],
+    user: Annotated[UserPublic, Depends(get_current_auth_user)],
     db_session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
 ):
     """
@@ -148,6 +150,7 @@ async def unsubscribe_email_notification(
     :return: A JSON response indicating the success of the unsubscription.
     :raises HTTPException: If the user is not authenticated.
     """
+
     if user is None:
         raise ExpiredTokenException()
 
@@ -156,7 +159,7 @@ async def unsubscribe_email_notification(
 
 @router.post("/subscribe")
 async def subscribe_email_notification(
-    user: Annotated[UserResponse, Depends(get_current_auth_user)],
+    user: Annotated[UserPublic, Depends(get_current_auth_user)],
     db_session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
 ):
     """
@@ -174,6 +177,7 @@ async def subscribe_email_notification(
     :return: A JSON response indicating the success of the subscription.
     :raises HTTPException: If the user is not authenticated.
     """
+
     if user is None:
         raise ExpiredTokenException()
 
@@ -190,4 +194,5 @@ async def login_get() -> RedirectResponse:
 
     :return: A 302 redirect response.
     """
+
     return RedirectResponse(url="/?action=unsubscribe")

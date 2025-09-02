@@ -11,27 +11,27 @@ from src.app.core.services.sentry import init_sentry
 
 log = logging.getLogger("taskiq_broker")
 
-init_sentry()
+if settings.env.env == "prod":
+    init_sentry()
 
-broker = AioPikaBroker(
-    url=str(settings.taskiq.url),
-)
-
-taskiq_fastapi.init(
-    broker,
-    "src.app.main:app",
-)
-
-
-@broker.on_event(TaskiqEvents.WORKER_STARTUP)
-async def on_worker_startup(state: TaskiqState) -> None:
-    logging.basicConfig(
-        level=settings.logging.log_level_value,
-        format=settings.logging.log_taskiq_format,
-        datefmt=settings.logging.log_date_format,
-        handlers=[
-            logging.FileHandler(settings.logging.log_file),
-            logging.StreamHandler(),
-        ],
+    broker = AioPikaBroker(
+        url=str(settings.taskiq.url),
     )
-    log.info("Worker startup complete, got state: %s", state)
+
+    taskiq_fastapi.init(
+        broker,
+        "src.app.main:app",
+    )
+
+    @broker.on_event(TaskiqEvents.WORKER_STARTUP)
+    async def on_worker_startup(state: TaskiqState) -> None:
+        logging.basicConfig(
+            level=settings.logging.log_level_value,
+            format=settings.logging.log_taskiq_format,
+            datefmt=settings.logging.log_date_format,
+            handlers=[
+                logging.FileHandler(settings.logging.log_file),
+                logging.StreamHandler(),
+            ],
+        )
+        log.info("Worker startup complete, got state: %s", state)

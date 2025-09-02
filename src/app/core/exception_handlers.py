@@ -1,6 +1,7 @@
 from fastapi import Request, status, FastAPI
 from fastapi.responses import ORJSONResponse
 from fastapi.exceptions import HTTPException, RequestValidationError
+from slowapi.errors import RateLimitExceeded
 
 from src.app.core.config import settings
 from src.app.core.exceptions import ExpiredTokenException
@@ -32,7 +33,7 @@ def expired_token_exception_handler(
         details=None,
     )
     error_response = ErrorResponse(status="error", error=error_detail)
-    log.error(
+    log.warning(
         "HTTP-ошибка по адресу %s: сообщение=%s, статус=%s",
         request.url,
         exc.detail,
@@ -99,11 +100,29 @@ def validation_exception_handler(
     :param exc: объект RequestValidationError, содержащий информацию о возникшей ошибке
     :return: объект ORJSONResponse, содержащий структурированную информацию об ошибке
     """
-    errors = [{"field": err["loc"][-1], "message": err["msg"]} for err in exc.errors()]
+
+    errors = []
+    for err in exc.errors():
+        # Extract the original error message and clean it up
+        if err["type"] == "value_error":
+            # Remove "Value error, " prefix if it exists
+            message = str(err.get("msg", ""))
+            if message.startswith("Value error, "):
+                message = message[13:]  # Remove "Value error, "
+        else:
+            message = err["msg"]
+
+        errors.append({"field": ".".join(map(str, err["loc"])), "message": message})
+
     error_response = ErrorResponse(
         status="error",
         error=ErrorDetail(
-            message="Некорректные входные данные", details={"fields": errors}
+            message=(
+                "Некорректные входные данные"
+                if len(errors) > 1
+                else errors[0]["message"]
+            ),
+            details={"fields": errors} if len(errors) > 1 else None,
         ),
     )
     log.error("Ошибка валидации по адресу: %s, ошибки: %s", request.url, errors)
@@ -126,8 +145,12 @@ def generic_exception_handler(
     :return: объект ORJSONResponse, содержащий структурированную информацию об ошибке
     """
     # используем X-Forwarded-Proto для определения схемы
-    scheme = request.headers.get("X-Forwarded-Proto", request.scope.get("scheme", "http"))
-    request_url = str(request.url).replace(f"{request.scope['scheme']}://", f"{scheme}://")
+    scheme = request.headers.get(
+        "X-Forwarded-Proto", request.scope.get("scheme", "http")
+    )
+    request_url = str(request.url).replace(
+        f"{request.scope['scheme']}://", f"{scheme}://"
+    )
 
     details = {"field": "server", "message": str(exc)} if settings.DEBUG else None
     error_response = ErrorResponse(
@@ -144,8 +167,29 @@ def generic_exception_handler(
     )
 
 
+def rate_limit_exceeded_handler(
+    request: Request,
+    exc: RateLimitExceeded,
+) -> ORJSONResponse:
+    error_detail = ErrorDetail(
+        message="Слишком много запросов. Подождите и попробуйте позже.",
+        details={"retry_after": exc.detail} if settings.DEBUG else None,
+    )
+    error_response = ErrorResponse(status="error", error=error_detail)
+    log.warning(
+        "Rate limit exceeded по адресу %s: %s",
+        request.url,
+        exc.detail,
+    )
+    return ORJSONResponse(
+        status_code=429,
+        content=error_response.model_dump(),
+    )
+
+
 def setup_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(ExpiredTokenException, expired_token_exception_handler)
+    app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
     app.add_exception_handler(HTTPException, http_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
     app.add_exception_handler(Exception, generic_exception_handler)

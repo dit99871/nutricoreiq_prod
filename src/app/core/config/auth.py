@@ -1,0 +1,14 @@
+from pathlib import Path
+
+from pydantic import BaseModel
+
+from src.app.core.constants import BASE_DIR
+
+
+class AuthConfig(BaseModel):
+    secret_key: str
+    algorithm: str
+    access_token_expires: int
+    refresh_token_expires: int
+    private_key_path: Path = BASE_DIR / "core" / "certs" / "jwt-private.pem"
+    public_key_path: Path = BASE_DIR / "core" / "certs" / "jwt-public.pem"

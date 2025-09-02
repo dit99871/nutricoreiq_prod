@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.core.logger import get_logger
 from src.app.models import User
-from src.app.schemas.user import UserResponse, UserProfile, UserAccount
+from src.app.schemas.user import UserPublic, UserProfileUpdate, UserProfile
 
 log = get_logger("profile_crud")
 
@@ -13,7 +13,7 @@ log = get_logger("profile_crud")
 async def get_user_profile(
     session: AsyncSession,
     user_id: int,
-) -> UserAccount:
+) -> UserProfile:
     """
     Fetches a user's profile information from the database.
 
@@ -22,6 +22,7 @@ async def get_user_profile(
     :return: The user's profile information.
     :raises HTTPException: If the user is not found in the database.
     """
+
     stmt = select(User).filter(
         User.id == user_id,
         User.is_active == True,
@@ -41,7 +42,7 @@ async def get_user_profile(
                     "user_id": user_id,
                 },
             )
-        return UserAccount.model_construct(**user.__dict__)
+        return UserProfile.model_validate(user, from_attributes=True)
 
     except SQLAlchemyError as e:
         log.error("Ошибка БД при получении пользователя: %s", e)
@@ -50,16 +51,15 @@ async def get_user_profile(
             detail={
                 "field": "DB error",
                 "message": "Внутренняя ошибка сервера",
-                # "details": str(e),
             },
         )
 
 
 async def update_user_profile(
-    data_in: UserProfile,
-    current_user: UserResponse,
+    data_in: UserProfileUpdate,
+    current_user: UserPublic,
     session: AsyncSession,
-) -> UserAccount:
+) -> UserProfile:
     """
     Updates the current authenticated user's profile information in the database.
 
@@ -70,7 +70,10 @@ async def update_user_profile(
     :raises HTTPException: If the user is not found in the database or
                            if an error occurs during the update.
     """
-    update_data = data_in.model_dump()
+
+    # обновляем только переданные поля
+    update_data = data_in.model_dump(exclude_unset=True)
+
     try:
         stmt = (
             update(User)
@@ -95,9 +98,9 @@ async def update_user_profile(
                 },
             )
         await session.commit()
-        # log.info("User updated with name: %s", current_user.username)
 
-        return UserAccount.model_construct(**updated_user.__dict__)
+        # возвращаем через Pydantic-валидацию, используя атрибуты ORM
+        return UserProfile.model_validate(updated_user, from_attributes=True)
 
     except SQLAlchemyError as e:
         log.error(
@@ -111,6 +114,5 @@ async def update_user_profile(
             detail={
                 "field": "Update user profile",
                 "message": "Внутренняя ошибка сервера",
-                # "details": str(e),
             },
         )

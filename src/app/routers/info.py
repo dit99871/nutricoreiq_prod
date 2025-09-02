@@ -4,9 +4,9 @@ from typing import Annotated
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import HTMLResponse
 
+from src.app.core import templates
 from src.app.core.services.auth import get_current_auth_user
-from src.app.core.utils import templates
-from src.app.schemas.user import UserResponse
+from src.app.schemas.user import UserPublic
 
 router = APIRouter(
     tags=["Info"],
@@ -17,7 +17,7 @@ router = APIRouter(
 @router.get("/privacy")
 def get_privacy_info(
     request: Request,
-    current_user: Annotated[UserResponse, Depends(get_current_auth_user)],
+    current_user: Annotated[UserPublic, Depends(get_current_auth_user)],
 ):
     """
     Retrieves the privacy policy information of the NutriCoreIQ project.
@@ -44,7 +44,7 @@ def get_privacy_info(
 @router.get("/about")
 def get_info_about_project(
     request: Request,
-    current_user: Annotated[UserResponse, Depends(get_current_auth_user)],
+    current_user: Annotated[UserPublic, Depends(get_current_auth_user)],
 ):
     """
     Retrieves information about the NutriCoreIQ project.
@@ -63,6 +63,35 @@ def get_info_about_project(
         context={
             "user": current_user,
             "current_year": datetime.now().year,
+            "csp_nonce": request.state.csp_nonce,
+        },
+    )
+
+
+@router.get(
+    "/",
+    name="home",
+)
+def start_page(
+    request: Request,
+    current_user: Annotated[UserPublic, Depends(get_current_auth_user)],
+):
+    """
+    Retrieves the home page of NutriCoreIQ.
+
+    This endpoint renders an HTML template for the home page, which
+    displays a welcome message and the current year.
+
+    :param request: The incoming request object.
+    :param current_user: The authenticated user object obtained from the dependency.
+    :return: A rendered HTML template for the home page.
+    """
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={
+            "current_year": datetime.now().year,
+            "user": current_user,
             "csp_nonce": request.state.csp_nonce,
         },
     )

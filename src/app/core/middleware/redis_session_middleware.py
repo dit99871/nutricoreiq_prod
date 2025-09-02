@@ -31,6 +31,20 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
         :param call_next: The next middleware in the chain.
         :return: The response object.
         """
+
+        # пропуск статических ресурсов и сервисов не требующих сессии
+        path = request.url.path
+        if path.startswith("/static/") or path in {
+            "/metrics",
+            "/security/csp-report",
+            "/favicon.ico",
+            "/robots.txt",
+            "/openapi.json",
+            "/docs",
+            "/redoc",
+        }:
+            return await call_next(request)
+
         session_id = (
             request.cookies.get("redis_session_id") or generate_redis_session_id()
         )
@@ -65,14 +79,17 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
                     json.dumps(session),
                     ex=settings.redis.session_ttl,
                 )
+            secure = settings.env.env == "prod"
+            samesite = "strict" if secure else "lax"
 
             # установка куков для session_id
             response.set_cookie(
                 key="redis_session_id",
                 value=session_id,
                 httponly=True,
-                secure=True,
-                samesite="strict",
+                secure=secure,
+                samesite=samesite,
+                max_age=settings.redis.session_ttl,
             )
 
             # установка csrf-токена в куки
@@ -80,8 +97,8 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
                 key="csrf_token",
                 value=csrf_token,
                 httponly=False,  # доступно для js
-                secure=True,
-                samesite="strict",
+                secure=secure,
+                samesite=samesite,
                 max_age=3600,  # токен живёт 1 час
             )
 

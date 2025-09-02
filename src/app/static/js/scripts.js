@@ -296,10 +296,157 @@ document.addEventListener("DOMContentLoaded", () => {
             .replace(/'/g, "&#039;");
     };
 
+    // ГЛОБАЛЬНЫЕ ТОСТЫ И ОБРАБОТКА ОШИБОК
+    const ensureToastContainer = () => {
+        let container = document.getElementById('toastContainer');
+        if (container) return container;
+        container = document.createElement('div');
+        container.id = 'toastContainer';
+        container.className = 'position-fixed top-0 end-0 p-3';
+        container.style.zIndex = '1080'; // выше модалок
+        document.body.appendChild(container);
+        return container;
+    };
+
+    const showToast = (message, variant = 'danger', options = {}) => {
+        const container = ensureToastContainer();
+        const id = `t_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+        const autohide = options.autohide !== undefined ? options.autohide : true;
+        const delay = options.delay || 5000;
+        const header = options.header || 'Ошибка';
+
+        const toastEl = document.createElement('div');
+        toastEl.className = `toast align-items-center text-bg-${variant} border-0`;
+        toastEl.id = id;
+        toastEl.setAttribute('role', 'alert');
+        toastEl.setAttribute('aria-live', 'assertive');
+        toastEl.setAttribute('aria-atomic', 'true');
+        toastEl.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    <strong class="me-2">${header}:</strong> ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+        container.appendChild(toastEl);
+        const toast = new bootstrap.Toast(toastEl, { autohide, delay });
+        toast.show();
+        toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+    };
+
+    const extractErrorMessageFromResponse = async (response) => {
+        const ct = response.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+            try {
+                const data = await response.clone().json();
+                // Формат бэкенда: { status: 'error', error: { message, details? } }
+                if (data?.error?.message) return data.error.message;
+            } catch (_) { /* ignore */ }
+        }
+        return `Ошибка сервера: ${response.status}`;
+    };
+
+    const initGlobalErrorHandlers = () => {
+        // глобальные необработанные исключения
+        window.addEventListener('error', (event) => {
+            // игнорим ошибки скриптов с внешних доменов без подробностей
+            if (!event.message) return;
+            showToast(event.message, 'danger', { header: 'Необработанная ошибка' });
+        });
+
+        window.addEventListener('unhandledrejection', (event) => {
+            const reason = event.reason;
+            let msg = 'Произошла непредвиденная ошибка';
+            if (reason) {
+                if (typeof reason === 'string') msg = reason;
+                else if (reason?.message) msg = reason.message;
+            }
+            showToast(msg, 'danger', { header: 'Ошибка в промисе' });
+        });
+
+        // перехват fetch для сетевых/5xx ошибок вне secureFetch
+        if (!window.__fetchPatched) {
+            const originalFetch = window.fetch.bind(window);
+            window.fetch = async (input, init = {}) => {
+                try {
+                    const response = await originalFetch(input, init);
+                    // позволяем явным вызовам отключать глобальные тосты
+                    const suppress = init && (init.suppressGlobalError === true);
+                    if (!response.ok && !suppress) {
+                        if (response.status >= 500) {
+                            const msg = await extractErrorMessageFromResponse(response);
+                            showToast(msg, 'danger', { header: 'Сервер недоступен' });
+                        }
+                        // 401/403/422 обычно обрабатываются локально (secureFetch/showError)
+                    }
+                    return response;
+                } catch (err) {
+                    const suppress = init && (init.suppressGlobalError === true);
+                    if (!suppress) {
+                        const msg = (err && err.message) ? err.message : 'Сеть недоступна или истек таймаут';
+                        showToast(msg, 'danger', { header: 'Сетевая ошибка' });
+                    }
+                    throw err;
+                }
+            };
+            window.__fetchPatched = true;
+        }
+
+        // экспорт в глобальную область для точечных уведомлений
+        window.appShowToast = showToast;
+    };
+
+    // Перехват кликов по защищённым ссылкам и проверка/refresh перед переходом
+    const initProtectedNavigation = () => {
+        const isProtectedHref = (href) => {
+            try {
+                const url = new URL(href, window.location.origin);
+                // По умолчанию считаем защищёнными все роуты под /user/
+                return url.origin === window.location.origin && url.pathname.startsWith('/user/');
+            } catch (_) {
+                return false;
+            }
+        };
+
+        document.addEventListener('click', (e) => {
+            // Только левый клик без модификаторов
+            if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+            const a = e.target.closest('a[href]');
+            if (!a) return;
+
+            const href = a.getAttribute('href');
+            if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
+
+            const explicitProtected = a.hasAttribute('data-protected');
+            const protectedLink = explicitProtected || isProtectedHref(href);
+            if (!protectedLink) return;
+
+            // Внутренние ссылки только
+            const abs = new URL(href, window.location.origin);
+            if (abs.origin !== window.location.origin) return;
+
+            e.preventDefault();
+            checkAuthAndRedirect(abs.pathname + abs.search + abs.hash);
+        }, { capture: true });
+    };
+
     // Форма логина
     const initLoginForm = () => {
         const form = document.getElementById('loginForm');
         if (!form) return;
+
+        const csrfInput = form.querySelector('input[name="_csrf_token"]');
+        if (csrfInput) {
+            const csrfToken = document.cookie
+                .split('; ')
+                .find(row => row.startsWith('csrf_token='))
+                ?.split('=')[1];
+            if (csrfToken) {
+                csrfInput.value = csrfToken;
+            }
+        }
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -314,7 +461,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             try {
                 const formData = new FormData(form);
-                await secureFetch('/routers/auth/login', {
+                await secureFetch('/auth/login', {
                     method: 'POST',
                     body: new URLSearchParams(formData),
                     headers: { "Content-Type": "application/x-www-form-urlencoded" }
@@ -813,7 +960,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         credentials: 'include',
                     });
                     showSuccess('Вы успешно вышли из аккаунта!');
-                    setTimeout(() => window.location.href = '/', 500);
+                    setTimeout(() => window.location.replace('/'), 500);
                 } catch (error) {
                     showError('globalError', 'Ошибка при выходе: ' + (error.message || 'Неизвестная ошибка'));
                 }
@@ -825,6 +972,8 @@ document.addEventListener("DOMContentLoaded", () => {
     initCsrfToken();
     initTheme();
     initPasswordToggles();
+    initGlobalErrorHandlers();
+    initProtectedNavigation();
     initLoginForm();
     initRegisterForm();
     initProfileModals();
