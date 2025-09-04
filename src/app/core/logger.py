@@ -48,9 +48,10 @@ def setup_logging() -> None:
         backupCount=settings.logging.log_file_backup_count,
     )
     file_handler.setFormatter(
-        json_formatter
-        if settings.logging.log_stage == "PROD"
-        else text_formatter,
+        # json_formatter
+        # if settings.logging.log_stage == "PROD"
+        # else text_formatter,
+        text_formatter,
     )
 
     # Хэндлер для вывода в консоль
