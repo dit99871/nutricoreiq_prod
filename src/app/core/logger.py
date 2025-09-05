@@ -33,7 +33,7 @@ def setup_logging() -> None:
     log_dir.mkdir(parents=True, exist_ok=True)
 
     # JSON форматтер для файла
-    json_formatter = JsonFormatter()
+    # json_formatter = JsonFormatter()
 
     # Текстовый форматтер для консоли
     text_formatter = logging.Formatter(
