@@ -20,6 +20,7 @@ from .sentry import SentyConfig
 from .smtp import SMTPConfig
 from .taskiq import TaskiqConfig
 
+
 class Settings(BaseSettings):
     DEBUG: bool = False
 
@@ -30,20 +31,20 @@ class Settings(BaseSettings):
         env_prefix="APP_CONFIG__",
     )
 
-    env: EnvConfig
-    run: RunConfig
-    logging: LoggingConfig = LoggingConfig()
-    router: RouterPrefix = RouterPrefix()
-    db: DatabaseConfig
     auth: AuthConfig
-    redis: RedisConfig
-    cors: CORSConfig
-    mail: SMTPConfig
-    taskiq: TaskiqConfig
-    sentry: SentyConfig
-    loki: LokiConfig
     cache: CacheConfig
+    cors: CORSConfig
+    db: DatabaseConfig
+    env: EnvConfig
+    loki: LokiConfig
+    mail: SMTPConfig
+    redis: RedisConfig
+    run: RunConfig
+    sentry: SentyConfig
+    taskiq: TaskiqConfig
+    logging: LoggingConfig = LoggingConfig()
     rate_limit: RateLimitConfig = RateLimitConfig()
+    router: RouterPrefix = RouterPrefix()
 
     @property
     def effective_db_url(self) -> PostgresDsn:
