@@ -33,7 +33,7 @@ def setup_logging() -> None:
     log_dir.mkdir(parents=True, exist_ok=True)
 
     # JSON форматтер для файла
-    json_formatter = JsonFormatter()
+    # json_formatter = JsonFormatter()
 
     # Текстовый форматтер для консоли
     text_formatter = logging.Formatter(
@@ -48,9 +48,10 @@ def setup_logging() -> None:
         backupCount=settings.logging.log_file_backup_count,
     )
     file_handler.setFormatter(
-        json_formatter
-        if settings.logging.log_stage == "PROD"
-        else text_formatter,
+        # json_formatter
+        # if settings.logging.log_stage == "PROD"
+        # else text_formatter,
+        text_formatter,
     )
 
     # Хэндлер для вывода в консоль
