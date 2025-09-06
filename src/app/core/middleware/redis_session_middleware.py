@@ -131,3 +131,16 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
                     "message": "Сервис недоступен. Пожалуйста, попробуйте позже.",
                 },
             )
+        except Exception as e:
+            # логируем непредвиденные ошибки и возвращаем 500
+            log.error(
+                "Непредвиденная ошибка в CSRF middleware: %s, URL: %s, Заголовки: %s",
+                str(e),
+                request.url,
+                dict(request.headers),
+                exc_info=True,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail={"message": "Внутренняя ошибка сервера при обработке запроса"},
+            )
