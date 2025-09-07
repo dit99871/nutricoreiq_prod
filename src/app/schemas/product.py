@@ -1,9 +1,11 @@
+from pydantic import Field
+
 from .base import BaseSchema
 
 
 # Базовые схемы
 class NutrientBase(BaseSchema):
-    amount: float
+    amount: float = Field(..., gt=0)
     name: str
     unit: str
 
@@ -90,7 +92,7 @@ class ProductSuggestion(BaseSchema):
 
 
 class PendingProductCreate(BaseSchema):
-    name: str
+    name: str = Field(..., min_length=3, max_length=40)
 
 
 class UnifiedProductResponse(BaseSchema):
