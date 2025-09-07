@@ -1,19 +1,13 @@
 import pytest
-from datetime import datetime
 from pydantic import ValidationError
 from src.app.schemas.product import (
     NutrientBase,
     AminoAcids,
     PolyunsaturatedFats,
     FatsDetail,
-    CarbsDetail,
     ProteinsSchema,
     FatsSchema,
     CarbsSchema,
-    VitaminsSchema,
-    VitaminLikeSchema,
-    MineralsSchema,
-    OtherSchema,
     ProductDetailResponse,
     ProductSuggestion,
     PendingProductCreate,
