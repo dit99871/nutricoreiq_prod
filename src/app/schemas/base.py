@@ -1,4 +1,6 @@
-from pydantic import BaseModel, ConfigDict
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, field_serializer
 from datetime import datetime
 
 
@@ -8,14 +10,19 @@ class CustomBaseModel(BaseModel):
     model_config = ConfigDict(
         from_attributes=True,  # поддержка orm
         populate_by_name=True,  # для алиасов полей
-        json_encoders={
-            datetime: lambda v: v.isoformat(),  # форматирование дат
-            bytes: lambda v: (
-                v.decode("utf-8") if v else None
-            ),  # для байтовых полей (hashed_password)
-        },
         arbitrary_types_allowed=True,  # для enum и кастомных типов
     )
+
+    @field_serializer("*", when_used="unless-none")
+    def serialize_dates(self, value: Any, _info) -> Any:
+        """Сериализация дат и байтов в JSON-совместимый формат."""
+
+        if isinstance(value, datetime):
+            return value.isoformat()
+        if isinstance(value, bytes):
+            return value.decode("utf-8") if value else None
+
+        return value
 
 
 class BaseSchema(CustomBaseModel):
