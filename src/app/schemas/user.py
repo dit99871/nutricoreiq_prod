@@ -110,7 +110,25 @@ class PasswordChange(FormSchema):
     ]
 
     @model_validator(mode="after")
-    def passwords_match(cls, values):
-        if values.current_password == values.new_password:
+    def passwords_match(self) -> "PasswordChange":
+        # Получаем строковое представление паролей
+        current = self.current_password
+        new = (
+            self.new_password.get_secret_value()
+            if hasattr(self.new_password, "get_secret_value")
+            else self.new_password
+        )
+
+        # Проверка на совпадение паролей
+        if current == new:
             raise ValueError("Новый пароль должен отличаться от текущего")
-        return values
+
+        # Дополнительные проверки сложности пароля
+        if not any(c.isupper() for c in new):
+            raise ValueError("Пароль должен содержать хотя бы одну заглавную букву")
+        if not any(c.islower() for c in new):
+            raise ValueError("Пароль должен содержать хотя бы одну строчную букву")
+        if not any(c.isdigit() for c in new):
+            raise ValueError("Пароль должен содержать хотя бы одну цифру")
+
+        return self
