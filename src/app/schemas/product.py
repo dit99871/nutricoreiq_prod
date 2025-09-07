@@ -5,13 +5,13 @@ from .base import BaseSchema
 
 # Базовые схемы
 class NutrientBase(BaseSchema):
-    amount: float = Field(..., gt=0)
+    amount: float = Field(..., ge=0)
     name: str
     unit: str
 
 
 class AminoAcids(BaseSchema):
-    essential: float = Field(gt=0, default=0.0)
+    essential: float = Field(ge=0, default=0.0)
     cond_essential: float = 0.0
     nonessential: float = 0.0
 
