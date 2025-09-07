@@ -11,7 +11,7 @@ class NutrientBase(BaseSchema):
 
 
 class AminoAcids(BaseSchema):
-    essential: float = 0.0
+    essential: float = Field(gt=0, default=0.0)
     cond_essential: float = 0.0
     nonessential: float = 0.0
 
