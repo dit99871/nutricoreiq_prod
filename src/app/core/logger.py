@@ -47,23 +47,18 @@ def setup_logging() -> None:
         maxBytes=settings.logging.log_file_max_size,
         backupCount=settings.logging.log_file_backup_count,
     )
-    file_handler.setFormatter(
-        # json_formatter
-        # if settings.logging.log_stage == "PROD"
-        # else text_formatter,
-        text_formatter,
-    )
+    file_handler.setFormatter(text_formatter)
 
     # Хэндлер для вывода в консоль
-    # console_handler = logging.StreamHandler()
-    # console_handler.setFormatter(text_formatter)
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(text_formatter)
 
     # Настройка корневого логгера
     logging.basicConfig(
         level=settings.logging.log_level_value,
         handlers=[
             file_handler,
-            # console_handler,
+            console_handler,
         ],
     )
 
