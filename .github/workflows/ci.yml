@@ -96,14 +96,28 @@ jobs:
         APP_CONFIG__LOGGING__LOG_LEVEL: "INFO"
         APP_CONFIG__LOGGING__LOG_STAGE: "DEV"
         
-        # Отключаем ненужные сервисы для тестов
-        APP_CONFIG__MAIL__ENABLED: "false"
-        APP_CONFIG__SENTRY__ENABLED: "false"
-        APP_CONFIG__LOKI__ENABLED: "false"
-        
         # Настройки для работы с БД в тестах
         APP_CONFIG__DB__URL: "postgresql+asyncpg://postgres:postgres@localhost:5432/test_db"
         APP_CONFIG__DB__ECHO: "false"
+        
+        # Настройки Loki
+        APP_CONFIG__LOKI__URL: "http://localhost:3100"
+        APP_CONFIG__LOKI__ENABLED: "false"
+        
+        # Настройки почты (обязательные поля с тестовыми значениями)
+        APP_CONFIG__MAIL__HOST: "smtp.example.com"
+        APP_CONFIG__MAIL__PORT: "587"
+        APP_CONFIG__MAIL__BUTTON_LINK: "https://example.com/verify"
+        APP_CONFIG__MAIL__UNSUBSCRIBE_LINK: "https://example.com/unsubscribe"
+        APP_CONFIG__MAIL__USERNAME: "test@example.com"
+        APP_CONFIG__MAIL__PASSWORD: "test-password"
+        APP_CONFIG__MAIL__USE_TLS: "true"
+        
+        # Настройки Sentry (обязательные поля)
+        APP_CONFIG__SENTRY__DSN: "https://test@example.com/123"
+        
+        # Настройки Taskiq
+        APP_CONFIG__TASKIQ__URL: "memory://"
         
       run: |
         poetry run pytest --asyncio-mode=auto
