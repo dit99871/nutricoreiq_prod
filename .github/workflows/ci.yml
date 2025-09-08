@@ -25,6 +25,17 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+      rabbitmq:
+        image: rabbitmq:3-management
+        ports:
+          - 5672:5672
+          - 15672:15672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q check_running"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
     - uses: actions/checkout@v3
 
@@ -117,7 +128,7 @@ jobs:
         APP_CONFIG__SENTRY__DSN: "https://test@example.com/123"
         
         # Настройки Taskiq
-        APP_CONFIG__TASKIQ__URL: "memory://"
+        APP_CONFIG__TASKIQ__URL: "amqp://guest:guest@localhost:5672//"
         
       run: |
         poetry run pytest --asyncio-mode=auto
