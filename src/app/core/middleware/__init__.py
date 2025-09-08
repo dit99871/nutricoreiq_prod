@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 
 from src.app.core.config import settings
+
 from .csp_middleware import CSPMiddleware
 from .csrf_middleware import CSRFMiddleware
 from .redis_session_middleware import RedisSessionMiddleware

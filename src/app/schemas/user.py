@@ -1,30 +1,17 @@
 from datetime import datetime
-from annotated_types import MinLen, MaxLen
-from pydantic import (
-    AfterValidator,
-    BeforeValidator,
-    EmailStr,
-    Field,
-    SecretStr,
-    model_validator,
-)
 from typing import Annotated, Literal, Optional
 
-from .base import BaseSchema, FormSchema
+from annotated_types import MaxLen, MinLen
+from pydantic import (AfterValidator, BeforeValidator, EmailStr, Field,
+                      SecretStr, model_validator)
+
+from src.app.core.constants import (MAX_AGE, MAX_HEIGHT_CM, MAX_WEIGHT_KG,
+                                    MIN_AGE, MIN_HEIGHT_CM, MIN_WEIGHT_KG)
+from src.app.core.utils.validators import (coerce_goal, coerce_kfa,
+                                           validate_password_strength)
 from src.app.models.user import GoalType, KFALevel
-from src.app.core.utils.validators import (
-    coerce_goal,
-    coerce_kfa,
-    validate_password_strength,
-)
-from src.app.core.constants import (
-    MIN_AGE,
-    MAX_AGE,
-    MIN_HEIGHT_CM,
-    MAX_HEIGHT_CM,
-    MIN_WEIGHT_KG,
-    MAX_WEIGHT_KG,
-)
+
+from .base import BaseSchema, FormSchema
 
 
 # базовая для input (create/update)

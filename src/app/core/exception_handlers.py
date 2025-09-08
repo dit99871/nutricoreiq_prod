@@ -1,12 +1,12 @@
-from fastapi import Request, status, FastAPI
-from fastapi.responses import ORJSONResponse
+from fastapi import FastAPI, Request, status
 from fastapi.exceptions import HTTPException, RequestValidationError
+from fastapi.responses import ORJSONResponse
 from slowapi.errors import RateLimitExceeded
 
 from src.app.core.config import settings
 from src.app.core.exceptions import ExpiredTokenException
 from src.app.core.logger import get_logger
-from src.app.schemas.responses import ErrorResponse, ErrorDetail
+from src.app.schemas.responses import ErrorDetail, ErrorResponse
 
 __all__ = ("setup_exception_handlers",)
 

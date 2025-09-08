@@ -6,7 +6,8 @@ from fastapi.responses import ORJSONResponse
 
 from src.app.core.config import settings
 from src.app.core.logger import get_logger
-from src.app.core.services.jwt_service import create_access_jwt, create_refresh_jwt
+from src.app.core.services.jwt_service import (create_access_jwt,
+                                               create_refresh_jwt)
 from src.app.schemas.user import UserPublic
 
 log = get_logger("auth_utils")

@@ -6,15 +6,12 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from fastapi import HTTPException
-from jose import jwt, ExpiredSignatureError, JWTError
+from jose import ExpiredSignatureError, JWTError, jwt
 from starlette import status
 
 from src.app.core.config import settings
-from src.app.core.constants import (
-    ACCESS_TOKEN_TYPE,
-    REFRESH_TOKEN_TYPE,
-    TOKEN_TYPE_FIELD,
-)
+from src.app.core.constants import (ACCESS_TOKEN_TYPE, REFRESH_TOKEN_TYPE,
+                                    TOKEN_TYPE_FIELD)
 from src.app.core.exceptions import ExpiredTokenException
 from src.app.core.logger import get_logger
 from src.app.core.services.redis import add_refresh_to_redis

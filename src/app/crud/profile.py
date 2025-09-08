@@ -1,11 +1,11 @@
 from fastapi import HTTPException, status
-from sqlalchemy import update, select
+from sqlalchemy import select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.core.logger import get_logger
 from src.app.models import User
-from src.app.schemas.user import UserPublic, UserProfileUpdate, UserProfile
+from src.app.schemas.user import UserProfile, UserProfileUpdate, UserPublic
 
 log = get_logger("profile_crud")
 
