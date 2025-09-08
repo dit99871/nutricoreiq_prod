@@ -8,14 +8,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.app.core import db_helper
 from src.app.core.logger import get_logger
 from src.app.core.services.auth import get_current_auth_user
-from src.app.core.services.product import (handle_product_details,
-                                           handle_product_search)
+from src.app.core.services.product import handle_product_details, handle_product_search
 from src.app.core.services.redis import get_redis_session_from_request
 from src.app.core.utils import templates
-from src.app.core.utils.pending_product import (check_pending_exists,
-                                                create_pending_product)
-from src.app.schemas.product import (PendingProductCreate,
-                                     UnifiedProductResponse)
+from src.app.core.utils.pending_product import (
+    check_pending_exists,
+    create_pending_product,
+)
+from src.app.schemas.product import PendingProductCreate, UnifiedProductResponse
 from src.app.schemas.user import UserPublic
 
 log = get_logger("product_router")
