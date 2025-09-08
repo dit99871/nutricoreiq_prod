@@ -16,8 +16,10 @@ stages:
 
 before_script:
   - apt-get update -qq && apt-get install -y -qq postgresql-client
-  - python -m pip install --upgrade pip
-  - pip install -e .[dev] pytest-cov black flake8 isort asyncpg pytest-asyncio
+  - pip install poetry
+  - poetry config virtualenvs.create false
+  - poetry install --no-interaction --no-root
+  - pip install pytest-cov pytest-asyncio asyncpg
   - |
     echo "Waiting for PostgreSQL to be ready..."
     for i in {1..30}; do
