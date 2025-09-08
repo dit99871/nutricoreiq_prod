@@ -48,16 +48,28 @@ jobs:
     - name: Run tests
       env:
         DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/test_db
+        APP_CONFIG__AUTH__SECRET_KEY: test-secret-key
+        APP_CONFIG__AUTH__ALGORITHM: HS256
+        APP_CONFIG__AUTH__ACCESS_TOKEN_EXPIRE_MINUTES: "30"
+        APP_CONFIG__CACHE__ENABLED: "false"
+        APP_CONFIG__CORS__ALLOW_ORIGINS: '["*"]'
+        APP_CONFIG__CORS__ALLOW_CREDENTIALS: "true"
+        APP_CONFIG__CORS__ALLOW_METHODS: '["*"]'
+        APP_CONFIG__CORS__ALLOW_HEADERS: '["*"]'
+        APP_CONFIG__DB__URL: postgresql+asyncpg://postgres:postgres@localhost:5432/test_db
+        APP_CONFIG__DB__TEST_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/test_db
+        APP_CONFIG__DB__ECHO: "false"
+        APP_CONFIG__DB__IS_TEST: "true"
+        APP_CONFIG__ENV__ENVIRONMENT: test
+        APP_CONFIG__LOKI__ENABLED: "false"
+        APP_CONFIG__MAIL__ENABLED: "false"
+        APP_CONFIG__REDIS__URL: redis://localhost:6379/0
+        APP_CONFIG__RUN__HOST: 0.0.0.0
+        APP_CONFIG__RUN__PORT: "8000"
+        APP_CONFIG__SENTRY__ENABLED: "false"
+        APP_CONFIG__TASKS__BROKER_URL: redis://localhost:6379/1
       run: |
-        poetry run pytest --asyncio-mode=auto --cov=src --cov-report=xml
-
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      if: github.event_name == 'push'
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        file: ./coverage.xml
-        fail_ci_if_error: false
+        poetry run pytest --asyncio-mode=auto
 
   lint:
     runs-on: ubuntu-latest
