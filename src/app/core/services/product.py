@@ -6,8 +6,11 @@ from sqlalchemy.orm import joinedload, selectinload
 from src.app.core.logger import get_logger
 from src.app.models import PendingProduct, Product, ProductNutrient
 from src.app.models.utils.product import map_to_schema
-from src.app.schemas.product import (ProductDetailResponse, ProductSuggestion,
-                                     UnifiedProductResponse)
+from src.app.schemas.product import (
+    ProductDetailResponse,
+    ProductSuggestion,
+    UnifiedProductResponse,
+)
 
 log = get_logger("product_services")
 

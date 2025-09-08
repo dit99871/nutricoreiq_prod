@@ -2,13 +2,28 @@ from datetime import datetime
 from typing import Annotated, Literal, Optional
 
 from annotated_types import MaxLen, MinLen
-from pydantic import (AfterValidator, BeforeValidator, EmailStr, Field,
-                      SecretStr, model_validator)
+from pydantic import (
+    AfterValidator,
+    BeforeValidator,
+    EmailStr,
+    Field,
+    SecretStr,
+    model_validator,
+)
 
-from src.app.core.constants import (MAX_AGE, MAX_HEIGHT_CM, MAX_WEIGHT_KG,
-                                    MIN_AGE, MIN_HEIGHT_CM, MIN_WEIGHT_KG)
-from src.app.core.utils.validators import (coerce_goal, coerce_kfa,
-                                           validate_password_strength)
+from src.app.core.constants import (
+    MAX_AGE,
+    MAX_HEIGHT_CM,
+    MAX_WEIGHT_KG,
+    MIN_AGE,
+    MIN_HEIGHT_CM,
+    MIN_WEIGHT_KG,
+)
+from src.app.core.utils.validators import (
+    coerce_goal,
+    coerce_kfa,
+    validate_password_strength,
+)
 from src.app.models.user import GoalType, KFALevel
 
 from .base import BaseSchema, FormSchema

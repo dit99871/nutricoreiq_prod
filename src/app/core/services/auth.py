@@ -8,12 +8,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.app.core import db_helper
 from src.app.core.constants import CREDENTIAL_EXCEPTION
 from src.app.core.logger import get_logger
-from src.app.core.services.jwt_service import (ACCESS_TOKEN_TYPE,
-                                               TOKEN_TYPE_FIELD, decode_jwt)
-from src.app.core.services.redis import (revoke_all_refresh_tokens,
-                                         validate_refresh_jwt)
-from src.app.core.utils.auth import (create_response, get_password_hash,
-                                     verify_password)
+from src.app.core.services.jwt_service import (
+    ACCESS_TOKEN_TYPE,
+    TOKEN_TYPE_FIELD,
+    decode_jwt,
+)
+from src.app.core.services.redis import revoke_all_refresh_tokens, validate_refresh_jwt
+from src.app.core.utils.auth import create_response, get_password_hash, verify_password
 from src.app.crud.user import get_user_by_name, get_user_by_uid
 from src.app.models import User
 from src.app.schemas.user import UserPublic

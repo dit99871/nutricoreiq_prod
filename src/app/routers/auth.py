@@ -11,10 +11,12 @@ from src.app.core.config import settings
 from src.app.core.exceptions import ExpiredTokenException
 from src.app.core.logger import get_logger
 from src.app.core.redis import get_redis
-from src.app.core.services.auth import (authenticate_user,
-                                        get_current_auth_user,
-                                        get_current_auth_user_for_refresh,
-                                        update_password)
+from src.app.core.services.auth import (
+    authenticate_user,
+    get_current_auth_user,
+    get_current_auth_user_for_refresh,
+    update_password,
+)
 from src.app.core.services.email import send_welcome_email as send_welcome
 from src.app.core.services.limiter import limiter
 from src.app.core.services.redis import revoke_refresh_token
