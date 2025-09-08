@@ -47,27 +47,64 @@ jobs:
 
     - name: Run tests
       env:
-        DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/test_db
-        APP_CONFIG__AUTH__SECRET_KEY: test-secret-key
+        # Настройки окружения
+        APP_CONFIG__ENV__ENV: "test"
+        
+        # Настройки базы данных
+        POSTGRES_DB: test_db
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: postgres
+        POSTGRES_HOST: localhost
+        POSTGRES_PORT: 5432
+        POSTGRES_SSL_MODE: disable
+        
+        # Настройки JWT
+        APP_CONFIG__AUTH__SECRET_KEY: test-secret-key-for-ci-123
         APP_CONFIG__AUTH__ALGORITHM: HS256
-        APP_CONFIG__AUTH__ACCESS_TOKEN_EXPIRE_MINUTES: "30"
-        APP_CONFIG__CACHE__ENABLED: "false"
+        APP_CONFIG__AUTH__ACCESS_TOKEN_EXPIRES: "7"
+        APP_CONFIG__AUTH__REFRESH_TOKEN_EXPIRES: "7"
+        
+        # Настройки Redis
+        REDIS_PORT: 6379
+        REDIS_ADDR: localhost
+        APP_CONFIG__REDIS__URL: "redis://localhost:6379/0"
+        APP_CONFIG__REDIS__SALT: test-salt
+        APP_CONFIG__REDIS__PASSWORD: test-password
+        APP_CONFIG__REDIS__SESSION_TTL: "3600"
+        
+        # Настройки кеширования
+        APP_CONFIG__CACHE__USER_TTL: "3600"
+        
+        # Настройки приложения
+        HTTP_PORT: 80
+        HTTPS_PORT: 443
+        APP_CONFIG__RUN__HOST: "0.0.0.0"
+        APP_CONFIG__RUN__PORT: "8080"
+        
+        # Настройки CORS
         APP_CONFIG__CORS__ALLOW_ORIGINS: '["*"]'
+        APP_CONFIG__CORS__ALLOW_METHODS: '["GET", "HEAD", "POST", "DELETE"]'
+        APP_CONFIG__CORS__ALLOW_HEADERS: '["Accept", "Authorization", "Content-Type", "X-CSRF-Token"]'
         APP_CONFIG__CORS__ALLOW_CREDENTIALS: "true"
-        APP_CONFIG__CORS__ALLOW_METHODS: '["*"]'
-        APP_CONFIG__CORS__ALLOW_HEADERS: '["*"]'
-        APP_CONFIG__DB__URL: postgresql+asyncpg://postgres:postgres@localhost:5432/test_db
-        APP_CONFIG__DB__TEST_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/test_db
-        APP_CONFIG__DB__ECHO: "false"
-        APP_CONFIG__DB__IS_TEST: "true"
-        APP_CONFIG__ENV__ENVIRONMENT: test
-        APP_CONFIG__LOKI__ENABLED: "false"
+        
+        # Настройки лимитов
+        APP_CONFIG__RATE_LIMIT__REGISTER: "1000/minute"
+        APP_CONFIG__RATE_LIMIT__LOGIN: "1000/minute"
+        APP_CONFIG__RATE_LIMIT__PASSWORD_CHANGE: "1000/minute"
+        
+        # Настройки логирования
+        APP_CONFIG__LOGGING__LOG_LEVEL: "INFO"
+        APP_CONFIG__LOGGING__LOG_STAGE: "DEV"
+        
+        # Отключаем ненужные сервисы для тестов
         APP_CONFIG__MAIL__ENABLED: "false"
-        APP_CONFIG__REDIS__URL: redis://localhost:6379/0
-        APP_CONFIG__RUN__HOST: 0.0.0.0
-        APP_CONFIG__RUN__PORT: "8000"
         APP_CONFIG__SENTRY__ENABLED: "false"
-        APP_CONFIG__TASKS__BROKER_URL: redis://localhost:6379/1
+        APP_CONFIG__LOKI__ENABLED: "false"
+        
+        # Настройки для работы с БД в тестах
+        APP_CONFIG__DB__URL: "postgresql+asyncpg://postgres:postgres@localhost:5432/test_db"
+        APP_CONFIG__DB__ECHO: "false"
+        
       run: |
         poetry run pytest --asyncio-mode=auto
 
