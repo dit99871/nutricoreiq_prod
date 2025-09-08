@@ -78,5 +78,3 @@ jobs:
         poetry install --no-interaction --no-root
     - name: Run black
       run: poetry run black --check src/
-    - name: Run isort
-      run: poetry run isort --check-only src/
