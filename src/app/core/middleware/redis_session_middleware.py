@@ -53,7 +53,7 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
             original_session = None
             if session_data:
                 session = json.loads(session_data)
-                original_session = session.copy()  #  копируем для сравнения изменений
+                original_session = session.copy()  # копируем для сравнения изменений
                 # продление сессии при активности
                 await redis_client.expire(
                     f"redis_session:{session_id}", settings.redis.session_ttl
