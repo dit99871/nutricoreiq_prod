@@ -1,14 +1,15 @@
 import json
 from datetime import datetime
 
-from fastapi import Request, Response, HTTPException, status
+from fastapi import HTTPException, Request, Response, status
 from redis.asyncio import RedisError
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.app.core.config import settings
 from src.app.core.logger import get_logger
 from src.app.core.redis import redis_client
-from src.app.core.utils.security import generate_redis_session_id, generate_csrf_token
+from src.app.core.utils.security import (generate_csrf_token,
+                                         generate_redis_session_id)
 
 log = get_logger("redis_session_middleware")
 

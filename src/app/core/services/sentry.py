@@ -1,13 +1,13 @@
-import requests
-import time
 import json
+import time
 from datetime import datetime
 
+import requests
 import sentry_sdk
 from sentry_sdk.integrations.starlette import StarletteIntegration
 
-from src.app.core.logger import get_logger
 from src.app.core.config import settings
+from src.app.core.logger import get_logger
 
 log = get_logger("sentry_service")
 

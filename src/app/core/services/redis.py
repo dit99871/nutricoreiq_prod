@@ -1,8 +1,8 @@
 import datetime as dt
 import time
 
-from redis.asyncio import RedisError, Redis
 from fastapi import HTTPException, Request, status
+from redis.asyncio import Redis, RedisError
 
 from src.app.core.logger import get_logger
 from src.app.core.redis import get_redis
