@@ -49,7 +49,7 @@ class UserCreate(UserBaseIn):
     """
 
     password: Annotated[
-        SecretStr,
+        str,
         MinLen(8),
         AfterValidator(validate_password_strength),
     ]
