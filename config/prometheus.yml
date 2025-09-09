@@ -1,0 +1,60 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['prometheus:9090']
+    relabel_configs:
+      - target_label: 'app'
+        replacement: 'prometheus'
+
+  - job_name: 'fastapi'
+    static_configs:
+      - targets: ['fastapi:8080']
+    relabel_configs:
+      - target_label: 'app'
+        replacement: 'fastapi'
+
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres_exporter:9187']
+    relabel_configs:
+      - target_label: 'app'
+        replacement: 'postgres'
+
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis_exporter:9121']
+    relabel_configs:
+      - target_label: 'app'
+        replacement: 'redis'
+
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node_exporter:9100']
+    relabel_configs:
+      - target_label: 'app'
+        replacement: 'node'
+
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['nginx_exporter:9113']
+    relabel_configs:
+      - target_label: 'app'
+        replacement: 'nginx'
+
+  - job_name: 'loki'
+    static_configs:
+      - targets: ['loki:3100']
+    relabel_configs:
+      - target_label: 'app'
+        replacement: 'loki'
+
+  - job_name: 'promtail'
+    static_configs:
+      - targets: ['promtail:9080']
+    relabel_configs:
+      - target_label: 'app'
+        replacement: 'promtail'

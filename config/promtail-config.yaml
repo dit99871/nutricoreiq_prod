@@ -1,0 +1,70 @@
+server:
+  http_listen_port: 9080
+  log_level: info
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+    backoff_config:
+      min_period: 500ms
+      max_period: 5s
+      max_retries: 10
+
+scrape_configs:
+  - job_name: fastapi
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    pipeline_stages:
+      - docker: {}
+      - match:
+          selector: '{container=~"web_app.*"}'
+          stages:
+            - regex:
+                expression: '^\[(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\]\s+(?P<module>[\w\.]+):(?P<line>\d+)\s+(?P<level>\w+)\s+-\s+(?P<message>.*)'
+            - timestamp:
+                source: timestamp
+                format: "2006-01-02 15:04:05.000"
+            - labels:
+                level:
+                module:
+            - output:
+                source: message
+            - drop:
+                expression: ".*\\n.*"
+                drop_counter_reason: "multiline_log"
+      - match:
+          selector: '{container=~"web_app.*"}'
+          stages:
+            - regex:
+                expression: '^(?P<message>.*)'
+                source: "message"
+            - output:
+                source: message
+
+    relabel_configs:
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/web_app.*'
+        action: keep
+      - source_labels: ['__meta_docker_container_name']
+        target_label: 'container'
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
+        target_label: 'service'
+
+  - job_name: containers
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    pipeline_stages:
+      - docker: {}
+    relabel_configs:
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.+)'
+        target_label: 'container'
+        replacement: '${1}'
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
+        target_label: 'service'
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_project']
+        target_label: 'project'
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(promtail|loki)'
+        action: drop
