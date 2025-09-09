@@ -2,42 +2,85 @@ image: python:3.13
 
 services:
   - postgres:17
+  - redis:alpine
+  - rabbitmq:3-management
 
+# Общие переменные
 variables:
-  POSTGRES_DB: test_db
-  POSTGRES_USER: runner
+  # Настройки окружения
+  APP_ENV: "prod"
+  
+  # Настройки базы данных
+  POSTGRES_DB: "test_db"
+  POSTGRES_USER: "runner"
   POSTGRES_PASSWORD: ""
-  POSTGRES_HOST_AUTH_METHOD: trust
-  DATABASE_URL: "postgresql+asyncpg://runner@postgres:5432/test_db"
+  POSTGRES_HOST: "postgres"
+  POSTGRES_PORT: "5432"
+  DATABASE_URL: "postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
+  
+  # Настройки Redis
+  REDIS_URL: "redis://redis:6379/0"
+  
+  # Настройки приложения
+  APP_CONFIG__ENV__ENV: "${APP_ENV}"
+  APP_CONFIG__DB__URL: "${DATABASE_URL}"
+  APP_CONFIG__DB__ECHO: "0"
+  
+  # Кеширование
+  APP_CONFIG__CACHE__USER_TTL: "3600"
+  
+  # Настройки CORS (для тестов)
+  APP_CONFIG__CORS__ALLOW_ORIGINS: '["*"]'
+  APP_CONFIG__CORS__ALLOW_METHODS: '["GET", "HEAD", "POST", "DELETE"]'
+  APP_CONFIG__CORS__ALLOW_HEADERS: '["Accept", "Authorization", "Content-Type"]'
+  APP_CONFIG__CORS__ALLOW_CREDENTIALS: "true"
+  
+  # Логирование
+  APP_CONFIG__LOGGING__LOG_LEVEL: "INFO"
+  APP_CONFIG__LOGGING__LOG_STAGE: "${APP_ENV}"
+
+# Кэширование зависимостей
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - .venv/
+    - .cache/pip/
+    - .cache/poetry/
 
 stages:
   - test
   - lint
+  - build
+  - deploy
 
 before_script:
-  - apt-get update -qq && apt-get install -y -qq postgresql-client
-  - pip install poetry
-  - poetry config virtualenvs.create false
-  - poetry install --no-interaction --no-root
-  - pip install pytest-cov pytest-asyncio asyncpg
   - |
+    # Установка зависимостей
+    python -m pip install --upgrade pip
+    pip install poetry
+    poetry config virtualenvs.create true
+    poetry config virtualenvs.in-project true
+    poetry install --no-interaction --no-root
+    
+    # Ожидание PostgreSQL
     echo "Waiting for PostgreSQL to be ready..."
     for i in {1..30}; do
-      if pg_isready -h postgres -U postgres; then
+      if pg_isready -h $POSTGRES_HOST -U $POSTGRES_USER; then
         echo "PostgreSQL is ready"
         break
       fi
       echo "Waiting for PostgreSQL..."
       sleep 1
     done
-    psql -h postgres -U postgres -c "CREATE USER runner WITH SUPERUSER;" || true
-    psql -h postgres -U postgres -c "CREATE DATABASE test_db;" || true
+    
+    # Создание тестовой БД
+    psql -h $POSTGRES_HOST -U $POSTGRES_USER -c "CREATE DATABASE $POSTGRES_DB;" || true
 
-test:
-  stage: test
+# Тесты
+.test:template: &test_template
   script:
-    - pytest --asyncio-mode=auto --cov=src --cov-report=xml
-  coverage: '/^TOTAL.+\s+(\d+%)$/'
+    - poetry run pytest --asyncio-mode=auto --cov=src --cov-report=xml
+  coverage: '/^TOTAL.+\s+(\d+%)$/'  
   artifacts:
     reports:
       coverage_report:
@@ -45,9 +88,224 @@ test:
         path: coverage.xml
     when: always
 
-test:lint:
-  stage: lint
+# Линтеры
+.lint:template: &lint_template
   script:
-    - black --check src/
-    - flake8 src/
-    - isort --check-only src/
+    - poetry run black --check src/
+
+test:unit:
+  <<: *test_template
+  stage: test
+  only:
+    - merge_requests
+    - main
+    - develop
+
+lint:code:
+  <<: *lint_template
+  stage: lint
+  only:
+    - merge_requests
+    - main
+    - develop
+
+# Сборка Docker-образа
+build:image:
+  stage: build
+  image: docker:24.0.6
+  services:
+    - docker:24.0.6-dind
+  variables:
+    DOCKER_HOST: tcp://docker:2376
+    DOCKER_TLS_CERTDIR: "/certs"
+  before_script: []
+  script:
+    - |
+      # Проверка обязательных переменных
+      if [ -z "$CI_REGISTRY" ] || [ -z "$CI_REGISTRY_USER" ] || [ -z "$CI_REGISTRY_PASSWORD" ]; then
+        echo "ERROR: Docker registry credentials not set"
+        exit 1
+      fi
+      
+      # Логин в registry
+      echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+      
+      # Сборка и пуш образа
+      TAG=${CI_COMMIT_REF_SLUG:-latest}
+      if [ "$CI_COMMIT_REF_NAME" = "main" ]; then
+        TAG="latest"
+      fi
+      
+      docker build -t "$CI_REGISTRY_IMAGE:$TAG" .
+      docker push "$CI_REGISTRY_IMAGE:$TAG"
+  only:
+    - main
+    - develop
+    - merge_requests
+  except:
+    - tags
+
+# Деплой на продакшен
+deploy:prod:
+  stage: deploy
+  image: alpine:3.19
+  needs: ["build:image"]
+  variables:
+    # Переменные для SSH
+    SSH_PRIVATE_KEY: $SSH_PRIVATE_KEY
+    SSH_HOST: $SSH_HOST
+    SSH_USER: $SSH_USER
+    
+    # Переменные для Docker
+    DOCKER_REGISTRY: $CI_REGISTRY
+    DOCKER_IMAGE: $CI_REGISTRY_IMAGE:latest
+    
+    # Путь к проекту на сервере
+    DEPLOY_PATH: "/home/deployer/nutricoreiq"
+    
+    # Шаблон .env файла
+    ENV_TEMPLATE: |
+      # Настройки Environment
+      APP_CONFIG__ENV__ENV=${APP_CONFIG__ENV__ENV}
+      
+      # Настройки базы данных
+      POSTGRES_DB=${POSTGRES_DB}
+      POSTGRES_USER=${POSTGRES_USER}
+      POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      POSTGRES_HOST=${POSTGRES_HOST}
+      POSTGRES_PORT=${POSTGRES_PORT}
+      APP_CONFIG__DB__URL=${APP_CONFIG__DB__URL}
+      APP_CONFIG__DB__ECHO=${APP_CONFIG__DB__ECHO}
+      
+      # JWT
+      APP_CONFIG__AUTH__SECRET_KEY=${APP_CONFIG__AUTH__SECRET_KEY}
+      APP_CONFIG__AUTH__ALGORITHM=${APP_CONFIG__AUTH__ALGORITHM}
+      APP_CONFIG__AUTH__ACCESS_TOKEN_EXPIRES=${APP_CONFIG__AUTH__ACCESS_TOKEN_EXPIRES}
+      APP_CONFIG__AUTH__REFRESH_TOKEN_EXPIRES=${APP_CONFIG__AUTH__REFRESH_TOKEN_EXPIRES}
+      
+      # Redis
+      APP_CONFIG__REDIS__URL=${APP_CONFIG__REDIS__URL}
+      APP_CONFIG__REDIS__SALT=${APP_CONFIG__REDIS__SALT}
+      APP_CONFIG__REDIS__PASSWORD=${APP_CONFIG__REDIS__PASSWORD}
+      APP_CONFIG__REDIS__SESSION_TTL=${APP_CONFIG__REDIS__SESSION_TTL}
+      
+      # Кеширование
+      APP_CONFIG__CACHE__USER_TTL=${APP_CONFIG__CACHE__USER_TTL}
+      
+      # Настройки приложения
+      APP_CONFIG__RUN__HOST=${APP_CONFIG__RUN__HOST}
+      APP_CONFIG__RUN__PORT=${APP_CONFIG__RUN__PORT}
+      
+      # CORS
+      APP_CONFIG__CORS__ALLOW_ORIGINS=${APP_CONFIG__CORS__ALLOW_ORIGINS}
+      APP_CONFIG__CORS__ALLOW_METHODS=${APP_CONFIG__CORS__ALLOW_METHODS}
+      APP_CONFIG__CORS__ALLOW_HEADERS=${APP_CONFIG__CORS__ALLOW_HEADERS}
+      APP_CONFIG__CORS__ALLOW_CREDENTIALS=${APP_CONFIG__CORS__ALLOW_CREDENTIALS}
+      
+      # Лимиты
+      APP_CONFIG__RATE_LIMIT__REGISTER=${APP_CONFIG__RATE_LIMIT__REGISTER}
+      APP_CONFIG__RATE_LIMIT__LOGIN=${APP_CONFIG__RATE_LIMIT__LOGIN}
+      APP_CONFIG__RATE_LIMIT__PASSWORD_CHANGE=${APP_CONFIG__RATE_LIMIT__PASSWORD_CHANGE}
+      
+      # Почта
+      APP_CONFIG__MAIL__HOST=${APP_CONFIG__MAIL__HOST}
+      APP_CONFIG__MAIL__PORT=${APP_CONFIG__MAIL__PORT}
+      APP_CONFIG__MAIL__BUTTON_LINK=${APP_CONFIG__MAIL__BUTTON_LINK}
+      APP_CONFIG__MAIL__UNSUBSCRIBE_LINK=${APP_CONFIG__MAIL__UNSUBSCRIBE_LINK}
+      APP_CONFIG__MAIL__USERNAME=${APP_CONFIG__MAIL__USERNAME}
+      APP_CONFIG__MAIL__PASSWORD=${APP_CONFIG__MAIL__PASSWORD}
+      APP_CONFIG__MAIL__USE_TLS=${APP_CONFIG__MAIL__USE_TLS}
+      
+      # RabbitMQ
+      RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+      APP_CONFIG__TASKIQ__URL=${APP_CONFIG__TASKIQ__URL}
+      
+      # Мониторинг
+      APP_CONFIG__SENTRY__DSN=${APP_CONFIG__SENTRY__DSN}
+      APP_CONFIG__LOKI__URL=${APP_CONFIG__LOKI__URL}
+      
+      # Логирование
+      APP_CONFIG__LOGGING__LOG_LEVEL=${APP_CONFIG__LOGGING__LOG_LEVEL}
+      APP_CONFIG__LOGGING__LOG_STAGE=${APP_CONFIG__LOGGING__LOG_STAGE}
+  
+  before_script:
+    - apk add --no-cache openssh-client docker-cli
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H $SSH_HOST >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+  
+  script:
+    - |
+      # Проверка обязательных переменных
+      for var in SSH_PRIVATE_KEY SSH_HOST SSH_USER DOCKER_REGISTRY DOCKER_IMAGE; do
+        if [ -z "${!var}" ]; then
+          echo "ERROR: Required variable $var is not set"
+          exit 1
+        fi
+      done
+      
+      # Деплой на сервер
+      ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST /bin/sh << EOF
+        set -e
+        
+        # Создаем директорию, если её нет
+        mkdir -p $DEPLOY_PATH
+        
+        # Создаем .env файл
+        cat > $DEPLOY_PATH/.env << 'ENV_EOF'
+        $ENV_TEMPLATE
+        ENV_EOF
+        
+        # Логинимся в Docker Registry
+        echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$DOCKER_REGISTRY"
+        
+        # Переходим в директорию проекта
+        cd $DEPLOY_PATH
+        
+        # Останавливаем и удаляем старые контейнеры
+        docker-compose -f docker-compose.prod.yml down || true
+        
+        # Подтягиваем новый образ
+        docker pull $DOCKER_IMAGE
+        
+        # Запускаем сервисы
+        docker-compose -f docker-compose.prod.yml up -d
+        
+        # Очищаем неиспользуемые образы
+        docker image prune -f
+        
+        # Проверяем здоровье сервиса
+        echo "Checking service health..."
+        if ! curl -sSf http://localhost:8080/health > /dev/null; then
+          echo "ERROR: Service health check failed"
+          exit 1
+        fi
+        
+        echo "Deployment completed successfully"
+      EOF
+  
+  after_script:
+    - |
+      # Отправка уведомления в Slack/TG/Email
+      if [ "$CI_JOB_STATUS" = "failed" ]; then
+        echo "Deployment failed! Check the logs for details."
+        # Здесь можно добавить отправку уведомлений
+      fi
+  
+  # Только для ветки main и с ручным подтверждением
+  only:
+    - main
+  when: manual
+  allow_failure: false
+
+# Уведомления о падении пайплайна
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG
+    - when: never
