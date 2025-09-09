@@ -5,19 +5,25 @@ from enum import Enum
 
 
 # Мокаем валидатор пароля
-def mock_validate_password_strength(v):
-    if isinstance(v, SecretStr):
-        v = v.get_secret_value()
-    # Простая проверка сложности пароля
-    if len(v) < 8:
-        raise ValueError("Пароль слишком короткий")
-    if not any(c.islower() for c in v):
-        raise ValueError("Пароль должен содержать строчные буквы")
-    if not any(c.isupper() for c in v):
-        raise ValueError("Пароль должен содержать заглавные буквы")
-    if not any(c.isdigit() for c in v):
-        raise ValueError("Пароль должен содержать цифры")
-    return SecretStr(v)
+def mock_validate_password_strength(v: str | SecretStr) -> str:
+    """
+    Проверяет сложность пароля: наличие строчных и прописных букв, цифр и спецсимволов.
+    Возвращает пароль без изменений, если проверка пройдена, иначе поднимает ValueError.
+    """
+
+    # Extract the actual string from SecretStr if that's what we got
+    password = v.get_secret_value() if isinstance(v, SecretStr) else v
+
+    has_lower = any(c.islower() for c in password)
+    has_upper = any(c.isupper() for c in password)
+    has_digit = any(c.isdigit() for c in password)
+    has_special = any(not c.isalnum() for c in password)
+
+    if not (has_lower and has_upper and has_digit and has_special):
+        raise ValueError(
+            "Пароль должен содержать строчные и прописные буквы, цифры и спецсимволы"
+        )
+    return v  # Return the original value to preserve SecretStr if that's what we got
 
 
 def mock_coerce_kfa(v):
@@ -111,22 +117,27 @@ class TestUserBaseIn:
 # Тесты для UserCreate
 class TestUserCreate:
     def test_valid_password(self, base_user_data):
-        user = UserCreate(**{**base_user_data, "password": "Str0ngP@ss!"})
-        assert user.password.get_secret_value() == "Str0ngP@ss!"
+        user_data = base_user_data.copy()
+        user_data["password"] = "Str0ngP@ss!"  # Plain string
+        user = UserCreate(**user_data)
+        assert user.password == "Str0ngP@ss!"  # Direct string comparison
 
     @pytest.mark.parametrize(
         "password",
         [
-            "short",  # Слишком короткий
-            "nopass",  # Нет цифр и спецсимволов
-            "12345678",  # Только цифры
-            "password",  # Только буквы
-            "PASSWORD",  # Только заглавные
+            "short",  # Too short
+            "nopass",  # No digits or special chars
+            "12345678",  # Only digits
+            "password",  # Only letters
+            "PASSWORD",  # Only uppercase
         ],
     )
     def test_invalid_password(self, base_user_data, password):
+        # Create a copy of base_user_data and update password
+        user_data = base_user_data.copy()
+        user_data["password"] = password  # Plain string
         with pytest.raises(ValidationError):
-            UserCreate(**{**base_user_data, "password": password})
+            UserCreate(**user_data)
 
 
 # Тесты для UserProfile
@@ -207,7 +218,7 @@ class TestUserProfileUpdate:
 # Тесты для PasswordChange
 class TestPasswordChange:
     def test_password_must_be_different(self):
-        # This should now work with the fixed schema
+        # Test that new password must be different from current password
         with pytest.raises(ValidationError) as exc_info:
             PasswordChange(
                 current_password="SamePass123!",
@@ -223,19 +234,23 @@ class TestPasswordChange:
                 current_password="Oldpass123!",
                 new_password="weakpassword",  # Long but no uppercase/number
             )
-        error_msg = str(exc_info.value)
+        error_msg = str(exc_info.value).lower()
         # Check for any of the validation messages
         assert any(
-            msg in error_msg.lower()
+            msg in error_msg
             for msg in ["uppercase", "digit", "number", "заглавные", "цифры"]
         )
 
     def test_successful_password_change(self):
+        # Test successful password change with valid passwords
         password_change = PasswordChange(
-            current_password="OldPass123!", new_password="NewPass123!"  # Valid password
+            current_password="OldPass123!",
+            new_password="NewPass123!",  # Valid password
         )
-        # Use get_secret_value() to compare SecretStr
-        assert password_change.new_password.get_secret_value() == "NewPass123!"
+
+        # Verify the new password is set correctly
+        assert password_change.new_password == "NewPass123!"
+        assert password_change.current_password == "OldPass123!"
 
 
 # Тесты для сериализации

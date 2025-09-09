@@ -1,4 +1,4 @@
-from pydantic import BaseModel, AmqpDsn
+from pydantic import AmqpDsn, BaseModel
 
 
 class TaskiqConfig(BaseModel):

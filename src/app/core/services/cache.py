@@ -2,8 +2,8 @@ import json
 from typing import Optional
 
 from src.app.core.config import settings
-from src.app.core.redis import get_redis
 from src.app.core.logger import get_logger
+from src.app.core.redis import get_redis
 
 log = get_logger("cache_service")
 

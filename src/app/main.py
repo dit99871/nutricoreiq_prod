@@ -13,6 +13,7 @@ if __name__ == "__main__":
 
     if settings.env.env == "dev":
         import subprocess
+
         import uvicorn
 
         subprocess.run(

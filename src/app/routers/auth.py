@@ -1,12 +1,6 @@
 from typing import Annotated
 
-from fastapi import (
-    APIRouter,
-    Depends,
-    HTTPException,
-    status,
-    Request,
-)
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import ORJSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from redis.asyncio import Redis
@@ -15,16 +9,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.app.core import db_helper
 from src.app.core.config import settings
 from src.app.core.exceptions import ExpiredTokenException
-from src.app.core.services.limiter import limiter
 from src.app.core.logger import get_logger
 from src.app.core.redis import get_redis
 from src.app.core.services.auth import (
-    update_password,
+    authenticate_user,
     get_current_auth_user,
     get_current_auth_user_for_refresh,
-    authenticate_user,
+    update_password,
 )
 from src.app.core.services.email import send_welcome_email as send_welcome
+from src.app.core.services.limiter import limiter
 from src.app.core.services.redis import revoke_refresh_token
 from src.app.core.utils.auth import create_response
 from src.app.crud.user import create_user, get_user_by_email

@@ -1,10 +1,8 @@
 from pydantic import PostgresDsn
-from pydantic_settings import (
-    BaseSettings,
-    SettingsConfigDict,
-)
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from src.app.core.constants import BASE_DIR
+
 from .auth import AuthConfig
 from .cache import CacheConfig
 from .cors import CORSConfig

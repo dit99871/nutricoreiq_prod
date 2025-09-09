@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from fastapi import HTTPException
-from jose import jwt, ExpiredSignatureError, JWTError
+from jose import ExpiredSignatureError, JWTError, jwt
 from starlette import status
 
 from src.app.core.config import settings

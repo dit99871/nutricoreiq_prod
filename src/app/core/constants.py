@@ -1,7 +1,8 @@
 from __future__ import annotations
+
 from pathlib import Path
-from fastapi import HTTPException
-from fastapi import status
+
+from fastapi import HTTPException, status
 
 # Base directory of the project (src/app/)
 BASE_DIR = Path(__file__).resolve().parent.parent
