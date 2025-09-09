@@ -207,6 +207,7 @@ deploy:prod:
   before_script:
     - apk add --no-cache openssh-client docker-cli
     - eval $(ssh-agent -s)
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
     - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
