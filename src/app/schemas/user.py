@@ -1,5 +1,7 @@
 from datetime import datetime
-from annotated_types import MinLen, MaxLen
+from typing import Annotated, Literal, Optional
+
+from annotated_types import MaxLen, MinLen
 from pydantic import (
     AfterValidator,
     BeforeValidator,
@@ -8,23 +10,23 @@ from pydantic import (
     SecretStr,
     model_validator,
 )
-from typing import Annotated, Literal, Optional
 
-from .base import BaseSchema, FormSchema
-from src.app.models.user import GoalType, KFALevel
+from src.app.core.constants import (
+    MAX_AGE,
+    MAX_HEIGHT_CM,
+    MAX_WEIGHT_KG,
+    MIN_AGE,
+    MIN_HEIGHT_CM,
+    MIN_WEIGHT_KG,
+)
 from src.app.core.utils.validators import (
     coerce_goal,
     coerce_kfa,
     validate_password_strength,
 )
-from src.app.core.constants import (
-    MIN_AGE,
-    MAX_AGE,
-    MIN_HEIGHT_CM,
-    MAX_HEIGHT_CM,
-    MIN_WEIGHT_KG,
-    MAX_WEIGHT_KG,
-)
+from src.app.models.user import GoalType, KFALevel
+
+from .base import BaseSchema, FormSchema
 
 
 # базовая для input (create/update)
@@ -47,7 +49,7 @@ class UserCreate(UserBaseIn):
     """
 
     password: Annotated[
-        SecretStr,
+        str,
         MinLen(8),
         AfterValidator(validate_password_strength),
     ]

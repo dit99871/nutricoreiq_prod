@@ -126,12 +126,12 @@ def test_negative_values_validation():
     # Проверка отрицательного значения amount
     with pytest.raises(ValidationError) as exc_info:
         NutrientBase(amount=-1, name="Invalid", unit="g")
-    assert "Input should be greater than 0" in str(exc_info.value)
+    assert "Input should be greater than or equal to 0" in str(exc_info.value)
 
     # Проверка отрицательного значения аминокислот
     with pytest.raises(ValidationError) as exc_info:
         AminoAcids(essential=-1.0, cond_essential=0.0, nonessential=0.0)
-    assert "Input should be greater than 0" in str(exc_info.value)
+    assert "Input should be greater than or equal to 0" in str(exc_info.value)
 
 
 # Тесты на валидацию вложенных объектов

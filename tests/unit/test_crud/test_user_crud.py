@@ -57,7 +57,7 @@ def user_create_data():
     return {
         "username": "newuser",
         "email": "newuser@example.com",
-        "password": SecretStr("StrongPass123!"),
+        "password": "StrongPass123!",
     }
 
 
@@ -225,7 +225,6 @@ async def test_create_user_success(user_create_data):
     assert result.id == 1
     assert result.username == user_create_data["username"]
     assert result.email == user_create_data["email"]
-    # Removed the hashed_password assertion since it's part of the model
     mock_session.add.assert_called_once()
     mock_session.commit.assert_called_once()
     mock_session.refresh.assert_called_once()

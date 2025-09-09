@@ -1,0 +1,154 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      rabbitmq:
+        image: rabbitmq:3-management
+        ports:
+          - 5672:5672
+          - 15672:15672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q check_running"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python 3.13
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.13'
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: 1.8.0
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+
+    - name: Install dependencies
+      run: |
+        poetry install --no-interaction --no-root
+        poetry run pip install pytest-cov pytest-asyncio asyncpg
+
+    - name: Run tests
+      env:
+        # Настройки окружения
+        APP_CONFIG__ENV__ENV: "test"
+        
+        # Настройки базы данных
+        POSTGRES_DB: test_db
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: postgres
+        POSTGRES_HOST: localhost
+        POSTGRES_PORT: 5432
+        POSTGRES_SSL_MODE: disable
+        
+        # Настройки JWT
+        APP_CONFIG__AUTH__SECRET_KEY: test-secret-key-for-ci-123
+        APP_CONFIG__AUTH__ALGORITHM: HS256
+        APP_CONFIG__AUTH__ACCESS_TOKEN_EXPIRES: "7"
+        APP_CONFIG__AUTH__REFRESH_TOKEN_EXPIRES: "7"
+        
+        # Настройки Redis
+        REDIS_PORT: 6379
+        REDIS_ADDR: localhost
+        APP_CONFIG__REDIS__URL: "redis://localhost:6379/0"
+        APP_CONFIG__REDIS__SALT: test-salt
+        APP_CONFIG__REDIS__PASSWORD: test-password
+        APP_CONFIG__REDIS__SESSION_TTL: "3600"
+        
+        # Настройки кеширования
+        APP_CONFIG__CACHE__USER_TTL: "3600"
+        
+        # Настройки приложения
+        HTTP_PORT: 80
+        HTTPS_PORT: 443
+        APP_CONFIG__RUN__HOST: "0.0.0.0"
+        APP_CONFIG__RUN__PORT: "8080"
+        
+        # Настройки CORS
+        APP_CONFIG__CORS__ALLOW_ORIGINS: '["*"]'
+        APP_CONFIG__CORS__ALLOW_METHODS: '["GET", "HEAD", "POST", "DELETE"]'
+        APP_CONFIG__CORS__ALLOW_HEADERS: '["Accept", "Authorization", "Content-Type", "X-CSRF-Token"]'
+        APP_CONFIG__CORS__ALLOW_CREDENTIALS: "true"
+        
+        # Настройки лимитов
+        APP_CONFIG__RATE_LIMIT__REGISTER: "1000/minute"
+        APP_CONFIG__RATE_LIMIT__LOGIN: "1000/minute"
+        APP_CONFIG__RATE_LIMIT__PASSWORD_CHANGE: "1000/minute"
+        
+        # Настройки логирования
+        APP_CONFIG__LOGGING__LOG_LEVEL: "INFO"
+        APP_CONFIG__LOGGING__LOG_STAGE: "DEV"
+        
+        # Настройки для работы с БД в тестах
+        APP_CONFIG__DB__URL: "postgresql+asyncpg://postgres:postgres@localhost:5432/test_db"
+        APP_CONFIG__DB__ECHO: "false"
+        
+        # Настройки Loki
+        APP_CONFIG__LOKI__URL: "http://localhost:3100"
+        APP_CONFIG__LOKI__ENABLED: "false"
+        
+        # Настройки почты (обязательные поля с тестовыми значениями)
+        APP_CONFIG__MAIL__HOST: "smtp.example.com"
+        APP_CONFIG__MAIL__PORT: "587"
+        APP_CONFIG__MAIL__BUTTON_LINK: "https://example.com/verify"
+        APP_CONFIG__MAIL__UNSUBSCRIBE_LINK: "https://example.com/unsubscribe"
+        APP_CONFIG__MAIL__USERNAME: "test@example.com"
+        APP_CONFIG__MAIL__PASSWORD: "test-password"
+        APP_CONFIG__MAIL__USE_TLS: "true"
+        
+        # Настройки Sentry (обязательные поля)
+        APP_CONFIG__SENTRY__DSN: "https://test@example.com/123"
+        
+        # Настройки Taskiq
+        APP_CONFIG__TASKIQ__URL: "amqp://guest:guest@localhost:5672//"
+        
+      run: |
+        poetry run pytest --asyncio-mode=auto
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.13
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.13'
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: 1.8.2
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+    - name: Install dependencies
+      run: |
+        poetry install --no-interaction --no-root
+    - name: Run black
+      run: poetry run black --check src/

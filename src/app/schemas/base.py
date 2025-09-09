@@ -1,7 +1,7 @@
+from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, field_serializer
-from datetime import datetime
 
 
 class CustomBaseModel(BaseModel):

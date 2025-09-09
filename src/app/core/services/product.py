@@ -1,10 +1,10 @@
 from fastapi import HTTPException, status
-from sqlalchemy import select, func, or_
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
 from src.app.core.logger import get_logger
-from src.app.models import Product, PendingProduct, ProductNutrient
+from src.app.models import PendingProduct, Product, ProductNutrient
 from src.app.models.utils.product import map_to_schema
 from src.app.schemas.product import (
     ProductDetailResponse,

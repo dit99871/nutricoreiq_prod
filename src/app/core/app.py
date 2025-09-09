@@ -4,11 +4,11 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from prometheus_fastapi_instrumentator import Instrumentator
 
-from src.app.core.services.limiter import limiter
-from src.app.core.middleware import setup_middleware
 from src.app.core.exception_handlers import setup_exception_handlers
-from src.app.routers import routers
+from src.app.core.middleware import setup_middleware
+from src.app.core.services.limiter import limiter
 from src.app.lifespan import lifespan
+from src.app.routers import routers
 
 
 def create_app() -> FastAPI:

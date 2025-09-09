@@ -2,11 +2,12 @@ import datetime
 from enum import Enum
 from typing import Literal
 from uuid import uuid4
+
 from sqlalchemy import CheckConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .mixins import IntIdPkMixin
 from .base import Base
+from .mixins import IntIdPkMixin
 
 
 class UserRole(Enum):
