@@ -188,30 +188,32 @@ build:image:
 # Деплой на продакшен
 deploy:prod:
   stage: deploy
-  image: alpine:3.19
+  image: docker:24.0.6
+  services:
+    - docker:24.0.6-dind
   needs: ["build:image"]
   variables:
     # Переменные для SSH
     SSH_PRIVATE_KEY: $SSH_PRIVATE_KEY
     SSH_HOST: $SSH_HOST
     SSH_USER: $SSH_USER
-    SSH_PORT: $SSH_PORT
+    SSH_PORT: ${SSH_PORT:-22}
     
     # Переменные для Docker
     DOCKER_REGISTRY: $CI_REGISTRY
     DOCKER_IMAGE: $CI_REGISTRY_IMAGE:latest
+    DOCKER_HOST: tcp://docker:2376
+    DOCKER_TLS_CERTDIR: "/certs"
     
     # Путь к проекту на сервере
     DEPLOY_PATH: "/home/deployer/nutricoreiq"
 
   before_script:
-    - echo "Logging to GitLab Container Registry..."
-    - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token --password-stdin $CI_REGISTRY
-    - apk add --no-cache openssh-client docker-cli
-    - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
+    - apk add --no-cache openssh-client
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
     - ssh-keyscan -H $SSH_HOST >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
   
@@ -229,8 +231,13 @@ deploy:prod:
       ssh -p $SSH_PORT $SSH_USER@$SSH_HOST /bin/sh << 'EOF'
         set -e
       
-        # Копируем .env из защищенной директории
-        cp /etc/nutricoreiq/.env $DEPLOY_PATH/.env
+        # Создаем директорию, если не существует
+        mkdir -p $DEPLOY_PATH
+        
+        # Копируем .env из защищенной директории, если существует
+        if [ -f "/etc/nutricoreiq/.env" ]; then
+          cp /etc/nutricoreiq/.env $DEPLOY_PATH/.env
+        fi
       
         # Переходим в директорию проекта
         cd $DEPLOY_PATH
