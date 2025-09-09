@@ -195,6 +195,7 @@ deploy:prod:
     SSH_PRIVATE_KEY: $SSH_PRIVATE_KEY
     SSH_HOST: $SSH_HOST
     SSH_USER: $SSH_USER
+    SSH_PORT: $SSH_PORT
     
     # Переменные для Docker
     DOCKER_REGISTRY: $CI_REGISTRY
@@ -202,73 +203,7 @@ deploy:prod:
     
     # Путь к проекту на сервере
     DEPLOY_PATH: "/home/deployer/nutricoreiq"
-    
-    # Шаблон .env файла
-    ENV_TEMPLATE: |
-      # Настройки Environment
-      APP_CONFIG__ENV__ENV=${APP_CONFIG__ENV__ENV}
-      
-      # Настройки базы данных
-      POSTGRES_DB=${POSTGRES_DB}
-      POSTGRES_USER=${POSTGRES_USER}
-      POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      POSTGRES_HOST=${POSTGRES_HOST}
-      POSTGRES_PORT=${POSTGRES_PORT}
-      APP_CONFIG__DB__URL=${APP_CONFIG__DB__URL}
-      APP_CONFIG__DB__ECHO=${APP_CONFIG__DB__ECHO}
-      
-      # JWT
-      APP_CONFIG__AUTH__SECRET_KEY=${APP_CONFIG__AUTH__SECRET_KEY}
-      APP_CONFIG__AUTH__ALGORITHM=${APP_CONFIG__AUTH__ALGORITHM}
-      APP_CONFIG__AUTH__ACCESS_TOKEN_EXPIRES=${APP_CONFIG__AUTH__ACCESS_TOKEN_EXPIRE_MINUTES}
-      APP_CONFIG__AUTH__REFRESH_TOKEN_EXPIRES=${APP_CONFIG__AUTH__ACCESS_TOKEN_EXPIRE_MINUTES}
-      
-      # Redis
-      APP_CONFIG__REDIS__URL=${APP_CONFIG__REDIS__HOST}:${APP_CONFIG__REDIS__PORT}
-      APP_CONFIG__REDIS__SALT=${APP_CONFIG__REDIS__PASSWORD}
-      APP_CONFIG__REDIS__PASSWORD=${APP_CONFIG__REDIS__PASSWORD}
-      APP_CONFIG__REDIS__SESSION_TTL=${APP_CONFIG__CACHE__USER_TTL}
-      
-      # Кеширование
-      APP_CONFIG__CACHE__USER_TTL=${APP_CONFIG__CACHE__USER_TTL}
-      
-      # Настройки приложения
-      APP_CONFIG__RUN__HOST=${APP_CONFIG__RUN__HOST}
-      APP_CONFIG__RUN__PORT=${APP_CONFIG__RUN__PORT}
-      
-      # CORS
-      APP_CONFIG__CORS__ALLOW_ORIGINS=${APP_CONFIG__CORS__ALLOW_ORIGINS}
-      APP_CONFIG__CORS__ALLOW_METHODS=${APP_CONFIG__CORS__ALLOW_METHODS}
-      APP_CONFIG__CORS__ALLOW_HEADERS=${APP_CONFIG__CORS__ALLOW_HEADERS}
-      APP_CONFIG__CORS__ALLOW_CREDENTIALS=${APP_CONFIG__CORS__ALLOW_CREDENTIALS}
-      
-      # Лимиты
-      APP_CONFIG__RATE_LIMIT__REGISTER=${APP_CONFIG__RATE_LIMIT__REGISTER}
-      APP_CONFIG__RATE_LIMIT__LOGIN=${APP_CONFIG__RATE_LIMIT__LOGIN}
-      APP_CONFIG__RATE_LIMIT__PASSWORD_CHANGE=${APP_CONFIG__RATE_LIMIT__PASSWORD_CHANGE}
-      
-      # Почта
-      APP_CONFIG__MAIL__HOST=${APP_CONFIG__MAIL__HOST}
-      APP_CONFIG__MAIL__PORT=${APP_CONFIG__MAIL__PORT}
-      APP_CONFIG__MAIL__BUTTON_LINK=${APP_CONFIG__MAIL__BUTTON_LINK}
-      APP_CONFIG__MAIL__UNSUBSCRIBE_LINK=${APP_CONFIG__MAIL__UNSUBSCRIBE_LINK}
-      APP_CONFIG__MAIL__USERNAME=${APP_CONFIG__MAIL__USERNAME}
-      APP_CONFIG__MAIL__PASSWORD=${APP_CONFIG__MAIL__PASSWORD}
-      APP_CONFIG__MAIL__USE_TLS=${APP_CONFIG__MAIL__USE_TLS}
-      
-      # RabbitMQ
-      RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
-      RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
-      APP_CONFIG__TASKIQ__URL=${APP_CONFIG__TASKIQ__BROKER_URL}
-      
-      # Мониторинг
-      APP_CONFIG__SENTRY__DSN=${APP_CONFIG__SENTRY__DSN}
-      APP_CONFIG__LOKI__URL=${APP_CONFIG__LOKI__URL}
-      
-      # Логирование
-      APP_CONFIG__LOGGING__LOG_LEVEL=${APP_CONFIG__LOGGING__LOG_LEVEL}
-      APP_CONFIG__LOGGING__LOG_STAGE=${APP_CONFIG__LOGGING__LOG_STAGE}
-  
+
   before_script:
     - apk add --no-cache openssh-client docker-cli
     - eval $(ssh-agent -s)
@@ -289,42 +224,37 @@ deploy:prod:
       done
       
       # Деплой на сервер
-      ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST /bin/sh << EOF
+      ssh -p $SSH_PORT $SSH_USER@$SSH_HOST /bin/sh << 'EOF'
         set -e
-        
-        # Создаем директорию, если её нет
-        mkdir -p $DEPLOY_PATH
-        
-        # Создаем .env файл
-        cat > $DEPLOY_PATH/.env << 'ENV_EOF'
-        $ENV_TEMPLATE
-        ENV_EOF
-        
-        # Логинимся в Docker Registry
-        echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$DOCKER_REGISTRY"
-        
+      
+        # Копируем .env из защищенной директории
+        cp /etc/nutricoreiq/.env $DEPLOY_PATH/.env
+      
         # Переходим в директорию проекта
         cd $DEPLOY_PATH
-        
+      
+        # Логинимся в Docker Registry
+        echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$DOCKER_REGISTRY"
+      
         # Останавливаем и удаляем старые контейнеры
         docker-compose -f docker-compose.prod.yml down || true
-        
+      
         # Подтягиваем новый образ
         docker pull $DOCKER_IMAGE
-        
+      
         # Запускаем сервисы
         docker-compose -f docker-compose.prod.yml up -d
-        
+      
         # Очищаем неиспользуемые образы
         docker image prune -f
-        
+      
         # Проверяем здоровье сервиса
         echo "Checking service health..."
         if ! curl -sSf http://localhost:8080/health > /dev/null; then
           echo "ERROR: Service health check failed"
           exit 1
         fi
-        
+      
         echo "Deployment completed successfully"
       EOF
   
