@@ -187,6 +187,9 @@ build:image:
 
 # Деплой на продакшен
 deploy:prod:
+  tags:
+    - production
+    - deploy
   stage: deploy
   image: docker:24.0.6
   services:
