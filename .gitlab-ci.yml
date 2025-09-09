@@ -205,9 +205,10 @@ deploy:prod:
     DEPLOY_PATH: "/home/deployer/nutricoreiq"
 
   before_script:
+    - echo "Logging to GitLab Container Registry..."
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
     - apk add --no-cache openssh-client docker-cli
     - eval $(ssh-agent -s)
-    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
     - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
