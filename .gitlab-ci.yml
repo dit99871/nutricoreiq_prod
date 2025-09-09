@@ -7,63 +7,77 @@ services:
 
 # Общие переменные
 variables:
-  # Настройки окружения
-  APP_ENV: "prod"
-  
-  # Настройки базы данных
-  POSTGRES_DB: "test_db"
-  POSTGRES_USER: "runner"
-  POSTGRES_PASSWORD: ""
-  POSTGRES_HOST: "postgres"
-  POSTGRES_PORT: "5432"
-  DATABASE_URL: "postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
-  
-  # Настройки Redis
-  REDIS_URL: "redis://redis:6379/0"
-  
-  # Настройки приложения
-  APP_CONFIG__ENV__ENV: "${APP_ENV}"
-  APP_CONFIG__DB__URL: "${DATABASE_URL}"
-  APP_CONFIG__DB__ECHO: "0"
-  
-  # Аутентификация
-  APP_CONFIG__AUTH__SECRET_KEY: "test-secret-key"
-  APP_CONFIG__AUTH__ALGORITHM: "HS256"
-  APP_CONFIG__AUTH__ACCESS_TOKEN_EXPIRE_MINUTES: "30"
-  
-  # Redis
-  APP_CONFIG__REDIS__HOST: "redis"
-  APP_CONFIG__REDIS__PORT: "6379"
-  APP_CONFIG__REDIS__PASSWORD: ""
-  
-  # Почта
-  APP_CONFIG__MAIL__HOST: "smtp.example.com"
-  APP_CONFIG__MAIL__PORT: "587"
-  APP_CONFIG__MAIL__USERNAME: "user@example.com"
-  APP_CONFIG__MAIL__PASSWORD: "password"
-  APP_CONFIG__MAIL_FROM: "noreply@example.com"
-  
-  # Sentry
-  APP_CONFIG__SENTRY__DSN: ""
-  
-  # Loki
-  APP_CONFIG__LOKI__URL: "http://localhost:3100"
-  
-  # Taskiq
-  APP_CONFIG__TASKIQ__BROKER_URL: "amqp://guest:guest@rabbitmq:5672//"
-  
-  # Кеширование
-  APP_CONFIG__CACHE__USER_TTL: "3600"
-  
-  # Настройки CORS (для тестов)
-  APP_CONFIG__CORS__ALLOW_ORIGINS: '["*"]'
-  APP_CONFIG__CORS__ALLOW_METHODS: '["GET", "HEAD", "POST", "DELETE"]'
-  APP_CONFIG__CORS__ALLOW_HEADERS: '["Accept", "Authorization", "Content-Type"]'
-  APP_CONFIG__CORS__ALLOW_CREDENTIALS: "true"
-  
-  # Логирование
-  APP_CONFIG__LOGGING__LOG_LEVEL: "INFO"
-  APP_CONFIG__LOGGING__LOG_STAGE: "${APP_ENV}"
+    # Настройки окружения
+    APP_CONFIG__ENV__ENV: "test"
+
+    # Настройки базы данных
+    POSTGRES_DB: test_db
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: postgres
+    POSTGRES_HOST: localhost
+    POSTGRES_PORT: 5432
+    POSTGRES_SSL_MODE: disable
+
+    # Настройки JWT
+    APP_CONFIG__AUTH__SECRET_KEY: test-secret-key-for-ci-123
+    APP_CONFIG__AUTH__ALGORITHM: HS256
+    APP_CONFIG__AUTH__ACCESS_TOKEN_EXPIRES: "7"
+    APP_CONFIG__AUTH__REFRESH_TOKEN_EXPIRES: "7"
+
+    # Настройки Redis
+    REDIS_PORT: 6379
+    REDIS_ADDR: localhost
+    APP_CONFIG__REDIS__URL: "redis://localhost:6379/0"
+    APP_CONFIG__REDIS__SALT: test-salt
+    APP_CONFIG__REDIS__PASSWORD: test-password
+    APP_CONFIG__REDIS__SESSION_TTL: "3600"
+
+    # Настройки кеширования
+    APP_CONFIG__CACHE__USER_TTL: "3600"
+
+    # Настройки приложения
+    HTTP_PORT: 80
+    HTTPS_PORT: 443
+    APP_CONFIG__RUN__HOST: "0.0.0.0"
+    APP_CONFIG__RUN__PORT: "8080"
+
+    # Настройки CORS
+    APP_CONFIG__CORS__ALLOW_ORIGINS: '["*"]'
+    APP_CONFIG__CORS__ALLOW_METHODS: '["GET", "HEAD", "POST", "DELETE"]'
+    APP_CONFIG__CORS__ALLOW_HEADERS: '["Accept", "Authorization", "Content-Type", "X-CSRF-Token"]'
+    APP_CONFIG__CORS__ALLOW_CREDENTIALS: "true"
+
+    # Настройки лимитов
+    APP_CONFIG__RATE_LIMIT__REGISTER: "1000/minute"
+    APP_CONFIG__RATE_LIMIT__LOGIN: "1000/minute"
+    APP_CONFIG__RATE_LIMIT__PASSWORD_CHANGE: "1000/minute"
+
+    # Настройки логирования
+    APP_CONFIG__LOGGING__LOG_LEVEL: "INFO"
+    APP_CONFIG__LOGGING__LOG_STAGE: "DEV"
+
+    # Настройки для работы с БД в тестах
+    APP_CONFIG__DB__URL: "postgresql+asyncpg://postgres:postgres@localhost:5432/test_db"
+    APP_CONFIG__DB__ECHO: "false"
+
+    # Настройки Loki
+    APP_CONFIG__LOKI__URL: "http://localhost:3100"
+    APP_CONFIG__LOKI__ENABLED: "false"
+
+    # Настройки почты (обязательные поля с тестовыми значениями)
+    APP_CONFIG__MAIL__HOST: "smtp.example.com"
+    APP_CONFIG__MAIL__PORT: "587"
+    APP_CONFIG__MAIL__BUTTON_LINK: "https://example.com/verify"
+    APP_CONFIG__MAIL__UNSUBSCRIBE_LINK: "https://example.com/unsubscribe"
+    APP_CONFIG__MAIL__USERNAME: "test@example.com"
+    APP_CONFIG__MAIL__PASSWORD: "test-password"
+    APP_CONFIG__MAIL__USE_TLS: "true"
+
+    # Настройки Sentry (обязательные поля)
+    APP_CONFIG__SENTRY__DSN: "https://test@example.com/123"
+
+    # Настройки Taskiq
+    APP_CONFIG__TASKIQ__URL: "amqp://guest:guest@localhost:5672//"
 
 # Кэширование зависимостей
 cache:
