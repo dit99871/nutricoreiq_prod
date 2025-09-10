@@ -290,11 +290,18 @@ deploy:prod:
   after_script:
     - |
       echo "=== Статус выполнения: $CI_JOB_STATUS ==="
-      # Отправка уведомления в Slack/TG/Email
-      echo "Деплой не удался! Проверьте логи для деталей."
+      
+      # Check if the job failed
+      if [ "$CI_JOB_STATUS" != "success" ]; then
+        echo "Деплой не удался! Проверьте логи для деталей."
         echo "Последние логи:"
-        tail -n 50 /var/log/gitlab-runner/gitlab-runner.log || echo "Не удалось прочитать логи"
-        # Здесь можно добавить отправку уведомлений
+        if [ -f "/var/log/gitlab-runner/gitlab-runner.log" ]; then
+          tail -n 50 /var/log/gitlab-runner/gitlab-runner.log
+        else
+          echo "Файл логов не найден. Проверьте путь: /var/log/gitlab-runner/gitlab-runner.log"
+        fi
+      else
+        echo "Деплой успешно завершен!"
       fi
   
   # Только для ветки main и с ручным подтверждением
