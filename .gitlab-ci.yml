@@ -191,10 +191,6 @@ deploy:prod:
     - production
     - deploy
   stage: deploy
-  image: docker:24.0.6
-  services:
-    - docker:24.0.6-dind
-  needs: ["build:image"]
   variables:
     # Переменные для SSH
     SSH_PRIVATE_KEY: $SSH_PRIVATE_KEY
@@ -205,24 +201,24 @@ deploy:prod:
     # Переменные для Docker
     DOCKER_REGISTRY: $CI_REGISTRY
     DOCKER_IMAGE: $CI_REGISTRY_IMAGE:latest
-    DOCKER_HOST: tcp://docker:2376
-    DOCKER_TLS_CERTDIR: "/certs"
     
     # Путь к проекту на сервере
     DEPLOY_PATH: "/home/deployer/nutricoreiq"
 
   before_script:
-    - apk add --no-cache openssh-client
+    - apt-get update && apt-get install -y openssh-client
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
-    - eval $(ssh-agent -s)
     - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
     - chmod 600 ~/.ssh/id_ed25519
+    - eval $(ssh-agent -s)
     - ssh-add ~/.ssh/id_ed25519
     - ssh-keyscan -H $SSH_HOST >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
   
   script:
+    - docker --version
+    - docker-compose --version
     - |
       # Проверка обязательных переменных
       for var in SSH_PRIVATE_KEY SSH_HOST SSH_USER DOCKER_REGISTRY DOCKER_IMAGE; do
