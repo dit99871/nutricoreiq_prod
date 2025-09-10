@@ -217,9 +217,21 @@ deploy:prod:
     - chmod 644 ~/.ssh/known_hosts
   
   script:
+    - echo "=== Проверка окружения ==="
+    - whoami
+    - pwd
+    - ls -la
+    - echo "=== Проверка Docker ==="
     - docker --version
     - docker-compose --version
+    - echo "=== Проверка SSH-ключа ==="
+    - ls -la ~/.ssh/
+    - echo "=== Проверка подключения к серверу ==="
+    - echo "SSH_PORT: $SSH_PORT"
+    - echo "SSH_USER: $SSH_USER"
+    - echo "SSH_HOST: $SSH_HOST"
     - ssh -v -p $SSH_PORT $SSH_USER@$SSH_HOST "echo 'SSH connection successful'"
+    - echo "=== Проверка завершена ==="
     - |
       # Проверка обязательных переменных
       for var in SSH_PRIVATE_KEY SSH_HOST SSH_USER DOCKER_REGISTRY DOCKER_IMAGE; do
