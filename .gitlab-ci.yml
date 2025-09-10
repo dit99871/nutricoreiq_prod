@@ -220,6 +220,7 @@ deploy:prod:
   script:
     - |
       set -x  # Включаем отладочный вывод
+      echo "=== Начало деплоя ==="
       echo "Текущий пользователь: $(whoami)"
       echo "Текущая директория: $(pwd)"
       echo "Содержимое директории:"
@@ -236,55 +237,93 @@ deploy:prod:
       echo "=== Попытка подключения по SSH ==="
       ssh -v -p ${SSH_PORT:-22} $SSH_USER@$SSH_HOST "echo 'SSH connection successful'"
       echo "=== Подключение успешно установлено ==="
-      echo "=== Проверка завершена ==="
-    - |
+
       # Проверка обязательных переменных
       for var in SSH_PRIVATE_KEY SSH_HOST SSH_USER DOCKER_REGISTRY DOCKER_IMAGE; do
-        if [ -z "${!var}" ]; then
-          echo "ERROR: Required variable $var is not set"
-          exit 1
-        fi
+        echo "Проверка переменной $var: ${!var:0:5}..."  # Выводим только первые 5 символов значения
       done
       echo "=== Все переменные проверены ==="
       
       # Деплой на сервер
-      ssh -p $SSH_PORT $SSH_USER@$SSH_HOST /bin/sh << 'EOF'
+      echo "=== Начало выполнения команд на удаленном сервере ==="
+      ssh -v -p $SSH_PORT $SSH_USER@$SSH_HOST /bin/sh -x << 'EOF'
         set -e
-      
+        echo "Текущая директория на сервере: $(pwd)"
+        echo "Содержимое домашней директории:"
+        ls -la ~/
+        
         # Создаем директорию, если не существует
-        mkdir -p $DEPLOY_PATH
+        echo "Создаем директорию $DEPLOY_PATH"
+        mkdir -p $DEPLOY_PATH || {
+          echo "Ошибка при создании директории $DEPLOY_PATH"
+          exit 1
+        }
+        
+        # Проверяем доступ к Docker
+        echo "Проверка доступа к Docker:"
+        docker ps || {
+          echo "Ошибка при выполнении docker ps. Проверьте права пользователя $SSH_USER в группе docker"
+          exit 1
+        }
         
         # Копируем .env из защищенной директории, если существует
         if [ -f "/etc/nutricoreiq/.env" ]; then
-          cp /etc/nutricoreiq/.env $DEPLOY_PATH/.env
-        fi
+          echo "Копируем .env файл"
+          cp /etc/nutricoreiq/.env $DEPLOY_PATH/.env || {
+            echo "Ошибка при копировании .env файла"
+            exit 1
+          }
+        else
+          echo "Файл /etc/nutricoreiq/.env не найден, используется существующий .env"
+        }
       
         # Переходим в директорию проекта
-        cd $DEPLOY_PATH
+        echo "Переходим в директорию $DEPLOY_PATH"
+        cd $DEPLOY_PATH || {
+          echo "Ошибка при переходе в директорию $DEPLOY_PATH"
+          exit 1
+        }
       
         # Логинимся в Docker Registry
-        echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$DOCKER_REGISTRY"
+        echo "Логинимся в Docker Registry"
+        echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$DOCKER_REGISTRY" || {
+          echo "Ошибка при логине в Docker Registry"
+          exit 1
+        }
       
         # Останавливаем и удаляем старые контейнеры
-        docker-compose -f docker-compose.prod.yml down || true
+        echo "Останавливаем и удаляем старые контейнеры"
+        docker-compose -f docker-compose.prod.yml down || {
+          echo "Предупреждение: не удалось остановить старые контейнеры, продолжаем..."
+        }
       
         # Подтягиваем новый образ
-        docker pull $DOCKER_IMAGE
+        echo "Подтягиваем новый образ $DOCKER_IMAGE"
+        docker pull $DOCKER_IMAGE || {
+          echo "Ошибка при загрузке образа $DOCKER_IMAGE"
+          exit 1
+        }
       
         # Запускаем сервисы
-        docker-compose -f docker-compose.prod.yml up -d
+        echo "Запускаем сервисы"
+        docker-compose -f docker-compose.prod.yml up -d || {
+          echo "Ошибка при запуске сервисов"
+          exit 1
+        }
       
         # Очищаем неиспользуемые образы
+        echo "Очищаем неиспользуемые образы"
         docker image prune -f
       
         # Проверяем здоровье сервиса
-        echo "Checking service health..."
+        echo "Проверяем здоровье сервиса..."
         if ! curl -sSf http://localhost:8080/health > /dev/null; then
-          echo "ERROR: Service health check failed"
+          echo "ОШИБКА: Не удалось проверить здоровье сервиса"
+          docker-compose -f docker-compose.prod.yml logs || true
           exit 1
         fi
       
-        echo "Deployment completed successfully"
+        echo "Деплой успешно завершен!"
       EOF
   
   after_script:
