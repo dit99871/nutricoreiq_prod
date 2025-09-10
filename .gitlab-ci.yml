@@ -206,7 +206,7 @@ deploy:prod:
     DEPLOY_PATH: "/home/deployer/nutricoreiq"
 
   before_script:
-    - apt-get update && apt-get install -y openssh-client
+    - command -v ssh || (echo "ssh not found" && exit 1)
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
     - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
@@ -219,6 +219,7 @@ deploy:prod:
   script:
     - docker --version
     - docker-compose --version
+    - ssh -v -p $SSH_PORT $SSH_USER@$SSH_HOST "echo 'SSH connection successful'"
     - |
       # Проверка обязательных переменных
       for var in SSH_PRIVATE_KEY SSH_HOST SSH_USER DOCKER_REGISTRY DOCKER_IMAGE; do
