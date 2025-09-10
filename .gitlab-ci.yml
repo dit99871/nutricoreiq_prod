@@ -334,10 +334,7 @@ deploy:prod:
       if [ "$CI_JOB_STATUS" != "success" ]; then
         echo "Деплой не удался! Проверьте логи для деталей."
         echo "Последние логи:"
-        if [ -f "/var/log/gitlab-runner/gitlab-runner.log" ]; then
-          tail -n 50 /var/log/gitlab-runner/gitlab-runner.log
-        else
-          echo "Файл логов не найден. Проверьте путь: /var/log/gitlab-runner/gitlab-runner.log"
+        journalctl -u gitlab-runner -n 50   
         fi
       else
         echo "Деплой успешно завершен!"
