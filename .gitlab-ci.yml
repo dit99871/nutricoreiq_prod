@@ -209,10 +209,17 @@ deploy:prod:
     - command -v ssh || (echo "ssh not found" && exit 1)
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
-    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
     - chmod 600 ~/.ssh/id_ed25519
     - eval $(ssh-agent -s)
     - ssh-add ~/.ssh/id_ed25519
+    - |
+      # Проверка переменных перед keyscan
+      if [ -z "$SSH_HOST" ] || [ -z "$SSH_PORT" ]; then
+        echo "ERROR: SSH_HOST or SSH_PORT not set!"
+        exit 1
+      fi
+      echo "SSH_HOST:  $SSH_HOST, SSH_PORT: $SSH_PORT"
     - ssh-keyscan -H $SSH_HOST >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
     - echo "=== Конец before_script ==="
