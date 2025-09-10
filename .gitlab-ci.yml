@@ -215,12 +215,14 @@ deploy:prod:
     - ssh-add ~/.ssh/id_ed25519
     - ssh-keyscan -H $SSH_HOST >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
+    - echo "=== Конец before_script ==="
   
   script:
     - |
-      echo "=== Проверка окружения ==="
-      whoami
-      pwd
+      set -x  # Включаем отладочный вывод
+      echo "Текущий пользователь: $(whoami)"
+      echo "Текущая директория: $(pwd)"
+      echo "Содержимое директории:"
       ls -la
       echo "=== Проверка Docker ==="
       docker --version
@@ -231,7 +233,9 @@ deploy:prod:
       echo "SSH_PORT: ${SSH_PORT:-22}"
       echo "SSH_USER: $SSH_USER"
       echo "SSH_HOST: $SSH_HOST"
+      echo "=== Попытка подключения по SSH ==="
       ssh -v -p ${SSH_PORT:-22} $SSH_USER@$SSH_HOST "echo 'SSH connection successful'"
+      echo "=== Подключение успешно установлено ==="
       echo "=== Проверка завершена ==="
     - |
       # Проверка обязательных переменных
@@ -241,6 +245,7 @@ deploy:prod:
           exit 1
         fi
       done
+      echo "=== Все переменные проверены ==="
       
       # Деплой на сервер
       ssh -p $SSH_PORT $SSH_USER@$SSH_HOST /bin/sh << 'EOF'
@@ -284,9 +289,11 @@ deploy:prod:
   
   after_script:
     - |
+      echo "=== Статус выполнения: $CI_JOB_STATUS ==="
       # Отправка уведомления в Slack/TG/Email
-      if [ "$CI_JOB_STATUS" = "failed" ]; then
-        echo "Deployment failed! Check the logs for details."
+      echo "Деплой не удался! Проверьте логи для деталей."
+        echo "Последние логи:"
+        tail -n 50 /var/log/gitlab-runner/gitlab-runner.log || echo "Не удалось прочитать логи"
         # Здесь можно добавить отправку уведомлений
       fi
   
