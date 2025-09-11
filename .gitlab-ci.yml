@@ -203,7 +203,7 @@ deploy:prod:
     DOCKER_IMAGE: $CI_REGISTRY_IMAGE:latest
     
     # Путь к проекту на сервере
-    DEPLOY_PATH: "/home/deployer/nutricoreiq"
+    DEPLOY_PATH: $DEPLOY_PATH
 
   before_script:
     - command -v ssh || (echo "ssh not found" && exit 1)
@@ -253,7 +253,7 @@ deploy:prod:
       
       # Деплой на сервер
       echo "=== Начало выполнения команд на удаленном сервере ==="
-      ssh -v -p $SSH_PORT $SSH_USER@$SSH_HOST /bin/sh -x << 'EOF'
+      ssh -v -p $SSH_PORT $SSH_USER@$SSH_HOST /bin/sh -x << EOF
         set -e
         echo "Текущая директория на сервере: $(pwd)"
         echo "Содержимое домашней директории:"
