@@ -3,7 +3,6 @@ image: python:3.13
 services:
   - postgres:17
   - redis:alpine
-  - rabbitmq:3-management
 
 # Общие переменные
 variables:
