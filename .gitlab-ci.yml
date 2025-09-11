@@ -272,7 +272,7 @@ deploy:prod:
           exit 1
         fi
         echo "Деплой успешно завершен!"
-     EOF
+      EOF
 
   after_script:
     # Проверка статуса деплоя
