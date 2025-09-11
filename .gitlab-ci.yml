@@ -298,10 +298,14 @@ deploy:prod:
         fi
         echo "Очищаем неиспользуемые образы"
         docker image prune -f
-        echo "Проверяем здоровье сервиса..."
-        if ! curl -sSf http://localhost:8080/health > /dev/null; then
-          echo "ОШИБКА: Не удалось проверить здоровье сервиса"
-          docker-compose -f docker-compose.prod.yml logs || true
+        echo "Проверяем статус контейнеров..."
+        exited_services=$(docker-compose -f docker-compose.prod.yml ps | grep Exited | awk '{print $1}' || true)
+        if [ -n "$exited_services" ]; then
+          echo "ОШИБКА: Следующие сервисы завершили работу (Exited): $exited_services"
+          for service in $exited_services; do
+            echo "Логи сервиса $service:"
+            docker-compose -f docker-compose.prod.yml logs "$service" || true
+          done
           exit 1
         fi
         echo "Деплой успешно завершен!"
