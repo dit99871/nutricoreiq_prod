@@ -3,7 +3,6 @@ image: python:3.13
 services:
   - postgres:17
   - redis:alpine
-  - rabbitmq:3-management
 
 # Общие переменные
 variables:
@@ -94,31 +93,28 @@ stages:
   - deploy
 
 before_script:
+  # Установка зависимостей
+  - python -m pip install --upgrade pip
+  - pip install poetry
+  - poetry config virtualenvs.create true
+  - poetry config virtualenvs.in-project true
+  - poetry install --no-interaction --no-root
+  # Ожидание готовности PostgreSQL
   - |
-    # Установка зависимостей
-    python -m pip install --upgrade pip
-    pip install poetry
-    poetry config virtualenvs.create true
-    poetry config virtualenvs.in-project true
-    poetry install --no-interaction --no-root
-    
-    # Ожидание PostgreSQL
     echo "Waiting for PostgreSQL to be ready..."
     for i in {1..30}; do
       if pg_isready -h $POSTGRES_HOST -U $POSTGRES_USER; then
         echo "PostgreSQL is ready"
         break
       fi
-      echo "Waiting for PostgreSQL..."
       sleep 1
     done
-    
-    # Создание тестовой БД
-    psql -h $POSTGRES_HOST -U $POSTGRES_USER -c "CREATE DATABASE $POSTGRES_DB;" || true
+  # Создание тестовой базы данных
+  - psql -h $POSTGRES_HOST -U $POSTGRES_USER -c "CREATE DATABASE $POSTGRES_DB;" || true
 
-# Тесты
 .test:template: &test_template
   script:
+    # Запуск тестов
     - poetry run pytest --asyncio-mode=auto --cov=src --cov-report=xml
   coverage: '/^TOTAL.+\s+(\d+%)$/'
   artifacts:
@@ -160,22 +156,19 @@ build:image:
     DOCKER_TLS_CERTDIR: "/certs"
   before_script: []
   script:
+    # Проверка переменных и логин в Docker Registry
     - |
-      # Проверка обязательных переменных
       if [ -z "$CI_REGISTRY" ] || [ -z "$CI_REGISTRY_USER" ] || [ -z "$CI_REGISTRY_PASSWORD" ]; then
         echo "ERROR: Docker registry credentials not set"
         exit 1
       fi
-      
-      # Логин в registry
       echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
-      
-      # Сборка и пуш образа
+    # Сборка и пуш Docker-образа
+    - |
       TAG=${CI_COMMIT_REF_SLUG:-latest}
       if [ "$CI_COMMIT_REF_NAME" = "main" ]; then
         TAG="latest"
       fi
-      
       docker build -t "$CI_REGISTRY_IMAGE:$TAG" .
       docker push "$CI_REGISTRY_IMAGE:$TAG"
   only:
@@ -185,94 +178,114 @@ build:image:
   except:
     - tags
 
-# Деплой на продакшен
+# Деплой на прод
 deploy:prod:
+  tags:
+    - production
+    - deploy
   stage: deploy
-  image: alpine:3.19
-  needs: ["build:image"]
   variables:
     # Переменные для SSH
     SSH_PRIVATE_KEY: $SSH_PRIVATE_KEY
     SSH_HOST: $SSH_HOST
     SSH_USER: $SSH_USER
-    SSH_PORT: $SSH_PORT
+    SSH_PORT: ${SSH_PORT:-22}
 
     # Переменные для Docker
     DOCKER_REGISTRY: $CI_REGISTRY
     DOCKER_IMAGE: $CI_REGISTRY_IMAGE:latest
 
     # Путь к проекту на сервере
-    DEPLOY_PATH: "/home/deployer/nutricoreiq"
+    DEPLOY_PATH: $DEPLOY_PATH
 
   before_script:
-    - apk add --no-cache openssh-client docker-cli
-    - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
+    # Настройка SSH
+    - command -v ssh || (echo "Ошибка - ssh не установлен" && exit 1)
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
-    - ssh-keyscan -H $SSH_HOST >> ~/.ssh/known_hosts
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
+    - chmod 600 ~/.ssh/id_ed25519
+    - eval $(ssh-agent -s)
+    - ssh-add ~/.ssh/id_ed25519
+
+    # Проверка SSH-переменных и настройка known_hosts
+    - |
+      if [ -z "$SSH_HOST" ] || [ -z "$SSH_PORT" ]; then
+        echo "ERROR: SSH_HOST or SSH_PORT not set!"
+        exit 1
+      fi
+    - ssh-keyscan -p $SSH_PORT -H $SSH_HOST >> ~/.ssh/known_hosts 2>/dev/null
     - chmod 644 ~/.ssh/known_hosts
 
   script:
+    # Деплой на сервер
     - |
-      # Проверка обязательных переменных
-      for var in SSH_PRIVATE_KEY SSH_HOST SSH_USER DOCKER_REGISTRY DOCKER_IMAGE; do
-        if [ -z "${!var}" ]; then
-          echo "ERROR: Required variable $var is not set"
-          exit 1
-        fi
-      done
-      
-      # Деплой на сервер
-      ssh -p $SSH_PORT $SSH_USER@$SSH_HOST /bin/sh << 'EOF'
+      ssh -p $SSH_PORT $SSH_USER@$SSH_HOST /bin/sh << EOF
         set -e
-      
-        # Копируем .env из защищенной директории
-        cp /etc/nutricoreiq/.env $DEPLOY_PATH/.env
-      
-        # Переходим в директорию проекта
-        cd $DEPLOY_PATH
-      
-        # Логинимся в Docker Registry
-        echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$DOCKER_REGISTRY"
-      
-        # Останавливаем и удаляем старые контейнеры
-        docker-compose -f docker-compose.prod.yml down || true
-      
-        # Подтягиваем новый образ
-        docker pull $DOCKER_IMAGE
-      
-        # Запускаем сервисы
-        docker-compose -f docker-compose.prod.yml up -d
-      
-        # Очищаем неиспользуемые образы
-        docker image prune -f
-      
-        # Проверяем здоровье сервиса
-        echo "Checking service health..."
-        if ! curl -sSf http://localhost:8080/health > /dev/null; then
-          echo "ERROR: Service health check failed"
+        # Создание директории проекта
+        if ! mkdir -p "$DEPLOY_PATH"; then
+          echo "ОШИБКА: Не удалось создать директорию $DEPLOY_PATH"
           exit 1
         fi
-      
-        echo "Deployment completed successfully"
+        # Проверка доступа к Docker
+        if ! docker ps > /dev/null; then
+          echo "ОШИБКА: Нет доступа к Docker. Проверьте права пользователя $SSH_USER в группе docker"
+          exit 1
+        fi
+        # Копирование .env файла, если он существует
+        if [ -f "/etc/nutricoreiq/.env" ]; then
+          if ! cp /etc/nutricoreiq/.env "$DEPLOY_PATH/.env"; then
+            echo "ОШИБКА: Не удалось скопировать .env файл"
+            exit 1
+          fi
+        fi
+        # Переход в директорию проекта
+        cd "$DEPLOY_PATH" || { echo "ОШИБКА: Не удалось перейти в директорию $DEPLOY_PATH"; exit 1; }
+        # Логин в Docker Registry
+        if ! echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$DOCKER_REGISTRY"; then
+          echo "ОШИБКА: Не удалось войти в Docker Registry"
+          exit 1
+        fi
+        # Остановка старых контейнеров
+        docker-compose -f docker-compose.prod.yml down || echo "Предупреждение: не удалось остановить старые контейнеры"
+        # Загрузка нового Docker-образа
+        if ! docker pull "$DOCKER_IMAGE"; then
+          echo "ОШИБКА: Не удалось загрузить образ $DOCKER_IMAGE"
+          exit 1
+        fi
+        # Запуск сервисов
+        if ! docker-compose -f docker-compose.prod.yml up -d; then
+          echo "ОШИБКА: Не удалось запустить сервисы"
+          exit 1
+        fi
+        # Очистка неиспользуемых образов
+        docker image prune -f
+        # Проверка статуса контейнеров
+        exited_services=\$(docker-compose -f docker-compose.prod.yml ps | grep Exited | awk '{print \$1}' || true)
+        if [ -n "\$exited_services" ]; then
+          echo "ОШИБКА: Следующие сервисы завершили работу (Exited): \$exited_services"
+          for service in \$exited_services; do
+            echo "Логи сервиса \$service:"
+            docker-compose -f docker-compose.prod.yml logs "\$service" || true
+          done
+          exit 1
+        fi
+        echo "Деплой успешно завершен!"
       EOF
 
   after_script:
+    # Проверка статуса деплоя
     - |
-      # Отправка уведомления в Slack/TG/Email
-      if [ "$CI_JOB_STATUS" = "failed" ]; then
-        echo "Deployment failed! Check the logs for details."
-        # Здесь можно добавить отправку уведомлений
+      if [ "$CI_JOB_STATUS" != "success" ]; then
+        echo "ОШИБКА: Деплой не удался! Проверьте логи для деталей."
+      else
+        echo "Деплой успешно завершен!"
       fi
-
-  # Только для ветки main и с ручным подтверждением
   only:
     - main
   when: manual
   allow_failure: false
 
-# Уведомления о падении пайплайна
 workflow:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
