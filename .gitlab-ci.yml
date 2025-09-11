@@ -201,7 +201,7 @@ deploy:prod:
 
   before_script:
     # Настройка SSH
-    - command -v ssh || (echo "Ошибка: ssh не установлен" && exit 1)
+    - command -v ssh || (echo "Ошибка - ssh не установлен" && exit 1)
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
     - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
