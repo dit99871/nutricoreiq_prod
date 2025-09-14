@@ -570,7 +570,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     const formData = new FormData(editForm);
                     const jsonData = {};
                     formData.forEach((value, key) => {
-                        jsonData[key] = ['age', 'height', 'weight'].includes(key) && value ? Number(value) : value || null;
+                        // Преобразуем числовые поля в числа
+                        if (['age', 'height', 'weight', 'kfa'].includes(key) && value) {
+                            jsonData[key] = Number(value);
+                        } else {
+                            jsonData[key] = value || null;
+                        }
                     });
 
                     await secureFetch('/user/profile/update', {
