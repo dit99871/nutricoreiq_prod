@@ -10,6 +10,7 @@ def validate_password_strength(v: str) -> str:
     Проверяет сложность пароля: наличие строчных и прописных букв, цифр и спецсимволов.
     Возвращает пароль без изменений, если проверка пройдена, иначе поднимает ValueError.
     """
+
     has_lower = any(c.islower() for c in v)
     has_upper = any(c.isupper() for c in v)
     has_digit = any(c.isdigit() for c in v)
@@ -24,14 +25,18 @@ def validate_password_strength(v: str) -> str:
 def coerce_kfa(v: Any) -> KFALevel | None:
     """
     Преобразует вход в KFALevel или None.
-    Допускает значения: None, "", экземпляр KFALevel, строковое/числовое значение Enum.
+    Допускает значения: None, "", экземпляр KFALevel, числовое значение.
     """
 
     if v is None or v == "":
         return None
     if isinstance(v, KFALevel):
         return v
-    return KFALevel.from_int(v)
+    try:
+        # Пробуем преобразовать в число и создать KFALevel
+        return KFALevel(int(v))
+    except (ValueError, TypeError) as e:
+        raise ValueError(f"Недопустимое значение KFA: {v}") from e
 
 
 def coerce_goal(v: Any) -> GoalType | None:
@@ -39,6 +44,7 @@ def coerce_goal(v: Any) -> GoalType | None:
     Преобразует вход в GoalType или None.
     Допускает значения: None, "", экземпляр GoalType, строковое значение Enum.
     """
+
     if v in (None, ""):
         return None
     if isinstance(v, GoalType):
