@@ -13,6 +13,7 @@ from src.app.core.services.auth import get_current_auth_user
 from src.app.core.utils import templates
 from src.app.crud.profile import get_user_profile, update_user_profile
 from src.app.crud.user import choose_subscribe_status
+from src.app.models.user import KFALevel
 from src.app.schemas.user import UserProfileUpdate, UserPublic
 
 router = APIRouter(
@@ -84,6 +85,7 @@ async def get_profile(
             "is_filled": all(
                 (user.gender, user.age, user.weight, user.height, user.kfa)
             ),
+            "KFALevel": KFALevel,
         },
     )
 
