@@ -101,8 +101,7 @@
                         <div class="d-flex justify-content-between">
                             <strong>Уровень физической активности:</strong>
                             <span id="kfa-field" class="fw-medium">
-                                {% set kfa_val = (user.kfa.value if user.kfa is not string and user.kfa is not none else user.kfa) %}
-                                {% if kfa_val %}{{ kfa_val }}-й уровень{% else %}Не указано{% endif %}
+                                {% if user.kfa is not none %}{{ KFALevel(user.kfa) }}{% else %}Не указано{% endif %}
                             </span>
                         </div>
                     </div>
@@ -203,17 +202,18 @@
                         <div class="custom-select-wrapper">
                             <div class="custom-select" data-name="kfa">
                                 <div class="custom-select-display">
-                                    {% set kfa_val = (user.kfa.value if user.kfa is not string and user.kfa is not none else user.kfa) %}
-                                    {% if kfa_val %}{{ kfa_val }}-й уровень{% else %}Не указан{% endif %}
+                                    {% if user.kfa is not none %}{{ KFALevel(user.kfa) }}{% else %}Не указан{% endif %}
                                 </div>
                                 <ul class="custom-select-options">
                                     <li data-value="">Не указан</li>
-                                    {% for k in [1, 2, 3, 4, 5] %}
-                                    <li data-value="{{ k }}">{{ k }}-й уровень</li>
+                                    {% for level in [1, 2, 3, 4, 5] %}
+                                    <li data-value="{{ level }}"{% if user.kfa == level %} class="selected" {% endif %}>
+                                        {{ KFALevel(level) }}
+                                    </li>
                                     {% endfor %}
                                 </ul>
                             </div>
-                            <input type="hidden" name="kfa" id="editKfa" value="{{ (user.kfa.value if user.kfa is not string and user.kfa is not none else user.kfa) or '' }}">
+                            <input type="hidden" name="kfa" id="editKfa" value="{{ user.kfa if user.kfa is not none else '' }}">
                         </div>
                     </div>
                     <div id="editProfileError" class="alert alert-danger d-none"></div>
