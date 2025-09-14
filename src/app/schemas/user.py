@@ -7,7 +7,6 @@ from pydantic import (
     BeforeValidator,
     EmailStr,
     Field,
-    SecretStr,
     model_validator,
 )
 
