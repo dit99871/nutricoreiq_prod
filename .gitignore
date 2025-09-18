@@ -2,11 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
 *.so
-
-# Distribution / packaging
 .Python
 build/
 develop-eggs/
@@ -63,9 +59,6 @@ db.sqlite3-journal
 instance/
 .webassets-cache
 
-# Scrapy stuff
-.scrapy
-
 # Sphinx documentation
 docs/_build/
 
@@ -105,13 +98,10 @@ __pypackages__/
 celerybeat-schedule
 celerybeat.pid
 
-# SageMath parsed files
-*.sage.py
-
 # Environments
 /.env
-/.env.prod
-src/app/.env
+/.env.*
+!/.env.example
 .venv
 env/
 venv/
@@ -119,44 +109,58 @@ ENV/
 env.bak/
 venv.bak/
 
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-
-# pytype static type analyzer
-.pytype/
-
-# Cython debug symbols
-cython_debug/
-
-# PyCharm
-#.idea/
-
-# Ruff stuff
-.ruff_cache/
-
-# PyPI configuration file
-.pypirc
-
-# Custom certificate paths
+# IDE
 .idea/
-structure.py
-src/app/core/certs/jwt-public.pem
-src/app/core/certs/jwt-private.pem
-.config/
-entrypoint.sh
+.vscode/
+*.swp
+*.swo
 
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Project specific
+.config/
+.structure.py
+
+# SSL certificates and sensitive files
+*.pem
+*.key
+*.crt
+*.cert
+*.p12
+*.pfx
+*.der
+
+# Config files
+/config/*
+
+# Explicitly ignore sensitive configs
+config/postgresql.conf
+config/pg_hba.conf
+config/redis.conf
+config/postgres_exporter.yml
+config/nginx/*
+
+# Allow monitoring configs
+!/config/loki-config.yaml
+!/config/prometheus.yml
+!/config/promtail-config.yaml
+
+# Application certs
+src/app/core/certs/*
+!src/app/core/certs/README.md
+
+# Local development
+.local/
