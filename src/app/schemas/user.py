@@ -7,6 +7,7 @@ from pydantic import (
     BeforeValidator,
     EmailStr,
     Field,
+    constr,
     model_validator,
 )
 
@@ -36,7 +37,7 @@ class UserBaseIn(FormSchema):
 
 # базовая для output (read): сериализация, exclude sensitive
 class UserBaseOut(BaseSchema):
-    username: Annotated[str, MinLen(3), MaxLen(20)]
+    username: Annotated[str, Field(min_length=3, max_length=20)]
     email: EmailStr
     id: int
     uid: str
@@ -49,7 +50,7 @@ class UserCreate(UserBaseIn):
 
     password: Annotated[
         str,
-        MinLen(8),
+        constr(min_length=8),
         AfterValidator(validate_password_strength),
     ]
 
@@ -60,7 +61,7 @@ class UserPublic(UserBaseOut):
     """
 
     # исключаем из сериализации
-    hashed_password: bytes | None = Field(default=None, exclude=True)
+    hashed_password: Annotated[bytes | None, Field(exclude=True)] = None
 
 
 class UserProfile(UserBaseOut):
@@ -69,9 +70,9 @@ class UserProfile(UserBaseOut):
     """
 
     gender: Literal["female", "male"] | None = None
-    age: int | None = Field(default=None, ge=MIN_AGE, le=MAX_AGE)
-    weight: float | None = Field(default=None, ge=MIN_WEIGHT_KG, le=MAX_WEIGHT_KG)
-    height: float | None = Field(default=None, ge=MIN_HEIGHT_CM, le=MAX_HEIGHT_CM)
+    age: Annotated[int | None, Field(ge=MIN_AGE, le=MAX_AGE)] = None
+    weight: Annotated[float | None, Field(ge=MIN_WEIGHT_KG, le=MAX_WEIGHT_KG)] = None
+    height: Annotated[float | None, Field(ge=MIN_HEIGHT_CM, le=MAX_HEIGHT_CM)] = None
     kfa: Annotated[KFALevel | None, BeforeValidator(coerce_kfa)] = None
     goal: Annotated[GoalType | None, BeforeValidator(coerce_goal)] = None
     created_at: datetime
@@ -84,9 +85,9 @@ class UserProfileUpdate(FormSchema):
     """
 
     gender: Optional[Literal["female", "male"]] = None
-    age: Optional[int] = Field(default=None, ge=MIN_AGE, le=MAX_AGE)
-    weight: Optional[float] = Field(default=None, ge=MIN_WEIGHT_KG, le=MAX_WEIGHT_KG)
-    height: Optional[float] = Field(default=None, ge=MIN_HEIGHT_CM, le=MAX_HEIGHT_CM)
+    age: Annotated[int | None, Field(ge=MIN_AGE, le=MAX_AGE)] = None
+    weight: Annotated[float | None, Field(ge=MIN_WEIGHT_KG, le=MAX_WEIGHT_KG)] = None
+    height: Annotated[float | None, Field(ge=MIN_HEIGHT_CM, le=MAX_HEIGHT_CM)] = None
     kfa: Annotated[Optional[KFALevel], BeforeValidator(coerce_kfa)] = None
     goal: Annotated[Optional[GoalType], BeforeValidator(coerce_goal)] = None
 
@@ -103,7 +104,7 @@ class PasswordChange(FormSchema):
     Схема для смены пароля.
     """
 
-    current_password: Annotated[str, MinLen(8)]
+    current_password: Annotated[str, Field(min_length=8)]
     new_password: Annotated[
         str,
         MinLen(8),
