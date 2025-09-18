@@ -1,3 +1,5 @@
+"""Модель нутриента"""
+
 from enum import Enum
 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -7,6 +9,8 @@ from .mixins.int_id_pk import IntIdPkMixin
 
 
 class NutrientCategory(Enum):
+    """Категории нутриентов"""
+
     MACRO = "MACRO"
     ENERGY_VALUE = "ENERGY_VALUE"
     NONESSENTIAL_AMINO = "NONESSENTIAL_AMINO"
