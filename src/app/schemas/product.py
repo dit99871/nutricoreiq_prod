@@ -1,19 +1,21 @@
+from typing import Annotated
+
 from pydantic import Field
 
 from .base import BaseSchema
 
 
-# Базовые схемы
+# базовые схемы
 class NutrientBase(BaseSchema):
-    amount: float = Field(..., ge=0)
-    name: str
+    amount: Annotated[float, Field(ge=0)] = 0.0
+    name: Annotated[str, Field(min_length=3, max_length=40)]
     unit: str
 
 
 class AminoAcids(BaseSchema):
-    essential: float = Field(ge=0, default=0.0)
-    cond_essential: float = 0.0
-    nonessential: float = 0.0
+    essential: Annotated[float, Field(ge=0)] = 0.0
+    cond_essential: Annotated[float, Field(ge=0)] = 0.0
+    nonessential: Annotated[float, Field(ge=0)] = 0.0
 
 
 class PolyunsaturatedFats(BaseSchema):
@@ -26,7 +28,7 @@ class FatsDetail(BaseSchema):
     saturated: float = 0.0
     monounsaturated: float = 0.0
     polyunsaturated: PolyunsaturatedFats = PolyunsaturatedFats()
-    cholesterol: float = 0.0  # Особый случай, можно искать по названию
+    cholesterol: float = 0.0
 
 
 class CarbsDetail(BaseSchema):
@@ -34,7 +36,7 @@ class CarbsDetail(BaseSchema):
     sugar: float = 0.0
 
 
-# Основные схемы группировки
+# основные схемы группировки
 class ProteinsSchema(BaseSchema):
     total: float = 0.0
     amino_acids: AminoAcids = AminoAcids()
@@ -67,11 +69,11 @@ class OtherSchema(BaseSchema):
     oths: list[NutrientBase] = []
 
 
-# Главная схема продукта
+# главная схема продукта
 class ProductDetailResponse(BaseSchema):
     id: int
-    title: str
-    group_name: str
+    title: Annotated[str, Field(min_length=3, max_length=40)]
+    group_name: Annotated[str, Field(min_length=3, max_length=40)]
 
     proteins: ProteinsSchema = ProteinsSchema()
     fats: FatsSchema = FatsSchema()
@@ -87,14 +89,15 @@ class ProductDetailResponse(BaseSchema):
 
 class ProductSuggestion(BaseSchema):
     id: int
-    title: str
+    title: Annotated[str, Field(min_length=3, max_length=40)]
     group_name: str
 
 
 class PendingProductCreate(BaseSchema):
-    name: str = Field(..., min_length=3, max_length=40)
+    name: Annotated[str, Field(min_length=3, max_length=40)]
 
 
+# схема ответа
 class UnifiedProductResponse(BaseSchema):
     exact_match: ProductDetailResponse | None = None
     suggestions: list[ProductSuggestion] = []
