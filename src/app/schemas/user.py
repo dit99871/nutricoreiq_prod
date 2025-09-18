@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import Annotated, Literal, Optional
 
-from annotated_types import MaxLen, MinLen
 from pydantic import (
     AfterValidator,
     BeforeValidator,
@@ -31,7 +30,7 @@ from .base import BaseSchema, FormSchema
 
 # базовая для input (create/update)
 class UserBaseIn(FormSchema):
-    username: Annotated[str, MinLen(3), MaxLen(20)]
+    username: Annotated[str, Field(min_length=3, max_length=20)]
     email: EmailStr
 
 
@@ -107,7 +106,7 @@ class PasswordChange(FormSchema):
     current_password: Annotated[str, Field(min_length=8)]
     new_password: Annotated[
         str,
-        MinLen(8),
+        Field(min_length=8),
         AfterValidator(validate_password_strength),
     ]
 
