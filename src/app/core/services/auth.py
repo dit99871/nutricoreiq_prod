@@ -1,6 +1,7 @@
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import Depends, HTTPException, Request, status
+from fastapi.responses import ORJSONResponse
 from redis.asyncio import Redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,7 +23,7 @@ from src.app.schemas.user import UserPublic
 log = get_logger("auth_service")
 
 
-async def get_access_token_from_cookies(request: Request):
+async def get_access_token_from_cookies(request: Request) -> str | None:
     """
     Retrieves the access token from the cookies of an HTTP request.
 
@@ -41,7 +42,7 @@ async def get_access_token_from_cookies(request: Request):
 
 def get_current_access_token_payload(
     token: str,
-) -> dict:
+) -> dict[str, Any]:
     """
     Retrieves the payload of the current access token.
 
@@ -59,7 +60,7 @@ def get_current_access_token_payload(
 
     log.debug("Attempting to decode token: %s", token)
 
-    payload: dict | None = decode_jwt(token)
+    payload: dict[str, Any] | None = decode_jwt(token)
     if payload is None:
         log.error("Failed to decode token: payload is None")
         raise CREDENTIAL_EXCEPTION
@@ -79,7 +80,7 @@ async def update_password(
     user: UserPublic,
     session: AsyncSession,
     new_password: str,
-):
+) -> ORJSONResponse:
     """
     Updates the password for the given user.
 
