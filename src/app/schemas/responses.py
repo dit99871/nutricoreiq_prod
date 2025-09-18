@@ -1,6 +1,6 @@
 from typing import Any, Literal, Annotated
 
-from pydantic import Field, constr
+from pydantic import Field, StringConstraints
 
 from .base import BaseSchema
 
@@ -12,7 +12,7 @@ class SuccessResponse(BaseSchema):
 
 
 class ErrorDetail(BaseSchema):
-    message: Annotated[str, constr(to_upper=True, max_length=255)]
+    message: Annotated[str, StringConstraints(to_upper=True, max_length=255)]
     details: Annotated[
         dict[str, Any] | None,
         Field(
