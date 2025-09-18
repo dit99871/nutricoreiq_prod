@@ -36,7 +36,7 @@ def test_error_detail_validation():
         details={"field": "email", "message": "Invalid format"},
     )
 
-    assert error.message == "Validation error"
+    assert error.message == "VALIDATION ERROR"
     assert error.details == {"field": "email", "message": "Invalid format"}
 
     # Проверка с опциональным полем details = None
@@ -59,7 +59,7 @@ def test_error_response_validation():
     )
 
     assert response.status == "error"
-    assert response.error.message == "Not found"
+    assert response.error.message == "NOT FOUND"
     assert response.error.details == {"resource": "user", "id": 123}
 
 
@@ -72,5 +72,8 @@ def test_error_response_serialization():
     result = response.model_dump()
     assert result == {
         "status": "error",
-        "error": {"message": "Permission denied", "details": {"required": "admin"}},
+        "error": {
+            "message": "PERMISSION DENIED",
+            "details": {"required": "admin"}
+        },
     }
