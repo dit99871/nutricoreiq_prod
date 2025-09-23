@@ -1,6 +1,13 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Request,
+    Response,
+    status,
+)
 from fastapi.responses import ORJSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from redis.asyncio import Redis
@@ -35,7 +42,6 @@ router = APIRouter(
 
 @router.post(
     "/register",
-    response_model=UserPublic,
     status_code=status.HTTP_201_CREATED,
 )
 @limiter.limit(settings.rate_limit.register_limit)
@@ -51,6 +57,7 @@ async def register_user(
     If the user is already registered, raises an `HTTPException` with a 400
     status code and a detail string containing the error message.
 
+    :param request: The current request object.
     :param user_in: The user data to register.
     :param session: The database session to use for the query.
     :return: The registered user object.
@@ -90,13 +97,14 @@ async def login(
     request: Request,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-):
+) -> Response:
     """
     Logs a user in and returns a response containing an access and refresh token.
 
     Given a valid username and password, logs the user in and returns a response
     containing an access and refresh token.
 
+    :param request: The current request object.
     :param form_data: The username and password to log in with.
     :param session: The current database session.
     :return: A response containing an access and refresh token.
@@ -117,7 +125,7 @@ async def logout(
     request: Request,
     user: Annotated[UserPublic, Depends(get_current_auth_user)],
     redis: Redis = Depends(get_redis),
-):
+) -> Response:
     """
     Logs out a user and invalidates their refresh token.
 
@@ -168,7 +176,7 @@ async def refresh_token(
     request: Request,
     session: AsyncSession = Depends(db_helper.session_getter),
     redis: Redis = Depends(get_redis),
-):
+) -> Response:
     """
     Refreshes the access and refresh tokens for a given user.
 
@@ -212,7 +220,7 @@ async def change_password(
     request: Request,
     user: Annotated[UserPublic, Depends(get_current_auth_user)],
     session: AsyncSession = Depends(db_helper.session_getter),
-):
+) -> Response:
     """
     Changes the password for the authenticated user.
 
