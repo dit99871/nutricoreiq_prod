@@ -242,7 +242,8 @@ services:
       - ./config/nginx/letsencrypt:/var/lib/letsencrypt
       - ./config/nginx/sites-enabled:/etc/nginx/sites-enabled:ro
       - /var/run/docker.sock:/var/run/docker.sock
-    command: renew --quiet --deploy-hook "docker exec nginx nginx -s reload"
+    command: >
+      bash -c "certbot renew --quiet --deploy-hook 'sh -c \"docker exec nginx nginx -s reload\"'"
     networks:
       - app-network
     depends_on:
