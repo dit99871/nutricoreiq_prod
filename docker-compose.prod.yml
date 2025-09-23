@@ -241,7 +241,8 @@ services:
       - ./config/nginx/letsencrypt:/etc/letsencrypt
       - ./config/nginx/letsencrypt:/var/lib/letsencrypt
       - ./config/nginx/sites-enabled:/etc/nginx/sites-enabled:ro
-    command: renew --quiet --deploy-hook "nginx -s reload"
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: renew --quiet --deploy-hook "docker exec nginx nginx -s reload"
     networks:
       - app-network
     depends_on:
