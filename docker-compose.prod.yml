@@ -237,11 +237,12 @@ services:
   certbot:
     image: certbot/certbot:latest
     container_name: certbot
+    user: root
     volumes:
       - ./config/nginx/letsencrypt:/etc/letsencrypt
       - ./config/nginx/letsencrypt:/var/lib/letsencrypt
       - ./config/nginx/sites-enabled:/etc/nginx/sites-enabled:ro
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock:rw  # Добавляем права на запись
       - ./certbot-entrypoint.sh:/certbot-entrypoint.sh
       - certbot_logs:/var/log/letsencrypt
     entrypoint: /certbot-entrypoint.sh
