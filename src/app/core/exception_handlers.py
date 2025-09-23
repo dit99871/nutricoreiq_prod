@@ -34,7 +34,7 @@ def expired_token_exception_handler(
     )
     error_response = ErrorResponse(status="error", error=error_detail)
     log.warning(
-        "HTTP-ошибка по адресу %s: сообщение=%s, статус=%s",
+        "Ошибка валидации токена по адресу %s: сообщение=%s, статус=%s",
         request.url,
         exc.detail,
         exc.status_code,
