@@ -233,32 +233,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    healthcheck:
-      test: [ "CMD", "sh", "-c", "if [ -f /etc/letsencrypt/.need_reload ]; then nginx -s reload && rm -f /etc/letsencrypt/.need_reload; fi || exit 0" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  certbot:
-    image: certbot/certbot:latest
-    container_name: certbot
-    user: root
-    volumes:
-      - ./config/nginx/letsencrypt:/etc/letsencrypt
-      - ./config/nginx/letsencrypt:/var/lib/letsencrypt
-      - ./config/nginx/sites-enabled:/etc/nginx/sites-enabled:ro
-      - ./certbot-entrypoint.sh:/certbot-entrypoint.sh
-      - certbot_logs:/var/log/letsencrypt
-    entrypoint: /certbot-entrypoint.sh
-    networks:
-      - app-network
-    depends_on:
-      - nginx
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
 
   node_exporter:
     image: prom/node-exporter:latest
