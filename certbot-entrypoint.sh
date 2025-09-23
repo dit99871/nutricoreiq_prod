@@ -1,37 +1,40 @@
 #!/bin/sh
-set -x  # Включаем отладочный вывод
-set -e  # Выходим при ошибке
+set -x
+set -e
 
-echo "Starting certbot entrypoint script..."
-
-# Создаем каталог для логов, если его нет
+echo "Starting certbot entrypoint script as user: $(whoami)"
 mkdir -p /var/log/letsencrypt
-
-# Записываем информацию о дате и времени
 echo "Current time: $(date)" >> /var/log/letsencrypt/certbot.log
 
 # Проверяем доступ к Docker
+ls -la /var/run/docker.sock >> /var/log/letsencrypt/certbot.log 2>&1
+ls -la /var/run/ >> /var/log/letsencrypt/docker-check.log 2>&1
+
 if ! docker ps > /dev/null 2>&1; then
   echo "Docker is not available or current user doesn't have permissions" | tee -a /var/log/letsencrypt/certbot.log
-  exit 1
+  echo "Trying with sudo..." | tee -a /var/log/letsencrypt/certbot.log
+  if ! sudo docker ps > /dev/null 2>&1; then
+    echo "Sudo docker also failed" | tee -a /var/log/letsencrypt/certbot.log
+    exit 1
+  fi
+  DOCKER_CMD="sudo docker"
+else
+  DOCKER_CMD="docker"
 fi
 
-# Создаем временный скрипт для хука
 cat > /deploy-hook.sh << 'EOF'
 #!/bin/sh
 set -x
 echo "Running deploy hook at $(date)" >> /var/log/letsencrypt/deploy-hook.log
-if ! docker exec nginx nginx -s reload; then
+if ! $DOCKER_CMD exec nginx nginx -s reload; then
   echo "Failed to reload nginx" >> /var/log/letsencrypt/deploy-hook.log
   exit 1
 fi
 echo "Nginx reloaded successfully" >> /var/log/letsencrypt/deploy-hook.log
 EOF
 
-# Делаем скрипт исполняемым
 chmod +x /deploy-hook.sh
 
-# Запускаем certbot с подробным логированием
 echo "Running certbot renew..." >> /var/log/letsencrypt/certbot.log
 certbot renew \
   --quiet \
@@ -41,7 +44,6 @@ certbot renew \
   --config-dir /etc/letsencrypt \
   --max-log-backups 0
 
-# Проверяем код выхода
 EXIT_CODE=$?
 echo "Certbot exited with code: $EXIT_CODE" >> /var/log/letsencrypt/certbot.log
 exit $EXIT_CODE
