@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import HTTPException, RequestValidationError
 from fastapi.responses import ORJSONResponse
 from slowapi.errors import RateLimitExceeded
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from src.app.core.config import settings
 from src.app.core.exceptions import ExpiredTokenException
@@ -53,7 +54,7 @@ def expired_token_exception_handler(
 
 def http_exception_handler(
     request: Request,
-    exc: HTTPException,
+    exc: StarletteHTTPException,
 ):
     """
     Обработка http-exception, которые могут возникнуть
