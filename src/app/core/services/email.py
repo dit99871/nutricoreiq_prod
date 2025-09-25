@@ -8,6 +8,7 @@ from jinja2 import Environment, FileSystemLoader
 from src.app.core.config import settings
 from src.app.core.constants import BASE_DIR
 from src.app.core.logger import get_logger
+from src.app.schemas.user import UserPublic
 
 log = get_logger("email_services")
 
@@ -80,7 +81,7 @@ async def send_email(
         raise Exception(f"Failed to send email to {recipient}: {str(e)}")
 
 
-async def send_welcome_email(user) -> None:
+async def send_welcome_email(user: UserPublic) -> None:
     """
     Sends a welcome email to a new user.
 
@@ -88,7 +89,6 @@ async def send_welcome_email(user) -> None:
     function. The email contains a welcome message and an unsubscribe link.
 
     :param user: The user object containing email and username information.
-    :type user: User
     :return: None
     """
 
