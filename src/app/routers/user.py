@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status, Response
 from fastapi.responses import HTMLResponse, ORJSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.responses import RedirectResponse
@@ -22,12 +22,14 @@ router = APIRouter(
 )
 
 log = get_logger("user_router")
+session = Annotated[AsyncSession, Depends(db_helper.session_getter)]
+current_user = Annotated[UserPublic, Depends(get_current_auth_user)]
 
 
 @router.get("/me")
 async def read_current_user(
-    user: Annotated[UserPublic, Depends(get_current_auth_user)],
-):
+    user: current_user,
+) -> dict:
     """
     Retrieves the current authenticated user's basic information.
 
@@ -52,9 +54,9 @@ async def read_current_user(
 @router.head("/profile/data")
 async def get_profile(
     request: Request,
-    user: Annotated[UserPublic, Depends(get_current_auth_user)],
-    db_session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-):
+    user: current_user,
+    db_session: session,
+) -> Response:
     """
     Retrieves the current authenticated user's profile information.
 
@@ -93,9 +95,9 @@ async def get_profile(
 @router.post("/profile/update")
 async def update_profile(
     data_in: UserProfileUpdate,
-    user: Annotated[UserPublic, Depends(get_current_auth_user)],
-    db_session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-):
+    user: current_user,
+    db_session: session,
+) -> dict:
     """
     Updates the current authenticated user's profile information.
 
@@ -128,9 +130,9 @@ async def update_profile(
 
 @router.post("/unsubscribe")
 async def unsubscribe_email_notification(
-    user: Annotated[UserPublic, Depends(get_current_auth_user)],
-    db_session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-):
+    user: current_user,
+    db_session: session,
+) -> None:
     """
     Unsubscribes the current authenticated user from email notifications.
 
@@ -155,9 +157,9 @@ async def unsubscribe_email_notification(
 
 @router.post("/subscribe")
 async def subscribe_email_notification(
-    user: Annotated[UserPublic, Depends(get_current_auth_user)],
-    db_session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-):
+    user: current_user,
+    db_session: session,
+) -> None:
     """
     Subscribes the current authenticated user to email notifications.
 
