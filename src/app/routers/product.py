@@ -25,10 +25,12 @@ router = APIRouter(
     default_response_class=ORJSONResponse,
 )
 
+current_session = Annotated[AsyncSession, Depends(db_helper.session_getter)]
+
 
 @router.get("/search", response_model=UnifiedProductResponse)
 async def search_products(
-    session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+    session: current_session,
     query: str = Query(..., min_length=2),
     confirmed: bool = Query(False),
 ):
@@ -53,7 +55,7 @@ async def search_products(
 async def get_product_details(
     request: Request,
     product_id: int,
-    session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+    session: current_session,
     current_user: Annotated[UserPublic, Depends(get_current_auth_user)],
 ):
     """
@@ -89,7 +91,7 @@ async def get_product_details(
 @router.post("/pending")
 async def add_pending_product(
     data: PendingProductCreate,
-    session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+    session: current_session,
 ):
     """
     Adds a new pending product to the database.
