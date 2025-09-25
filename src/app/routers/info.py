@@ -13,11 +13,13 @@ router = APIRouter(
     default_response_class=HTMLResponse,
 )
 
+current_user = Annotated[UserPublic, Depends(get_current_auth_user)]
+
 
 @router.get("/privacy")
 def get_privacy_info(
     request: Request,
-    current_user: Annotated[UserPublic, Depends(get_current_auth_user)],
+    user: current_user,
 ):
     """
     Retrieves the privacy policy information of the NutriCoreIQ project.
@@ -26,7 +28,7 @@ def get_privacy_info(
     including information on data collection, usage, and protection.
 
     :param request: The incoming request object.
-    :param current_user: The authenticated user object obtained from the dependency.
+    :param user: The authenticated user object obtained from the dependency.
     :return: A rendered HTML template with the privacy policy information.
     """
 
@@ -34,7 +36,7 @@ def get_privacy_info(
         request=request,
         name="privacy.html",
         context={
-            "user": current_user,
+            "user": user,
             "current_year": datetime.now().year,
             "csp_nonce": request.state.csp_nonce,
         },
@@ -44,7 +46,7 @@ def get_privacy_info(
 @router.get("/about")
 def get_info_about_project(
     request: Request,
-    current_user: Annotated[UserPublic, Depends(get_current_auth_user)],
+    user: current_user,
 ):
     """
     Retrieves information about the NutriCoreIQ project.
@@ -53,7 +55,7 @@ def get_info_about_project(
     including its goals, features, and team.
 
     :param request: The incoming request object.
-    :param current_user: The authenticated user object obtained from the dependency.
+    :param user: The authenticated user object obtained from the dependency.
     :return: A rendered HTML template with information about the project.
     """
 
@@ -61,7 +63,7 @@ def get_info_about_project(
         request=request,
         name="about.html",
         context={
-            "user": current_user,
+            "user": user,
             "current_year": datetime.now().year,
             "csp_nonce": request.state.csp_nonce,
         },
@@ -74,7 +76,7 @@ def get_info_about_project(
 )
 def start_page(
     request: Request,
-    current_user: Annotated[UserPublic, Depends(get_current_auth_user)],
+    user: current_user,
 ):
     """
     Retrieves the home page of NutriCoreIQ.
@@ -83,7 +85,7 @@ def start_page(
     displays a welcome message and the current year.
 
     :param request: The incoming request object.
-    :param current_user: The authenticated user object obtained from the dependency.
+    :param user: The authenticated user object obtained from the dependency.
     :return: A rendered HTML template for the home page.
     """
     return templates.TemplateResponse(
@@ -91,7 +93,7 @@ def start_page(
         name="index.html",
         context={
             "current_year": datetime.now().year,
-            "user": current_user,
+            "user": user,
             "csp_nonce": request.state.csp_nonce,
         },
     )
