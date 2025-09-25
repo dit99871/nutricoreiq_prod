@@ -6,6 +6,7 @@ from src.app.core.config import settings
 
 from .csp_middleware import CSPMiddleware
 from .csrf_middleware import CSRFMiddleware
+from .http_middleware import HTTPMiddleware
 from .redis_session_middleware import RedisSessionMiddleware
 
 __all__ = ("setup_middleware",)
@@ -35,3 +36,4 @@ def setup_middleware(app: FastAPI) -> None:
     app.add_middleware(CSPMiddleware)
     app.add_middleware(CSRFMiddleware)
     app.add_middleware(RedisSessionMiddleware)
+    app.add_middleware(HTTPMiddleware)
