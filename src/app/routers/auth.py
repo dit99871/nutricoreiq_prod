@@ -37,6 +37,7 @@ log = get_logger("auth_router")
 # алиасы типов зависимостей
 db_session = Annotated[AsyncSession, Depends(db_helper.session_getter)]
 current_user = Annotated[UserPublic, Depends(get_current_auth_user)]
+redis_dependency = Annotated[Redis, Depends(get_redis)]
 
 router = APIRouter(
     tags=["Authentication"],
@@ -128,7 +129,7 @@ async def login(
 async def logout(
     request: Request,
     user: current_user,
-    redis: Redis = Depends(get_redis),
+    redis: redis_dependency,
 ) -> Response:
     """
     Выход пользователя из системы и инвалидация refresh токена.
@@ -177,7 +178,7 @@ async def logout(
 async def refresh_token(
     request: Request,
     session: db_session,
-    redis: Redis = Depends(get_redis),
+    redis: redis_dependency,
 ) -> Response:
     """
     Обновляет access и refresh токены для пользователя.
