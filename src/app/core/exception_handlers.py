@@ -19,16 +19,13 @@ def expired_token_exception_handler(
     exc: ExpiredTokenException,
 ) -> ORJSONResponse:
     """
-    Handler for `ExpiredTokenException`, which is raised when the provided
-    access token is expired.
+    Обработчик исключения истекшего токена доступа.
 
-    :param request: The incoming request.
-    :type request: Request
-    :param exc: The exception that was raised.
-    :type exc: ExpiredTokenException
-    :return: A response with the error message and appropriate HTTP status code.
-    :rtype: ORJSONResponse
+    :param request: Входящий HTTP-запрос
+    :param exc: Исключение ExpiredTokenException
+    :return: JSON-ответ с информацией об ошибке
     """
+
     error_detail = ErrorDetail(
         message=exc.detail,
         details=None,
@@ -55,7 +52,7 @@ def expired_token_exception_handler(
 def http_exception_handler(
     request: Request,
     exc: StarletteHTTPException,
-):
+) -> ORJSONResponse:
     """
     Обработка http-exception, которые могут возникнуть
     при выполнении запросов к API.
@@ -64,6 +61,7 @@ def http_exception_handler(
     :param exc: объект HTTPException, содержащий информацию о возникшей ошибке
     :return: объект ORJSONResponse, содержащий структурированную информацию об ошибке
     """
+
     if isinstance(exc.detail, dict):
         message = exc.detail.get("message", "Произошла ошибка")
         details = exc.detail.get("details")
@@ -104,12 +102,12 @@ def validation_exception_handler(
 
     errors = []
     for err in exc.errors():
-        # Extract the original error message and clean it up
+        # извлекаем и очищаем оригинальное сообщение об ошибке
         if err["type"] == "value_error":
-            # Remove "Value error, " prefix if it exists
+            # удаляем префикс "Value error, " если он есть
             message = str(err.get("msg", ""))
             if message.startswith("Value error, "):
-                message = message[13:]  # Remove "Value error, "
+                message = message[13:]  # удаляем "Value error, "
         else:
             message = err["msg"]
 
@@ -145,6 +143,7 @@ def generic_exception_handler(
     :param exc: объект Exception, содержащий информацию об возникшей ошибке
     :return: объект ORJSONResponse, содержащий структурированную информацию об ошибке
     """
+
     # используем X-Forwarded-Proto для определения схемы
     scheme = request.headers.get(
         "X-Forwarded-Proto", request.scope.get("scheme", "http")
@@ -172,6 +171,14 @@ def rate_limit_exceeded_handler(
     request: Request,
     exc: RateLimitExceeded,
 ) -> ORJSONResponse:
+    """
+    Обработчик превышения лимита запросов.
+
+    :param request: Входящий HTTP-запрос
+    :param exc: Исключение RateLimitExceeded
+    :return: JSON-ответ с информацией о превышении лимита
+    """
+
     error_detail = ErrorDetail(
         message="Слишком много запросов. Подождите и попробуйте позже.",
         details={"retry_after": exc.detail} if settings.DEBUG else None,
@@ -183,14 +190,25 @@ def rate_limit_exceeded_handler(
         exc.detail,
     )
     return ORJSONResponse(
-        status_code=429,
+        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
         content=error_response.model_dump(),
     )
 
 
 def setup_exception_handlers(app: FastAPI) -> None:
+    """
+    Настройка обработчиков исключений приложения.
+
+    Обработчики регистрируются в порядке от наиболее специфичных к наиболее общим.
+    """
+
+    # кастомные исключения
     app.add_exception_handler(ExpiredTokenException, expired_token_exception_handler)
     app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+
+    # стандартные http исключения
     app.add_exception_handler(HTTPException, http_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
+
+    # общий обработчик всех необработанных исключений
     app.add_exception_handler(Exception, generic_exception_handler)
