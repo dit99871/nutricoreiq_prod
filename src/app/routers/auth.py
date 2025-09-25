@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.core import db_helper
 from src.app.core.config import settings
-from src.app.core.exceptions import ExpiredTokenException
+from src.app.core.exceptions import ExpiredTokenException, UserAlreadyExistsError
 from src.app.core.logger import get_logger
 from src.app.core.redis import get_redis
 from src.app.core.services.auth import (
@@ -24,13 +24,11 @@ from src.app.core.services.auth import (
     get_current_auth_user_for_refresh,
     update_password,
 )
-from src.app.core.services.email import send_welcome_email as send_welcome
 from src.app.core.services.limiter import limiter
 from src.app.core.services.redis import revoke_refresh_token
+from src.app.core.services.user_service import UserService
 from src.app.core.utils.auth import create_response
-from src.app.crud.user import create_user, get_user_by_email
 from src.app.schemas.user import PasswordChange, UserCreate, UserPublic
-from src.app.tasks import send_welcome_email
 
 log = get_logger("auth_router")
 
@@ -69,31 +67,17 @@ async def register_user(
     :raises HTTPException: Если пользователь уже зарегистрирован.
     """
 
-    db_user = await get_user_by_email(session, user_in.email)
+    client_host = request.client.host if request.client else None
+    user_service = UserService(session)
 
-    if db_user:
-        log.error(
-            "Registration failed: Email already registered: %s",
-            user_in.email,
-        )
+    try:
+        return await user_service.register_user(user_in, client_host)
+
+    except UserAlreadyExistsError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={
-                "message": "Пользователь с таким email уже зарегистрирован",
-            },
+            detail={"message": str(e)},
         )
-    user = await create_user(session, user_in)
-    log.info("User registered successfully: %s", user.email)
-
-    if settings.env.env == "prod":
-        # на проде отправляем письмо в фоне через брокер
-        await send_welcome_email.kiq(user.email)
-    else:
-        # в dev отправляем письмо в maildev
-        await send_welcome(user)
-
-    # возвращаем только публичные данные, без пароля
-    return UserPublic.model_validate(user)
 
 
 @router.post("/login")
