@@ -34,6 +34,10 @@ from src.app.tasks import send_welcome_email
 
 log = get_logger("auth_router")
 
+# алиасы типов зависимостей
+db_session = Annotated[AsyncSession, Depends(db_helper.session_getter)]
+current_user = Annotated[UserPublic, Depends(get_current_auth_user)]
+
 router = APIRouter(
     tags=["Authentication"],
     default_response_class=ORJSONResponse,
@@ -48,20 +52,20 @@ router = APIRouter(
 async def register_user(
     request: Request,
     user_in: UserCreate,
-    session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+    session: db_session,
 ) -> UserPublic:
     """
-    Registers a new user in the database.
+    Регистрирует нового пользователя в базе данных.
 
-    Given a valid `UserCreate` object, registers a new user in the database.
-    If the user is already registered, raises an `HTTPException` with a 400
-    status code and a detail string containing the error message.
+    Принимает валидный объект `UserCreate` и регистрирует нового пользователя.
+    Если пользователь уже зарегистрирован, вызывает `HTTPException` со статусом 400
+    и сообщением об ошибке.
 
-    :param request: The current request object.
-    :param user_in: The user data to register.
-    :param session: The database session to use for the query.
-    :return: The registered user object.
-    :raises HTTPException: If the user is already registered.
+    :param request: Текущий объект запроса.
+    :param user_in: Данные пользователя для регистрации.
+    :param session: Сессия базы данных для выполнения запроса.
+    :return: Зарегистрированный пользователь.
+    :raises HTTPException: Если пользователь уже зарегистрирован.
     """
 
     db_user = await get_user_by_email(session, user_in.email)
@@ -96,18 +100,18 @@ async def register_user(
 async def login(
     request: Request,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+    session: db_session,
 ) -> Response:
     """
-    Logs a user in and returns a response containing an access and refresh token.
+    Аутентифицирует пользователя и возвращает access и refresh токены.
 
-    Given a valid username and password, logs the user in and returns a response
-    containing an access and refresh token.
+    Принимает логин и пароль, аутентифицирует пользователя и возвращает ответ,
+    содержащий access и refresh токены.
 
-    :param request: The current request object.
-    :param form_data: The username and password to log in with.
-    :param session: The current database session.
-    :return: A response containing an access and refresh token.
+    :param request: Текущий объект запроса.
+    :param form_data: Данные формы, содержащие имя пользователя и пароль.
+    :param session: Текущая сессия базы данных.
+    :return: Ответ, содержащий access и refresh токены.
     """
 
     user = await authenticate_user(
@@ -123,22 +127,20 @@ async def login(
 @router.post("/logout")
 async def logout(
     request: Request,
-    user: Annotated[UserPublic, Depends(get_current_auth_user)],
+    user: current_user,
     redis: Redis = Depends(get_redis),
 ) -> Response:
     """
-    Logs out a user and invalidates their refresh token.
+    Выход пользователя из системы и инвалидация refresh токена.
 
-    This endpoint logs out a user, invalidates their refresh token, and clears
-    the access and refresh tokens from the request cookies.
+    Этот эндпоинт выполняет выход пользователя, инвалидирует его refresh токен
+    и удаляет access и refresh токены из cookies запроса.
 
-    :param request: The current request object.
-    :param user: The authenticated user object.
-    :param redis: The Redis client to use for invalidating the refresh token.
-    :return: A RedirectResponse to the root URL, with the access and refresh
-             tokens cleared from the cookies.
-    :raises HTTPException: If the refresh token is not found in the request
-                           cookies.
+    :param request: Текущий объект запроса.
+    :param user: Аутентифицированный пользователь.
+    :param redis: Redis клиент для инвалидации refresh токена.
+    :return: Ответ с сообщением об успешном выходе.
+    :raises HTTPException: Если refresh токен не найден в cookies запроса.
     """
 
     if user is None:
@@ -174,24 +176,20 @@ async def logout(
 )
 async def refresh_token(
     request: Request,
-    session: AsyncSession = Depends(db_helper.session_getter),
+    session: db_session,
     redis: Redis = Depends(get_redis),
 ) -> Response:
     """
-    Refreshes the access and refresh tokens for a given user.
+    Обновляет access и refresh токены для пользователя.
 
-    This endpoint takes a refresh token from the request cookies and returns a
-    response containing a new access and refresh token if the refresh token is
-    valid. If the refresh token is invalid or has expired, it raises a 401
-    HTTP exception.
+    Принимает refresh токен из cookies запроса и возвращает новый access и refresh токен,
+    если токен валиден. Если токен недействителен или истек, вызывает исключение 401.
 
-    :param request: The current request object.
-    :param session: The current database session.
-    :param redis: The Redis client to use for validating the refresh token.
-    :return: A response containing the new access and refresh tokens.
-    :raises HTTPException: If the refresh token is not found in the request
-                           cookies, or if the refresh token is invalid or has
-                           expired.
+    :param request: Текущий объект запроса.
+    :param session: Текущая сессия базы данных.
+    :param redis: Redis клиент для валидации refresh токена.
+    :return: Ответ с новыми access и refresh токенами.
+    :raises HTTPException: Если refresh токен не найден или недействителен.
     """
 
     refresh_jwt = request.cookies.get("refresh_token")
@@ -218,24 +216,22 @@ async def refresh_token(
 async def change_password(
     password_data: PasswordChange,
     request: Request,
-    user: Annotated[UserPublic, Depends(get_current_auth_user)],
-    session: AsyncSession = Depends(db_helper.session_getter),
+    user: current_user,
+    session: db_session,
 ) -> Response:
     """
-    Changes the password for the authenticated user.
+    Изменяет пароль аутентифицированного пользователя.
 
-    Given a valid username and old password, this endpoint changes the
-    password for the authenticated user to the new password provided in the
-    request.
+    Принимает старый и новый пароль, проверяет старый пароль и,
+    если он верный, изменяет его на новый.
 
-    :param password_data: The new password and the old password to change.
-    :param request: The current request object.
-    :param user: The authenticated user object.
-    :param session: The current database session.
-    :return: A response containing the new access and refresh tokens.
-    :raises HTTPException: If the old password is incorrect.
-    :raises HTTPException: If an unexpected error occurs while changing the
-                           password.
+    :param password_data: Новый и текущий пароли.
+    :param request: Текущий объект запроса.
+    :param user: Аутентифицированный пользователь.
+    :param session: Текущая сессия базы данных.
+    :return: Ответ с новыми access и refresh токенами.
+    :raises HTTPException: Если текущий пароль неверен.
+    :raises HTTPException: При возникновении непредвиденной ошибки.
     """
 
     if user is None:
