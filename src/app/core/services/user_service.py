@@ -1,11 +1,15 @@
-from typing import Optional
+from typing import Optional, Annotated
 
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Depends, Request
+from fastapi.responses import ORJSONResponse
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.app.core import db_helper
 from src.app.core.config import settings
-from src.app.core.exceptions import UserAlreadyExistsError
+from src.app.core.exceptions import UserAlreadyExistsError, ExpiredTokenException
 from src.app.core.logger import get_logger
+from src.app.core.services.redis import revoke_refresh_token
 from src.app.crud.user import create_user
 from src.app.crud.user import get_user_by_email, get_user_by_name
 from src.app.schemas.user import UserCreate, UserPublic
@@ -88,6 +92,48 @@ class UserService:
                 detail={"message": "Произошла ошибка при регистрации"},
             )
 
+    async def logout(
+        self,
+        request: Request,
+        redis: Redis,
+        user: UserPublic,
+    ) -> ORJSONResponse:
+        """
+        Выход пользователя из системы и инвалидация refresh токена.
+
+        :param request: Текущий объект запроса.
+        :param redis: Redis клиент для инвалидации refresh токена.
+        :param user: Аутентифицированный пользователь.
+        :return: Ответ с сообщением об успешном выходе.
+        :raises ExpiredTokenException: Если refresh токен не найден в cookies запроса.
+        """
+
+        if user is None:
+            raise ExpiredTokenException()
+
+        refresh_jwt = request.cookies.get("refresh_token")
+        if not refresh_jwt:
+            log.error("Refresh token not found in cookies")
+            raise ExpiredTokenException()
+
+        await revoke_refresh_token(user.uid, refresh_jwt, redis)
+
+        session_id = request.cookies.get("redis_session_id")
+        if session_id:
+            await redis.delete(f"redis_session:{session_id}")
+
+        response = ORJSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={"message": "Successfully logged out"},
+        )
+
+        response.delete_cookie("refresh_token")
+        response.delete_cookie("access_token")
+        response.delete_cookie("redis_session_id")
+        response.delete_cookie("csrf_token")
+
+        return response
+
     @staticmethod
     async def _send_welcome_email(user: UserPublic) -> None:
         """Отправляет приветственное письмо пользователю"""
@@ -107,3 +153,9 @@ class UserService:
                 str(e),
                 exc_info=True,
             )
+
+
+def get_user_service(
+    session: AsyncSession = Depends(db_helper.session_getter),
+) -> UserService:
+    return UserService(session=session)
