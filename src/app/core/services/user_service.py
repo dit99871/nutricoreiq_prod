@@ -158,4 +158,11 @@ class UserService:
 def get_user_service(
     session: AsyncSession = Depends(db_helper.session_getter),
 ) -> UserService:
+    """
+    Возвращает экземпляр UserService с переданной сессией.
+
+    :param session: Сессия базы данных для выполнения запросов.
+    :return: Экземпляр UserService с переданной сессией.
+    """
+
     return UserService(session=session)
