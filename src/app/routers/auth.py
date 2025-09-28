@@ -22,7 +22,6 @@ from src.app.core.services.auth import (
     authenticate_user,
     get_current_auth_user,
     get_current_auth_user_for_refresh,
-    update_password,
 )
 from src.app.core.services.limiter import limiter
 from src.app.core.services.user_service import UserService, get_user_service
@@ -35,6 +34,7 @@ log = get_logger("auth_router")
 db_session = Annotated[AsyncSession, Depends(db_helper.session_getter)]
 current_user = Annotated[UserPublic, Depends(get_current_auth_user)]
 redis_dependency = Annotated[Redis, Depends(get_redis)]
+user_service = Annotated[UserService, Depends(get_user_service)]
 
 router = APIRouter(
     tags=["Authentication"],
@@ -50,7 +50,7 @@ router = APIRouter(
 async def register_user(
     request: Request,
     user_in: UserCreate,
-    user_service: Annotated[UserService, Depends(get_user_service)],
+    user_service: user_service,
 ) -> UserPublic:
     """
     Регистрирует нового пользователя в базе данных.
@@ -61,7 +61,6 @@ async def register_user(
 
     :param request: Текущий объект запроса.
     :param user_in: Данные пользователя для регистрации.
-    :param session: Сессия базы данных для выполнения запроса.
     :param user_service: Сервис для работы с пользователями, создается автоматически.
     :return: Зарегистрированный пользователь.
     :raises HTTPException: Если пользователь уже зарегистрирован.
@@ -113,7 +112,7 @@ async def logout(
     request: Request,
     user: current_user,
     redis: redis_dependency,
-    user_service: Annotated[UserService, Depends(get_user_service)],
+    user_service: user_service,
 ) -> Response:
     """
     Выход пользователя из системы и инвалидация refresh токена.
@@ -176,29 +175,25 @@ async def change_password(
     request: Request,
     user: current_user,
     session: db_session,
+    user_service: user_service,
 ) -> Response:
     """
     Изменяет пароль аутентифицированного пользователя.
 
-    Принимает старый и новый пароль, проверяет старый пароль и,
-    если он верный, изменяет его на новый.
+    Принимает текущий и новый пароль, проверяет их валидность и обновляет пароль
+    пользователя в системе. Требует аутентификации.
 
-    :param password_data: Новый и текущий пароли.
-    :param request: Текущий объект запроса.
-    :param user: Аутентифицированный пользователь.
-    :param session: Текущая сессия базы данных.
-    :return: Ответ с новыми access и refresh токенами.
-    :raises HTTPException: Если текущий пароль неверен.
-    :raises HTTPException: При возникновении непредвиденной ошибки.
+    :param password_data: Данные для смены пароля (текущий и новый пароль)
+    :param request: Объект запроса FastAPI
+    :param user: Текущий аутентифицированный пользователь
+    :param session: Сессия базы данных
+    :param user_service: Сервис для работы с пользователями
+    :return: Ответ с результатом операции
+    :raises ExpiredTokenException: Если пользователь не аутентифицирован
+    :raises HTTPException: При ошибках валидации или несоответствии текущего пароля
     """
 
     if user is None:
         raise ExpiredTokenException()
 
-    authenticated_user = await authenticate_user(
-        session, user.username, password_data.current_password
-    )
-
-    return await update_password(
-        authenticated_user, session, password_data.new_password
-    )
+    return await user_service.change_password(session, user, password_data)

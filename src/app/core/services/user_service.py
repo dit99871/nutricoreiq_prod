@@ -3,7 +3,6 @@ from typing import Optional
 from fastapi import HTTPException, status, Depends, Request
 from fastapi.responses import ORJSONResponse
 from redis.asyncio import Redis
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.core import db_helper
@@ -11,11 +10,11 @@ from src.app.core.config import settings
 from src.app.core.exceptions import UserAlreadyExistsError, ExpiredTokenException
 from src.app.core.logger import get_logger
 from src.app.core.services.redis import revoke_refresh_token, revoke_all_refresh_tokens
-from src.app.core.utils.auth import get_password_hash, create_response
-from src.app.crud.user import create_user
+from src.app.core.utils.auth import create_response, verify_password
+from src.app.crud.user import create_user, update_user_password
 from src.app.crud.user import get_user_by_email, get_user_by_name
-from src.app.models import User
-from src.app.schemas.user import UserCreate, UserPublic
+
+from src.app.schemas.user import UserCreate, UserPublic, PasswordChange
 from src.app.tasks import send_welcome_email
 from src.app.core.services.email import send_welcome_email as send_welcome
 
@@ -23,7 +22,11 @@ log = get_logger("user_service")
 
 
 class UserService:
-    """Сервис для работы с пользователями"""
+    """Сервис для работы с пользователями.
+
+    Предоставляет методы для регистрации, аутентификации, выхода из системы
+    и управления профилем пользователя.
+    """
 
     def __init__(self, session: AsyncSession):
         self.session = session
@@ -139,7 +142,13 @@ class UserService:
 
     @staticmethod
     async def _send_welcome_email(user: UserPublic) -> None:
-        """Отправляет приветственное письмо пользователю"""
+        """
+        Отправляет приветственное письмо пользователю.
+
+        :param user: Объект пользователя, которому отправляется письмо.
+        :return: None
+        :raises Exception: При ошибке отправки письма.
+        """
 
         try:
             if settings.env.env == "prod":
@@ -157,48 +166,75 @@ class UserService:
                 exc_info=True,
             )
 
-    async def update_password(
-        self,
-        user: UserPublic,
-        session: AsyncSession,
-        new_password: str,
-    ) -> ORJSONResponse:
-
-        stmt = select(User).where(User.uid == user.uid)
-        result = await session.execute(stmt)
-
-        db_user = result.scalar_one_or_none()
-        if db_user is None:
-            log.error("Пользователь с uid %s не найден", user.uid)
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={
-                    "message": "Пользователь не найден",
-                },
-            )
-        db_user.hashed_password = get_password_hash(new_password)
-
-        await session.commit()
-        await revoke_all_refresh_tokens(user.uid)
-
-        return await create_response(user)
-
-    async def autheticate_user(
+    async def authenticate_user(
         self,
         session: AsyncSession,
         username: str,
         password: str,
     ) -> UserPublic | None:
-        pass
+        """
+        Аутентифицирует пользователя по имени пользователя и паролю.
+
+        :param session: Асинхронная сессия базы данных.
+        :param username: Имя пользователя для аутентификации.
+        :param password: Пароль пользователя для проверки.
+        :return: Объект UserPublic, если аутентификация прошла успешно, иначе None.
+        :raises HTTPException: Если пароль неверный.
+        """
+
+        user = await get_user_by_name(session, username)
+
+        if not verify_password(password, user.hashed_password):
+            log.error(
+                "Неверный пароль для пользователя: %s",
+                username,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail={"message": "Введён неверный пароль"},
+            )
+
+        return UserPublic.model_validate(user)
+
+    async def change_password(
+        self,
+        session: AsyncSession,
+        user: UserPublic,
+        password_data: PasswordChange,
+    ) -> ORJSONResponse:
+        """
+        Изменяет пароль пользователя.
+
+        :param session: Асинхронная сессия базы данных.
+        :param user: Объект аутентифицированного пользователя.
+        :param password_data: Данные для смены пароля (текущий и новый пароль).
+        :return: Ответ об успешной смене пароля.
+        :raises HTTPException: Если текущий пароль неверный.
+        """
+
+        authenticated_user = await self.authenticate_user(
+            session,
+            user.username,
+            password_data.current_password,
+        )
+
+        await update_user_password(
+            session,
+            authenticated_user.uid,
+            password_data.new_password,
+        )
+        await revoke_all_refresh_tokens(authenticated_user.uid)
+
+        return await create_response(authenticated_user)
 
 
 def get_user_service(
     session: AsyncSession = Depends(db_helper.session_getter),
 ) -> UserService:
     """
-    Возвращает экземпляр UserService с переданной сессией.
+    Фабрика для создания экземпляра UserService.
 
-    :param session: Сессия базы данных для выполнения запросов.
+    :param session: Асинхронная сессия базы данных.
     :return: Экземпляр UserService с переданной сессией.
     """
 
