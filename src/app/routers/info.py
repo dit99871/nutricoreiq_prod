@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 
 from src.app.core import templates
-from src.app.core.services.auth import get_current_auth_user
+from src.app.core.services.user_service import UserService
 from src.app.schemas.user import UserPublic
 
 router = APIRouter(
@@ -13,7 +13,7 @@ router = APIRouter(
     default_response_class=HTMLResponse,
 )
 
-current_user = Annotated[UserPublic, Depends(get_current_auth_user)]
+current_user = Annotated[UserPublic, Depends(UserService.get_current_auth_user)]
 
 
 @router.get("/privacy")
