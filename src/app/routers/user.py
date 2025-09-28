@@ -9,7 +9,7 @@ from starlette.responses import RedirectResponse
 from src.app.core import db_helper
 from src.app.core.exceptions import ExpiredTokenException
 from src.app.core.logger import get_logger
-from src.app.core.services.auth import get_current_auth_user
+from src.app.core.services.user_service import UserService
 from src.app.core.utils import templates
 from src.app.crud.profile import get_user_profile, update_user_profile
 from src.app.crud.user import choose_subscribe_status
@@ -23,7 +23,7 @@ router = APIRouter(
 
 log = get_logger("user_router")
 session = Annotated[AsyncSession, Depends(db_helper.session_getter)]
-current_user = Annotated[UserPublic, Depends(get_current_auth_user)]
+current_user = Annotated[UserPublic, Depends(UserService.get_current_auth_user)]
 
 
 @router.get("/me")

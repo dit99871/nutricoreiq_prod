@@ -7,9 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.core import db_helper
 from src.app.core.logger import get_logger
-from src.app.core.services.auth import get_current_auth_user
 from src.app.core.services.product import handle_product_details, handle_product_search
 from src.app.core.services.redis import get_redis_session_from_request
+from src.app.core.services.user_service import UserService
 from src.app.core.utils import templates
 from src.app.core.utils.pending_product import (
     check_pending_exists,
@@ -56,7 +56,7 @@ async def get_product_details(
     request: Request,
     product_id: int,
     session: current_session,
-    current_user: Annotated[UserPublic, Depends(get_current_auth_user)],
+    current_user: Annotated[UserPublic, Depends(UserService.get_current_auth_user)],
 ):
     """
     Retrieves the details of a product.

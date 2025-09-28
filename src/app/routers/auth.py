@@ -18,10 +18,7 @@ from src.app.core.config import settings
 from src.app.core.exceptions import ExpiredTokenException, UserAlreadyExistsError
 from src.app.core.logger import get_logger
 from src.app.core.redis import get_redis
-from src.app.core.services.auth import (
-    get_current_auth_user,
-    get_current_auth_user_for_refresh,
-)
+from src.app.core.services.auth import get_current_auth_user_for_refresh
 from src.app.core.services.limiter import limiter
 from src.app.core.services.user_service import UserService, get_user_service
 from src.app.core.utils.auth import create_response
@@ -30,10 +27,10 @@ from src.app.schemas.user import PasswordChange, UserCreate, UserPublic
 log = get_logger("auth_router")
 
 # алиасы типов зависимостей
-db_session = Annotated[AsyncSession, Depends(db_helper.session_getter)]
-current_user = Annotated[UserPublic, Depends(get_current_auth_user)]
-redis_dependency = Annotated[Redis, Depends(get_redis)]
 UserServiceDep = Annotated[UserService, Depends(get_user_service)]
+db_session = Annotated[AsyncSession, Depends(db_helper.session_getter)]
+current_user = Annotated[UserPublic, Depends(UserServiceDep.get_current_auth_user)]
+redis_dependency = Annotated[Redis, Depends(get_redis)]
 
 router = APIRouter(
     tags=["Authentication"],
@@ -137,19 +134,8 @@ async def refresh_token(
     request: Request,
     session: db_session,
     redis: redis_dependency,
+    user_service: UserServiceDep,
 ) -> Response:
-    """
-    Обновляет access и refresh токены для пользователя.
-
-    Принимает refresh токен из cookies запроса и возвращает новый access и refresh токен,
-    если токен валиден. Если токен недействителен или истек, вызывает исключение 401.
-
-    :param request: Текущий объект запроса.
-    :param session: Текущая сессия базы данных.
-    :param redis: Redis клиент для валидации refresh токена.
-    :return: Ответ с новыми access и refresh токенами.
-    :raises HTTPException: Если refresh токен не найден или недействителен.
-    """
 
     refresh_jwt = request.cookies.get("refresh_token")
     if not refresh_jwt:
