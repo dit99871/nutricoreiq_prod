@@ -250,3 +250,41 @@ async def choose_subscribe_status(
                 "message": "Внутренняя ошибка обновления данных",
             },
         )
+
+
+async def update_user_password(
+    session: AsyncSession,
+    user_uid: str,
+    new_password: str,
+) -> None:
+    """
+    Обновляет пароль пользователя в базе данных.
+
+    :param session: Асинхронная сессия SQLAlchemy
+    :param user_uid: UID пользователя
+    :param new_password: Новый пароль в открытом виде
+    :raises HTTPException: Если пользователь не найден
+    """
+
+    try:
+        stmt = select(User).where(User.uid == user_uid)
+        result = await session.execute(stmt)
+        db_user = result.scalar_one_or_none()
+
+        if db_user is None:
+            log.error("Пользователь с uid %s не найден", user_uid)
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"message": "Пользователь не найден"},
+            )
+
+        db_user.hashed_password = get_password_hash(new_password)
+        await session.commit()
+
+    except SQLAlchemyError as e:
+        log.error("Ошибка при обновлении пароля пользователя %s: %s", user_uid, str(e))
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"message": "Ошибка при обновлении пароля"},
+        )
