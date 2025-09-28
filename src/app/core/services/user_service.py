@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Annotated
 
 from fastapi import HTTPException, status, Depends, Request
 from fastapi.responses import ORJSONResponse
@@ -7,11 +7,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.core import db_helper
 from src.app.core.config import settings
+from src.app.core.constants import CREDENTIAL_EXCEPTION
 from src.app.core.exceptions import UserAlreadyExistsError, ExpiredTokenException
 from src.app.core.logger import get_logger
+from src.app.core.services.auth import (
+    get_access_token_from_cookies,
+    get_current_access_token_payload,
+)
 from src.app.core.services.redis import revoke_refresh_token, revoke_all_refresh_tokens
 from src.app.core.utils.auth import create_response, verify_password
-from src.app.crud.user import create_user, update_user_password
+from src.app.crud.user import create_user, update_user_password, get_user_by_uid
 from src.app.crud.user import get_user_by_email, get_user_by_name
 
 from src.app.schemas.user import UserCreate, UserPublic, PasswordChange
@@ -48,6 +53,12 @@ class UserService:
         """
 
         user = await get_user_by_name(session, username)
+        if user is None:
+            log.error("Пользователя с таким именем не существует в БД")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"message": "Пользователь с таким именем не найден"},
+            )
 
         if not verify_password(password, user.hashed_password):
             log.error(
@@ -253,9 +264,41 @@ class UserService:
 
         return await create_response(authenticated_user)
 
+    async def get_current_auth_user(
+        self,
+        session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
+        token: Annotated[str, Depends(get_access_token_from_cookies)],
+    ) -> UserPublic | None:
+        """
+        Получает текущего аутентифицированного пользователя на основе access токена.
+
+        Извлекает и проверяет access токен из куки запроса, затем находит
+        соответствующего пользователя в базе данных.
+
+        :param session: Асинхронная сессия базы данных.
+        :param token: Access токен, извлеченный из куки запроса.
+        :return: Объект UserPublic, если пользователь аутентифицирован, иначе None.
+        :raises HTTPException:
+            - 401: Если токен недействителен или истек.
+            - 404: Если пользователь не найден.
+        """
+
+        if token is None:
+            return None
+
+        payload: dict = get_current_access_token_payload(token)
+        uid: str | None = payload.get("sub")
+        if uid is None:
+            log.error("Ошибка получения uid из payload")
+            raise CREDENTIAL_EXCEPTION
+
+        user = await get_user_by_uid(session, uid)
+
+        return user
+
 
 def get_user_service(
-    session: AsyncSession = Depends(db_helper.session_getter),
+    session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
 ) -> UserService:
     """
     Фабрика для создания экземпляра UserService.

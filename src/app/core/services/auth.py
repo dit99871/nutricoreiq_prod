@@ -1,10 +1,9 @@
-from typing import Annotated, Any
+from typing import Any
 
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import Request
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.app.core import db_helper
 from src.app.core.constants import CREDENTIAL_EXCEPTION
 from src.app.core.logger import get_logger
 from src.app.core.services.jwt_service import (
@@ -13,8 +12,7 @@ from src.app.core.services.jwt_service import (
     decode_jwt,
 )
 from src.app.core.services.redis import validate_refresh_jwt
-from src.app.core.utils.auth import verify_password
-from src.app.crud.user import get_user_by_name, get_user_by_uid
+from src.app.crud.user import get_user_by_uid
 from src.app.schemas.user import UserPublic
 
 log = get_logger("auth_service")
@@ -73,39 +71,6 @@ def get_current_access_token_payload(
     return payload
 
 
-async def get_current_auth_user(
-    token: Annotated[str, Depends(get_access_token_from_cookies)],
-    session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-) -> UserPublic | None:
-    """
-    Authenticates a user given a JWT token and returns the user object.
-
-    If the token is invalid, has expired, or the user is not found, raises an
-    HTTPException with a 401 status code.
-
-    :param token: The JWT token to authenticate with.
-    :param session: The database session to use for the query.
-    :return: The authenticated user object, or None if authentication fails.
-    """
-    if token is None:
-        return None
-
-    payload: dict = get_current_access_token_payload(token)
-    uid: str | None = payload.get("sub")
-    if uid is None:
-        log.error("Ошибка получения uid из payload")
-        raise CREDENTIAL_EXCEPTION
-
-    try:
-        # используем кешированную версию get_user_by_uid
-        user = await get_user_by_uid(session, uid)
-        return user
-
-    except Exception as e:
-        log.error("Ошибка при получении пользователя: %s", str(e))
-        raise CREDENTIAL_EXCEPTION
-
-
 async def get_current_auth_user_for_refresh(
     token: str,
     session: AsyncSession,
@@ -139,38 +104,3 @@ async def get_current_auth_user_for_refresh(
     user = await get_user_by_uid(session, uid)
 
     return user
-
-
-async def authenticate_user(
-    session: AsyncSession,
-    username: str,
-    password: str,
-) -> UserPublic | None:
-    """
-    Authenticates a user by validating their username and password.
-
-    This function retrieves a user from the database using the provided
-    username and verifies the provided password against the stored
-    hashed password. If the password is incorrect, it raises an HTTPException
-    with a 401 status code.
-
-    :param session: The current database session.
-    :param username: The username of the user to authenticate.
-    :param password: The password of the user to authenticate.
-    :return: A `UserResponse` object containing the authenticated user's data,
-             or None if the authentication fails.
-    :raises HTTPException: If the password is incorrect.
-    """
-    user = await get_user_by_name(session, username)
-
-    if not verify_password(password, user.hashed_password):
-        log.error(
-            "Неверный пароль для пользователя: %s",
-            username,
-        )
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"message": "Введён неверный пароль"},
-        )
-
-    return UserPublic.model_validate(user)
