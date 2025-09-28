@@ -141,12 +141,7 @@ async def get_user_by_name(
     """
 
     user = await _get_user_by_filter(session, User.username == user_name)
-    if user is None:
-        log.error("User not found in db by name")
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"message": "Пользователь с таким именем не найден"},
-        )
+
     return user
 
 
