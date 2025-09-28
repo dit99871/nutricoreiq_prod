@@ -1,9 +1,7 @@
 from typing import Annotated, Any
 
 from fastapi import Depends, HTTPException, Request, status
-from fastapi.responses import ORJSONResponse
 from redis.asyncio import Redis
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.core import db_helper
@@ -14,10 +12,9 @@ from src.app.core.services.jwt_service import (
     TOKEN_TYPE_FIELD,
     decode_jwt,
 )
-from src.app.core.services.redis import revoke_all_refresh_tokens, validate_refresh_jwt
-from src.app.core.utils.auth import create_response, get_password_hash, verify_password
+from src.app.core.services.redis import validate_refresh_jwt
+from src.app.core.utils.auth import verify_password
 from src.app.crud.user import get_user_by_name, get_user_by_uid
-from src.app.models import User
 from src.app.schemas.user import UserPublic
 
 log = get_logger("auth_service")
@@ -74,46 +71,6 @@ def get_current_access_token_payload(
         raise CREDENTIAL_EXCEPTION
 
     return payload
-
-
-async def update_password(
-    user: UserPublic,
-    session: AsyncSession,
-    new_password: str,
-) -> ORJSONResponse:
-    """
-    Updates the password for the given user.
-
-    Given a user object and a new password, updates the user's password in the
-    database. The function first queries the database for the user, then
-    updates the user's password with the new password (hashed with a secure
-    hashing algorithm). The function then commits the changes and revokes all
-    refresh tokens for the user. Finally, the function returns a response
-    containing a new access and refresh token for the user.
-
-    :param user: The user object whose password is to be updated.
-    :param session: The database session to use for the query.
-    :param new_password: The new password to set for the user.
-    :return: A response containing the new access and refresh tokens.
-    :raises HTTPException: If the user is not found in the database.
-    """
-    stmt = select(User).where(User.uid == user.uid)
-    result = await session.execute(stmt)
-    db_user = result.scalar_one_or_none()
-    if db_user is None:
-        log.error("Пользователь с uid %s не найден", user.uid)
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={
-                "message": "Пользователь не найден",
-            },
-        )
-    db_user.hashed_password = get_password_hash(new_password)
-
-    await session.commit()
-    await revoke_all_refresh_tokens(user.uid)
-
-    return await create_response(user)
 
 
 async def get_current_auth_user(

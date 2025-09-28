@@ -1,17 +1,20 @@
-from typing import Optional, Annotated
+from typing import Optional
 
 from fastapi import HTTPException, status, Depends, Request
 from fastapi.responses import ORJSONResponse
 from redis.asyncio import Redis
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.core import db_helper
 from src.app.core.config import settings
 from src.app.core.exceptions import UserAlreadyExistsError, ExpiredTokenException
 from src.app.core.logger import get_logger
-from src.app.core.services.redis import revoke_refresh_token
+from src.app.core.services.redis import revoke_refresh_token, revoke_all_refresh_tokens
+from src.app.core.utils.auth import get_password_hash, create_response
 from src.app.crud.user import create_user
 from src.app.crud.user import get_user_by_email, get_user_by_name
+from src.app.models import User
 from src.app.schemas.user import UserCreate, UserPublic
 from src.app.tasks import send_welcome_email
 from src.app.core.services.email import send_welcome_email as send_welcome
@@ -153,6 +156,40 @@ class UserService:
                 str(e),
                 exc_info=True,
             )
+
+    async def update_password(
+        self,
+        user: UserPublic,
+        session: AsyncSession,
+        new_password: str,
+    ) -> ORJSONResponse:
+
+        stmt = select(User).where(User.uid == user.uid)
+        result = await session.execute(stmt)
+
+        db_user = result.scalar_one_or_none()
+        if db_user is None:
+            log.error("Пользователь с uid %s не найден", user.uid)
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={
+                    "message": "Пользователь не найден",
+                },
+            )
+        db_user.hashed_password = get_password_hash(new_password)
+
+        await session.commit()
+        await revoke_all_refresh_tokens(user.uid)
+
+        return await create_response(user)
+
+    async def autheticate_user(
+        self,
+        session: AsyncSession,
+        username: str,
+        password: str,
+    ) -> UserPublic | None:
+        pass
 
 
 def get_user_service(
