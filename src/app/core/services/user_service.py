@@ -24,12 +24,42 @@ log = get_logger("user_service")
 class UserService:
     """Сервис для работы с пользователями.
 
-    Предоставляет методы для регистрации, аутентификации, выхода из системы
+    Предоставляет методы для регистрации, аутентификации, входа и выхода из системы
     и управления профилем пользователя.
     """
 
     def __init__(self, session: AsyncSession):
         self.session = session
+
+    @staticmethod
+    async def authenticate_user(
+        session: AsyncSession,
+        username: str,
+        password: str,
+    ) -> UserPublic:
+        """
+        Аутентифицирует пользователя по имени и паролю.
+
+        :param session: Асинхронная сессия базы данных.
+        :param username: Имя пользователя для аутентификации.
+        :param password: Пароль пользователя для проверки.
+        :return: Объект UserPublic.
+        :raises HTTPException: Если пароль неверный.
+        """
+
+        user = await get_user_by_name(session, username)
+
+        if not verify_password(password, user.hashed_password):
+            log.error(
+                "Неверный пароль для пользователя: %s",
+                username,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail={"message": "Введён неверный пароль"},
+            )
+
+        return UserPublic.model_validate(user)
 
     async def register_user(
         self,
@@ -98,6 +128,32 @@ class UserService:
                 detail={"message": "Произошла ошибка при регистрации"},
             )
 
+    async def login(
+        self,
+        session: AsyncSession,
+        username: str,
+        password: str,
+    ) -> ORJSONResponse:
+        """
+        Аутентифицирует пользователя по имени пользователя и паролю.
+
+        :param session: Асинхронная сессия базы данных.
+        :param username: Имя пользователя для входа.
+        :param password: Пароль пользователя.
+        :return: Ответ с access и refresh токенами.
+        :raises HTTPException:
+            - 401: Если имя пользователя или пароль неверны.
+            - 500: При возникновении ошибки при аутентификации.
+        """
+
+        authenticated_user = await self.authenticate_user(
+            session,
+            username,
+            password,
+        )
+
+        return await create_response(authenticated_user)
+
     async def logout(
         self,
         request: Request,
@@ -165,36 +221,6 @@ class UserService:
                 str(e),
                 exc_info=True,
             )
-
-    async def authenticate_user(
-        self,
-        session: AsyncSession,
-        username: str,
-        password: str,
-    ) -> UserPublic | None:
-        """
-        Аутентифицирует пользователя по имени пользователя и паролю.
-
-        :param session: Асинхронная сессия базы данных.
-        :param username: Имя пользователя для аутентификации.
-        :param password: Пароль пользователя для проверки.
-        :return: Объект UserPublic, если аутентификация прошла успешно, иначе None.
-        :raises HTTPException: Если пароль неверный.
-        """
-
-        user = await get_user_by_name(session, username)
-
-        if not verify_password(password, user.hashed_password):
-            log.error(
-                "Неверный пароль для пользователя: %s",
-                username,
-            )
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail={"message": "Введён неверный пароль"},
-            )
-
-        return UserPublic.model_validate(user)
 
     async def change_password(
         self,

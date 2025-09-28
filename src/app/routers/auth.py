@@ -19,7 +19,6 @@ from src.app.core.exceptions import ExpiredTokenException, UserAlreadyExistsErro
 from src.app.core.logger import get_logger
 from src.app.core.redis import get_redis
 from src.app.core.services.auth import (
-    authenticate_user,
     get_current_auth_user,
     get_current_auth_user_for_refresh,
 )
@@ -34,7 +33,7 @@ log = get_logger("auth_router")
 db_session = Annotated[AsyncSession, Depends(db_helper.session_getter)]
 current_user = Annotated[UserPublic, Depends(get_current_auth_user)]
 redis_dependency = Annotated[Redis, Depends(get_redis)]
-user_service = Annotated[UserService, Depends(get_user_service)]
+UserServiceDep = Annotated[UserService, Depends(get_user_service)]
 
 router = APIRouter(
     tags=["Authentication"],
@@ -50,7 +49,7 @@ router = APIRouter(
 async def register_user(
     request: Request,
     user_in: UserCreate,
-    user_service: user_service,
+    user_service: UserServiceDep,
 ) -> UserPublic:
     """
     Регистрирует нового пользователя в базе данных.
@@ -84,27 +83,30 @@ async def login(
     request: Request,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     session: db_session,
+    user_service: UserServiceDep,
 ) -> Response:
     """
-    Аутентифицирует пользователя и возвращает access и refresh токены.
+    Аутентифицирует пользователя и возвращает response с access и refresh токенами.
 
-    Принимает логин и пароль, аутентифицирует пользователя и возвращает ответ,
-    содержащий access и refresh токены.
+    Принимает имя пользователя и пароль, проверяет их валидность и возвращает
+    access и refresh токены в случае успешной аутентификации. Использует OAuth2
+    схему аутентификации.
 
     :param request: Текущий объект запроса.
     :param form_data: Данные формы, содержащие имя пользователя и пароль.
     :param session: Текущая сессия базы данных.
-    :return: Ответ, содержащий access и refresh токены.
+    :param user_service: Сервис для работы с пользователями.
+    :return: Response с access и refresh токенами.
+    :raises HTTPException:
+        - 401: Если имя пользователя или пароль неверны.
+        - 500: При возникновении ошибки при аутентификации.
     """
 
-    user = await authenticate_user(
-        session,
-        form_data.username,
-        form_data.password,
+    return await user_service.login(
+        session=session,
+        username=form_data.username,
+        password=form_data.password,
     )
-    response = await create_response(user)
-
-    return response
 
 
 @router.post("/logout")
@@ -112,7 +114,7 @@ async def logout(
     request: Request,
     user: current_user,
     redis: redis_dependency,
-    user_service: user_service,
+    user_service: UserServiceDep,
 ) -> Response:
     """
     Выход пользователя из системы и инвалидация refresh токена.
@@ -175,7 +177,7 @@ async def change_password(
     request: Request,
     user: current_user,
     session: db_session,
-    user_service: user_service,
+    user_service: UserServiceDep,
 ) -> Response:
     """
     Изменяет пароль аутентифицированного пользователя.
