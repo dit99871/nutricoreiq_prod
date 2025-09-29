@@ -14,7 +14,12 @@ from src.app.core.services.auth import (
     get_access_token_from_cookies,
     get_current_access_token_payload,
 )
-from src.app.core.services.redis import revoke_refresh_token, revoke_all_refresh_tokens
+from src.app.core.services.jwt_service import decode_jwt
+from src.app.core.services.redis import (
+    revoke_refresh_token,
+    revoke_all_refresh_tokens,
+    validate_refresh_jwt,
+)
 from src.app.core.utils.auth import create_response, verify_password
 from src.app.crud.user import create_user, update_user_password, get_user_by_uid
 from src.app.crud.user import get_user_by_email, get_user_by_name
@@ -144,26 +149,24 @@ class UserService:
         session: AsyncSession,
         username: str,
         password: str,
-    ) -> ORJSONResponse:
+    ) -> UserPublic:
         """
         Аутентифицирует пользователя по имени пользователя и паролю.
 
         :param session: Асинхронная сессия базы данных.
         :param username: Имя пользователя для входа.
         :param password: Пароль пользователя.
-        :return: Ответ с access и refresh токенами.
+        :return: UserPublic-схема.
         :raises HTTPException:
             - 401: Если имя пользователя или пароль неверны.
             - 500: При возникновении ошибки при аутентификации.
         """
 
-        authenticated_user = await self.authenticate_user(
+        return await self.authenticate_user(
             session,
             username,
             password,
         )
-
-        return await create_response(authenticated_user)
 
     async def logout(
         self,
@@ -290,6 +293,32 @@ class UserService:
         uid: str | None = payload.get("sub")
         if uid is None:
             log.error("Ошибка получения uid из payload")
+            raise CREDENTIAL_EXCEPTION
+
+        user = await get_user_by_uid(session, uid)
+
+        return user
+
+    async def get_current_auth_user_for_refresh(
+        self,
+        token: str,
+        session: AsyncSession,
+        redis: Redis,
+    ):
+
+
+        payload = decode_jwt(token)
+        if payload is None:
+            log.error("Ошибка декодирования refresh токена")
+            raise CREDENTIAL_EXCEPTION
+
+        uid: str | None = payload.get("sub")
+        if uid is None:
+            log.error("id пользователя не найден в refresh токене")
+            raise CREDENTIAL_EXCEPTION
+
+        if not await validate_refresh_jwt(uid, token, redis):
+            log.error("refresh токен невалиден или устарел")
             raise CREDENTIAL_EXCEPTION
 
         user = await get_user_by_uid(session, uid)
