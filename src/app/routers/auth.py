@@ -18,7 +18,6 @@ from src.app.core.config import settings
 from src.app.core.exceptions import ExpiredTokenException, UserAlreadyExistsError
 from src.app.core.logger import get_logger
 from src.app.core.redis import get_redis
-from src.app.core.services.auth import get_current_auth_user_for_refresh
 from src.app.core.services.limiter import limiter
 from src.app.core.services.user_service import UserService, get_user_service
 from src.app.core.utils.auth import create_response
@@ -99,11 +98,13 @@ async def login(
         - 500: При возникновении ошибки при аутентификации.
     """
 
-    return await user_service.login(
+    auth_user = await user_service.login(
         session=session,
         username=form_data.username,
         password=form_data.password,
     )
+
+    return await create_response(auth_user)
 
 
 @router.post("/logout")
@@ -149,11 +150,11 @@ async def refresh_token(
                 },
             },
         )
+    user = await user_service.get_current_auth_user_for_refresh(
+        refresh_jwt, session, redis
+    )
 
-    user = await get_current_auth_user_for_refresh(refresh_jwt, session, redis)
-    response = await create_response(user)
-
-    return response
+    return await create_response(user)
 
 
 @router.post("/password/change")
