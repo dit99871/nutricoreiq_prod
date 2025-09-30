@@ -1,8 +1,6 @@
 from typing import Any
 
 from fastapi import Request
-from redis.asyncio import Redis
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.core.constants import CREDENTIAL_EXCEPTION
 from src.app.core.logger import get_logger
@@ -11,9 +9,6 @@ from src.app.core.services.jwt_service import (
     TOKEN_TYPE_FIELD,
     decode_jwt,
 )
-from src.app.core.services.redis import validate_refresh_jwt
-from src.app.crud.user import get_user_by_uid
-from src.app.schemas.user import UserPublic
 
 log = get_logger("auth_service")
 
@@ -69,38 +64,3 @@ def get_current_access_token_payload(
         raise CREDENTIAL_EXCEPTION
 
     return payload
-
-
-async def get_current_auth_user_for_refresh(
-    token: str,
-    session: AsyncSession,
-    redis: Redis,
-) -> UserPublic:
-    """
-    Authenticates a user given a refresh token and returns the user object.
-
-    If the token is invalid, has expired, or the user is not found, raises an
-    HTTPException with a 401 status code.
-
-    :param token: The refresh token to authenticate with.
-    :param session: The database session to use for the query.
-    :param redis: The Redis client to use for the query.
-    :return: The authenticated user object.
-    """
-    payload = decode_jwt(token)
-    if payload is None:
-        log.error("Ошибка декодирования refresh токена")
-        raise CREDENTIAL_EXCEPTION
-
-    uid: str | None = payload.get("sub")
-    if uid is None:
-        log.error("id пользователя не найден в refresh токене")
-        raise CREDENTIAL_EXCEPTION
-
-    if not await validate_refresh_jwt(uid, token, redis):
-        log.error("refresh токен невалиден или устарел")
-        raise CREDENTIAL_EXCEPTION
-
-    user = await get_user_by_uid(session, uid)
-
-    return user
