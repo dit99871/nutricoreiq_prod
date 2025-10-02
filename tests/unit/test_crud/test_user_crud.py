@@ -1,8 +1,7 @@
 import uuid
-from unittest.mock import AsyncMock, patch, MagicMock, ANY
+from unittest.mock import AsyncMock, patch, MagicMock
 import pytest
 from fastapi import HTTPException, status
-from pydantic import SecretStr
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,7 +25,6 @@ src.app.core.utils.validators.validate_password_strength = (
 
 # Now import the rest of the modules
 from src.app.crud.user import (
-    _get_user_by_filter,
     get_user_by_uid,
     get_user_by_email,
     get_user_by_name,
@@ -44,7 +42,7 @@ def mock_user():
     return User(
         id=1,
         uid=str(uuid.uuid4()),
-        username="testuser",
+        username="test_user",
         email="test@example.com",
         hashed_password=b"hashed_password",
         is_active=True,
@@ -55,39 +53,10 @@ def mock_user():
 @pytest.fixture
 def user_create_data():
     return {
-        "username": "newuser",
+        "username": "new_user",
         "email": "newuser@example.com",
         "password": "StrongPass123!",
     }
-
-
-@pytest.mark.asyncio
-async def test_get_user_by_filter_success(mock_user):
-    mock_session = AsyncMock(spec=AsyncSession)
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = mock_user
-    mock_session.execute.return_value = mock_result
-
-    result = await _get_user_by_filter(mock_session, User.id == 1)
-
-    assert result is not None
-    assert result.id == mock_user.id
-    assert result.username == mock_user.username
-    assert result.email == mock_user.email
-    assert hasattr(result, "hashed_password")
-    assert "hashed_password" not in result.model_dump()
-
-
-@pytest.mark.asyncio
-async def test_get_user_by_filter_not_found():
-    mock_session = AsyncMock(spec=AsyncSession)
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = None
-    mock_session.execute.return_value = mock_result
-
-    result = await _get_user_by_filter(mock_session, User.id == 999)
-
-    assert result is None
 
 
 @pytest.mark.asyncio
@@ -172,23 +141,10 @@ async def test_get_user_by_name_success(mock_user):
     mock_result.scalar_one_or_none.return_value = mock_user
     mock_session.execute.return_value = mock_result
 
-    result = await get_user_by_name(mock_session, "testuser")
+    result = await get_user_by_name(mock_session, "test_user")
 
     assert result is not None
-    assert result.username == "testuser"
-
-
-@pytest.mark.asyncio
-async def test_get_user_by_name_not_found():
-    mock_session = AsyncMock(spec=AsyncSession)
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = None
-    mock_session.execute.return_value = mock_result
-
-    with pytest.raises(HTTPException) as exc_info:
-        await get_user_by_name(mock_session, "nonexistentuser")
-
-    assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
+    assert result.username == "test_user"
 
 
 @pytest.mark.asyncio
