@@ -19,8 +19,8 @@ MAX_WEIGHT_KG: int = 400
 
 # JWT constants
 TOKEN_TYPE_FIELD = "type"
-ACCESS_TOKEN_TYPE = "access"
-REFRESH_TOKEN_TYPE = "refresh"
+ACCESS_TOKEN_TYPE = "access_token"
+REFRESH_TOKEN_TYPE = "refresh_token"
 
 # Authentication constants
 CREDENTIAL_EXCEPTION = HTTPException(
