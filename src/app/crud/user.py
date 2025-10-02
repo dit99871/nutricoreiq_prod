@@ -19,24 +19,16 @@ async def _get_user_by_filter(
     filter_condition,
 ) -> UserPublic | None:
     """
-    Helper function to get a user from the database using a filter condition.
+    Получает пользователя из базы данных по заданному фильтру.
 
-    Given a `filter_condition` argument, constructs a SQLAlchemy query to fetch a user
-    from the database. The query will only return active users.
+    Ищет активного пользователя в базе данных, соответствующего переданному условию фильтрации.
+    Возвращает объект пользователя в формате UserPublic, если пользователь найден и активен,
+    или None, если пользователь не найден или неактивен.
 
-    On success, returns a `UserResponse` object containing the user's data. If the user
-    is not found, returns `None`.
-
-    If a database error occurs, raises an `HTTPException` with a 404 status code and
-    a detail string containing the error message. If an unexpected error occurs,
-    raises an `HTTPException` with a 500 status code and a detail string containing the
-    error message.
-
-    :param session: The current database session.
-    :param filter_condition: The filter condition to use in the query.
-    :return: A `UserResponse` object containing the user's data, or `None` if the user
-        is not found.
-    :raises HTTPException: If a database error or unexpected error occurs.
+    :param session: Асинхронная сессия SQLAlchemy для работы с базой данных.
+    :param filter_condition: Условие фильтрации для поиска пользователя.
+    :return: Объект UserPublic с данными пользователя или None, если пользователь не найден.
+    :raises SQLAlchemyError: При возникновении ошибок при работе с базой данных.
     """
 
     try:
@@ -48,11 +40,11 @@ async def _get_user_by_filter(
 
     except SQLAlchemyError as e:
         log.error(
-            "Database error getting user: %s",
+            "Database error: %s",
             str(e),
         )
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={
                 "message": "Внутренняя ошибка сервера",
             },
@@ -65,14 +57,19 @@ async def get_user_by_uid(
     use_cache: bool = True,
 ) -> UserPublic:
     """
-    Fetches a user from the database by their user ID (UID) with optional caching.
+    Получает пользователя из базы данных по его UID с возможностью кеширования.
 
-    :param session: The current database session.
-    :param uid: The UID of the user to fetch.
-    :param use_cache: Whether to use cache (default: True).
-    :return: A UserPublic object containing the user's data.
-    :raises HTTPException: If the user is not found or an unexpected error occurs.
+    Ищет пользователя в базе данных по указанному UID. Поддерживает кеширование
+    для ускорения последующих запросов. Если пользователь не найден, вызывает
+    исключение HTTP 404.
+
+    :param session: Асинхронная сессия SQLAlchemy для работы с базой данных.
+    :param uid: UID пользователя для поиска.
+    :param use_cache: Флаг использования кеширования (по умолчанию: True).
+    :return: Объект UserPublic с данными пользователя.
+    :raises HTTPException: Если пользователь не найден или произошла ошибка.
     """
+
     # пытаемся получить из кеша
     if use_cache:
         cached_user = await CacheService.get_user(uid)
@@ -102,18 +99,15 @@ async def get_user_by_email(
     email: EmailStr,
 ) -> UserPublic | None:
     """
-    Fetches a user from the database by their email address.
+    Получает пользователя из базы данных по email.
 
-    Given a `session` and an `email`, constructs a SQLAlchemy query to fetch a user
-    from the database. The query will only return active users.
+    Ищет активного пользователя в базе данных по указанному email.
+    Возвращает объект пользователя в формате UserPublic, если пользователь найден,
+    или None, если пользователь не найден.
 
-    On success, returns a `UserResponse` object containing the user's data. If the user
-    is not found, returns `None`.
-
-    :param session: The current database session.
-    :param email: The email address of the user to fetch.
-    :return: A `UserResponse` object containing the user's data, or `None` if the user
-        is not found.
+    :param session: Асинхронная сессия SQLAlchemy для работы с базой данных.
+    :param email: Email пользователя для поиска.
+    :return: Объект UserPublic с данными пользователя или None, если пользователь не найден.
     """
 
     user = await _get_user_by_filter(session, User.email == email)
@@ -126,18 +120,16 @@ async def get_user_by_name(
     user_name: str,
 ) -> UserPublic:
     """
-    Fetches a user from the database by their username.
+    Получает пользователя из базы данных по имени пользователя.
 
-    Constructs a SQLAlchemy query to fetch an active user from the database
-    using the provided `user_name`. If the user is found, returns a `UserResponse`
-    object containing the user's data. If the user is not found, raises an
-    `HTTPException` with a 404 status code and an appropriate error message.
+    Ищет активного пользователя в базе данных по указанному имени пользователя.
+    Возвращает объект пользователя в формате UserPublic, если пользователь найден,
+    или вызывает исключение HTTP 404, если пользователь не найден.
 
-    :param session: The current database session.
-    :param user_name: The username of the user to fetch.
-    :return: A `UserResponse` object containing the user's data, or raises an
-        `HTTPException` if the user is not found.
-    :raises HTTPException: If the user is not found in the database.
+    :param session: Асинхронная сессия SQLAlchemy для работы с базой данных.
+    :param user_name: Имя пользователя для поиска.
+    :return: Объект UserPublic с данными пользователя.
+    :raises HTTPException: Если пользователь не найден.
     """
 
     user = await _get_user_by_filter(session, User.username == user_name)
@@ -150,23 +142,15 @@ async def create_user(
     user_in: UserCreate,
 ) -> UserPublic:
     """
-    Creates a new user in the database.
+    Создает нового пользователя в базе данных.
 
-    Given a `UserCreate` object as input, this function creates a new user in the
-    database. The function first hashes the password using a secure password hashing
-    algorithm, then creates a new `User` object with the input data and the hashed
-    password. The object is then added to the database and committed.
+    Принимает объект UserCreate, хеширует пароль и создает новую запись пользователя
+    в базе данных. В случае успеха возвращает созданного пользователя в формате UserPublic.
 
-    On success, returns a `UserResponse` object containing the user's data. If the user is not
-    found, raises an `HTTPException` with a 500 status code and a detail string
-    containing the error message. If an unexpected error occurs, raises an
-    `HTTPException` with a 500 status code and a detail string containing the error
-    message.
-
-    :param session: The current database session.
-    :param user_in: The user data to create.
-    :return: A `UserResponse` object containing the user's data.
-    :raises HTTPException: If an error occurs during the creation of the user.
+    :param session: Асинхронная сессия SQLAlchemy для работы с базой данных.
+    :param user_in: Данные для создания нового пользователя.
+    :return: Объект UserPublic с данными созданного пользователя.
+    :raises HTTPException: Если произошла ошибка при создании пользователя.
     """
 
     try:
@@ -206,13 +190,15 @@ async def choose_subscribe_status(
     condition: bool,
 ):
     """
-    Updates the subscription status for the given user.
+    Обновляет статус подписки для указанного пользователя.
 
-    :param user: The user object (Pydantic UserResponse) whose subscription status is to be updated.
-    :param session: The current database session.
-    :param condition: A boolean value indicating the desired subscription status.
-    :return: None
-    :raises HTTPException: If the user is not found or the database operation fails.
+    Изменяет статус подписки пользователя на указанное значение.
+    В случае успешного обновления сохраняет изменения в базе данных.
+
+    :param user: Объект пользователя (UserPublic), для которого обновляется подписка.
+    :param session: Асинхронная сессия SQLAlchemy для работы с базой данных.
+    :param condition: Булево значение нового статуса подписки.
+    :raises HTTPException: Если пользователь не найден или произошла ошибка при обновлении.
     """
 
     stmt = select(User).filter(User.uid == user.uid, User.is_active == True)
@@ -255,10 +241,13 @@ async def update_user_password(
     """
     Обновляет пароль пользователя в базе данных.
 
-    :param session: Асинхронная сессия SQLAlchemy
-    :param user_uid: UID пользователя
-    :param new_password: Новый пароль в открытом виде
-    :raises HTTPException: Если пользователь не найден
+    Принимает новый пароль в открытом виде, хеширует его и сохраняет в базе данных.
+    В случае успеха сохраняет изменения в базе данных.
+
+    :param session: Асинхронная сессия SQLAlchemy.
+    :param user_uid: UID пользователя, для которого обновляется пароль.
+    :param new_password: Новый пароль в открытом виде.
+    :raises HTTPException: Если пользователь не найден или произошла ошибка при обновлении.
     """
 
     try:
