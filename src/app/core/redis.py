@@ -19,7 +19,7 @@ redis_client = Redis.from_url(
 )
 
 
-async def get_redis() -> AsyncGenerator[Any, Redis]:
+async def get_redis_service() -> AsyncGenerator[Any, Redis]:
     """
     Yields a Redis connection object for dependency injection.
     """
