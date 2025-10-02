@@ -3,7 +3,7 @@ from typing import Optional
 
 from src.app.core.config import settings
 from src.app.core.logger import get_logger
-from src.app.core.redis import get_redis
+from src.app.core.redis import get_redis_service
 
 log = get_logger("cache_service")
 
@@ -27,7 +27,7 @@ class CacheService:
         """
 
         try:
-            async for redis in get_redis():
+            async for redis in get_redis_service():
                 key = cls._get_user_cache_key(uid)
                 data = await redis.get(key)
                 if data:
@@ -57,7 +57,7 @@ class CacheService:
         """
 
         try:
-            async for redis in get_redis():
+            async for redis in get_redis_service():
                 key = cls._get_user_cache_key(uid)
                 # сериализуем словарь в json-строку
                 serialized_data = json.dumps(user_data, ensure_ascii=False)
@@ -90,7 +90,7 @@ class CacheService:
         """
 
         try:
-            async for redis in get_redis():
+            async for redis in get_redis_service():
                 key = cls._get_user_cache_key(uid)
                 await redis.delete(key)
 
