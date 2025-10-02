@@ -22,13 +22,15 @@ router = APIRouter(
 )
 
 log = get_logger("user_router")
-session = Annotated[AsyncSession, Depends(db_helper.session_getter)]
-current_user = Annotated[UserPublic, Depends(UserService.get_current_auth_user)]
+
+# алиасы типов зависимостей
+session_dep = Annotated[AsyncSession, Depends(db_helper.session_getter)]
+current_user_dep = Annotated[UserPublic, Depends(UserService.get_user_by_access_jwt)]
 
 
 @router.get("/me")
 async def read_current_user(
-    user: current_user,
+    user: current_user_dep,
 ) -> dict:
     """
     Retrieves the current authenticated user's basic information.
@@ -54,8 +56,8 @@ async def read_current_user(
 @router.head("/profile/data")
 async def get_profile(
     request: Request,
-    user: current_user,
-    db_session: session,
+    user: current_user_dep,
+    db_session: session_dep,
 ) -> Response:
     """
     Retrieves the current authenticated user's profile information.
@@ -95,8 +97,8 @@ async def get_profile(
 @router.post("/profile/update")
 async def update_profile(
     data_in: UserProfileUpdate,
-    user: current_user,
-    db_session: session,
+    user: current_user_dep,
+    db_session: session_dep,
 ) -> dict:
     """
     Updates the current authenticated user's profile information.
@@ -130,8 +132,8 @@ async def update_profile(
 
 @router.post("/unsubscribe")
 async def unsubscribe_email_notification(
-    user: current_user,
-    db_session: session,
+    user: current_user_dep,
+    db_session: session_dep,
 ) -> None:
     """
     Unsubscribes the current authenticated user from email notifications.
@@ -157,8 +159,8 @@ async def unsubscribe_email_notification(
 
 @router.post("/subscribe")
 async def subscribe_email_notification(
-    user: current_user,
-    db_session: session,
+    user: current_user_dep,
+    db_session: session_dep,
 ) -> None:
     """
     Subscribes the current authenticated user to email notifications.
