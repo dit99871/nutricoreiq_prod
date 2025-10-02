@@ -1,4 +1,4 @@
-from typing import Optional, Annotated
+from typing import Annotated, Any
 
 from fastapi import HTTPException, status, Depends, Request
 from fastapi.responses import ORJSONResponse
@@ -7,26 +7,31 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.core import db_helper
 from src.app.core.config import settings
-from src.app.core.constants import CREDENTIAL_EXCEPTION
+from src.app.core.constants import (
+    ACCESS_TOKEN_TYPE,
+    CREDENTIAL_EXCEPTION,
+    TOKEN_TYPE_FIELD,
+    REFRESH_TOKEN_TYPE,
+)
 from src.app.core.exceptions import UserAlreadyExistsError, ExpiredTokenException
 from src.app.core.logger import get_logger
-from src.app.core.services.auth import (
-    get_access_token_from_cookies,
-    get_current_access_token_payload,
-)
-from src.app.core.services.jwt_service import decode_jwt
+from src.app.core.services.jwt_service import get_jwt_from_cookies, get_jwt_payload
+from src.app.core.services.email import send_welcome_email as send_welcome
 from src.app.core.services.redis import (
-    revoke_refresh_token,
     revoke_all_refresh_tokens,
+    revoke_refresh_token,
     validate_refresh_jwt,
 )
 from src.app.core.utils.auth import create_response, verify_password
-from src.app.crud.user import create_user, update_user_password, get_user_by_uid
-from src.app.crud.user import get_user_by_email, get_user_by_name
-
+from src.app.crud.user import (
+    create_user,
+    get_user_by_email,
+    get_user_by_name,
+    get_user_by_uid,
+    update_user_password,
+)
 from src.app.schemas.user import UserCreate, UserPublic, PasswordChange
 from src.app.tasks import send_welcome_email
-from src.app.core.services.email import send_welcome_email as send_welcome
 
 log = get_logger("user_service")
 
@@ -41,8 +46,8 @@ class UserService:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    @staticmethod
     async def authenticate_user(
+        self,
         session: AsyncSession,
         username: str,
         password: str,
@@ -80,19 +85,19 @@ class UserService:
     async def register_user(
         self,
         user_in: UserCreate,
-        client_ip: Optional[str] = None,
+        request: Request,
     ) -> UserPublic:
         """
         Регистрирует нового пользователя
 
         :param user_in: Данные нового пользователя
-        :param client_ip: IP-адрес клиента для логирования
+        :param request: Объект запроса
         :return: Зарегистрированный пользователь
         :raises UserAlreadyExistsError: Если пользователь с таким email или username уже существует
         :raises HTTPException: При возникновении ошибки при создании пользователя
         """
 
-        client_ip = client_ip or "неизвестен"
+        client_ip = (request.client.host if request.client else None) or "неизвестен"
 
         # проверяем существование пользователя по username
         existing_user = await get_user_by_name(self.session, user_in.username)
@@ -146,13 +151,15 @@ class UserService:
 
     async def login(
         self,
+        request: Request,
         session: AsyncSession,
         username: str,
         password: str,
     ) -> UserPublic:
         """
-        Аутентифицирует пользователя по имени пользователя и паролю.
+        Аутентифицирует пользователя по имени и паролю.
 
+        :param request: Объект запроса
         :param session: Асинхронная сессия базы данных.
         :param username: Имя пользователя для входа.
         :param password: Пароль пользователя.
@@ -161,6 +168,13 @@ class UserService:
             - 401: Если имя пользователя или пароль неверны.
             - 500: При возникновении ошибки при аутентификации.
         """
+
+        client_ip = (request.client.host if request.client else None) or "неизвестен"
+        log.info(
+            "Попытка входа по логину: %s, с IP: %s",
+            username,
+            client_ip,
+        )
 
         return await self.authenticate_user(
             session,
@@ -187,7 +201,7 @@ class UserService:
         if user is None:
             raise ExpiredTokenException()
 
-        refresh_jwt = request.cookies.get("refresh_token")
+        refresh_jwt = request.cookies.get(REFRESH_TOKEN_TYPE)
         if not refresh_jwt:
             log.error("Refresh token not found in cookies")
             raise ExpiredTokenException()
@@ -203,8 +217,8 @@ class UserService:
             content={"message": "Successfully logged out"},
         )
 
-        response.delete_cookie("refresh_token")
-        response.delete_cookie("access_token")
+        response.delete_cookie(ACCESS_TOKEN_TYPE)
+        response.delete_cookie(REFRESH_TOKEN_TYPE)
         response.delete_cookie("redis_session_id")
         response.delete_cookie("csrf_token")
 
@@ -238,6 +252,7 @@ class UserService:
 
     async def change_password(
         self,
+        request: Request,
         session: AsyncSession,
         user: UserPublic,
         password_data: PasswordChange,
@@ -245,12 +260,20 @@ class UserService:
         """
         Изменяет пароль пользователя.
 
+        :param request: Объект текущего запроса
         :param session: Асинхронная сессия базы данных.
         :param user: Объект аутентифицированного пользователя.
         :param password_data: Данные для смены пароля (текущий и новый пароль).
         :return: Ответ об успешной смене пароля.
         :raises HTTPException: Если текущий пароль неверный.
         """
+
+        client_ip = (request.client.host if request.client else None) or "неизвестен"
+        log.info(
+            "Попытка сменить пароль для пользователя: %s, c IP: %s",
+            user.username,
+            client_ip,
+        )
 
         authenticated_user = await self.authenticate_user(
             session,
@@ -267,29 +290,25 @@ class UserService:
 
         return await create_response(authenticated_user)
 
-    async def get_current_auth_user(
-        self,
+    @staticmethod
+    async def get_user_by_access_jwt(
         session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
-        token: Annotated[str, Depends(get_access_token_from_cookies)],
+        token: Annotated[str, Depends(get_jwt_from_cookies)],
     ) -> UserPublic | None:
-        """
-        Получает текущего аутентифицированного пользователя на основе access токена.
-
-        Извлекает и проверяет access токен из куки запроса, затем находит
-        соответствующего пользователя в базе данных.
-
-        :param session: Асинхронная сессия базы данных.
-        :param token: Access токен, извлеченный из куки запроса.
-        :return: Объект UserPublic, если пользователь аутентифицирован, иначе None.
-        :raises HTTPException:
-            - 401: Если токен недействителен или истек.
-            - 404: Если пользователь не найден.
-        """
 
         if token is None:
             return None
 
-        payload: dict = get_current_access_token_payload(token)
+        payload: dict = await get_jwt_payload(token)
+        token_type: str | None = payload.get(TOKEN_TYPE_FIELD)
+        if token_type is None or token_type != ACCESS_TOKEN_TYPE:
+            log.error(
+                "Такого типа токена %s не существует в payload токена: %s",
+                token_type,
+                payload,
+            )
+            raise CREDENTIAL_EXCEPTION
+
         uid: str | None = payload.get("sub")
         if uid is None:
             log.error("Ошибка получения uid из payload")
@@ -299,11 +318,11 @@ class UserService:
 
         return user
 
-    async def get_current_auth_user_for_refresh(
+    async def get_user_by_refresh_jwt(
         self,
-        token: str,
+        request: Request,
         session: AsyncSession,
-        redis: Redis,
+        redis_service: Redis,
     ) -> UserPublic:
         """
         Получает текущего аутентифицированного пользователя для обновления токенов.
@@ -311,27 +330,37 @@ class UserService:
         Проверяет валидность refresh токена, извлекает идентификатор пользователя
         и возвращает соответствующий объект пользователя из базы данных.
 
-        :param token: Refresh токен из cookies запроса.
+        :param request: Объект текущего запроса
         :param session: Асинхронная сессия базы данных.
-        :param redis: Клиент Redis для проверки валидности токена.
+        :param redis_service: Клиент Redis для проверки валидности токена.
         :return: Объект UserPublic, если пользователь аутентифицирован.
         :raises HTTPException:
             - 401: Если токен недействителен, истек или пользователь не найден.
             - 404: Если пользователь с указанным идентификатором не существует.
         """
 
-        payload = decode_jwt(token)
-        if payload is None:
-            log.error("Ошибка декодирования refresh токена")
-            raise CREDENTIAL_EXCEPTION
+        refresh_jwt = await get_jwt_from_cookies(request, REFRESH_TOKEN_TYPE)
+        if not refresh_jwt:
+            log.error("Refresh токен не найден в куках")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail={
+                    "message": "Ошибка аутентификации. Пожалуйста, войдите заново",
+                    "details": {
+                        "message": "Refresh token not found in cookies",
+                    },
+                },
+            )
+
+        payload: dict[str, Any] = await get_jwt_payload(refresh_jwt)
 
         uid: str | None = payload.get("sub")
         if uid is None:
-            log.error("id пользователя не найден в refresh токене")
+            log.error("Uid пользователя не найден в refresh токене")
             raise CREDENTIAL_EXCEPTION
 
-        if not await validate_refresh_jwt(uid, token, redis):
-            log.error("refresh токен невалиден или устарел")
+        if not await validate_refresh_jwt(uid, refresh_jwt, redis_service):
+            log.error("Refresh токен невалиден или устарел")
             raise CREDENTIAL_EXCEPTION
 
         user = await get_user_by_uid(session, uid)
