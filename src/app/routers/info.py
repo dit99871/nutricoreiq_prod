@@ -13,13 +13,13 @@ router = APIRouter(
     default_response_class=HTMLResponse,
 )
 
-current_user = Annotated[UserPublic, Depends(UserService.get_current_auth_user)]
+current_user_dep = Annotated[UserPublic, Depends(UserService.get_user_by_access_jwt)]
 
 
 @router.get("/privacy")
 def get_privacy_info(
     request: Request,
-    user: current_user,
+    user: current_user_dep,
 ):
     """
     Retrieves the privacy policy information of the NutriCoreIQ project.
@@ -46,7 +46,7 @@ def get_privacy_info(
 @router.get("/about")
 def get_info_about_project(
     request: Request,
-    user: current_user,
+    user: current_user_dep,
 ):
     """
     Retrieves information about the NutriCoreIQ project.
@@ -76,7 +76,7 @@ def get_info_about_project(
 )
 def start_page(
     request: Request,
-    user: current_user,
+    user: current_user_dep,
 ):
     """
     Retrieves the home page of NutriCoreIQ.
