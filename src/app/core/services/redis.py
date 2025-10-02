@@ -5,7 +5,7 @@ from fastapi import HTTPException, Request, status
 from redis.asyncio import Redis, RedisError
 
 from src.app.core.logger import get_logger
-from src.app.core.redis import get_redis
+from src.app.core.redis import get_redis_service
 from src.app.core.utils.security import generate_hash_token
 
 log = get_logger("redis_service")
@@ -26,7 +26,7 @@ async def _scan_keys(redis: Redis, pattern: str, count: int = 100) -> list[str]:
     return keys
 
 
-async def add_refresh_to_redis(
+async def add_refresh_jwt_to_redis(
     uid: str,
     jwt: str,
     exp: dt.timedelta,
@@ -46,7 +46,7 @@ async def add_refresh_to_redis(
     """
 
     try:
-        async for redis in get_redis():
+        async for redis in get_redis_service():
             token_hash = generate_hash_token(jwt)
             keys = await _scan_keys(redis, f"refresh_token:{uid}:*")
             if len(keys) >= 4:
@@ -183,7 +183,7 @@ async def revoke_all_refresh_tokens(
     """
 
     try:
-        async for redis in get_redis():
+        async for redis in get_redis_service():
             keys = [
                 k
                 async for k in redis.scan_iter(
