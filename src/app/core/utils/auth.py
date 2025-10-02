@@ -5,6 +5,7 @@ from fastapi import status
 from fastapi.responses import ORJSONResponse
 
 from src.app.core.config import settings
+from src.app.core.constants import ACCESS_TOKEN_TYPE, REFRESH_TOKEN_TYPE
 from src.app.core.logger import get_logger
 from src.app.core.services.jwt_service import create_access_jwt, create_refresh_jwt
 from src.app.schemas.user import UserPublic
@@ -94,12 +95,12 @@ async def create_response(user: UserPublic) -> ORJSONResponse:
         )
 
     _set_cookies(
-        key="access_token",
+        key=ACCESS_TOKEN_TYPE,
         value=access_token,
         expires=expires_access_token,
     )
     _set_cookies(
-        key="refresh_token",
+        key=REFRESH_TOKEN_TYPE,
         value=refresh_token,
         expires=expires_refresh_token,
     )
