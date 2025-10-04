@@ -253,6 +253,8 @@ services:
   nginx_exporter:
     image: nginx/nginx-prometheus-exporter:latest
     container_name: nginx_exporter
+    ports:
+      - "127.0.0.1:9113:9113"
     depends_on:
       - nginx
     command: --nginx.scrape-uri=http://nginx-app:80/stub_status
