@@ -259,7 +259,7 @@ async def update_user_password(
             log.error("Пользователь с uid %s не найден", user_uid)
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail={"message": "Пользователь не найден"},
+                detail={"message": "Пользователь не найден"},
             )
 
         db_user.hashed_password = get_password_hash(new_password)
