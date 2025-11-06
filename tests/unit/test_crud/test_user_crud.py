@@ -245,3 +245,170 @@ async def test_choose_subscribe_status_not_found():
         await choose_subscribe_status(user_public, mock_session, False)
 
     assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
+
+
+@pytest.mark.asyncio
+async def test_update_user_password_success():
+    """Тест успешного обновления пароля"""
+    from src.app.crud.user import update_user_password
+
+    mock_session = AsyncMock(spec=AsyncSession)
+    mock_session.commit = AsyncMock()
+
+    # Создаём mock пользователя
+    mock_user = User(
+        id=1,
+        uid="test-uid-123",
+        username="testuser",
+        email="test@example.com",
+        hashed_password=b"old_hashed_password",
+        is_active=True,
+    )
+
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = mock_user
+    mock_session.execute.return_value = mock_result
+
+    with patch(
+        "src.app.crud.user.get_password_hash", return_value=b"new_hashed_password"
+    ):
+        await update_user_password(mock_session, "test-uid-123", "NewPassword123!")
+
+    # Проверяем, что пароль был обновлён
+    assert mock_user.hashed_password == b"new_hashed_password"
+    mock_session.commit.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_update_user_password_user_not_found():
+    """Тест обновления пароля для несуществующего пользователя"""
+    from src.app.crud.user import update_user_password
+
+    mock_session = AsyncMock(spec=AsyncSession)
+
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = None
+    mock_session.execute.return_value = mock_result
+
+    with pytest.raises(HTTPException) as exc_info:
+        await update_user_password(mock_session, "non-existent-uid", "NewPassword123!")
+
+    assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
+    assert "Пользователь не найден" in exc_info.value.detail["message"]
+
+
+@pytest.mark.asyncio
+async def test_update_user_password_database_error():
+    """Тест обработки ошибки БД при обновлении пароля"""
+    from src.app.crud.user import update_user_password
+
+    mock_session = AsyncMock(spec=AsyncSession)
+    mock_session.execute.side_effect = SQLAlchemyError("Database connection error")
+    mock_session.rollback = AsyncMock()
+
+    with pytest.raises(HTTPException) as exc_info:
+        await update_user_password(mock_session, "test-uid-123", "NewPassword123!")
+
+    assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert "Ошибка при обновлении пароля" in exc_info.value.detail["message"]
+    mock_session.rollback.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_update_user_password_commit_error():
+    """Тест обработки ошибки commit при обновлении пароля"""
+    from src.app.crud.user import update_user_password
+
+    mock_session = AsyncMock(spec=AsyncSession)
+    mock_session.commit.side_effect = SQLAlchemyError("Commit failed")
+    mock_session.rollback = AsyncMock()
+
+    mock_user = User(
+        id=1,
+        uid="test-uid-123",
+        username="testuser",
+        email="test@example.com",
+        hashed_password=b"old_hashed_password",
+        is_active=True,
+    )
+
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = mock_user
+    mock_session.execute.return_value = mock_result
+
+    with patch(
+        "src.app.crud.user.get_password_hash", return_value=b"new_hashed_password"
+    ):
+        with pytest.raises(HTTPException) as exc_info:
+            await update_user_password(mock_session, "test-uid-123", "NewPassword123!")
+
+    assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    mock_session.rollback.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_update_user_password_hash_verification():
+    """Тест что новый хеш действительно применяется"""
+    from src.app.crud.user import update_user_password
+
+    mock_session = AsyncMock(spec=AsyncSession)
+    mock_session.commit = AsyncMock()
+
+    old_hash = b"old_hashed_password"
+    new_hash = b"new_hashed_password"
+
+    mock_user = User(
+        id=1,
+        uid="test-uid-123",
+        username="testuser",
+        email="test@example.com",
+        hashed_password=old_hash,
+        is_active=True,
+    )
+
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = mock_user
+    mock_session.execute.return_value = mock_result
+
+    with patch(
+        "src.app.crud.user.get_password_hash", return_value=new_hash
+    ) as mock_hash:
+        await update_user_password(mock_session, "test-uid-123", "NewPassword123!")
+
+        # Проверяем, что get_password_hash был вызван с правильным паролем
+        mock_hash.assert_called_once_with("NewPassword123!")
+
+        # Проверяем, что хеш изменился
+        assert mock_user.hashed_password == new_hash
+        assert mock_user.hashed_password != old_hash
+
+
+@pytest.mark.asyncio
+async def test_update_user_password_with_empty_password():
+    """Тест обновления с пустым паролем"""
+    from src.app.crud.user import update_user_password
+
+    mock_session = AsyncMock(spec=AsyncSession)
+    mock_session.commit = AsyncMock()
+
+    mock_user = User(
+        id=1,
+        uid="test-uid-123",
+        username="testuser",
+        email="test@example.com",
+        hashed_password=b"old_hashed_password",
+        is_active=True,
+    )
+
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none.return_value = mock_user
+    mock_session.execute.return_value = mock_result
+
+    # Пустой пароль должен быть обработан (хотя валидация должна быть на уровне схемы)
+    with patch(
+        "src.app.crud.user.get_password_hash", return_value=b"empty_hash"
+    ) as mock_hash:
+        await update_user_password(mock_session, "test-uid-123", "")
+
+        mock_hash.assert_called_once_with("")
+        assert mock_user.hashed_password == b"empty_hash"
