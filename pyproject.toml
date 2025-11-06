@@ -67,11 +67,30 @@ disallow_untyped_decorators = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+addopts = [
+    "-v",
+    "--tb=short",
+    "--strict-markers",
+    "--strict-config",
+    "--durations=3"
+]
+minversion = "7.0"
 testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "slow: slow running tests",
+    "integration: integration tests",
+    "asyncio: asynchronous tests",
+    "db: tests requiring database access",
+    "api: tests for API endpoints"
+]
+filterwarnings = [
+    "error",
+    "ignore::DeprecationWarning"
+]
 pythonpath = ["src"]
-python_files = "test_*.py"
-python_functions = "test_*"
-python_classes = "Test*"
 
 [mypy.plugins]
 pydantic.mypy = true
