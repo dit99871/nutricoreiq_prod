@@ -6,7 +6,7 @@ from pydantic import (
     BeforeValidator,
     EmailStr,
     Field,
-    constr,
+    StringConstraints,
     model_validator,
 )
 
@@ -49,7 +49,7 @@ class UserCreate(UserBaseIn):
 
     password: Annotated[
         str,
-        constr(min_length=8),
+        StringConstraints(min_length=8),
         AfterValidator(validate_password_strength),
     ]
 
