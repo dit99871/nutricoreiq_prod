@@ -1,3 +1,5 @@
+"""Модуль для работы с пользователями"""
+
 from typing import Annotated, Any
 
 from fastapi import HTTPException, status, Depends, Request
@@ -46,8 +48,8 @@ class UserService:
     def __init__(self, session: AsyncSession):
         self.session = session
 
+    @staticmethod
     async def authenticate_user(
-        self,
         session: AsyncSession,
         username: str,
         password: str,
@@ -155,15 +157,15 @@ class UserService:
         session: AsyncSession,
         username: str,
         password: str,
-    ) -> UserPublic:
+    ) -> ORJSONResponse:
         """
-        Аутентифицирует пользователя по имени и паролю.
+        Осуществляет вход пользователя по имени и паролю.
 
         :param request: Объект запроса
         :param session: Асинхронная сессия базы данных.
         :param username: Имя пользователя для входа.
         :param password: Пароль пользователя.
-        :return: UserPublic-схема.
+        :return: ORJSONResponse для залогиненного пользователя.
         :raises HTTPException:
             - 401: Если имя пользователя или пароль неверны.
             - 500: При возникновении ошибки при аутентификации.
@@ -176,11 +178,13 @@ class UserService:
             client_ip,
         )
 
-        return await self.authenticate_user(
+        auth_user = await self.authenticate_user(
             session,
             username,
             password,
         )
+
+        return await create_response(auth_user)
 
     async def logout(
         self,
@@ -295,6 +299,19 @@ class UserService:
         session: Annotated[AsyncSession, Depends(db_helper.session_getter)],
         token: Annotated[str, Depends(get_jwt_from_cookies)],
     ) -> UserPublic | None:
+        """
+        Получает текущего аутентифицированного пользователя по access токену.
+
+        Проверяет валидность access токена, извлекает идентификатор пользователя
+        и возвращает соответствующий объект пользователя из базы данных.
+
+        :param session: Асинхронная сессия базы данных.
+        :param token: Access токен, полученный из cookies.
+        :return: Объект UserPublic, если пользователь аутентифицирован.
+        :raises HTTPException:
+            - 401: Если токен недействителен, истек или пользователь не найден.
+            - 404: Если пользователь с указанным идентификатором не существует.
+        """
 
         if token is None:
             return None
@@ -318,22 +335,22 @@ class UserService:
 
         return user
 
-    async def get_user_by_refresh_jwt(
+    async def refresh_jwt(
         self,
         request: Request,
         session: AsyncSession,
         redis_service: Redis,
-    ) -> UserPublic:
+    ) -> ORJSONResponse:
         """
         Получает текущего аутентифицированного пользователя для обновления токенов.
 
         Проверяет валидность refresh токена, извлекает идентификатор пользователя
-        и возвращает соответствующий объект пользователя из базы данных.
+        и возвращает соответствующий ответ с обновленными токенами.
 
         :param request: Объект текущего запроса
         :param session: Асинхронная сессия базы данных.
         :param redis_service: Клиент Redis для проверки валидности токена.
-        :return: Объект UserPublic, если пользователь аутентифицирован.
+        :return: Объект ORJSONResponse, если пользователь аутентифицирован.
         :raises HTTPException:
             - 401: Если токен недействителен, истек или пользователь не найден.
             - 404: Если пользователь с указанным идентификатором не существует.
@@ -365,7 +382,7 @@ class UserService:
 
         user = await get_user_by_uid(session, uid)
 
-        return user
+        return await create_response(user)
 
 
 def get_user_service(
