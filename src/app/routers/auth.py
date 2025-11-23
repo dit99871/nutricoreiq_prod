@@ -1,3 +1,5 @@
+"""Модуль с ручками для аутентификации"""
+
 from typing import Annotated
 
 from fastapi import (
@@ -5,7 +7,6 @@ from fastapi import (
     Depends,
     HTTPException,
     Request,
-    Response,
     status,
 )
 from fastapi.responses import ORJSONResponse
@@ -20,7 +21,6 @@ from src.app.core.logger import get_logger
 from src.app.core.redis import get_redis_service
 from src.app.core.services.limiter import limiter
 from src.app.core.services.user_service import UserService, get_user_service
-from src.app.core.utils.auth import create_response
 from src.app.schemas.user import PasswordChange, UserCreate, UserPublic
 
 log = get_logger("auth_router")
@@ -80,7 +80,7 @@ async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     session: db_session_dep,
     user_service: user_service_dep,
-) -> Response:
+) -> ORJSONResponse:
     """
     Аутентифицирует пользователя и возвращает response с access и refresh токенами.
 
@@ -98,14 +98,12 @@ async def login(
         - 500: При возникновении ошибки при аутентификации.
     """
 
-    auth_user = await user_service.login(
+    return await user_service.login(
         request=request,
         session=session,
         username=form_data.username,
         password=form_data.password,
     )
-
-    return await create_response(auth_user)
 
 
 @router.post("/logout")
@@ -114,7 +112,7 @@ async def logout(
     user: current_user_dep,
     redis_service: redis_service_dep,
     user_service: user_service_dep,
-) -> Response:
+) -> ORJSONResponse:
     """
     Выход пользователя из системы и инвалидация refresh токена.
 
@@ -137,7 +135,7 @@ async def refresh_token(
     session: db_session_dep,
     redis_service: redis_service_dep,
     user_service: user_service_dep,
-) -> Response:
+) -> ORJSONResponse:
     """
     Обновляет access и refresh токены пользователя.
 
@@ -154,13 +152,11 @@ async def refresh_token(
         - 400: Если токен не передан или имеет неверный формат.
     """
 
-    user = await user_service.get_user_by_refresh_jwt(
+    return await user_service.refresh_jwt(
         request=request,
         session=session,
         redis_service=redis_service,
     )
-
-    return await create_response(user)
 
 
 @router.post("/password/change")
@@ -171,7 +167,7 @@ async def change_password(
     user: current_user_dep,
     session: db_session_dep,
     user_service: user_service_dep,
-) -> Response:
+) -> ORJSONResponse:
     """
     Изменяет пароль аутентифицированного пользователя.
 
