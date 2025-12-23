@@ -184,21 +184,20 @@ deploy:prod:
     - production
     - deploy
   stage: deploy
+
+  # отключаем глобальный before_script
+  before_script: []
+
   variables:
-    # Переменные для SSH
     SSH_PRIVATE_KEY: $SSH_PRIVATE_KEY
     SSH_HOST: $SSH_HOST
     SSH_USER: $SSH_USER
     SSH_PORT: ${SSH_PORT:-22}
-
-    # Переменные для Docker
     DOCKER_REGISTRY: $CI_REGISTRY
     DOCKER_IMAGE: $CI_REGISTRY_IMAGE:latest
-
-    # Путь к проекту на сервере
     DEPLOY_PATH: $DEPLOY_PATH
 
-  before_script:
+  script:
     # Настройка SSH
     - command -v ssh || (echo "Ошибка - ssh не установлен" && exit 1)
     - mkdir -p ~/.ssh
@@ -207,8 +206,6 @@ deploy:prod:
     - chmod 600 ~/.ssh/id_ed25519
     - eval $(ssh-agent -s)
     - ssh-add ~/.ssh/id_ed25519
-
-    # Проверка SSH-переменных и настройка known_hosts
     - |
       if [ -z "$SSH_HOST" ] || [ -z "$SSH_PORT" ]; then
         echo "ERROR: SSH_HOST or SSH_PORT not set!"
@@ -217,7 +214,6 @@ deploy:prod:
     - ssh-keyscan -p $SSH_PORT -H $SSH_HOST >> ~/.ssh/known_hosts 2>/dev/null
     - chmod 644 ~/.ssh/known_hosts
 
-  script:
     # Тестовое подключение
     - echo "=== Проверка SSH подключения ==="
     - ssh -p $SSH_PORT $SSH_USER@$SSH_HOST "echo 'SSH connected successfully'"
@@ -311,7 +307,6 @@ deploy:prod:
         rm -f /tmp/deploy_script.sh"
 
   after_script:
-    # Проверка статуса деплоя
     - |
       if [ "$CI_JOB_STATUS" != "success" ]; then
         echo "ОШИБКА: Деплой не удался! Проверьте логи для деталей."
