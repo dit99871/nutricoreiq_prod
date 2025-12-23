@@ -218,60 +218,97 @@ deploy:prod:
     - chmod 644 ~/.ssh/known_hosts
 
   script:
-    # Деплой на сервер
+    # Тестовое подключение
+    - echo "=== Проверка SSH подключения ==="
+    - ssh -p $SSH_PORT $SSH_USER@$SSH_HOST "echo 'SSH connected successfully'"
+
+    # Создаем скрипт деплоя локально
     - |
-      ssh -p $SSH_PORT $SSH_USER@$SSH_HOST /bin/sh << EOF
-        set -e
-        # Создание директории проекта
-        if ! mkdir -p "$DEPLOY_PATH"; then
-          echo "ОШИБКА: Не удалось создать директорию $DEPLOY_PATH"
+      cat > /tmp/deploy_script.sh << 'DEPLOY_SCRIPT'
+      #!/bin/bash
+      set -e
+      
+      echo "=== Начало деплоя ==="
+      echo "DEPLOY_PATH: $DEPLOY_PATH"
+      echo "DOCKER_IMAGE: $DOCKER_IMAGE"
+      
+      # Создание директории проекта
+      if ! mkdir -p "$DEPLOY_PATH"; then
+        echo "ОШИБКА: Не удалось создать директорию $DEPLOY_PATH"
+        exit 1
+      fi
+      
+      # Проверка доступа к Docker
+      if ! docker ps > /dev/null; then
+        echo "ОШИБКА: Нет доступа к Docker"
+        exit 1
+      fi
+      
+      # Копирование .env файла
+      if [ -f "/etc/nutricoreiq/.env" ]; then
+        if ! cp /etc/nutricoreiq/.env "$DEPLOY_PATH/.env"; then
+          echo "ОШИБКА: Не удалось скопировать .env файл"
           exit 1
         fi
-        # Проверка доступа к Docker
-        if ! docker ps > /dev/null; then
-          echo "ОШИБКА: Нет доступа к Docker. Проверьте права пользователя $SSH_USER в группе docker"
-          exit 1
-        fi
-        # Копирование .env файла, если он существует
-        if [ -f "/etc/nutricoreiq/.env" ]; then
-          if ! cp /etc/nutricoreiq/.env "$DEPLOY_PATH/.env"; then
-            echo "ОШИБКА: Не удалось скопировать .env файл"
-            exit 1
-          fi
-        fi
-        # Переход в директорию проекта
-        cd "$DEPLOY_PATH" || { echo "ОШИБКА: Не удалось перейти в директорию $DEPLOY_PATH"; exit 1; }
-        # Логин в Docker Registry
-        if ! echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$DOCKER_REGISTRY"; then
-          echo "ОШИБКА: Не удалось войти в Docker Registry"
-          exit 1
-        fi
-        # Остановка старых контейнеров
-        docker-compose -f docker-compose.prod.yml down || echo "Предупреждение: не удалось остановить старые контейнеры"
-        # Загрузка нового Docker-образа
-        if ! docker pull "$DOCKER_IMAGE"; then
-          echo "ОШИБКА: Не удалось загрузить образ $DOCKER_IMAGE"
-          exit 1
-        fi
-        # Запуск сервисов
-        if ! docker-compose -f docker-compose.prod.yml up -d; then
-          echo "ОШИБКА: Не удалось запустить сервисы"
-          exit 1
-        fi
-        # Очистка неиспользуемых образов
-        docker image prune -f
-        # Проверка статуса контейнеров
-        exited_services=\$(docker-compose -f docker-compose.prod.yml ps | grep Exited | awk '{print \$1}' || true)
-        if [ -n "\$exited_services" ]; then
-          echo "ОШИБКА: Следующие сервисы завершили работу (Exited): \$exited_services"
-          for service in \$exited_services; do
-            echo "Логи сервиса \$service:"
-            docker-compose -f docker-compose.prod.yml logs "\$service" || true
-          done
-          exit 1
-        fi
-        echo "Деплой успешно завершен!"
-      EOF
+      fi
+      
+      # Переход в директорию проекта
+      cd "$DEPLOY_PATH" || { echo "ОШИБКА: Не удалось перейти в $DEPLOY_PATH"; exit 1; }
+      
+      # Логин в Docker Registry
+      if ! echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$DOCKER_REGISTRY"; then
+        echo "ОШИБКА: Не удалось войти в Docker Registry"
+        exit 1
+      fi
+      
+      # Остановка старых контейнеров
+      docker-compose -f docker-compose.prod.yml down || echo "Предупреждение: старые контейнеры не найдены"
+      
+      # Загрузка нового Docker-образа
+      if ! docker pull "$DOCKER_IMAGE"; then
+        echo "ОШИБКА: Не удалось загрузить образ $DOCKER_IMAGE"
+        exit 1
+      fi
+      
+      # Запуск сервисов
+      if ! docker-compose -f docker-compose.prod.yml up -d; then
+        echo "ОШИБКА: Не удалось запустить сервисы"
+        exit 1
+      fi
+      
+      # Очистка неиспользуемых образов
+      docker image prune -f
+      
+      # Пауза перед проверкой
+      sleep 5
+      
+      # Проверка статуса контейнеров
+      exited_services=$(docker-compose -f docker-compose.prod.yml ps | grep Exited | awk '{print $1}' || true)
+      if [ -n "$exited_services" ]; then
+        echo "ОШИБКА: Следующие сервисы завершили работу: $exited_services"
+        for service in $exited_services; do
+          echo "Логи сервиса $service:"
+          docker-compose -f docker-compose.prod.yml logs "$service" || true
+        done
+        exit 1
+      fi
+      
+      echo "=== Деплой успешно завершен ==="
+      DEPLOY_SCRIPT
+
+    # Копируем скрипт на удалённый сервер
+    - chmod +x /tmp/deploy_script.sh
+    - scp -P $SSH_PORT /tmp/deploy_script.sh $SSH_USER@$SSH_HOST:/tmp/deploy_script.sh
+
+    # Экспортируем переменные и запускаем скрипт
+    - |
+      ssh -p $SSH_PORT $SSH_USER@$SSH_HOST "export DEPLOY_PATH='$DEPLOY_PATH' && \
+        export DOCKER_REGISTRY='$DOCKER_REGISTRY' && \
+        export DOCKER_IMAGE='$DOCKER_IMAGE' && \
+        export CI_REGISTRY_USER='$CI_REGISTRY_USER' && \
+        export CI_REGISTRY_PASSWORD='$CI_REGISTRY_PASSWORD' && \
+        bash /tmp/deploy_script.sh && \
+        rm -f /tmp/deploy_script.sh"
 
   after_script:
     # Проверка статуса деплоя
@@ -281,6 +318,7 @@ deploy:prod:
       else
         echo "Деплой успешно завершен!"
       fi
+
   only:
     - main
   when: manual
