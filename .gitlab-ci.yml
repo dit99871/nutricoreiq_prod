@@ -185,7 +185,6 @@ deploy:prod:
     - deploy
   stage: deploy
 
-  # отключаем глобальный before_script
   before_script: []
 
   variables:
@@ -227,6 +226,7 @@ deploy:prod:
       echo "=== Начало деплоя ==="
       echo "DEPLOY_PATH: $DEPLOY_PATH"
       echo "DOCKER_IMAGE: $DOCKER_IMAGE"
+      echo "DOCKER_REGISTRY: $DOCKER_REGISTRY"
       
       # Создание директории проекта
       if ! mkdir -p "$DEPLOY_PATH"; then
@@ -251,34 +251,58 @@ deploy:prod:
       # Переход в директорию проекта
       cd "$DEPLOY_PATH" || { echo "ОШИБКА: Не удалось перейти в $DEPLOY_PATH"; exit 1; }
       
-      # Логин в Docker Registry
-      if ! echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$DOCKER_REGISTRY"; then
+      # КРИТИЧЕСКИ ВАЖНО: Логаут из старых сессий
+      echo "=== Выход из предыдущих Docker сессий ==="
+      docker logout "$DOCKER_REGISTRY" 2>/dev/null || true
+      
+      # Логин в Docker Registry с Deploy Token
+      echo "=== Логин в Docker Registry ==="
+      echo "Registry: $DOCKER_REGISTRY"
+      echo "Username: $DEPLOY_TOKEN_USERNAME"
+      
+      if ! echo "$DEPLOY_TOKEN_PASSWORD" | docker login -u "$DEPLOY_TOKEN_USERNAME" --password-stdin "$DOCKER_REGISTRY"; then
         echo "ОШИБКА: Не удалось войти в Docker Registry"
+        echo "Проверьте:"
+        echo "1. Deploy Token создан и активен"
+        echo "2. Username и Password правильные"
+        echo "3. Scope 'read_registry' включен"
         exit 1
       fi
       
+      echo "✓ Успешная авторизация в registry"
+      
       # Остановка старых контейнеров
+      echo "=== Остановка старых контейнеров ==="
       docker-compose -f docker-compose.prod.yml down || echo "Предупреждение: старые контейнеры не найдены"
       
       # Загрузка нового Docker-образа
+      echo "=== Загрузка Docker образа: $DOCKER_IMAGE ==="
       if ! docker pull "$DOCKER_IMAGE"; then
         echo "ОШИБКА: Не удалось загрузить образ $DOCKER_IMAGE"
+        echo "Проверьте что образ существует в Container Registry"
         exit 1
       fi
       
+      echo "✓ Образ успешно загружен"
+      
       # Запуск сервисов
+      echo "=== Запуск сервисов ==="
       if ! docker-compose -f docker-compose.prod.yml up -d; then
         echo "ОШИБКА: Не удалось запустить сервисы"
         exit 1
       fi
       
       # Очистка неиспользуемых образов
+      echo "=== Очистка старых образов ==="
       docker image prune -f
       
       # Пауза перед проверкой
       sleep 5
       
       # Проверка статуса контейнеров
+      echo "=== Проверка статуса контейнеров ==="
+      docker-compose -f docker-compose.prod.yml ps
+      
       exited_services=$(docker-compose -f docker-compose.prod.yml ps | grep Exited | awk '{print $1}' || true)
       if [ -n "$exited_services" ]; then
         echo "ОШИБКА: Следующие сервисы завершили работу: $exited_services"
@@ -297,12 +321,13 @@ deploy:prod:
     - scp -P $SSH_PORT /tmp/deploy_script.sh $SSH_USER@$SSH_HOST:/tmp/deploy_script.sh
 
     # Экспортируем переменные и запускаем скрипт
+    # ВАЖНО: Передаем DEPLOY_TOKEN вместо CI_REGISTRY credentials
     - |
       ssh -p $SSH_PORT $SSH_USER@$SSH_HOST "export DEPLOY_PATH='$DEPLOY_PATH' && \
         export DOCKER_REGISTRY='$DOCKER_REGISTRY' && \
         export DOCKER_IMAGE='$DOCKER_IMAGE' && \
-        export CI_REGISTRY_USER='$CI_REGISTRY_USER' && \
-        export CI_REGISTRY_PASSWORD='$CI_REGISTRY_PASSWORD' && \
+        export DEPLOY_TOKEN_USERNAME='$DEPLOY_TOKEN_USERNAME' && \
+        export DEPLOY_TOKEN_PASSWORD='$DEPLOY_TOKEN_PASSWORD' && \
         bash /tmp/deploy_script.sh && \
         rm -f /tmp/deploy_script.sh"
 
