@@ -198,6 +198,8 @@ deploy:prod:
 
   before_script: []
 
+  cache: {}
+
   variables:
     SSH_PRIVATE_KEY: $SSH_PRIVATE_KEY
     SSH_HOST: $SSH_HOST
@@ -325,6 +327,9 @@ deploy:prod:
       fi
       
       echo "=== Деплой успешно завершен ==="
+      
+      echo "=== Выход из Docker Registry ==="
+      docker logout "$DOCKER_REGISTRY" || true
       DEPLOY_SCRIPT
 
     # Копируем скрипт на удалённый сервер
@@ -332,7 +337,6 @@ deploy:prod:
     - scp -P $SSH_PORT /tmp/deploy_script.sh $SSH_USER@$SSH_HOST:/tmp/deploy_script.sh
 
     # Экспортируем переменные и запускаем скрипт
-    # ВАЖНО: Передаем DEPLOY_TOKEN вместо CI_REGISTRY credentials
     - |
       ssh -p $SSH_PORT $SSH_USER@$SSH_HOST "export DEPLOY_PATH='$DEPLOY_PATH' && \
         export DOCKER_REGISTRY='$DOCKER_REGISTRY' && \
