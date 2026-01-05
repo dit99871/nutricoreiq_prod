@@ -157,9 +157,9 @@ build:image:
     DOCKER_DRIVER: overlay2
   before_script: []
   script:
-    # ИСПРАВЛЕНИЕ: Используем CI_JOB_TOKEN вместо CI_REGISTRY_PASSWORD
+    # ИСПРАВЛЕНИЕ: Используем литерал "gitlab-ci-token" вместо переменной
     - echo "Logging into GitLab Container Registry..."
-    - echo "$CI_JOB_TOKEN" | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+    - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token --password-stdin $CI_REGISTRY
 
     # Определяем тег
     - |
