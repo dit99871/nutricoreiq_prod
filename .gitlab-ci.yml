@@ -154,23 +154,34 @@ build:image:
   variables:
     DOCKER_HOST: tcp://docker:2376
     DOCKER_TLS_CERTDIR: "/certs"
+    DOCKER_DRIVER: overlay2
   before_script: []
   script:
-    # Проверка переменных и логин в Docker Registry
+    # ИСПРАВЛЕНИЕ: Используем CI_JOB_TOKEN вместо CI_REGISTRY_PASSWORD
+    - echo "Logging into GitLab Container Registry..."
+    - echo "$CI_JOB_TOKEN" | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+
+    # Определяем тег
     - |
-      if [ -z "$CI_REGISTRY" ] || [ -z "$CI_REGISTRY_USER" ] || [ -z "$CI_REGISTRY_PASSWORD" ]; then
-        echo "ERROR: Docker registry credentials not set"
-        exit 1
-      fi
-      echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
-    # Сборка и пуш Docker-образа
-    - |
-      TAG=${CI_COMMIT_REF_SLUG:-latest}
       if [ "$CI_COMMIT_REF_NAME" = "main" ]; then
         TAG="latest"
+      else
+        TAG="$CI_COMMIT_REF_SLUG"
       fi
-      docker build -t "$CI_REGISTRY_IMAGE:$TAG" .
-      docker push "$CI_REGISTRY_IMAGE:$TAG"
+      echo "Building image with tag: $TAG"
+
+    # Собираем образ
+    - docker build -t "$CI_REGISTRY_IMAGE:$TAG" .
+
+    # Пушим образ
+    - docker push "$CI_REGISTRY_IMAGE:$TAG"
+
+    # Если это main и тег не latest - создаем дополнительно latest
+    - |
+      if [ "$CI_COMMIT_REF_NAME" = "main" ] && [ "$TAG" != "latest" ]; then
+        docker tag "$CI_REGISTRY_IMAGE:$TAG" "$CI_REGISTRY_IMAGE:latest"
+        docker push "$CI_REGISTRY_IMAGE:latest"
+      fi
   only:
     - main
     - develop
