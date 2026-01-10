@@ -25,7 +25,7 @@ from src.app.core.services.redis import (
     validate_refresh_jwt,
 )
 from src.app.core.utils.auth import create_response, verify_password
-from src.app.crud.user import (
+from src.app.repo.user import (
     create_user,
     get_user_by_email,
     get_user_by_name,
