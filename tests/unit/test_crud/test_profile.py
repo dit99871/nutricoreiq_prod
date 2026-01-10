@@ -5,7 +5,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.app.crud.profile import get_user_profile, update_user_profile
+from src.app.repo.profile import get_user_profile, update_user_profile
 from src.app.models import User
 from src.app.schemas.user import UserProfileUpdate, UserPublic
 from src.app.models.user import KFALevel, GoalType, UserRole
@@ -237,7 +237,7 @@ async def test_update_user_profile_partial_update(mock_user, user_public):
     mock_session.commit = AsyncMock()
 
     # Act
-    with patch("src.app.crud.profile.log") as mock_log:
+    with patch("src.app.repo.profile.log") as mock_log:
         result = await update_user_profile(
             data_in=update_data, current_user=user_public, session=mock_session
         )
