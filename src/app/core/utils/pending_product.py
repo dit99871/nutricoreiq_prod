@@ -1,3 +1,4 @@
+from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -32,6 +33,14 @@ async def create_pending_product(
     :param name: str
     :return: None
     """
+
+    if await check_pending_exists(session, name):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "message": "Продукт уже в очереди на добавление",
+            },
+        )
     new_pending = PendingProduct(name=name)
     session.add(new_pending)
     await session.commit()
