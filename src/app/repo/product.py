@@ -5,13 +5,14 @@ from sqlalchemy.orm import selectinload, joinedload
 from starlette import status
 
 from src.app.core.logger import get_logger
-from src.app.models import Product, ProductNutrient, PendingProduct
+from src.app.models import Product, ProductNutrient
 from src.app.models.utils.product import map_to_schema
 from src.app.schemas.product import (
     ProductDetailResponse,
     ProductSuggestion,
     UnifiedProductResponse,
 )
+from src.app.repo.pending_product import create_pending_product
 
 log = get_logger("product_services")
 
@@ -104,14 +105,12 @@ async def handle_product_search(
             return response
 
     if confirmed:
-        exists = await session.execute(
-            select(PendingProduct).where(func.lower(PendingProduct.name) == query)
+        created = await create_pending_product(
+            session,
+            query,
+            raise_if_exists=False,
         )
-        if not exists.scalar():
-            # log.info("Добавление в очередь: %s", query)
-            new_pending = PendingProduct(name=query)
-            session.add(new_pending)
-            await session.commit()
+        if created:
             response.pending_added = True
 
     return response
