@@ -46,7 +46,7 @@ class Settings(BaseSettings):
 
     @property
     def effective_db_url(self) -> PostgresDsn:
-        if self.db.is_test and self.db.test_url:
+        if self.env == "test" and self.db.test_url:
             return self.db.test_url
         if self.db.url:
             return self.db.url
