@@ -104,11 +104,5 @@ async def add_pending_product(
     :raises HTTPException: If the product is already in the pending queue.
     :return: A JSON response indicating success.
     """
-    if await check_pending_exists(session, data.name):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={
-                "message": "Продукт уже в очереди на добавление",
-            },
-        )
+
     await create_pending_product(session, data.name)
