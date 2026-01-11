@@ -34,6 +34,7 @@ services:
 
   test_db:
     image: postgres
+    container_name: test_db
     environment:
       POSTGRES_DB: ${APP_CONFIG__DB__TEST_NAME}
       POSTGRES_USER: ${APP_CONFIG__DB__TEST_USER}
