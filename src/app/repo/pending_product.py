@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.models import PendingProduct
 
+
 async def pending_product_exists(
     session: AsyncSession,
     name: str,
