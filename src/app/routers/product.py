@@ -8,10 +8,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.app.core import db_helper
 from src.app.core.logger import get_logger
 from src.app.repo.product import handle_product_search, handle_product_details
+from src.app.repo.pending_product import create_pending_product
 from src.app.core.services.redis import get_redis_session_from_request
 from src.app.core.services.user_service import UserService
 from src.app.core.utils import templates
-from src.app.core.utils.pending_product import create_pending_product
 from src.app.schemas.product import PendingProductCreate, UnifiedProductResponse
 from src.app.schemas.user import UserPublic
 
