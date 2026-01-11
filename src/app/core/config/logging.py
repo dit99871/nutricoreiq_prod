@@ -3,12 +3,11 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from src.app.core.constants import BASE_DIR
-
-LOG_DEFAULT_FORMAT = (
-    "[%(asctime)s.%(msecs)03d] %(name)24s:%(lineno)-4d %(levelname)-7s - %(message)s"
+from src.app.core.constants import (
+    BASE_DIR,
+    LOG_DEFAULT_FORMAT,
+    WORKER_LOG_DEFAULT_FORMAT,
 )
-WORKER_LOG_DEFAULT_FORMAT = "[%(asctime)s.%(msecs)03d] [%(processName)s] %(module)16s:%(lineno)-3d %(levelname)-7s - %(message)s"
 
 
 class LoggingConfig(BaseModel):
@@ -19,7 +18,6 @@ class LoggingConfig(BaseModel):
         "ERROR",
         "CRITICAL",
     ] = "INFO"
-    log_stage: Literal["DEV", "PROD"] = "DEV"
     log_format: str = LOG_DEFAULT_FORMAT
     log_taskiq_format: str = WORKER_LOG_DEFAULT_FORMAT
     log_date_format: str = "%Y-%m-%d %H:%M:%S"
