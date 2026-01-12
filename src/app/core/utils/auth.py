@@ -8,7 +8,7 @@ from src.app.core.config import settings
 from src.app.core.constants import ACCESS_TOKEN_TYPE, REFRESH_TOKEN_TYPE
 from src.app.core.logger import get_logger
 from src.app.core.services.jwt_service import create_access_jwt, create_refresh_jwt
-from src.app.core.schemas import UserPublic
+from src.app.core.schemas.user import UserPublic
 
 log = get_logger("auth_utils")
 

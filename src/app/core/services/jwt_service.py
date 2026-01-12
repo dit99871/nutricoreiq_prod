@@ -18,7 +18,7 @@ from src.app.core.constants import (
 from src.app.core.exceptions import ExpiredTokenException
 from src.app.core.logger import get_logger
 from src.app.core.services.redis import add_refresh_jwt_to_redis
-from src.app.core.schemas import UserPublic
+from src.app.core.schemas.user import UserPublic
 
 log = get_logger("jwt_service")
 

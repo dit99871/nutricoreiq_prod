@@ -1,6 +1,6 @@
 from src.app.core.logger import get_logger
 from src.app.core.models.user import KFALevel
-from src.app.core.schemas import UserProfile
+from src.app.core.schemas.user import UserProfile
 
 log = get_logger("user_utils")
 
