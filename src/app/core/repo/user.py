@@ -8,8 +8,8 @@ from sqlalchemy.future import select
 from src.app.core.logger import get_logger
 from src.app.core.services.cache import CacheService
 from src.app.core.utils.auth import get_password_hash
-from src.app.models import User
-from src.app.schemas.user import UserCreate, UserPublic
+from src.app.core.models import User
+from src.app.core.schemas.user import UserCreate, UserPublic
 
 log = get_logger("user_crud")
 

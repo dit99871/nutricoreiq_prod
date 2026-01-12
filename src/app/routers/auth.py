@@ -21,7 +21,7 @@ from src.app.core.logger import get_logger
 from src.app.core.redis import get_redis_service
 from src.app.core.services.limiter import limiter
 from src.app.core.services.user_service import UserService, get_user_service
-from src.app.schemas.user import PasswordChange, UserCreate, UserPublic
+from src.app.core.schemas import PasswordChange, UserCreate, UserPublic
 
 log = get_logger("auth_router")
 
