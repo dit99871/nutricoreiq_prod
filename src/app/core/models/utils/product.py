@@ -1,6 +1,6 @@
 from src.app.core.logger import get_logger
-from src.app.models import NutrientCategory, Product
-from src.app.schemas.product import NutrientBase, ProductDetailResponse
+from src.app.core.models import NutrientCategory, Product
+from src.app.core.schemas.product import NutrientBase, ProductDetailResponse
 
 log = get_logger("product_utils")
 
