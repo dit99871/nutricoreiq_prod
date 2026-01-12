@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.app.models.user import GoalType, KFALevel
+from src.app.core.models.user import GoalType, KFALevel
 
 
 def validate_password_strength(v: str) -> str:

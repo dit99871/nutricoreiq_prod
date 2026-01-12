@@ -8,7 +8,7 @@ from jinja2 import Environment, FileSystemLoader
 from src.app.core.config import settings
 from src.app.core.constants import BASE_DIR
 from src.app.core.logger import get_logger
-from src.app.schemas.user import UserPublic
+from src.app.core.schemas import UserPublic
 
 log = get_logger("email_services")
 
