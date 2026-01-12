@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from fastapi import HTTPException, status
 
-from src.app.repo.product import handle_product_search, handle_product_details
+from src.app.core.repo import handle_product_search, handle_product_details
 
 
 class FakeResult:

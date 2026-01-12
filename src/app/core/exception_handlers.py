@@ -7,7 +7,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from src.app.core.config import settings
 from src.app.core.exceptions import ExpiredTokenException
 from src.app.core.logger import get_logger
-from src.app.schemas.responses import ErrorDetail, ErrorResponse
+from src.app.core.schemas.responses import ErrorDetail, ErrorResponse
 
 __all__ = ("setup_exception_handlers",)
 

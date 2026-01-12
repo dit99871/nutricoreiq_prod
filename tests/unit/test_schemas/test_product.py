@@ -1,6 +1,6 @@
 import pytest
 from pydantic import ValidationError
-from src.app.schemas.product import (
+from src.app.core.schemas import (
     NutrientBase,
     AminoAcids,
     PolyunsaturatedFats,

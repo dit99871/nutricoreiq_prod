@@ -24,15 +24,15 @@ src.app.core.utils.validators.validate_password_strength = (
 )
 
 # Now import the rest of the modules
-from src.app.repo.user import (
+from src.app.core.repo import (
     get_user_by_uid,
     get_user_by_email,
     get_user_by_name,
     create_user,
     choose_subscribe_status,
 )
-from src.app.schemas.user import UserCreate, UserPublic
-from src.app.models import User
+from src.app.core.schemas import UserCreate, UserPublic
+from src.app.core.models import User
 from src.app.core.services.cache import CacheService
 
 
@@ -250,7 +250,7 @@ async def test_choose_subscribe_status_not_found():
 @pytest.mark.asyncio
 async def test_update_user_password_success():
     """Тест успешного обновления пароля"""
-    from src.app.repo.user import update_user_password
+    from src.app.core.repo import update_user_password
 
     mock_session = AsyncMock(spec=AsyncSession)
     mock_session.commit = AsyncMock()
@@ -282,7 +282,7 @@ async def test_update_user_password_success():
 @pytest.mark.asyncio
 async def test_update_user_password_user_not_found():
     """Тест обновления пароля для несуществующего пользователя"""
-    from src.app.repo.user import update_user_password
+    from src.app.core.repo import update_user_password
 
     mock_session = AsyncMock(spec=AsyncSession)
 
@@ -300,7 +300,7 @@ async def test_update_user_password_user_not_found():
 @pytest.mark.asyncio
 async def test_update_user_password_database_error():
     """Тест обработки ошибки БД при обновлении пароля"""
-    from src.app.repo.user import update_user_password
+    from src.app.core.repo import update_user_password
 
     mock_session = AsyncMock(spec=AsyncSession)
     mock_session.execute.side_effect = SQLAlchemyError("Database connection error")
@@ -317,7 +317,7 @@ async def test_update_user_password_database_error():
 @pytest.mark.asyncio
 async def test_update_user_password_commit_error():
     """Тест обработки ошибки commit при обновлении пароля"""
-    from src.app.repo.user import update_user_password
+    from src.app.core.repo import update_user_password
 
     mock_session = AsyncMock(spec=AsyncSession)
     mock_session.commit.side_effect = SQLAlchemyError("Commit failed")
@@ -349,7 +349,7 @@ async def test_update_user_password_commit_error():
 @pytest.mark.asyncio
 async def test_update_user_password_hash_verification():
     """Тест что новый хеш действительно применяется"""
-    from src.app.repo.user import update_user_password
+    from src.app.core.repo import update_user_password
 
     mock_session = AsyncMock(spec=AsyncSession)
     mock_session.commit = AsyncMock()
@@ -386,7 +386,7 @@ async def test_update_user_password_hash_verification():
 @pytest.mark.asyncio
 async def test_update_user_password_with_empty_password():
     """Тест обновления с пустым паролем"""
-    from src.app.repo.user import update_user_password
+    from src.app.core.repo import update_user_password
 
     mock_session = AsyncMock(spec=AsyncSession)
     mock_session.commit = AsyncMock()

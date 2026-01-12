@@ -4,8 +4,8 @@
 
 import pytest
 from src.app.core.utils.user_profile import calculate_bmr, calculate_tdee
-from src.app.schemas.user import UserProfile
-from src.app.models.user import KFALevel, GoalType
+from src.app.core.schemas import UserProfile
+from src.app.core.models.user import KFALevel, GoalType
 
 
 @pytest.fixture

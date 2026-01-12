@@ -2,7 +2,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.app.models import PendingProduct
+from src.app.core.models import PendingProduct
 
 
 async def pending_product_exists(

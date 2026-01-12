@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from fastapi import HTTPException, status
 
-from src.app.repo.pending_product import (
+from src.app.core.repo import (
     create_pending_product,
     pending_product_exists,
 )

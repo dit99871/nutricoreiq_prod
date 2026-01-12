@@ -25,15 +25,15 @@ from src.app.core.services.redis import (
     validate_refresh_jwt,
 )
 from src.app.core.utils.auth import create_response, verify_password
-from src.app.repo.user import (
+from src.app.core.repo import (
     create_user,
     get_user_by_email,
     get_user_by_name,
     get_user_by_uid,
     update_user_password,
 )
-from src.app.schemas.user import UserCreate, UserPublic, PasswordChange
-from src.app.tasks import send_welcome_email
+from src.app.core.schemas import UserCreate, UserPublic, PasswordChange
+from src.app.core.tasks import send_welcome_email
 
 log = get_logger("user_service")
 
