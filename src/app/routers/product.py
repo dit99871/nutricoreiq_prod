@@ -7,13 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.core import db_helper
 from src.app.core.logger import get_logger
-from src.app.core.repo import handle_product_search, handle_product_details
-from src.app.core.repo import create_pending_product
+from src.app.core.repo.product import handle_product_search, handle_product_details
+from src.app.core.repo.pending_product import create_pending_product
 from src.app.core.services.redis import get_redis_session_from_request
 from src.app.core.services.user_service import UserService
 from src.app.core.utils import templates
-from src.app.core.schemas import PendingProductCreate, UnifiedProductResponse
-from src.app.core.schemas import UserPublic
+from src.app.core.schemas.product import PendingProductCreate, UnifiedProductResponse
+from src.app.core.schemas.user import UserPublic
 
 log = get_logger("product_router")
 
