@@ -6,7 +6,7 @@ from fastapi.responses import HTMLResponse
 
 from src.app.core import templates
 from src.app.core.services.user_service import UserService
-from src.app.schemas.user import UserPublic
+from src.app.core.schemas import UserPublic
 
 router = APIRouter(
     tags=["Info"],

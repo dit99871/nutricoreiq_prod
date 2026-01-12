@@ -23,7 +23,7 @@ from src.app.core.utils.validators import (
     coerce_kfa,
     validate_password_strength,
 )
-from src.app.models.user import GoalType, KFALevel
+from src.app.core.models.user import GoalType, KFALevel
 
 from .base import BaseSchema, FormSchema
 

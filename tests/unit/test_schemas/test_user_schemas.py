@@ -6,7 +6,7 @@ import pytest
 from datetime import datetime
 from pydantic import ValidationError
 
-from src.app.schemas.user import (
+from src.app.core.schemas import (
     UserBaseIn,
     UserCreate,
     UserPublic,
@@ -14,7 +14,7 @@ from src.app.schemas.user import (
     UserProfileUpdate,
     PasswordChange,
 )
-from src.app.models.user import KFALevel, GoalType
+from src.app.core.models.user import KFALevel, GoalType
 from src.app.core.constants import (
     MIN_AGE,
     MAX_AGE,

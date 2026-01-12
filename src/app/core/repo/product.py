@@ -5,14 +5,14 @@ from sqlalchemy.orm import selectinload, joinedload
 from starlette import status
 
 from src.app.core.logger import get_logger
-from src.app.models import Product, ProductNutrient
-from src.app.models.utils.product import map_to_schema
-from src.app.schemas.product import (
+from src.app.core.models import Product, ProductNutrient
+from src.app.core.models import map_to_schema
+from src.app.core.schemas.product import (
     ProductDetailResponse,
     ProductSuggestion,
     UnifiedProductResponse,
 )
-from src.app.repo.pending_product import create_pending_product
+from src.app.core.repo.pending_product import create_pending_product
 
 log = get_logger("product_services")
 

@@ -5,10 +5,10 @@ from fastapi import HTTPException, status
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.app.repo.profile import get_user_profile, update_user_profile
-from src.app.models import User
-from src.app.schemas.user import UserProfileUpdate, UserPublic
-from src.app.models.user import KFALevel, GoalType, UserRole
+from src.app.core.repo import get_user_profile, update_user_profile
+from src.app.core.models import User
+from src.app.core.schemas import UserProfileUpdate, UserPublic
+from src.app.core.models.user import KFALevel, GoalType, UserRole
 
 
 def create_test_user(**kwargs):
