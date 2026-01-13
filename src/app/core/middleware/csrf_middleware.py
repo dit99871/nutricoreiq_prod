@@ -18,13 +18,18 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         )
 
         # пропуск публичных маршрутов
-        if request.url.path in [
-            f"{settings.router.auth}/login",
-            f"{settings.router.auth}/register",
-            f"{settings.router.auth}/refresh",
-            f"{settings.router.security}/csp-report",
-            f"{settings.router.product}/pending",
-        ] or request.url.path.endswith("/login") or request.url.path.startswith("/apis/features.grafana.app/"):
+        if (
+            request.url.path
+            in [
+                f"{settings.router.auth}/login",
+                f"{settings.router.auth}/register",
+                f"{settings.router.auth}/refresh",
+                f"{settings.router.security}/csp-report",
+                f"{settings.router.product}/pending",
+            ]
+            or request.url.path.endswith("/login")
+            or request.url.path.startswith("/apis/features.grafana.app/")
+        ):
             return await call_next(request)
 
         if request.method in ["POST", "PUT", "DELETE", "PATCH"]:
