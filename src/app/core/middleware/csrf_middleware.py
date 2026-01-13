@@ -24,7 +24,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             f"{settings.router.auth}/refresh",
             f"{settings.router.security}/csp-report",
             f"{settings.router.product}/pending",
-        ] or request.url.path.endswith("/login"):
+        ] or request.url.path.endswith("/login") or request.url.path.startswith("/apis/features.grafana.app/"):
             return await call_next(request)
 
         if request.method in ["POST", "PUT", "DELETE", "PATCH"]:
