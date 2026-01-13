@@ -6,7 +6,7 @@ from unittest.mock import patch, MagicMock
 from fastapi.responses import ORJSONResponse
 
 from src.app.core.utils import auth
-from src.app.core.schemas import UserPublic
+from src.app.core.schemas.user import UserPublic
 
 
 def test_get_password_hash_returns_bytes():
