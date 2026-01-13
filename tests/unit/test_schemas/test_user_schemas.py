@@ -6,7 +6,7 @@ import pytest
 from datetime import datetime
 from pydantic import ValidationError
 
-from src.app.core.schemas import (
+from src.app.core.schemas.user import (
     UserBaseIn,
     UserCreate,
     UserPublic,

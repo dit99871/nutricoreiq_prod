@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from fastapi import HTTPException, status
 
-from src.app.core.repo import (
+from src.app.core.repo.pending_product import (
     create_pending_product,
     pending_product_exists,
 )
@@ -55,10 +55,10 @@ async def test_create_pending_product_success():
     session.add = MagicMock()
 
     with patch(
-        "src.app.repo.pending_product.pending_product_exists",
+        "src.app.core.repo.pending_product.pending_product_exists",
         new_callable=AsyncMock,
     ) as mock_exists, patch(
-        "src.app.repo.pending_product.PendingProduct"
+        "src.app.core.repo.pending_product.PendingProduct"
     ) as mock_model:
         mock_exists.return_value = False
         new_pending_instance = MagicMock()
@@ -91,7 +91,7 @@ async def test_create_pending_product_exists_raise():
     session = AsyncMock()
 
     with patch(
-        "src.app.repo.pending_product.pending_product_exists",
+        "src.app.core.repo.pending_product.pending_product_exists",
         new_callable=AsyncMock,
     ) as mock_exists:
         mock_exists.return_value = True
@@ -111,7 +111,7 @@ async def test_create_pending_product_exists_no_raise():
     session = AsyncMock()
 
     with patch(
-        "src.app.repo.pending_product.pending_product_exists",
+        "src.app.core.repo.pending_product.pending_product_exists",
         new_callable=AsyncMock,
     ) as mock_exists:
         mock_exists.return_value = True
