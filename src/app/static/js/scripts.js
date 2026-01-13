@@ -800,32 +800,60 @@ document.addEventListener("DOMContentLoaded", () => {
                 };
             };
 
+            let searchTimeout;
             searchInput.addEventListener('input', (e) => {
                 const query = e.target.value.trim();
-                if (query.length < 2) {
-                    searchResults.innerHTML = '';
-                    searchResults.classList.remove('active');
+                
+                // Clear previous timeout and abort any pending requests
+                clearTimeout(searchTimeout);
+                if (abortController) {
+                    abortController.abort();
+                }
+                
+                // Clear previous results and errors
+                searchResults.innerHTML = '';
+                searchResults.classList.remove('active');
+                if (searchError) {
+                    searchError.textContent = '';
+                    searchError.style.display = 'none';
+                }
+                
+                if (query.length < 3) {
                     lastSearchData = null;
                     return;
                 }
-                setTimeout(() => performSearch(query), 300);
+                
+                // Only search after a delay when user stops typing
+                searchTimeout = setTimeout(() => {
+                    performSearch(query).catch(() => {
+                        // Ignore aborted requests
+                    });
+                }, 500); // Reduced from 3000ms to 500ms for better UX
             });
 
             searchForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const query = searchInput.value.trim();
 
-                if (query.length < 2) {
-                    showError(errorId, 'Запрос должен содержать минимум 2 символа');
+                // Clear previous errors
+                if (searchError) {
+                    searchError.textContent = '';
+                    searchError.style.display = 'none';
+                }
+
+                // Validate input
+                if (query.length < 3) {
+                    showError(errorId, 'Запрос должен содержать минимум 3 символа');
                     return;
                 }
 
-                if (analyzeBtn) {
-                    analyzeBtn.disabled = true;
-                    const originalText = analyzeBtn.textContent;
-                    analyzeBtn.textContent = 'Идет анализ...';
-
+                const button = analyzeBtn || searchForm.querySelector('button[type="submit"]');
+                if (button) {
+                    const originalText = button.textContent;
                     try {
+                        button.disabled = true;
+                        button.textContent = 'Поиск...';
+
                         const data = await performSearch(query, true);
                         const id = data.exact_match?.id || lastSearchData?.exact_match?.id;
 
@@ -835,22 +863,15 @@ document.addEventListener("DOMContentLoaded", () => {
                             openPendingProductModal(query);
                         }
                     } catch (error) {
-                        showError(errorId, error.message || 'Ошибка при выполнении поиска');
+                        // Only show error if it's not an aborted request
+                        if (error.name !== 'AbortError') {
+                            showError(errorId, error.message || 'Ошибка при выполнении поиска');
+                        }
                     } finally {
-                        analyzeBtn.disabled = false;
-                        analyzeBtn.textContent = originalText;
-                    }
-                } else {
-                    try {
-                        const data = await performSearch(query, true);
-                        const id = data.exact_match?.id || lastSearchData?.exact_match?.id;
-
-                        if (id) {
-                            checkAuthAndRedirect(`/product/${id}`);
-                        } else {
-                            openPendingProductModal(query);
+                        if (button) {
+                            button.disabled = false;
+                            button.textContent = originalText;
                         }
-                    } catch (error) {
                     }
                 }
             });
