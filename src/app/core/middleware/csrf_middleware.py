@@ -24,7 +24,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             f"{settings.router.auth}/refresh",
             f"{settings.router.security}/csp-report",
             f"{settings.router.product}/pending",
-            "apis/features.grafana.app",
+            "apis/features.grafana.app/v0alpha1/namespaces/default/ofrep/v1/evaluate/flags",
         ] or request.url.path.endswith("/login"):
             return await call_next(request)
 
