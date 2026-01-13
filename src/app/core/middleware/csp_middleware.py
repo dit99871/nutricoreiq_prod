@@ -1,6 +1,7 @@
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from src.app.core.config import settings
 from src.app.core.utils.security import generate_csp_nonce
 
 
@@ -12,7 +13,7 @@ class CSPMiddleware(BaseHTTPMiddleware):
 
         response = await call_next(request)
 
-        response.headers["Content-Security-Policy-Report-Only"] = (
+        csp_policy = (
             "default-src 'self'; "
             f"script-src 'self' 'nonce-{csp_nonce}' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
             f"style-src 'self' 'nonce-{csp_nonce}' https://cdn.jsdelivr.net; "
@@ -24,8 +25,13 @@ class CSPMiddleware(BaseHTTPMiddleware):
             "object-src 'none'; "
             "form-action 'self'; "
             "upgrade-insecure-requests;"
-            "report-uri /routers/security/csp-report;"
         )
+
+        # Добавляем report-uri только в production
+        if settings.env.env == "prod":
+            csp_policy += "report-uri /routers/security/csp-report;"
+
+        response.headers["Content-Security-Policy-Report-Only"] = csp_policy
         response.headers["Cache-Control"] = (
             "no-store, no-cache, must-revalidate, max-age=0"
         )
