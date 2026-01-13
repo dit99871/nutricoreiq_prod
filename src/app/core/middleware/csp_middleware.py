@@ -24,7 +24,7 @@ class CSPMiddleware(BaseHTTPMiddleware):
             "object-src 'none'; "
             "form-action 'self'; "
             "upgrade-insecure-requests;"
-            "report-uri /api/v1/security/csp-report;"
+            "report-uri /routers/security/csp-report;"
         )
         response.headers["Cache-Control"] = (
             "no-store, no-cache, must-revalidate, max-age=0"
