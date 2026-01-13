@@ -1,0 +1,117 @@
+"""
+Модуль для расчёта показателей здоровья и метаболизма.
+"""
+
+from src.app.core.logger import get_logger
+from src.app.core.models.user import KFALevel
+from src.app.core.schemas.user import UserProfile
+
+log = get_logger("health_calculator")
+
+
+class HealthCalculator:
+    """
+    Класс для расчёта различных показателей здоровья и метаболизма.
+    """
+
+    @staticmethod
+    def calculate_bmr(user: UserProfile) -> float:
+        """
+        Рассчитывает базовый уровень метаболизма (BMR) для пользователя.
+
+        BMR - это количество калорий, необходимое организму для поддержания
+        основных функций в состоянии покоя.
+
+        Формулы расчёта:
+        - Для мужчин: BMR = 10 * вес (кг) + 6.25 * рост (см) - 5 * возраст (лет) + 5
+        - Для женщин: BMR = 10 * вес (кг) + 6.25 * рост (см) - 5 * возраст (лет) - 161
+
+        :param user: Объект UserProfile с данными пользователя.
+        :return: Рассчитанный BMR (float).
+        :raises ValueError: Если отсутствуют обязательные поля или их значения недопустимы.
+        """
+        # Проверка на наличие всех необходимых полей
+        required_fields = ["gender", "age", "weight", "height"]
+        missing_fields = [
+            field for field in required_fields if getattr(user, field) is None
+        ]
+        if missing_fields:
+            log.error(
+                "Не заполнены обязательные поля: %s",
+                ", ".join(missing_fields),
+            )
+            raise ValueError(
+                f"Отсутствуют обязательные поля для расчёта BMR: {', '.join(missing_fields)}"
+            )
+
+        # Извлечение данных
+        gender = user.gender
+        age = user.age
+        weight = user.weight
+        height = user.height
+
+        # Валидация значений
+        if age <= 0 or age > 120:
+            raise ValueError(
+                f"Недопустимый возраст: {age}. Должен быть от 1 до 120 лет."
+            )
+        if weight <= 0 or weight > 500:
+            raise ValueError(
+                f"Недопустимый вес: {weight}. Должен быть от 0.1 до 500 кг."
+            )
+        if height <= 0 or height > 300:
+            raise ValueError(
+                f"Недопустимый рост: {height}. Должен быть от 1 до 300 см."
+            )
+
+        # Расчёт BMR
+        bmr = 10 * weight + 6.25 * height - 5 * age
+        if gender == "male":
+            bmr += 5
+        else:  # gender == "female"
+            bmr -= 161
+
+        return bmr
+
+    @classmethod
+    def calculate_tdee(cls, user: UserProfile) -> float:
+        """
+        Рассчитывает общий дневной расход энергии (TDEE) пользователя.
+
+        TDEE - это общее количество калорий, которое человек тратит за день,
+        включая базовый метаболизм и физическую активность.
+
+        :param user: Объект UserProfile с данными пользователя.
+        :return: Рассчитанный TDEE (float).
+        :raises ValueError: Если отсутствует или недопустим коэффициент активности (kfa).
+        """
+        # Проверка kfa
+        if user.kfa is None:
+            log.error(
+                "Отсутствует коэффициент активности (kfa) для пользователя: %s", user
+            )
+            raise ValueError("Для расчёта TDEE необходим коэффициент активности (kfa).")
+
+        try:
+            if isinstance(user.kfa, KFALevel):
+                kfa = float(user.kfa.value)  # "1".."5" -> 1.0..5.0
+            else:
+                kfa = float(user.kfa)  # fallback для исторических значений
+        except Exception as e:
+            log.error("Ошибка значения kfa: %s", str(e))
+            raise ValueError(
+                f"Недопустимое значение kfa: {user.kfa}. "
+                "Должно быть число от 1.0 до 5.0."
+            )
+
+        if kfa < 1.0 or kfa > 5.0:
+            log.error("Недопустимое значение kfa: %s", kfa)
+            raise ValueError(
+                f"Недопустимый коэффициент активности (kfa): {kfa}. "
+                "Должен быть от 1.0 до 5.0."
+            )
+
+        bmr = cls.calculate_bmr(user)
+        tdee = bmr * kfa
+
+        return tdee
