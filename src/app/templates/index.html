@@ -52,4 +52,63 @@
         </div>
     </div>
 </div>
+
+<!-- Карусель с полезными советами -->
+<div class="container-fluid mt-5 px-3 px-md-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-10 col-lg-8">
+            <h3 class="text-center mb-4">Полезные советы по питанию</h3>
+            <div id="nutritionTipsCarousel" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-inner rounded-3 shadow-sm">
+                    <!-- Совет 1 -->
+                    <div class="carousel-item active">
+                        <div class="carousel-content p-4 p-md-5 text-center">
+                            <div class="tip-icon mb-3">
+                                <i class="fas fa-tint text-primary"></i>
+                            </div>
+                            <h5>Пейте больше воды</h5>
+                            <p class="text-muted">Рекомендуется выпивать не менее 2 литров воды в день. Вода помогает ускорить обмен веществ и улучшает пищеварение.</p>
+                        </div>
+                    </div>
+                    <!-- Совет 2 -->
+                    <div class="carousel-item">
+                        <div class="carousel-content p-4 p-md-5 text-center">
+                            <div class="tip-icon mb-3">
+                                <i class="fas fa-apple-alt text-success"></i>
+                            </div>
+                            <h5>Ешьте больше овощей и фруктов</h5>
+                            <p class="text-muted">Овощи и фрукты - важный источник витаминов, минералов и клетчатки. Старайтесь употреблять не менее 5 порций в день.</p>
+                        </div>
+                    </div>
+                    <!-- Совет 3 -->
+                    <div class="carousel-item">
+                        <div class="carousel-content p-4 p-md-5 text-center">
+                            <div class="tip-icon mb-3">
+                                <i class="fas fa-utensils text-warning"></i>
+                            </div>
+                            <h5>Соблюдайте режим питания</h5>
+                            <p class="text-muted">Старайтесь есть в одно и то же время. Это помогает организму лучше усваивать питательные вещества.</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Элементы управления -->
+                <button class="carousel-control-prev" type="button" data-bs-target="#nutritionTipsCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Предыдущий</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#nutritionTipsCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Следующий</span>
+                </button>
+                <!-- Индикаторы слайдов -->
+                <div class="carousel-indicators position-relative mt-3">
+                    <button type="button" data-bs-target="#nutritionTipsCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Совет 1"></button>
+                    <button type="button" data-bs-target="#nutritionTipsCarousel" data-bs-slide-to="1" aria-label="Совет 2"></button>
+                    <button type="button" data-bs-target="#nutritionTipsCarousel" data-bs-slide-to="2" aria-label="Совет 3"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

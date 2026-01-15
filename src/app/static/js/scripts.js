@@ -4,6 +4,16 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
+    // Автопрокрутка карусели с советами
+    const myCarousel = document.getElementById('nutritionTipsCarousel');
+    if (myCarousel) {
+        const carousel = new bootstrap.Carousel(myCarousel, {
+            interval: 5000,  // Смена слайдов каждые 5 секунд
+            touch: true,     // Включение свайпов на мобильных устройствах
+            ride: 'carousel' // Автозапуск карусели
+        });
+    }
+
     // Инициализация CSRF-токена в формах
     const initCsrfToken = () => {
         const getCsrfToken = () => {
