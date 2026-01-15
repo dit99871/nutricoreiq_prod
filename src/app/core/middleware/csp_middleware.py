@@ -29,7 +29,7 @@ class CSPMiddleware(BaseHTTPMiddleware):
 
         # Добавляем report-uri только в production
         if settings.env.env == "prod":
-            csp_policy += "report-uri /routers/security/csp-report;"
+            csp_policy += f"report-uri {settings.router.security}/csp-report;"
 
         response.headers["Content-Security-Policy-Report-Only"] = csp_policy
         response.headers["Cache-Control"] = (
