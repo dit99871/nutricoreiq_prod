@@ -1655,3 +1655,207 @@ body.dark-mode .small {
         font-size: 0.8rem;
     }
 }
+/* Карусель с советами - светлая тема */
+.carousel-content {
+    background: var(--light-sand);
+    color: var(--text-primary);
+    border-radius: 0.75rem;
+    min-height: 250px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.tip-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1.25rem;
+    color: var(--moss);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: rgba(74, 124, 89, 0.1);
+    transition: all 0.3s ease;
+}
+
+.carousel-content h5 {
+    color: var(--moss);
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+.carousel-content p {
+    color: var(--text-primary);
+    margin-bottom: 0;
+    max-width: 600px;
+    line-height: 1.6;
+    opacity: 0.9;
+}
+
+/* Индикаторы */
+.carousel-indicators {
+    margin: 1.5rem 0 0;
+    position: static;
+}
+
+.carousel-indicators [data-bs-target] {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: var(--stone);
+    margin: 0 5px;
+    border: none;
+    opacity: 0.5;
+    transition: all 0.3s ease;
+}
+
+.carousel-indicators .active {
+    background-color: var(--moss);
+    opacity: 1;
+}
+
+/* Кнопки навигации */
+.carousel-control-prev,
+.carousel-control-next {
+    width: 40px;
+    height: 40px;
+    background-color: rgba(255, 255, 255, 0.7) !important;
+    border-radius: 50%;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 1;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+.carousel-control-prev {
+    left: -20px;
+}
+
+.carousel-control-next {
+    right: -20px;
+}
+
+/* Стили для иконок стрелок (светлая тема) */
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+    filter: invert(0.3) sepia(1) saturate(5) hue-rotate(175deg);
+    transition: all 0.3s ease;
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+/* Эффект при наведении (светлая тема) */
+.carousel-control-prev:hover,
+.carousel-control-next:hover {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.carousel-control-prev:hover .carousel-control-prev-icon,
+.carousel-control-next:hover .carousel-control-next-icon {
+    filter: invert(0.4) sepia(1) saturate(5) hue-rotate(175deg);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .carousel-content {
+        min-height: 280px;
+        padding: 1.5rem 1rem !important;
+    }
+
+    .carousel-control-prev {
+        left: 0;
+    }
+
+    .carousel-control-next {
+        right: 0;
+    }
+}
+
+/* Темная тема */
+body.dark-mode .carousel-content {
+    background: var(--input-bg);
+    border-color: var(--sage);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+body.dark-mode .tip-icon {
+    background-color: rgba(138, 155, 110, 0.3);
+    color: var(--sage);
+}
+
+body.dark-mode .carousel-content h5 {
+    color: var(--sage);
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+body.dark-mode .carousel-content p {
+    color: #b5e8b5 !important; /* Салатовый цвет для лучшей читаемости */
+    opacity: 0.95;
+    font-weight: 400;
+    text-shadow: 0 0 1px rgba(0, 0, 0, 0.3); /* Легкая тень для лучшей читаемости */
+}
+
+/* Улучшаем контрастность индикаторов */
+body.dark-mode .carousel-indicators [data-bs-target] {
+    background-color: var(--stone);
+    opacity: 0.7;
+}
+
+body.dark-mode .carousel-indicators .active {
+    background-color: var(--sage);
+    opacity: 1;
+    transform: scale(1.2); /* Делаем активный индикатор немного больше */
+}
+
+/* Улучшаем видимость стрелок навигации */
+/* Темная тема - кнопки навигации */
+body.dark-mode .carousel-control-prev,
+body.dark-mode .carousel-control-next {
+    background-color: rgba(45, 45, 45, 0.7) !important;
+    border-color: var(--sage) !important;
+}
+
+/* Темная тема - иконки стрелок */
+body.dark-mode .carousel-control-prev-icon,
+body.dark-mode .carousel-control-next-icon {
+    filter: invert(0.8) sepia(1) saturate(5) hue-rotate(90deg);
+}
+
+/* Эффект при наведении (темная тема) */
+body.dark-mode .carousel-control-prev:hover,
+body.dark-mode .carousel-control-next:hover {
+    background-color: rgba(60, 60, 60, 0.9) !important;
+}
+
+body.dark-mode .carousel-control-prev:hover .carousel-control-prev-icon,
+body.dark-mode .carousel-control-next:hover .carousel-control-next-icon {
+    filter: invert(1) sepia(1) saturate(5) hue-rotate(90deg);
+}
+
+/* Улучшаем контрастность при наведении */
+body.dark-mode .carousel-control-prev:hover,
+body.dark-mode .carousel-control-next:hover {
+    background-color: rgba(138, 155, 110, 0.2);
+}
+
+/* Плавные переходы для переключения темы */
+.carousel-content,
+.tip-icon,
+.carousel-control-prev,
+.carousel-control-next,
+.carousel-indicators [data-bs-target] {
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
