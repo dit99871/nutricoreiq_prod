@@ -6,3 +6,4 @@ class RouterPrefix(BaseModel):
     product: str = "/product"
     user: str = "/user"
     security: str = "/security"
+    privacy: str = "/privacy"
