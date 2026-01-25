@@ -4,7 +4,7 @@ from typing import Literal
 from uuid import uuid4
 
 from sqlalchemy import CheckConstraint
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
 from .mixins import IntIdPkMixin
@@ -77,4 +77,9 @@ class User(IntIdPkMixin, Base):
 
     created_at: Mapped[datetime.datetime] = mapped_column(
         default=lambda: datetime.datetime.now().date(), index=True
+    )
+
+    # Связь с согласиями на обработку персональных данных
+    privacy_consents: Mapped[list["PrivacyConsent"]] = relationship(
+        "PrivacyConsent", back_populates="user", cascade="all, delete-orphan"
     )
