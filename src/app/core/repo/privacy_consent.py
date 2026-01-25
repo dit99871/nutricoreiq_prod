@@ -20,7 +20,7 @@ async def create_privacy_consent(
     user_agent: str,
     consent_type: ConsentType,
     is_granted: bool,
-    policy_version: str = "1.0"
+    policy_version: str = "1.0",
 ) -> PrivacyConsent:
     """
     Создает запись о согласии на обработку персональных данных.
@@ -44,18 +44,21 @@ async def create_privacy_consent(
             user_agent=user_agent,
             consent_type=consent_type,
             is_granted=is_granted,
-            policy_version=policy_version
+            policy_version=policy_version,
         )
-        
+
         session.add(consent)
         await session.flush()  # Получаем ID без коммита
         await session.refresh(consent)
-        
+
         log.info(
             "Создано согласие: user_id=%s, session_id=%s, type=%s, granted=%s",
-            user_id, session_id, consent_type.value, is_granted
+            user_id,
+            session_id,
+            consent_type.value,
+            is_granted,
         )
-        
+
         return consent
 
     except SQLAlchemyError as e:
@@ -63,14 +66,14 @@ async def create_privacy_consent(
         await session.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"message": "Ошибка при сохранении согласия"}
+            detail={"message": "Ошибка при сохранении согласия"},
         )
 
 
 async def has_user_consent(
     session: AsyncSession,
     user_id: int,
-    consent_type: ConsentType = ConsentType.PERSONAL_DATA
+    consent_type: ConsentType = ConsentType.PERSONAL_DATA,
 ) -> bool:
     """
     Проверяет наличие согласия у пользователя.
@@ -81,15 +84,20 @@ async def has_user_consent(
     :return: True если согласие есть, иначе False
     """
     try:
-        stmt = select(PrivacyConsent).filter(
-            PrivacyConsent.user_id == user_id,
-            PrivacyConsent.consent_type == consent_type,
-            PrivacyConsent.is_granted == True
-        ).order_by(PrivacyConsent.granted_at.desc()).limit(1)
-        
+        stmt = (
+            select(PrivacyConsent)
+            .filter(
+                PrivacyConsent.user_id == user_id,
+                PrivacyConsent.consent_type == consent_type,
+                PrivacyConsent.is_granted == True,
+            )
+            .order_by(PrivacyConsent.granted_at.desc())
+            .limit(1)
+        )
+
         result = await session.execute(stmt)
         consent = result.scalar_one_or_none()
-        
+
         return consent is not None
 
     except SQLAlchemyError as e:
@@ -100,7 +108,7 @@ async def has_user_consent(
 async def has_session_consent(
     session: AsyncSession,
     session_id: str,
-    consent_type: ConsentType = ConsentType.PERSONAL_DATA
+    consent_type: ConsentType = ConsentType.PERSONAL_DATA,
 ) -> bool:
     """
     Проверяет наличие согласия у сессии.
@@ -111,15 +119,20 @@ async def has_session_consent(
     :return: True если согласие есть, иначе False
     """
     try:
-        stmt = select(PrivacyConsent).filter(
-            PrivacyConsent.session_id == session_id,
-            PrivacyConsent.consent_type == consent_type,
-            PrivacyConsent.is_granted == True
-        ).order_by(PrivacyConsent.granted_at.desc()).limit(1)
-        
+        stmt = (
+            select(PrivacyConsent)
+            .filter(
+                PrivacyConsent.session_id == session_id,
+                PrivacyConsent.consent_type == consent_type,
+                PrivacyConsent.is_granted == True,
+            )
+            .order_by(PrivacyConsent.granted_at.desc())
+            .limit(1)
+        )
+
         result = await session.execute(stmt)
         consent = result.scalar_one_or_none()
-        
+
         return consent is not None
 
     except SQLAlchemyError as e:
@@ -128,8 +141,7 @@ async def has_session_consent(
 
 
 async def get_user_consents(
-    session: AsyncSession,
-    user_id: int
+    session: AsyncSession, user_id: int
 ) -> list[PrivacyConsent]:
     """
     Получает все согласия пользователя.
@@ -139,13 +151,15 @@ async def get_user_consents(
     :return: Список согласий пользователя
     """
     try:
-        stmt = select(PrivacyConsent).filter(
-            PrivacyConsent.user_id == user_id
-        ).order_by(PrivacyConsent.granted_at.desc())
-        
+        stmt = (
+            select(PrivacyConsent)
+            .filter(PrivacyConsent.user_id == user_id)
+            .order_by(PrivacyConsent.granted_at.desc())
+        )
+
         result = await session.execute(stmt)
         consents = result.scalars().all()
-        
+
         return list(consents)
 
     except SQLAlchemyError as e:
@@ -154,8 +168,7 @@ async def get_user_consents(
 
 
 async def get_session_consents(
-    session: AsyncSession,
-    session_id: str
+    session: AsyncSession, session_id: str
 ) -> list[PrivacyConsent]:
     """
     Получает все согласия сессии.
@@ -165,13 +178,15 @@ async def get_session_consents(
     :return: Список согласий сессии
     """
     try:
-        stmt = select(PrivacyConsent).filter(
-            PrivacyConsent.session_id == session_id
-        ).order_by(PrivacyConsent.granted_at.desc())
-        
+        stmt = (
+            select(PrivacyConsent)
+            .filter(PrivacyConsent.session_id == session_id)
+            .order_by(PrivacyConsent.granted_at.desc())
+        )
+
         result = await session.execute(stmt)
         consents = result.scalars().all()
-        
+
         return list(consents)
 
     except SQLAlchemyError as e:
