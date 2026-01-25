@@ -71,7 +71,7 @@ def setup_logging() -> None:
         level=settings.logging.log_level_value,
         handlers=[
             file_handler,
-            console_handler,
+            # console_handler,
         ],
     )
 

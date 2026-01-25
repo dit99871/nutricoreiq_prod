@@ -173,7 +173,9 @@ async def test_create_user_success(user_create_data):
 
     mock_session.add.side_effect = mock_add
 
-    with patch("src.app.core.repo.user.get_password_hash", return_value=b"hashed_password"):
+    with patch(
+        "src.app.core.repo.user.get_password_hash", return_value=b"hashed_password"
+    ):
         user_create = UserCreate(**user_create_data)
         result = await create_user(mock_session, user_create)
 
@@ -192,7 +194,9 @@ async def test_create_user_database_error(user_create_data):
     mock_session.commit = AsyncMock(side_effect=SQLAlchemyError("Database error"))
     mock_session.rollback = AsyncMock()
 
-    with patch("src.app.core.repo.user.get_password_hash", return_value=b"hashed_password"):
+    with patch(
+        "src.app.core.repo.user.get_password_hash", return_value=b"hashed_password"
+    ):
         with patch("src.app.core.repo.user.log") as mock_logger:
             with pytest.raises(HTTPException) as exc_info:
                 user_create = UserCreate(**user_create_data)
