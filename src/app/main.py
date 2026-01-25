@@ -18,7 +18,8 @@ if __name__ == "__main__":
 
         subprocess.run(
             [
-                "docker-compose",
+                "docker",
+                "compose",
                 "-f",
                 "docker-compose.dev.yml",
                 "up",
