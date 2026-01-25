@@ -69,79 +69,105 @@ class TestCalculateBMR:
     def test_bmr_missing_gender(self, male_user_profile):
         """Тест с отсутствующим полом"""
         male_user_profile.gender = None
-        with pytest.raises(ValueError, match="Отсутствуют обязательные поля для расчёта BMR"):
+        with pytest.raises(
+            ValueError, match="Отсутствуют обязательные поля для расчёта BMR"
+        ):
             HealthCalculator.calculate_bmr(male_user_profile)
 
     def test_bmr_missing_age(self, male_user_profile):
         """Тест с отсутствующим возрастом"""
         male_user_profile.age = None
-        with pytest.raises(ValueError, match="Отсутствуют обязательные поля для расчёта BMR"):
+        with pytest.raises(
+            ValueError, match="Отсутствуют обязательные поля для расчёта BMR"
+        ):
             HealthCalculator.calculate_bmr(male_user_profile)
 
     def test_bmr_missing_weight(self, male_user_profile):
         """Тест с отсутствующим весом"""
         male_user_profile.weight = None
-        with pytest.raises(ValueError, match="Отсутствуют обязательные поля для расчёта BMR: weight"):
+        with pytest.raises(
+            ValueError, match="Отсутствуют обязательные поля для расчёта BMR: weight"
+        ):
             HealthCalculator.calculate_bmr(male_user_profile)
 
     def test_bmr_missing_height(self, male_user_profile):
         """Тест с отсутствующим ростом"""
         male_user_profile.height = None
-        with pytest.raises(ValueError, match="Отсутствуют обязательные поля для расчёта BMR: height"):
+        with pytest.raises(
+            ValueError, match="Отсутствуют обязательные поля для расчёта BMR: height"
+        ):
             HealthCalculator.calculate_bmr(male_user_profile)
 
     def test_bmr_invalid_age_zero(self, male_user_profile):
         """Тест с нулевым возрастом"""
         male_user_profile.age = 0
-        with pytest.raises(ValueError, match="Недопустимый возраст: 0. Должен быть от 1 до 120 лет."):
+        with pytest.raises(
+            ValueError, match="Недопустимый возраст: 0. Должен быть от 1 до 120 лет."
+        ):
             HealthCalculator.calculate_bmr(male_user_profile)
 
     def test_bmr_invalid_age_negative(self, male_user_profile):
         """Тест с отрицательным возрастом"""
         male_user_profile.age = -5
-        with pytest.raises(ValueError, match="Недопустимый возраст: -5. Должен быть от 1 до 120 лет."):
+        with pytest.raises(
+            ValueError, match="Недопустимый возраст: -5. Должен быть от 1 до 120 лет."
+        ):
             HealthCalculator.calculate_bmr(male_user_profile)
 
     def test_bmr_invalid_age_too_high(self, male_user_profile):
         """Тест с возрастом > 120"""
         male_user_profile.age = 150
-        with pytest.raises(ValueError, match="Недопустимый возраст: 150. Должен быть от 1 до 120 лет."):
+        with pytest.raises(
+            ValueError, match="Недопустимый возраст: 150. Должен быть от 1 до 120 лет."
+        ):
             HealthCalculator.calculate_bmr(male_user_profile)
 
     def test_bmr_invalid_weight_zero(self, male_user_profile):
         """Тест с нулевым весом"""
         male_user_profile.weight = 0
-        with pytest.raises(ValueError, match="Недопустимый вес: 0. Должен быть от 0.1 до 500 кг."):
+        with pytest.raises(
+            ValueError, match="Недопустимый вес: 0. Должен быть от 0.1 до 500 кг."
+        ):
             HealthCalculator.calculate_bmr(male_user_profile)
 
     def test_bmr_invalid_weight_negative(self, male_user_profile):
         """Тест с отрицательным весом"""
         male_user_profile.weight = -10
-        with pytest.raises(ValueError, match="Недопустимый вес: -10. Должен быть от 0.1 до 500 кг."):
+        with pytest.raises(
+            ValueError, match="Недопустимый вес: -10. Должен быть от 0.1 до 500 кг."
+        ):
             HealthCalculator.calculate_bmr(male_user_profile)
 
     def test_bmr_invalid_weight_too_high(self, male_user_profile):
         """Тест с весом > 500 кг"""
         male_user_profile.weight = 600
-        with pytest.raises(ValueError, match="Недопустимый вес: 600. Должен быть от 0.1 до 500 кг."):
+        with pytest.raises(
+            ValueError, match="Недопустимый вес: 600. Должен быть от 0.1 до 500 кг."
+        ):
             HealthCalculator.calculate_bmr(male_user_profile)
 
     def test_bmr_invalid_height_zero(self, male_user_profile):
         """Тест с нулевым ростом"""
         male_user_profile.height = 0
-        with pytest.raises(ValueError, match="Недопустимый рост: 0. Должен быть от 1 до 300 см."):
+        with pytest.raises(
+            ValueError, match="Недопустимый рост: 0. Должен быть от 1 до 300 см."
+        ):
             HealthCalculator.calculate_bmr(male_user_profile)
 
     def test_bmr_invalid_height_negative(self, male_user_profile):
         """Тест с отрицательным ростом"""
         male_user_profile.height = -50
-        with pytest.raises(ValueError, match="Недопустимый рост: -50. Должен быть от 1 до 300 см."):
+        with pytest.raises(
+            ValueError, match="Недопустимый рост: -50. Должен быть от 1 до 300 см."
+        ):
             HealthCalculator.calculate_bmr(male_user_profile)
 
     def test_bmr_invalid_height_too_high(self, male_user_profile):
         """Тест с ростом > 300 см"""
         male_user_profile.height = 350
-        with pytest.raises(ValueError, match="Недопустимый рост: 350. Должен быть от 1 до 300 см."):
+        with pytest.raises(
+            ValueError, match="Недопустимый рост: 350. Должен быть от 1 до 300 см."
+        ):
             HealthCalculator.calculate_bmr(male_user_profile)
 
     def test_bmr_boundary_age_min(self, male_user_profile):
@@ -216,13 +242,17 @@ class TestCalculateTDEE:
     def test_tdee_missing_kfa(self, male_user_profile):
         """Тест с отсутствующим KFA"""
         male_user_profile.kfa = None
-        with pytest.raises(ValueError, match="Для расчёта TDEE необходим коэффициент активности"):
+        with pytest.raises(
+            ValueError, match="Для расчёта TDEE необходим коэффициент активности"
+        ):
             HealthCalculator.calculate_tdee(male_user_profile)
 
     def test_tdee_propagates_bmr_errors(self, male_user_profile):
         """Тест что TDEE пробрасывает ошибки BMR"""
         male_user_profile.age = None
-        with pytest.raises(ValueError, match="Отсутствуют обязательные поля для расчёта BMR"):
+        with pytest.raises(
+            ValueError, match="Отсутствуют обязательные поля для расчёта BMR"
+        ):
             HealthCalculator.calculate_tdee(male_user_profile)
 
     @pytest.mark.parametrize(

@@ -72,8 +72,5 @@ def test_error_response_serialization():
     result = response.model_dump()
     assert result == {
         "status": "error",
-        "error": {
-            "message": "PERMISSION DENIED",
-            "details": {"required": "admin"}
-        },
+        "error": {"message": "PERMISSION DENIED", "details": {"required": "admin"}},
     }
