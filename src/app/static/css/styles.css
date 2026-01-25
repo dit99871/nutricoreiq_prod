@@ -510,6 +510,99 @@ body.dark-mode .unsubscribe-btn[aria-label]::after {
     overflow: hidden;
 }
 
+/* Кастомное уведомление о согласии на cookie */
+.cookie-consent-notification {
+    position: fixed;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(150%);
+    opacity: 0;
+    transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+    z-index: 999;
+    max-width: min(500px, calc(100vw - 2rem));
+    width: auto;
+}
+
+.cookie-consent-notification.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+.cookie-consent-content {
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1rem 1.25rem;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.cookie-consent-content p {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    text-align: center;
+    flex: 1;
+    min-width: 200px;
+}
+
+.cookie-consent-content a {
+    color: var(--link-color);
+    text-decoration: underline;
+}
+
+.cookie-consent-content a:hover {
+    text-decoration: none;
+}
+
+.cookie-consent-content button {
+    flex-shrink: 0;
+}
+
+/* Мобильные стили */
+@media (max-width: 768px) {
+    .cookie-consent-notification {
+        bottom: 0.5rem;
+        max-width: calc(100vw - 1rem);
+    }
+    
+    .cookie-consent-content {
+        padding: 0.75rem 1rem;
+        flex-direction: column;
+        text-align: center;
+        gap: 0.75rem;
+    }
+    
+    .cookie-consent-content p {
+        font-size: 0.85rem;
+        min-width: auto;
+    }
+    
+    .cookie-consent-content button {
+        width: 100%;
+        max-width: 200px;
+    }
+}
+
+@media (max-width: 480px) {
+    .cookie-consent-notification {
+        bottom: 0.25rem;
+        max-width: calc(100vw - 0.5rem);
+    }
+    
+    .cookie-consent-content {
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .cookie-consent-content p {
+        font-size: 0.8rem;
+    }
+}
+
 .modal-header {
     background: var(--header-bg);
     border-bottom: 2px solid var(--border-color);
@@ -1780,6 +1873,100 @@ body.dark-mode .small {
 
     .carousel-control-next {
         right: 0;
+    }
+}
+
+/* Стили для модального окна согласия на обработку персональных данных */
+.consent-content {
+    color: var(--text-primary);
+}
+
+.consent-content h6 {
+    color: var(--moss);
+    font-weight: 600;
+}
+
+.consent-details ul,
+.consent-purpose ul {
+    padding-left: 1rem;
+}
+
+.consent-details li,
+.consent-purpose li {
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.consent-policy-link {
+    color: var(--link-color);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.consent-policy-link:hover {
+    color: var(--moss);
+    text-decoration: underline;
+}
+
+.form-check-input:checked {
+    background-color: var(--moss);
+    border-color: var(--moss);
+}
+
+.form-check-input:focus {
+    border-color: var(--sage);
+    box-shadow: 0 0 0 0.25rem rgba(138, 155, 110, 0.25);
+}
+
+/* Темная тема для модального окна согласия */
+body.dark-mode .consent-content {
+    color: var(--text-primary);
+}
+
+body.dark-mode .consent-content h6 {
+    color: var(--sage);
+}
+
+body.dark-mode .consent-details li,
+body.dark-mode .consent-purpose li {
+    color: var(--text-primary);
+}
+
+body.dark-mode .consent-policy-link {
+    color: var(--sage);
+}
+
+body.dark-mode .consent-policy-link:hover {
+    color: var(--moss);
+}
+
+body.dark-mode .form-check-input {
+    background-color: var(--input-bg);
+    border-color: var(--sage);
+}
+
+body.dark-mode .form-check-input:checked {
+    background-color: var(--moss);
+    border-color: var(--moss);
+}
+
+body.dark-mode .form-check-label {
+    color: var(--text-primary);
+}
+
+/* Адаптивность для модального окна согласия */
+@media (max-width: 768px) {
+    #privacyConsentModal .modal-dialog {
+        margin: 1rem;
+    }
+    
+    .consent-content {
+        font-size: 0.9rem;
+    }
+    
+    .consent-details ul,
+    .consent-purpose ul {
+        padding-left: 0.5rem;
     }
 }
 
