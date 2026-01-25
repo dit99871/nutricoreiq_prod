@@ -103,6 +103,12 @@ document.addEventListener("DOMContentLoaded", () => {
             ...options.headers,
         };
 
+        // Добавляем заголовок согласия на обработку данных
+        const consentData = localStorage.getItem('privacy_consent_data');
+        if (consentData) {
+            headers['X-Privacy-Consent'] = consentData;
+        }
+
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000);
 
@@ -128,6 +134,18 @@ document.addEventListener("DOMContentLoaded", () => {
                     throw new Error('Ваша сессия истекла. Пожалуйста, войдите заново.');
                 } else if (response.status === 403) {
                     throw new Error('Недействительный CSRF-токен. Пожалуйста, обновите страницу и попробуйте снова.');
+                } else if (response.status === 451) {
+                    // Обработка ошибки согласия на обработку данных
+                    const errorData = await response.json().catch(() => ({}));
+                    
+                    // Показываем уведомление вместо модального окна, чтобы не мешать пользованию сайтом
+                    showToast(errorData.detail?.message || 'Требуется согласие на обработку персональных данных', 'warning', {
+                        header: 'Согласие на обработку данных',
+                        autohide: true,
+                        delay: 8000
+                    });
+                    
+                    throw new Error(errorData.detail?.message || 'Требуется согласие на обработку персональных данных');
                 } else if (response.status === 500) {
                     window.location.href = '/error';
                 }
@@ -1004,6 +1022,62 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
+    // Обработка согласия на обработку cookie
+    const initCookieConsent = () => {
+        const consentNotification = document.getElementById('cookieConsentNotification');
+        const acceptBtn = document.getElementById('acceptCookieConsent');
+
+        // Проверяем, есть ли уже согласие
+        const hasConsent = localStorage.getItem('privacy_consent_given') === 'true';
+        
+        if (!hasConsent && consentNotification) {
+            // Показываем уведомление с небольшой задержкой
+            setTimeout(() => {
+                consentNotification.classList.add('show');
+            }, 1000);
+        }
+
+        // Обработка принятия согласия
+        if (acceptBtn) {
+            acceptBtn.addEventListener('click', async () => {
+                const consentData = {
+                    personal_data: true,
+                    cookies: true,
+                    marketing: false,
+                    timestamp: new Date().toISOString()
+                };
+
+                try {
+                    // Сохраняем согласие в localStorage
+                    localStorage.setItem('privacy_consent_given', 'true');
+                    localStorage.setItem('privacy_consent_data', JSON.stringify(consentData));
+
+                    // Отправляем согласие на сервер
+                    await secureFetch('/api/privacy/consent', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(consentData)
+                    });
+
+                    // Закрываем уведомление
+                    if (consentNotification) {
+                        consentNotification.classList.remove('show');
+                    }
+
+                    showSuccess('globalSuccess', 'Спасибо за согласие на обработку данных!');
+                } catch (error) {
+                    console.error('Ошибка при сохранении согласия:', error);
+                    // Даже при ошибке закрываем уведомление, так как согласие уже сохранено локально
+                    if (consentNotification) {
+                        consentNotification.classList.remove('show');
+                    }
+                }
+            });
+        }
+    };
+
     // Инициализация
     initCsrfToken();
     initTheme();
@@ -1017,6 +1091,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initTooltips();
     initCustomSelects();
     initNavigationButtons();
+    initCookieConsent();
 
     // Обработка действия отписки из параметра URL
     const urlParams = new URLSearchParams(window.location.search);
