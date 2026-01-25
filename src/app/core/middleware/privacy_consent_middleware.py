@@ -55,7 +55,7 @@ class PrivacyConsentMiddleware(BaseHTTPMiddleware):
 
             # Проверяем согласие в зависимости от типа пользователя
             user = getattr(request.state, "user", None)
-            
+
             if user:
                 # Авторизованный пользователь - проверяем в БД
                 has_consent = await has_user_consent(session, user.id)
@@ -76,8 +76,8 @@ class PrivacyConsentMiddleware(BaseHTTPMiddleware):
                     detail={
                         "message": "Требуется согласие на обработку персональных данных",
                         "code": "privacy_consent_required",
-                        "redirect_url": "/privacy"
-                    }
+                        "redirect_url": "/privacy",
+                    },
                 )
 
             return await call_next(request)
@@ -105,5 +105,7 @@ class PrivacyConsentMiddleware(BaseHTTPMiddleware):
 
             return False
         except Exception as e:
-            log.error("Ошибка при проверке согласия анонимного пользователя: %s", str(e))
+            log.error(
+                "Ошибка при проверке согласия анонимного пользователя: %s", str(e)
+            )
             return False

@@ -49,7 +49,7 @@ async def save_privacy_consent(
         user = getattr(request.state, "user", None)
         redis_session = request.scope.get("redis_session", {})
         session_id = redis_session.get("redis_session_id")
-        
+
         # Получаем IP и User-Agent
         ip_address = request.client.host
         user_agent = request.headers.get("user-agent", "unknown")
@@ -63,7 +63,7 @@ async def save_privacy_consent(
                 ip_address=ip_address,
                 user_agent=user_agent,
                 consent_type=ConsentType.PERSONAL_DATA,
-                is_granted=True
+                is_granted=True,
             )
 
         # Сохраняем согласие на cookies
@@ -75,7 +75,7 @@ async def save_privacy_consent(
                 ip_address=ip_address,
                 user_agent=user_agent,
                 consent_type=ConsentType.COOKIES,
-                is_granted=True
+                is_granted=True,
             )
 
         # Сохраняем согласие на маркетинг
@@ -87,7 +87,7 @@ async def save_privacy_consent(
                 ip_address=ip_address,
                 user_agent=user_agent,
                 consent_type=ConsentType.MARKETING,
-                is_granted=True
+                is_granted=True,
             )
 
         await session.commit()
@@ -96,12 +96,11 @@ async def save_privacy_consent(
             "Сохранено согласие на обработку данных: user_id=%s, session_id=%s, ip=%s",
             user.id if user else None,
             session_id,
-            ip_address
+            ip_address,
         )
 
         return PrivacyConsentResponse(
-            success=True,
-            message="Согласие успешно сохранено"
+            success=True, message="Согласие успешно сохранено"
         )
 
     except Exception as e:
@@ -126,36 +125,45 @@ async def get_consent_status(
         if user:
             # Проверяем согласие для авторизованного пользователя
             consents = await get_user_consents(session, user.id)
-            
+
             # Проверяем наличие каждого типа согласия
-            personal_data_consent = await has_user_consent(session, user.id, ConsentType.PERSONAL_DATA)
-            cookies_consent = await has_user_consent(session, user.id, ConsentType.COOKIES)
-            marketing_consent = await has_user_consent(session, user.id, ConsentType.MARKETING)
+            personal_data_consent = await has_user_consent(
+                session, user.id, ConsentType.PERSONAL_DATA
+            )
+            cookies_consent = await has_user_consent(
+                session, user.id, ConsentType.COOKIES
+            )
+            marketing_consent = await has_user_consent(
+                session, user.id, ConsentType.MARKETING
+            )
         else:
             # Проверяем согласие для неавторизованного пользователя
             consents = await get_session_consents(session, session_id)
-            
+
             # Проверяем наличие каждого типа согласия
-            personal_data_consent = await has_session_consent(session, session_id, ConsentType.PERSONAL_DATA)
-            cookies_consent = await has_session_consent(session, session_id, ConsentType.COOKIES)
-            marketing_consent = await has_session_consent(session, session_id, ConsentType.MARKETING)
+            personal_data_consent = await has_session_consent(
+                session, session_id, ConsentType.PERSONAL_DATA
+            )
+            cookies_consent = await has_session_consent(
+                session, session_id, ConsentType.COOKIES
+            )
+            marketing_consent = await has_session_consent(
+                session, session_id, ConsentType.MARKETING
+            )
 
         # Формируем ответ
         last_updated = consents[0].granted_at if consents else None
-        
+
         return ConsentStatusResponse(
             personal_data=personal_data_consent,
             cookies=cookies_consent,
             marketing=marketing_consent,
             has_consent=len(consents) > 0,
-            last_updated=last_updated
+            last_updated=last_updated,
         )
 
     except Exception as e:
         log.error("Ошибка при получении статуса согласия: %s", str(e))
         return ConsentStatusResponse(
-            personal_data=False,
-            cookies=False,
-            marketing=False,
-            has_consent=False
+            personal_data=False, cookies=False, marketing=False, has_consent=False
         )
