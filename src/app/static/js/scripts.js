@@ -1053,7 +1053,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     localStorage.setItem('privacy_consent_data', JSON.stringify(consentData));
 
                     // Отправляем согласие на сервер
-                    await secureFetch('/api/privacy/consent', {
+                    await secureFetch('/privacy/consent', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
