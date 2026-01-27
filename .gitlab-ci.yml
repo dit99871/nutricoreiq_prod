@@ -1,4 +1,4 @@
-image: python:3.13
+image: python:3.13-slim
 
 services:
   - postgres:17
@@ -92,6 +92,8 @@ stages:
   - deploy
 
 before_script:
+  # Установка системных зависимостей для slim образа
+  - apt-get update && apt-get install -y --no-install-recommends libpq-dev && rm -rf /var/lib/apt/lists/*
   # Установка зависимостей
   - python -m pip install --upgrade pip
   - pip install poetry
