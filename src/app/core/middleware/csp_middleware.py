@@ -32,9 +32,5 @@ class CSPMiddleware(BaseHTTPMiddleware):
             csp_policy += f"report-uri {settings.router.security}/csp-report;"
 
         response.headers["Content-Security-Policy-Report-Only"] = csp_policy
-        response.headers["Cache-Control"] = (
-            "no-store, no-cache, must-revalidate, max-age=0"
-        )
-        response.headers["Pragma"] = "no-cache"
 
         return response
