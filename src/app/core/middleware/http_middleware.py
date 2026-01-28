@@ -133,12 +133,10 @@ class HTTPMiddleware(BaseHTTPMiddleware):
             # добавляем полезные заголовки в ответ
             response.headers["X-Process-Time"] = f"{process_time:.2f}ms"
             response.headers["X-Request-ID"] = request_id
-
+            
             # отключаем кеширование для static files
             if url.path.startswith("/static/"):
-                response.headers["Cache-Control"] = (
-                    "no-cache, no-store, must-revalidate"
-                )
+                response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
                 response.headers["Pragma"] = "no-cache"
                 response.headers["Expires"] = "0"
 
