@@ -136,6 +136,9 @@ class HTTPMiddleware(BaseHTTPMiddleware):
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 541d262 (Рефакторинг http_middleware - удаление последствий pull --rebase)
             # отключаем кеширование для API ответов (без статических файлов)
             if not url.path.startswith("/static/"):
                 response.headers["Cache-Control"] = (
@@ -145,6 +148,7 @@ class HTTPMiddleware(BaseHTTPMiddleware):
                 response.headers["Expires"] = "0"
             # для статических файлов применяем более мягкие настройки
             else:
+<<<<<<< HEAD
 =======
             # отключаем кеширование для static files
             if url.path.startswith("/static/"):
@@ -156,6 +160,8 @@ class HTTPMiddleware(BaseHTTPMiddleware):
                 response.headers["Cache-Control"] = (
                     "no-cache, no-store, must-revalidate"
                 )
+=======
+>>>>>>> 541d262 (Рефакторинг http_middleware - удаление последствий pull --rebase)
                 response.headers["Pragma"] = "no-cache"
                 response.headers["Expires"] = "0"
 
