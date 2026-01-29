@@ -133,10 +133,31 @@ class HTTPMiddleware(BaseHTTPMiddleware):
             # добавляем полезные заголовки в ответ
             response.headers["X-Process-Time"] = f"{process_time:.2f}ms"
             response.headers["X-Request-ID"] = request_id
+<<<<<<< HEAD
             
             # отключаем кеширование для static files
             if url.path.startswith("/static/"):
                 response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+=======
+
+<<<<<<< HEAD
+            # отключаем кеширование для API ответов (без статических файлов)
+            if not url.path.startswith("/static/"):
+                response.headers["Cache-Control"] = (
+                    "no-store, no-cache, must-revalidate, max-age=0"
+                )
+                response.headers["Pragma"] = "no-cache"
+                response.headers["Expires"] = "0"
+            # для статических файлов применяем более мягкие настройки
+            else:
+=======
+            # отключаем кеширование для static files
+            if url.path.startswith("/static/"):
+>>>>>>> 34dfc76 (Рефакторинг  мидлвари для black)
+                response.headers["Cache-Control"] = (
+                    "no-cache, no-store, must-revalidate"
+                )
+>>>>>>> main
                 response.headers["Pragma"] = "no-cache"
                 response.headers["Expires"] = "0"
 
