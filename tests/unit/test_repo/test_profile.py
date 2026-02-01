@@ -140,9 +140,9 @@ async def test_update_user_profile_success(mock_user, user_public):
     assert result.height == 180.0
     assert result.gender == "male"
 
-    # Handle both enum and integer kfa
+    # Handle both enum and string kfa
     kfa_value = result.kfa.value if hasattr(result.kfa, "value") else result.kfa
-    assert kfa_value in [4, KFALevel.HIGH]
+    assert kfa_value in ["2.2", KFALevel.HIGH]
 
     if hasattr(result.kfa, "value"):
         assert str(result.kfa) == "Высокий"
@@ -183,8 +183,8 @@ async def test_update_user_profile_with_int_kfa(mock_user, user_public):
     db.execute.return_value = mock_result
     db.commit = AsyncMock()
 
-    # Create update data with integer KFA
-    update_data = UserProfileUpdate(kfa=4)  # Should be converted to KFALevel.HIGH
+    # Create update data with string KFA
+    update_data = UserProfileUpdate(kfa="2.2")  # Should be converted to KFALevel.HIGH
 
     # Call the function with the correct parameters
     result = await update_user_profile(
@@ -193,7 +193,7 @@ async def test_update_user_profile_with_int_kfa(mock_user, user_public):
 
     # Verify the results
     kfa_value = result.kfa.value if hasattr(result.kfa, "value") else result.kfa
-    assert kfa_value in [4, KFALevel.HIGH]
+    assert kfa_value in ["2.2", KFALevel.HIGH]
 
     if hasattr(result.kfa, "value"):
         assert str(result.kfa) == "Высокий"
