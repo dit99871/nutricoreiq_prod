@@ -475,6 +475,19 @@ body.dark-mode .unsubscribe-btn[aria-label]::after {
     width: 100%;
 }
 
+/* Для профиля - вертикальное расположение */
+.profile-detail-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+}
+
+.profile-detail-container .detail-card {
+    flex: 1 1 100%;
+    min-width: 100%;
+}
+
 .detail-card {
     background: var(--light-sand);
     border-radius: var(--border-radius);

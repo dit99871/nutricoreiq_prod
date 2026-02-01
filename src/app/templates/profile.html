@@ -114,6 +114,57 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- План питания и калории -->
+                {% if is_filled and tdee %}
+                <div class="profile-detail-container">
+                    <!-- План питания -->
+                    <div class="detail-card">
+                        {% set goal_val = (user.goal.value if user.goal is not string and user.goal is not none else user.goal) %}
+                        {% if goal_val == "Поддержание веса" %}
+                            {% set goal_case = "поддержания веса" %}
+                        {% elif goal_val == "Увеличение веса" %}
+                            {% set goal_case = "набора массы" %}
+                        {% elif goal_val == "Снижение веса" %}
+                            {% set goal_case = "снижения веса" %}
+                        {% else %}
+                            {% set goal_case = "" %}
+                        {% endif %}
+                        <h3 class="mb-4"><i class="bi bi-fire"></i> План по БЖУ для {{ goal_case }}</h3>
+                        {% if nutrients %}
+                        <div class="detail-item">
+                            <div class="d-flex justify-content-between">
+                                <strong>Углеводы:</strong>
+                                <span class="fw-medium">{{ nutrients.carbs }} г</span>
+                            </div>
+                        </div>
+                        <div class="detail-item mt-3">
+                            <div class="d-flex justify-content-between">
+                                <strong>Белки:</strong>
+                                <span class="fw-medium">{{ nutrients.protein }} г</span>
+                            </div>
+                        </div>
+                        <div class="detail-item mt-3">
+                            <div class="d-flex justify-content-between">
+                                <strong>Жиры:</strong>
+                                <span class="fw-medium">{{ nutrients.fat }} г</span>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Дневная норма калорий -->
+                    <div class="detail-card">
+                        <h3 class="mb-4"><i class="bi bi-lightning-charge"></i> Калории</h3>
+                        <div class="detail-item">
+                            <div class="d-flex justify-content-between">
+                                <strong>Дневная норма:</strong>
+                                <span class="fw-medium">{{ "%.0f"|format(tdee) }} ккал</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
