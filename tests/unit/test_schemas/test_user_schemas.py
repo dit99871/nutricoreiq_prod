@@ -172,9 +172,9 @@ class TestUserProfileUpdate:
             UserProfileUpdate(age=25, weight=None)
         assert "указан возраст, укажите вес" in str(exc_info.value).lower()
 
-    def test_kfa_coercion_from_int(self):
-        """Тест преобразования int в KFALevel"""
-        update = UserProfileUpdate(kfa=3)
+    def test_kfa_coercion_from_str(self):
+        """Тест преобразования строки в KFALevel"""
+        update = UserProfileUpdate(kfa="1.9")
         assert update.kfa == KFALevel.MEDIUM
 
     def test_goal_coercion(self):
