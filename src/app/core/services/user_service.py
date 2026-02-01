@@ -32,8 +32,14 @@ from src.app.core.repo.user import (
     get_user_by_uid,
     update_user_password,
 )
-from src.app.core.schemas.user import UserCreate, UserPublic, PasswordChange
+from src.app.core.schemas.user import (
+    UserCreate,
+    UserPublic,
+    PasswordChange,
+    UserProfile,
+)
 from src.app.core.tasks import send_welcome_email
+from src.app.core.domain.health.health_calculator import HealthCalculator
 
 log = get_logger("user_service")
 
@@ -383,6 +389,31 @@ class UserService:
         user = await get_user_by_uid(session, uid)
 
         return await create_response(user)
+
+    def calculate_user_nutrients(self, user: UserProfile) -> dict | None:
+        """
+        Рассчитывает нутриенты и скорректированный TDEE для пользователя на основе его профиля.
+
+        :param user: Объект пользователя с профилем.
+        :return: Словарь с TDEE и нутриентами или None, если профиль не заполнен.
+        """
+        # Проверяем, что профиль полностью заполнен
+        is_filled = all((user.gender, user.age, user.weight, user.height, user.kfa, user.goal))
+        
+        if not is_filled:
+            return None
+            
+        try:
+            # Используем скорректированный TDEE
+            adjusted_tdee = HealthCalculator.calculate_adjusted_tdee(user)
+            nutrients = HealthCalculator.calculate_nutrients(user, adjusted_tdee)
+            return {
+                "tdee": adjusted_tdee,
+                "nutrients": nutrients
+            }
+        except ValueError as e:
+            log.warning("Не удалось рассчитать нутриенты для пользователя %s: %s", user.id, str(e))
+            return None
 
 
 def get_user_service(
