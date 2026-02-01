@@ -280,3 +280,207 @@ class TestCalculateTDEE:
         bmr = HealthCalculator.calculate_bmr(male_user_profile)
         tdee = HealthCalculator.calculate_tdee(male_user_profile)
         assert tdee >= bmr
+
+
+class TestCalculateAdjustedTDEE:
+    """Тесты для расчёта скорректированного TDEE"""
+
+    def test_adjusted_tdee_maintain_weight(self, male_user_profile):
+        """Тест скорректированного TDEE для поддержания веса (без изменений)"""
+        base_tdee = 1780.0 * 1.9  # 3382 ккал
+        result = HealthCalculator.calculate_adjusted_tdee(male_user_profile)
+        assert result == base_tdee
+
+    def test_adjusted_tdee_gain_weight(self, male_user_profile):
+        """Тест скорректированного TDEE для набора веса (+500 ккал)"""
+        male_user_profile.goal = GoalType.GAIN_WEIGHT
+        base_tdee = 1780.0 * 1.9  # 3382 ккал
+        expected = base_tdee + 500  # 3882 ккал
+        result = HealthCalculator.calculate_adjusted_tdee(male_user_profile)
+        assert result == expected
+
+    def test_adjusted_tdee_lose_weight(self, male_user_profile):
+        """Тест скорректированного TDEE для снижения веса (-500 ккал)"""
+        male_user_profile.goal = GoalType.LOSE_WEIGHT
+        base_tdee = 1780.0 * 1.9  # 3382 ккал
+        expected = base_tdee - 500  # 2882 ккал
+        result = HealthCalculator.calculate_adjusted_tdee(male_user_profile)
+        assert result == expected
+
+    def test_adjusted_tdee_missing_goal(self, male_user_profile):
+        """Тест с отсутствующей целью"""
+        male_user_profile.goal = None
+        with pytest.raises(
+            ValueError, match="Для расчета скорректированного TDEE необходимо указать цель"
+        ):
+            HealthCalculator.calculate_adjusted_tdee(male_user_profile)
+
+    def test_adjusted_tdee_propagates_tdee_errors(self, male_user_profile):
+        """Тест что скорректированный TDEE пробрасывает ошибки TDEE"""
+        male_user_profile.age = None
+        with pytest.raises(
+            ValueError, match="Отсутствуют обязательные поля для расчёта BMR"
+        ):
+            HealthCalculator.calculate_adjusted_tdee(male_user_profile)
+
+
+class TestCalculateNutrients:
+    """Тесты для расчёта нутриентов"""
+
+    def test_nutrients_maintain_weight(self, male_user_profile):
+        """Тест расчёта нутриентов для поддержания веса"""
+        tdee = 1780.0 * 1.9  # 3382 ккал
+        expected_carbs = int(-(-3382 * 0.55 / 4))  # 465 г
+        expected_protein = int(-(-3382 * 0.20 / 4))  # 169 г
+        expected_fat = int(-(-3382 * 0.25 / 9))  # 94 г
+        
+        result = HealthCalculator.calculate_nutrients(male_user_profile, tdee)
+        
+        assert result["carbs"] == expected_carbs
+        assert result["protein"] == expected_protein
+        assert result["fat"] == expected_fat
+
+    def test_nutrients_gain_weight(self, male_user_profile):
+        """Тест расчёта нутриентов для набора веса"""
+        male_user_profile.goal = GoalType.GAIN_WEIGHT
+        tdee = 1780.0 * 1.9  # 3382 ккал
+        expected_carbs = int(-(-3382 * 0.55 / 4))  # 465 г
+        expected_protein = int(-(-3382 * 0.25 / 4))  # 212 г
+        expected_fat = int(-(-3382 * 0.20 / 9))  # 75 г
+        
+        result = HealthCalculator.calculate_nutrients(male_user_profile, tdee)
+        
+        assert result["carbs"] == expected_carbs
+        assert result["protein"] == expected_protein
+        assert result["fat"] == expected_fat
+
+    def test_nutrients_lose_weight(self, female_user_profile):
+        """Тест расчёта нутриентов для снижения веса"""
+        tdee = 1345.25 * 1.6  # 2152.4 ккал
+        expected_carbs = int(-(-2152.4 * 0.45 / 4))  # 242 г
+        expected_protein = int(-(-2152.4 * 0.30 / 4))  # 162 г
+        expected_fat = int(-(-2152.4 * 0.25 / 9))  # 60 г
+        
+        result = HealthCalculator.calculate_nutrients(female_user_profile, tdee)
+        
+        assert result["carbs"] == expected_carbs
+        assert result["protein"] == expected_protein
+        assert result["fat"] == expected_fat
+
+    def test_nutrients_missing_goal(self, male_user_profile):
+        """Тест с отсутствующей целью"""
+        male_user_profile.goal = None
+        tdee = 2000.0
+        
+        with pytest.raises(
+            ValueError, match="Для расчёта нутриентов необходимо указать цель"
+        ):
+            HealthCalculator.calculate_nutrients(male_user_profile, tdee)
+
+    @pytest.mark.parametrize(
+        "tdee,goal,expected_carbs,expected_protein,expected_fat",
+        [
+            # TDEE=2000, поддержание веса: 55% carbs, 20% protein, 25% fat
+            (2000.0, GoalType.MAINTAIN_WEIGHT, 275, 100, 55),
+            # TDEE=2000, набор веса: 55% carbs, 25% protein, 20% fat  
+            (2000.0, GoalType.GAIN_WEIGHT, 275, 125, 44),
+            # TDEE=2000, снижение веса: 45% carbs, 30% protein, 25% fat
+            (2000.0, GoalType.LOSE_WEIGHT, 225, 150, 55),
+        ],
+    )
+    def test_nutrients_different_goals_and_tdee(
+        self, male_user_profile, tdee, goal, expected_carbs, expected_protein, expected_fat
+    ):
+        """Тест различных целей и значений TDEE"""
+        male_user_profile.goal = goal
+        result = HealthCalculator.calculate_nutrients(male_user_profile, tdee)
+        
+        assert result["carbs"] == expected_carbs
+        assert result["protein"] == expected_protein
+        assert result["fat"] == expected_fat
+
+    def test_nutrients_rounding_up(self, male_user_profile):
+        """Тест правильного округления вверх"""
+        male_user_profile.goal = GoalType.MAINTAIN_WEIGHT
+        tdee = 1999.0  # Нечетное число для проверки округления
+        
+        result = HealthCalculator.calculate_nutrients(male_user_profile, tdee)
+        
+        # Проверяем, что значения округлены вверх
+        carbs_calories = tdee * 0.55  # 1099.45
+        expected_carbs = int(-(-carbs_calories / 4))  # 275
+        assert result["carbs"] == expected_carbs
+
+
+class TestUserServiceNutrients:
+    """Тесты для метода расчета нутриентов в UserService"""
+
+    def test_calculate_user_nutrients_complete_profile(self, male_user_profile):
+        """Тест расчета нутриентов для полностью заполненного профиля"""
+        from src.app.core.services.user_service import UserService
+        from unittest.mock import Mock
+        
+        # Создаем мок сессии
+        mock_session = Mock()
+        user_service = UserService(mock_session)
+        
+        result = user_service.calculate_user_nutrients(male_user_profile)
+        
+        assert result is not None
+        assert "tdee" in result
+        assert "nutrients" in result
+        assert result["tdee"] > 0
+        assert "carbs" in result["nutrients"]
+        assert "protein" in result["nutrients"]
+        assert "fat" in result["nutrients"]
+        assert result["nutrients"]["carbs"] > 0
+        assert result["nutrients"]["protein"] > 0
+        assert result["nutrients"]["fat"] > 0
+
+    def test_calculate_user_nutrients_gain_weight_adjustment(self, male_user_profile):
+        """Тест что для набора веса TDEE увеличивается на 500"""
+        from src.app.core.services.user_service import UserService
+        from unittest.mock import Mock
+        
+        # Устанавливаем цель набор веса
+        male_user_profile.goal = GoalType.GAIN_WEIGHT
+        
+        mock_session = Mock()
+        user_service = UserService(mock_session)
+        
+        result = user_service.calculate_user_nutrients(male_user_profile)
+        
+        assert result is not None
+        base_tdee = 1780.0 * 1.9  # 3382 ккал
+        expected_tdee = base_tdee + 500  # 3882 ккал
+        assert result["tdee"] == expected_tdee
+
+    def test_calculate_user_nutrients_incomplete_profile(self, male_user_profile):
+        """Тест расчета нутриентов для неполного профиля"""
+        from src.app.core.services.user_service import UserService
+        from unittest.mock import Mock
+        
+        # Убираем цель
+        male_user_profile.goal = None
+        
+        mock_session = Mock()
+        user_service = UserService(mock_session)
+        
+        result = user_service.calculate_user_nutrients(male_user_profile)
+        
+        assert result is None
+
+    def test_calculate_user_nutrients_missing_age(self, male_user_profile):
+        """Тест расчета нутриентов при отсутствии возраста"""
+        from src.app.core.services.user_service import UserService
+        from unittest.mock import Mock
+        
+        # Убираем возраст
+        male_user_profile.age = None
+        
+        mock_session = Mock()
+        user_service = UserService(mock_session)
+        
+        result = user_service.calculate_user_nutrients(male_user_profile)
+        
+        assert result is None
