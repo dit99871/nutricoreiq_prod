@@ -398,21 +398,24 @@ class UserService:
         :return: Словарь с TDEE и нутриентами или None, если профиль не заполнен.
         """
         # Проверяем, что профиль полностью заполнен
-        is_filled = all((user.gender, user.age, user.weight, user.height, user.kfa, user.goal))
-        
+        is_filled = all(
+            (user.gender, user.age, user.weight, user.height, user.kfa, user.goal)
+        )
+
         if not is_filled:
             return None
-            
+
         try:
             # Используем скорректированный TDEE
             adjusted_tdee = HealthCalculator.calculate_adjusted_tdee(user)
             nutrients = HealthCalculator.calculate_nutrients(user, adjusted_tdee)
-            return {
-                "tdee": adjusted_tdee,
-                "nutrients": nutrients
-            }
+            return {"tdee": adjusted_tdee, "nutrients": nutrients}
         except ValueError as e:
-            log.warning("Не удалось рассчитать нутриенты для пользователя %s: %s", user.id, str(e))
+            log.warning(
+                "Не удалось рассчитать нутриенты для пользователя %s: %s",
+                user.id,
+                str(e),
+            )
             return None
 
 

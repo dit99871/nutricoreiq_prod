@@ -84,7 +84,7 @@ async def get_profile(
     # Расчет нутриентов через сервисный слой
     nutrition_data = user_service.calculate_user_nutrients(user)
     is_filled = nutrition_data is not None
-    
+
     tdee = nutrition_data["tdee"] if nutrition_data else None
     nutrients = nutrition_data["nutrients"] if nutrition_data else None
 

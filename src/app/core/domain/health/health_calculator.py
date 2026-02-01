@@ -126,13 +126,15 @@ class HealthCalculator:
         :raises ValueError: Если отсутствуют необходимые данные или цель не указана.
         """
         base_tdee = HealthCalculator.calculate_tdee(user)
-        
+
         if not user.goal:
-            raise ValueError("Для расчета скорректированного TDEE необходимо указать цель.")
-        
+            raise ValueError(
+                "Для расчета скорректированного TDEE необходимо указать цель."
+            )
+
         # Получаем строковое значение цели
-        goal_value = user.goal.value if hasattr(user.goal, 'value') else str(user.goal)
-        
+        goal_value = user.goal.value if hasattr(user.goal, "value") else str(user.goal)
+
         # Корректировка TDEE в зависимости от цели
         if goal_value == "Увеличение веса":
             return base_tdee + 500
@@ -164,21 +166,17 @@ class HealthCalculator:
         }
 
         # Получаем строковое значение цели
-        goal_value = user.goal.value if hasattr(user.goal, 'value') else str(user.goal)
+        goal_value = user.goal.value if hasattr(user.goal, "value") else str(user.goal)
         ratios = goal_ratios[goal_value]
-        
+
         # Расчет калорийности по нутриентам
         carbs_calories = tdee * ratios["carbs"]
         protein_calories = tdee * ratios["protein"]
         fat_calories = tdee * ratios["fat"]
-        
+
         # Перевод в граммы (углеводы и белки - 4 ккал/г, жиры - 9 ккал/г)
         carbs_grams = int(-(-carbs_calories / 4))  # округление вверх
         protein_grams = int(-(-protein_calories / 4))  # округление вверх
         fat_grams = int(-(-fat_calories / 9))  # округление вверх
 
-        return {
-            "carbs": carbs_grams,
-            "protein": protein_grams,
-            "fat": fat_grams
-        }
+        return {"carbs": carbs_grams, "protein": protein_grams, "fat": fat_grams}
