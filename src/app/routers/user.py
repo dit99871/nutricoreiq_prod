@@ -9,7 +9,7 @@ from starlette.responses import RedirectResponse
 from src.app.core import db_helper
 from src.app.core.exceptions import ExpiredTokenException
 from src.app.core.logger import get_logger
-from src.app.core.services.user_service import UserService
+from src.app.core.services.user_service import UserService, get_user_service
 from src.app.core.utils import templates
 from src.app.core.repo.profile import get_user_profile, update_user_profile
 from src.app.core.repo.user import choose_subscribe_status
@@ -26,6 +26,7 @@ log = get_logger("user_router")
 # алиасы типов зависимостей
 session_dep = Annotated[AsyncSession, Depends(db_helper.session_getter)]
 current_user_dep = Annotated[UserPublic, Depends(UserService.get_user_by_access_jwt)]
+user_service_dep = Annotated[UserService, Depends(get_user_service)]
 
 
 @router.get("/me")
@@ -58,6 +59,7 @@ async def get_profile(
     request: Request,
     user: current_user_dep,
     db_session: session_dep,
+    user_service: user_service_dep,
 ) -> Response:
     """
     Retrieves the current authenticated user's profile information.
@@ -68,6 +70,7 @@ async def get_profile(
     :param request: The incoming request object.
     :param user: The authenticated user object obtained from the dependency.
     :param db_session: The current database db_session.
+    :param user_service: The user service instance.
     :return: A rendered HTML template with the user's profile information.
     :raises HTTPException: If the user is not authenticated.
     """
@@ -78,6 +81,13 @@ async def get_profile(
 
     user = await get_user_profile(db_session, user.id)
 
+    # Расчет нутриентов через сервисный слой
+    nutrition_data = user_service.calculate_user_nutrients(user)
+    is_filled = nutrition_data is not None
+    
+    tdee = nutrition_data["tdee"] if nutrition_data else None
+    nutrients = nutrition_data["nutrients"] if nutrition_data else None
+
     return templates.TemplateResponse(
         name="profile.html",
         request=request,
@@ -86,9 +96,9 @@ async def get_profile(
             "csp_nonce": request.state.csp_nonce,
             "user": user,
             "is_subscribed": user.is_subscribed,
-            "is_filled": all(
-                (user.gender, user.age, user.weight, user.height, user.kfa)
-            ),
+            "is_filled": is_filled,
+            "tdee": tdee,
+            "nutrients": nutrients,
             "KFALevel": KFALevel,
         },
     )
