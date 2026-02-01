@@ -3,7 +3,7 @@
 """
 
 from src.app.core.logger import get_logger
-from src.app.core.models.user import KFALevel
+from src.app.core.models.user import KFALevel, GoalType
 from src.app.core.schemas.user import UserProfile
 
 log = get_logger("health_calculator")
@@ -115,3 +115,70 @@ class HealthCalculator:
         tdee = bmr * kfa
 
         return tdee
+
+    @staticmethod
+    def calculate_adjusted_tdee(user: UserProfile) -> float:
+        """
+        Рассчитывает скорректированный TDEE в зависимости от цели пользователя.
+
+        :param user: Объект UserProfile с данными пользователя.
+        :return: Скорректированный TDEE (float).
+        :raises ValueError: Если отсутствуют необходимые данные или цель не указана.
+        """
+        base_tdee = HealthCalculator.calculate_tdee(user)
+        
+        if not user.goal:
+            raise ValueError("Для расчета скорректированного TDEE необходимо указать цель.")
+        
+        # Получаем строковое значение цели
+        goal_value = user.goal.value if hasattr(user.goal, 'value') else str(user.goal)
+        
+        # Корректировка TDEE в зависимости от цели
+        if goal_value == "Увеличение веса":
+            return base_tdee + 500
+        elif goal_value == "Снижение веса":
+            return base_tdee - 500
+        elif goal_value == "Поддержание веса":
+            return base_tdee
+        else:
+            raise ValueError(f"Неизвестная цель: {goal_value}")
+
+    @staticmethod
+    def calculate_nutrients(user: UserProfile, tdee: float) -> dict:
+        """
+        Рассчитывает количество нутриентов (углеводов, белков, жиров) на основе цели пользователя.
+
+        :param user: Объект UserProfile с данными пользователя.
+        :param tdee: Рассчитанный TDEE (общий дневной расход энергии).
+        :return: Словарь с рассчитанными значениями нутриентов в граммах.
+        """
+
+        if not user.goal:
+            raise ValueError("Для расчёта нутриентов необходимо указать цель.")
+
+        # Процентное соотношение нутриентов в зависимости от цели
+        goal_ratios = {
+            "Поддержание веса": {"carbs": 0.55, "protein": 0.20, "fat": 0.25},
+            "Увеличение веса": {"carbs": 0.55, "protein": 0.25, "fat": 0.20},
+            "Снижение веса": {"carbs": 0.45, "protein": 0.30, "fat": 0.25},
+        }
+
+        # Получаем строковое значение цели
+        goal_value = user.goal.value if hasattr(user.goal, 'value') else str(user.goal)
+        ratios = goal_ratios[goal_value]
+        
+        # Расчет калорийности по нутриентам
+        carbs_calories = tdee * ratios["carbs"]
+        protein_calories = tdee * ratios["protein"]
+        fat_calories = tdee * ratios["fat"]
+        
+        # Перевод в граммы (углеводы и белки - 4 ккал/г, жиры - 9 ккал/г)
+        carbs_grams = int(-(-carbs_calories / 4))  # округление вверх
+        protein_grams = int(-(-protein_calories / 4))  # округление вверх
+        fat_grams = int(-(-fat_calories / 9))  # округление вверх
+
+        return {
+            "carbs": carbs_grams,
+            "protein": protein_grams,
+            "fat": fat_grams
+        }
