@@ -207,35 +207,35 @@ class TestCalculateTDEE:
     """Тесты для расчёта суточной нормы калорий (TDEE)"""
 
     def test_tdee_with_kfa_medium(self, male_user_profile):
-        """Тест TDEE с средней активностью (KFA=3)"""
-        expected_tdee = 1780.0 * 3.0
+        """Тест TDEE с средней активностью (KFA=1.9)"""
+        expected_tdee = 1780.0 * 1.9
         result = HealthCalculator.calculate_tdee(male_user_profile)
         assert result == expected_tdee
 
     def test_tdee_with_kfa_low(self, female_user_profile):
-        """Тест TDEE с низкой активностью (KFA=2)"""
-        expected_tdee = 1345.25 * 2.0
+        """Тест TDEE с низкой активностью (KFA=1.6)"""
+        expected_tdee = 1345.25 * 1.6
         result = HealthCalculator.calculate_tdee(female_user_profile)
         assert result == expected_tdee
 
     def test_tdee_with_kfa_very_low(self, male_user_profile):
-        """Тест TDEE с очень низкой активностью (KFA=1)"""
+        """Тест TDEE с очень низкой активностью (KFA=1.4)"""
         male_user_profile.kfa = KFALevel.VERY_LOW
-        expected_tdee = 1780.0 * 1.0
+        expected_tdee = 1780.0 * 1.4
         result = HealthCalculator.calculate_tdee(male_user_profile)
         assert result == expected_tdee
 
     def test_tdee_with_kfa_high(self, male_user_profile):
-        """Тест TDEE с высокой активностью (KFA=4)"""
+        """Тест TDEE с высокой активностью (KFA=2.2)"""
         male_user_profile.kfa = KFALevel.HIGH
-        expected_tdee = 1780.0 * 4.0
+        expected_tdee = 1780.0 * 2.2
         result = HealthCalculator.calculate_tdee(male_user_profile)
         assert result == expected_tdee
 
     def test_tdee_with_kfa_very_high(self, male_user_profile):
-        """Тест TDEE с очень высокой активностью (KFA=5)"""
+        """Тест TDEE с очень высокой активностью (KFA=2.5)"""
         male_user_profile.kfa = KFALevel.VERY_HIGH
-        expected_tdee = 1780.0 * 5.0
+        expected_tdee = 1780.0 * 2.5
         result = HealthCalculator.calculate_tdee(male_user_profile)
         assert result == expected_tdee
 
@@ -258,11 +258,11 @@ class TestCalculateTDEE:
     @pytest.mark.parametrize(
         "kfa_level,expected_multiplier",
         [
-            (KFALevel.VERY_LOW, 1.0),
-            (KFALevel.LOW, 2.0),
-            (KFALevel.MEDIUM, 3.0),
-            (KFALevel.HIGH, 4.0),
-            (KFALevel.VERY_HIGH, 5.0),
+            (KFALevel.VERY_LOW, 1.4),
+            (KFALevel.LOW, 1.6),
+            (KFALevel.MEDIUM, 1.9),
+            (KFALevel.HIGH, 2.2),
+            (KFALevel.VERY_HIGH, 2.5),
         ],
     )
     def test_tdee_all_kfa_levels(
