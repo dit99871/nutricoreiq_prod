@@ -206,9 +206,9 @@
                                 </div>
                                 <ul class="custom-select-options">
                                     <li data-value="">Не указан</li>
-                                    {% for level in [1, 2, 3, 4, 5] %}
-                                    <li data-value="{{ level }}"{% if user.kfa == level %} class="selected" {% endif %}>
-                                        {{ KFALevel(level) }}
+                                    {% for level in KFALevel %}
+                                    <li data-value="{{ level.value }}"{% if user.kfa == level.value %} class="selected" {% endif %}>
+                                        {{ level }}
                                     </li>
                                     {% endfor %}
                                 </ul>
