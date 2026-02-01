@@ -25,7 +25,7 @@ def validate_password_strength(v: str) -> str:
 def coerce_kfa(v: Any) -> KFALevel | None:
     """
     Преобразует вход в KFALevel или None.
-    Допускает значения: None, "", экземпляр KFALevel, числовое значение.
+    Допускает значения: None, "", экземпляр KFALevel, строковое значение.
     """
 
     if v is None or v == "":
@@ -33,8 +33,8 @@ def coerce_kfa(v: Any) -> KFALevel | None:
     if isinstance(v, KFALevel):
         return v
     try:
-        # Пробуем преобразовать в число и создать KFALevel
-        return KFALevel(int(v))
+        # Пробуем преобразовать в строку и создать KFALevel
+        return KFALevel(str(v))
     except (ValueError, TypeError) as e:
         raise ValueError(f"Недопустимое значение KFA: {v}") from e
 

@@ -1,5 +1,5 @@
 import datetime
-from enum import Enum, IntEnum
+from enum import Enum
 from typing import Literal
 from uuid import uuid4
 
@@ -16,22 +16,22 @@ class UserRole(Enum):
     MODERATOR = "moderator"
 
 
-class KFALevel(IntEnum):
+class KFALevel(Enum):
     """Уровень физической активности (KFA - Коэффициент Физической Активности)"""
 
-    VERY_LOW = 1
-    LOW = 2
-    MEDIUM = 3
-    HIGH = 4
-    VERY_HIGH = 5
+    VERY_LOW = "1.4"
+    LOW = "1.6"
+    MEDIUM = "1.9"
+    HIGH = "2.2"
+    VERY_HIGH = "2.5"
 
     def __str__(self):
         names = {
-            1: "Очень низкий",
-            2: "Низкий",
-            3: "Средний",
-            4: "Высокий",
-            5: "Очень высокий",
+            "1.4": "Очень низкий",
+            "1.6": "Низкий",
+            "1.9": "Средний",
+            "2.2": "Высокий",
+            "2.5": "Очень высокий",
         }
         return names[self.value]
 
