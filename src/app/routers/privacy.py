@@ -28,7 +28,6 @@ session_dep = Annotated[AsyncSession, Depends(db_helper.session_getter)]
 
 router = APIRouter(
     tags=["Privacy"],
-    default_response_class=Response,
 )
 
 
