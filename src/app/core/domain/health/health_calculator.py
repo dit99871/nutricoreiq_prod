@@ -92,24 +92,7 @@ class HealthCalculator:
             )
             raise ValueError("Для расчёта TDEE необходим коэффициент активности (kfa).")
 
-        try:
-            if isinstance(user.kfa, KFALevel):
-                kfa = float(user.kfa.value)  # "1".."5" -> 1.0..5.0
-            else:
-                kfa = float(user.kfa)  # fallback для исторических значений
-        except Exception as e:
-            log.error("Ошибка значения kfa: %s", str(e))
-            raise ValueError(
-                f"Недопустимое значение kfa: {user.kfa}. "
-                "Должно быть число от 1.0 до 5.0."
-            )
-
-        if kfa < 1.0 or kfa > 5.0:
-            log.error("Недопустимое значение kfa: %s", kfa)
-            raise ValueError(
-                f"Недопустимый коэффициент активности (kfa): {kfa}. "
-                "Должен быть от 1.0 до 5.0."
-            )
+        kfa = float(user.kfa.value)  # "1.4".."2.5" -> 1.4..2.5
 
         bmr = cls.calculate_bmr(user)
         tdee = bmr * kfa
