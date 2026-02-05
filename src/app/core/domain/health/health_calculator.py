@@ -175,8 +175,8 @@ class HealthCalculator:
         fat_calories = tdee * ratios["fat"]
 
         # Перевод в граммы (углеводы и белки - 4 ккал/г, жиры - 9 ккал/г)
-        carbs_grams = int(-(-carbs_calories / 4))  # округление вверх
-        protein_grams = int(-(-protein_calories / 4))  # округление вверх
-        fat_grams = int(-(-fat_calories / 9))  # округление вверх
+        carbs_grams = round(carbs_calories / 4)
+        protein_grams = round(protein_calories / 4)
+        fat_grams = round(fat_calories / 9)
 
         return {"carbs": carbs_grams, "protein": protein_grams, "fat": fat_grams}
