@@ -137,7 +137,7 @@ class HealthCalculator:
 
         # Корректировка TDEE в зависимости от цели
         if goal_value == "Увеличение веса":
-            return base_tdee + 500
+            return base_tdee + 400
         elif goal_value == "Снижение веса":
             return base_tdee - 500
         elif goal_value == "Поддержание веса":
