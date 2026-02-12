@@ -313,8 +313,9 @@ security:sast:
   before_script:
     - pip install safety bandit
   script:
+    # Экспорт зависимостей из Poetry и проверка безопасности
     - poetry export -f requirements.txt --without-hashes --dev -o requirements.txt
-    - safety check --json --output safety-report.json || true
+    - safety check --json --output safety-report.json --file requirements.txt || true
     - bandit -r src/ -f json -o bandit-report.json || true
   artifacts:
     paths:
