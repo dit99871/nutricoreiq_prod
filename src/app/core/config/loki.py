@@ -2,4 +2,4 @@ from pydantic import BaseModel
 
 
 class LokiConfig(BaseModel):
-    url: str
+    url: str | None = None

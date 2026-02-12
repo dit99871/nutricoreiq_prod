@@ -2,4 +2,4 @@ from pydantic import BaseModel
 
 
 class SentyConfig(BaseModel):
-    dsn: str
+    dsn: str | None = None
