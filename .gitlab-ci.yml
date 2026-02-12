@@ -322,7 +322,7 @@ deploy:prod:
         echo "ОШИБКА: Следующие сервисы завершили работу: $exited_services"
         for service in $exited_services; do
           echo "Логи сервиса $service:"
-          docker-compose -f docker-compose.prod.yml logs "$service" || true
+          docker logs "$service" || true
         done
         exit 1
       fi
