@@ -160,8 +160,6 @@ test:unit:
     - merge_requests
     - main
     - develop
-  tags:
-    - docker
   timeout: 10m
 
 lint:code:
@@ -170,8 +168,6 @@ lint:code:
     - merge_requests
     - main
     - develop
-  tags:
-    - docker
   timeout: 5m
 
 # Сборка Docker-образа
@@ -218,8 +214,6 @@ build:image:
     - develop
     - merge_requests
     - tags
-  tags:
-    - docker
   timeout: 15m
   retry:
     max: 1
@@ -327,6 +321,4 @@ security:sast:
     - main
     - develop
     - merge_requests
-  tags:
-    - docker
   timeout: 5m
