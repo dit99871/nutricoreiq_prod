@@ -8,6 +8,12 @@ services:
 variables:
     # Настройки окружения
     APP_CONFIG__ENV__ENV: "test"
+    
+    # Версия Python
+    PYTHON_VERSION: "3.13"
+    
+    # Настройки кеширования
+    CACHE_VERSION: "v1"
 
     # Настройки базы данных
     POSTGRES_DB: test_db
@@ -79,11 +85,15 @@ variables:
 
 # Кэширование зависимостей
 cache:
-  key: ${CI_COMMIT_REF_SLUG}
+  key: 
+    files:
+      - poetry.lock
+      - pyproject.toml
   paths:
     - .venv/
     - .cache/pip/
     - .cache/poetry/
+  policy: pull-push
 
 stages:
   - test
@@ -93,7 +103,7 @@ stages:
 
 before_script:
   # Установка системных зависимостей для slim образа
-  - apt-get update && apt-get install -y --no-install-recommends libpq-dev && rm -rf /var/lib/apt/lists/*
+  - apt-get update && apt-get install -y --no-install-recommends libpq-dev curl && rm -rf /var/lib/apt/lists/*
   # Установка зависимостей
   - python -m pip install --upgrade pip
   - pip install poetry
@@ -114,37 +124,55 @@ before_script:
   - psql -h $POSTGRES_HOST -U $POSTGRES_USER -c "CREATE DATABASE $POSTGRES_DB;" || true
 
 .test:template: &test_template
+  stage: test
   script:
     # Запуск тестов
-    - poetry run pytest --asyncio-mode=auto --cov=src --cov-report=xml
+    - poetry run pytest --asyncio-mode=auto --cov=src --cov-report=xml --cov-report=html
   coverage: '/^TOTAL.+\s+(\d+%)$/'
   artifacts:
     reports:
       coverage_report:
         coverage_format: cobertura
         path: coverage.xml
+    paths:
+      - htmlcov/
     when: always
+    expire_in: 1 week
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
 
 # Линтеры
 .lint:template: &lint_template
+  stage: lint
   script:
     - poetry run black --check src/
+  allow_failure: false
+  retry:
+    max: 1
+    when: runner_system_failure
 
 test:unit:
   <<: *test_template
-  stage: test
   only:
     - merge_requests
     - main
     - develop
+  tags:
+    - docker
+  timeout: 10m
 
 lint:code:
   <<: *lint_template
-  stage: lint
   only:
     - merge_requests
     - main
     - develop
+  tags:
+    - docker
+  timeout: 5m
 
 # Сборка Docker-образа
 build:image:
@@ -166,6 +194,8 @@ build:image:
     - |
       if [ "$CI_COMMIT_REF_NAME" = "main" ]; then
         TAG="latest"
+      elif [ -n "$CI_COMMIT_TAG" ]; then
+        TAG="$CI_COMMIT_TAG"
       else
         TAG="$CI_COMMIT_REF_SLUG"
       fi
@@ -187,20 +217,24 @@ build:image:
     - main
     - develop
     - merge_requests
-  except:
     - tags
+  tags:
+    - docker
+  timeout: 15m
+  retry:
+    max: 1
+    when: runner_system_failure
 
 # Деплой на прод
 deploy:prod:
+  stage: deploy
   tags:
     - production
     - deploy
-  stage: deploy
-
+  
   before_script: []
-
   cache: {}
-
+  
   variables:
     SSH_PRIVATE_KEY: $SSH_PRIVATE_KEY
     SSH_HOST: $SSH_HOST
@@ -209,7 +243,9 @@ deploy:prod:
     DOCKER_REGISTRY: $CI_REGISTRY
     DOCKER_IMAGE: $CI_REGISTRY_IMAGE:latest
     DEPLOY_PATH: $DEPLOY_PATH
-
+    DEPLOY_TOKEN_USERNAME: $DEPLOY_TOKEN_USERNAME
+    DEPLOY_TOKEN_PASSWORD: $DEPLOY_TOKEN_PASSWORD
+  
   script:
     # Настройка SSH
     - command -v ssh || (echo "Ошибка - ssh не установлен" && exit 1)
@@ -231,113 +267,11 @@ deploy:prod:
     - echo "=== Проверка SSH подключения ==="
     - ssh -p $SSH_PORT $SSH_USER@$SSH_HOST "echo 'SSH connected successfully'"
 
-    # Создаем скрипт деплоя локально
-    - |
-      cat > /tmp/deploy_script.sh << 'DEPLOY_SCRIPT'
-      #!/bin/bash
-      set -e
-      
-      echo "=== Начало деплоя ==="
-      echo "DEPLOY_PATH: $DEPLOY_PATH"
-      echo "DOCKER_IMAGE: $DOCKER_IMAGE"
-      echo "DOCKER_REGISTRY: $DOCKER_REGISTRY"
-      
-      # Создание директории проекта
-      if ! mkdir -p "$DEPLOY_PATH"; then
-        echo "ОШИБКА: Не удалось создать директорию $DEPLOY_PATH"
-        exit 1
-      fi
-      
-      # Проверка доступа к Docker
-      if ! docker ps > /dev/null; then
-        echo "ОШИБКА: Нет доступа к Docker"
-        exit 1
-      fi
-      
-      # Копирование .env файла
-      if [ -f "/etc/nutricoreiq/.env" ]; then
-        if ! cp /etc/nutricoreiq/.env "$DEPLOY_PATH/.env"; then
-          echo "ОШИБКА: Не удалось скопировать .env файл"
-          exit 1
-        fi
-      fi
-      
-      # Переход в директорию проекта
-      cd "$DEPLOY_PATH" || { echo "ОШИБКА: Не удалось перейти в $DEPLOY_PATH"; exit 1; }
-      
-      # Логаут из старых сессий
-      echo "=== Выход из предыдущих Docker сессий ==="
-      docker logout "$DOCKER_REGISTRY" 2>/dev/null || true
-      
-      # Логин в Docker Registry с Deploy Token
-      echo "=== Логин в Docker Registry ==="
-      echo "Registry: $DOCKER_REGISTRY"
-      echo "Username: $DEPLOY_TOKEN_USERNAME"
-      
-      if ! echo "$DEPLOY_TOKEN_PASSWORD" | docker login -u "$DEPLOY_TOKEN_USERNAME" --password-stdin "$DOCKER_REGISTRY"; then
-        echo "ОШИБКА: Не удалось войти в Docker Registry"
-        echo "Проверьте:"
-        echo "1. Deploy Token создан и активен"
-        echo "2. Username и Password правильные"
-        echo "3. Scope 'read_registry' включен"
-        exit 1
-      fi
-      
-      echo "✓ Успешная авторизация в registry"
-      
-      # Остановка старых контейнеров
-      echo "=== Остановка старых контейнеров ==="
-      docker-compose -f docker-compose.prod.yml down || echo "Предупреждение: старые контейнеры не найдены"
-      
-      # Загрузка нового Docker-образа
-      echo "=== Загрузка Docker образа: $DOCKER_IMAGE ==="
-      if ! docker pull "$DOCKER_IMAGE"; then
-        echo "ОШИБКА: Не удалось загрузить образ $DOCKER_IMAGE"
-        echo "Проверьте что образ существует в Container Registry"
-        exit 1
-      fi
-      
-      echo "✓ Образ успешно загружен"
-      
-      # Запуск сервисов
-      echo "=== Запуск сервисов ==="
-      if ! docker-compose -f docker-compose.prod.yml up -d; then
-        echo "ОШИБКА: Не удалось запустить сервисы"
-        exit 1
-      fi
-      
-      # Очистка неиспользуемых образов
-      echo "=== Очистка старых образов ==="
-      docker image prune -f
-      
-      # Пауза перед проверкой
-      sleep 5
-      
-      # Проверка статуса контейнеров
-      echo "=== Проверка статуса контейнеров ==="
-      docker-compose -f docker-compose.prod.yml ps -a
-      
-      exited_services=$(docker-compose -f docker-compose.prod.yml ps -a | grep Exited | awk '{print $1}' || true)
-      if [ -n "$exited_services" ]; then
-        echo "ОШИБКА: Следующие сервисы завершили работу: $exited_services"
-        for service in $exited_services; do
-          echo "Логи сервиса $service:"
-          docker logs "$service" || true
-        done
-        exit 1
-      fi
-      
-      echo "=== Деплой успешно завершен ==="
-      
-      echo "=== Выход из Docker Registry ==="
-      docker logout "$DOCKER_REGISTRY" || true
-      DEPLOY_SCRIPT
+    # Копируем скрипт деплоя на удалённый сервер
+    - scp -P $SSH_PORT scripts/deploy.sh $SSH_USER@$SSH_HOST:/tmp/deploy_script.sh
+    - ssh -p $SSH_PORT $SSH_USER@$SSH_HOST "chmod +x /tmp/deploy_script.sh"
 
-    # Копируем скрипт на удалённый сервер
-    - chmod +x /tmp/deploy_script.sh
-    - scp -P $SSH_PORT /tmp/deploy_script.sh $SSH_USER@$SSH_HOST:/tmp/deploy_script.sh
-
-    # Экспортируем переменные и запускаем скрипт
+    # Запускаем скрипт деплоя
     - |
       ssh -p $SSH_PORT $SSH_USER@$SSH_HOST "export DEPLOY_PATH='$DEPLOY_PATH' && \
         export DOCKER_REGISTRY='$DOCKER_REGISTRY' && \
@@ -354,11 +288,16 @@ deploy:prod:
       else
         echo "Деплой успешно завершен!"
       fi
+    # Очистка SSH ключей
+    - rm -rf ~/.ssh
 
   only:
     - main
   when: manual
   allow_failure: false
+  timeout: 20m
+  retry:
+    max: 0
 
 workflow:
   rules:
@@ -366,3 +305,27 @@ workflow:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     - if: $CI_COMMIT_TAG
     - when: never
+
+# Security scanning
+security:sast:
+  stage: test
+  image: python:3.13-slim
+  before_script:
+    - pip install safety bandit
+  script:
+    - poetry export -f requirements.txt --without-hashes --dev -o requirements.txt
+    - safety check --json --output safety-report.json || true
+    - bandit -r src/ -f json -o bandit-report.json || true
+  artifacts:
+    paths:
+      - safety-report.json
+      - bandit-report.json
+    expire_in: 1 week
+  allow_failure: true
+  only:
+    - main
+    - develop
+    - merge_requests
+  tags:
+    - docker
+  timeout: 5m
