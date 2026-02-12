@@ -315,9 +315,9 @@ deploy:prod:
       
       # Проверка статуса контейнеров
       echo "=== Проверка статуса контейнеров ==="
-      docker-compose -f docker-compose.prod.yml ps
+      docker-compose -f docker-compose.prod.yml ps -a
       
-      exited_services=$(docker-compose -f docker-compose.prod.yml ps | grep Exited | awk '{print $1}' || true)
+      exited_services=$(docker-compose -f docker-compose.prod.yml ps -a | grep Exited | awk '{print $1}' || true)
       if [ -n "$exited_services" ]; then
         echo "ОШИБКА: Следующие сервисы завершили работу: $exited_services"
         for service in $exited_services; do
