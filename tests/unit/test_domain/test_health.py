@@ -438,7 +438,7 @@ class TestUserServiceNutrients:
         assert result["nutrients"]["fat"] > 0
 
     def test_calculate_user_nutrients_gain_weight_adjustment(self, male_user_profile):
-        """Тест что для набора веса TDEE увеличивается на 500"""
+        """Тест на то, что для набора веса TDEE увеличивается на 400"""
         from src.app.core.services.user_service import UserService
         from unittest.mock import Mock
         
