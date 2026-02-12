@@ -316,7 +316,7 @@ class TestCalculateAdjustedTDEE:
             HealthCalculator.calculate_adjusted_tdee(male_user_profile)
 
     def test_adjusted_tdee_propagates_tdee_errors(self, male_user_profile):
-        """Тест что скорректированный TDEE пробрасывает ошибки TDEE"""
+        """Тест на то, что скорректированный TDEE пробрасывает ошибки TDEE"""
         male_user_profile.age = None
         with pytest.raises(
             ValueError, match="Отсутствуют обязательные поля для расчёта BMR"
