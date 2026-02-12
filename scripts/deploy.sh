@@ -7,13 +7,20 @@ echo "DOCKER_IMAGE: $DOCKER_IMAGE"
 echo "DOCKER_REGISTRY: $DOCKER_REGISTRY"
 
 # Валидация обязательных переменных
-required_vars=("DEPLOY_PATH" "DOCKER_IMAGE" "DOCKER_REGISTRY" "DEPLOY_TOKEN_USERNAME" "DEPLOY_TOKEN_PASSWORD")
+required_vars=("DEPLOY_PATH" "DOCKER_IMAGE" "DOCKER_REGISTRY")
 for var in "${required_vars[@]}"; do
     if [[ -z "${!var}" ]]; then
         echo "ОШИБКА: Переменная $var не установлена"
         exit 1
     fi
 done
+
+# Проверка доступных методов аутентификации
+if [[ -z "$CI_JOB_TOKEN" && -z "$DEPLOY_TOKEN_USERNAME" ]]; then
+    echo "ОШИБКА: Ни CI_JOB_TOKEN ни DEPLOY_TOKEN_USERNAME не доступны"
+    echo "Установите хотя бы один метод аутентификации"
+    exit 1
+fi
 
 # Создание директории проекта
 if ! mkdir -p "$DEPLOY_PATH"; then
