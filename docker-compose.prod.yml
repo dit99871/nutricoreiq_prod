@@ -5,7 +5,7 @@ services:
     image: postgres:17
     container_name: postgre
     ports:
-      - "127.0.0.1:${POSTGRES_PORT}:${POSTGRES_PORT}"
+      - "127.0.0.1:${APP_CONFIG__POSTGRES_PORT}:${APP_CONFIG__POSTGRES_PORT}"
     env_file:
       - .env
     volumes:
@@ -16,7 +16,7 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${APP_CONFIG__POSTGRES_USER} -d ${APP_CONFIG__POSTGRES_DB}" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -32,7 +32,7 @@ services:
     env_file:
       - .env
     environment:
-      - DATA_SOURCE_NAME=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=${POSTGRES_SSL_MODE}
+      - DATA_SOURCE_NAME=postgresql://${APP_CONFIG__POSTGRES_USER}:${APP_CONFIG__POSTGRES_PASSWORD}@db:${APP_CONFIG__POSTGRES_PORT}/${APP_CONFIG__POSTGRES_DB}?sslmode=${APP_CONFIG__POSTGRES_SSL_MODE}
     volumes:
       - ./config/postgres_exporter.yml:/postgres_exporter.yml
     command:
@@ -53,7 +53,7 @@ services:
     image: redis:latest
     container_name: redis
     ports:
-      - "127.0.0.1:${REDIS_PORT}:${REDIS_PORT}"
+      - "127.0.0.1:${APP_CONFIG__REDIS_PORT}:${APP_CONFIG__REDIS_PORT}"
     volumes:
       - redis_data:/data
       - ./config/redis.conf:/usr/local/etc/redis/redis.conf:ro
@@ -75,8 +75,8 @@ services:
     image: oliver006/redis_exporter:latest
     container_name: redis_exporter
     environment:
-      - REDIS_ADDR=${REDIS_ADDR}
-      - LOG_LEVEL=${REDIS_LOG_LEVEL}
+      - REDIS_ADDR=${APP_CONFIG__REDIS_ADDR}
+      - LOG_LEVEL=${APP_CONFIG__REDIS_LOG_LEVEL}
     depends_on:
       redis:
         condition: service_healthy
@@ -93,7 +93,7 @@ services:
     hostname: rabbitmq
     container_name: rabbitmq
     ports:
-      - "127.0.0.1:${RABBITMQ_PORT}:${RABBITMQ_PORT}"
+      - "127.0.0.1:${APP_CONFIG__RABBITMQ_PORT}:${APP_CONFIG__RABBITMQ_PORT}"
     env_file:
       - .env
     volumes:
@@ -196,9 +196,9 @@ services:
     ports:
       - "127.0.0.1:3000:3000"
     environment:
-      - GF_SERVER_PROTOCOL=${GF_SERVER_PROTOCOL}
-      - GF_SERVER_DOMAIN=${GF_SERVER_DOMAIN}
-      - GF_SERVER_ROOT_URL=${GF_SERVER_ROOT_URL}
+      - GF_SERVER_PROTOCOL=${APP_CONFIG__GF_SERVER_PROTOCOL}
+      - GF_SERVER_DOMAIN=${APP_CONFIG__GF_SERVER_DOMAIN}
+      - GF_SERVER_ROOT_URL=${APP_CONFIG__GF_SERVER_ROOT_URL}
     volumes:
       - grafana_data:/var/lib/grafana
     networks:
@@ -215,8 +215,8 @@ services:
       dockerfile: Dockerfile.nginx
     container_name: nginx
     ports:
-      - "${HTTP_PORT}:${HTTP_PORT}"
-      - "${HTTPS_PORT}:${HTTPS_PORT}"
+      - "${APP_CONFIG__HTTP_PORT}:${APP_CONFIG__HTTP_PORT}"
+      - "${APP_CONFIG__HTTPS_PORT}:${APP_CONFIG__HTTPS_PORT}"
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt:ro
       - /var/www/certbot:/var/www/certbot
