@@ -158,7 +158,7 @@ build:image:
     DOCKER_DRIVER: overlay2
   before_script: []
   script:
-    # ИСПРАВЛЕНИЕ: Используем литерал "gitlab-ci-token" вместо переменной
+    # используем литерал "gitlab-ci-token" вместо переменной
     - echo "Logging into GitLab Container Registry..."
     - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token --password-stdin $CI_REGISTRY
 
@@ -265,7 +265,7 @@ deploy:prod:
       # Переход в директорию проекта
       cd "$DEPLOY_PATH" || { echo "ОШИБКА: Не удалось перейти в $DEPLOY_PATH"; exit 1; }
       
-      # КРИТИЧЕСКИ ВАЖНО: Логаут из старых сессий
+      # Логаут из старых сессий
       echo "=== Выход из предыдущих Docker сессий ==="
       docker logout "$DOCKER_REGISTRY" 2>/dev/null || true
       
