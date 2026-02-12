@@ -292,10 +292,10 @@ class TestCalculateAdjustedTDEE:
         assert result == base_tdee
 
     def test_adjusted_tdee_gain_weight(self, male_user_profile):
-        """Тест скорректированного TDEE для набора веса (+500 ккал)"""
+        """Тест скорректированного TDEE для набора веса (+400 ккал)"""
         male_user_profile.goal = GoalType.GAIN_WEIGHT
         base_tdee = 1780.0 * 1.9  # 3382 ккал
-        expected = base_tdee + 500  # 3882 ккал
+        expected = base_tdee + 400  # 3782 ккал
         result = HealthCalculator.calculate_adjusted_tdee(male_user_profile)
         assert result == expected
 
@@ -330,9 +330,9 @@ class TestCalculateNutrients:
     def test_nutrients_maintain_weight(self, male_user_profile):
         """Тест расчёта нутриентов для поддержания веса"""
         tdee = 1780.0 * 1.9  # 3382 ккал
-        expected_carbs = int(-(-3382 * 0.55 / 4))  # 465 г
-        expected_protein = int(-(-3382 * 0.20 / 4))  # 169 г
-        expected_fat = int(-(-3382 * 0.25 / 9))  # 94 г
+        expected_carbs = round(3382 * 0.55 / 4)  # 465 г
+        expected_protein = round(3382 * 0.20 / 4)  # 169 г
+        expected_fat = round(3382 * 0.25 / 9)  # 94 г
         
         result = HealthCalculator.calculate_nutrients(male_user_profile, tdee)
         
@@ -344,9 +344,9 @@ class TestCalculateNutrients:
         """Тест расчёта нутриентов для набора веса"""
         male_user_profile.goal = GoalType.GAIN_WEIGHT
         tdee = 1780.0 * 1.9  # 3382 ккал
-        expected_carbs = int(-(-3382 * 0.55 / 4))  # 465 г
-        expected_protein = int(-(-3382 * 0.25 / 4))  # 212 г
-        expected_fat = int(-(-3382 * 0.20 / 9))  # 75 г
+        expected_carbs = round(3382 * 0.55 / 4)  # 465 г
+        expected_protein = round(3382 * 0.25 / 4)  # 211 г
+        expected_fat = round(3382 * 0.20 / 9)  # 75 г
         
         result = HealthCalculator.calculate_nutrients(male_user_profile, tdee)
         
@@ -357,9 +357,9 @@ class TestCalculateNutrients:
     def test_nutrients_lose_weight(self, female_user_profile):
         """Тест расчёта нутриентов для снижения веса"""
         tdee = 1345.25 * 1.6  # 2152.4 ккал
-        expected_carbs = int(-(-2152.4 * 0.45 / 4))  # 242 г
-        expected_protein = int(-(-2152.4 * 0.30 / 4))  # 162 г
-        expected_fat = int(-(-2152.4 * 0.25 / 9))  # 60 г
+        expected_carbs = round(2152.4 * 0.45 / 4)  # 242 г
+        expected_protein = round(2152.4 * 0.30 / 4)  # 161 г
+        expected_fat = round(2152.4 * 0.25 / 9)  # 60 г
         
         result = HealthCalculator.calculate_nutrients(female_user_profile, tdee)
         
@@ -381,11 +381,11 @@ class TestCalculateNutrients:
         "tdee,goal,expected_carbs,expected_protein,expected_fat",
         [
             # TDEE=2000, поддержание веса: 55% carbs, 20% protein, 25% fat
-            (2000.0, GoalType.MAINTAIN_WEIGHT, 275, 100, 55),
+            (2000.0, GoalType.MAINTAIN_WEIGHT, 275, 100, 56),
             # TDEE=2000, набор веса: 55% carbs, 25% protein, 20% fat  
             (2000.0, GoalType.GAIN_WEIGHT, 275, 125, 44),
             # TDEE=2000, снижение веса: 45% carbs, 30% protein, 25% fat
-            (2000.0, GoalType.LOSE_WEIGHT, 225, 150, 55),
+            (2000.0, GoalType.LOSE_WEIGHT, 225, 150, 56),
         ],
     )
     def test_nutrients_different_goals_and_tdee(
@@ -400,15 +400,15 @@ class TestCalculateNutrients:
         assert result["fat"] == expected_fat
 
     def test_nutrients_rounding_up(self, male_user_profile):
-        """Тест правильного округления вверх"""
+        """Тест правильного округления"""
         male_user_profile.goal = GoalType.MAINTAIN_WEIGHT
         tdee = 1999.0  # Нечетное число для проверки округления
         
         result = HealthCalculator.calculate_nutrients(male_user_profile, tdee)
         
-        # Проверяем, что значения округлены вверх
+        # Проверяем, что значения округлены правильно
         carbs_calories = tdee * 0.55  # 1099.45
-        expected_carbs = int(-(-carbs_calories / 4))  # 275
+        expected_carbs = round(carbs_calories / 4)  # 275
         assert result["carbs"] == expected_carbs
 
 
@@ -452,7 +452,7 @@ class TestUserServiceNutrients:
         
         assert result is not None
         base_tdee = 1780.0 * 1.9  # 3382 ккал
-        expected_tdee = base_tdee + 500  # 3882 ккал
+        expected_tdee = base_tdee + 400  # 3782 ккал
         assert result["tdee"] == expected_tdee
 
     def test_calculate_user_nutrients_incomplete_profile(self, male_user_profile):
