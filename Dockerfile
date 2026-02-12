@@ -22,7 +22,7 @@ RUN useradd -m appuser && \
     chmod 770 /nutricoreiq/src/app/logs && \
     chown -R appuser:appuser /nutricoreiq
 
-COPY entrypoint.sh .
+COPY scripts/entrypoint.sh .
 RUN chmod +x entrypoint.sh
 
 # Настройка PYTHONPATH
