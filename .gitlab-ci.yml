@@ -237,8 +237,8 @@ deploy:prod:
     DOCKER_REGISTRY: $CI_REGISTRY
     DOCKER_IMAGE: $CI_REGISTRY_IMAGE:latest
     DEPLOY_PATH: $DEPLOY_PATH
-    DEPLOY_TOKEN_USERNAME: $DEPLOY_TOKEN_USERNAME
-    DEPLOY_TOKEN_PASSWORD: $DEPLOY_TOKEN_PASSWORD
+    # Альтернатива: использовать CI_JOB_TOKEN вместо Deploy Token
+    CI_JOB_TOKEN: $CI_JOB_TOKEN
   
   script:
     # Настройка SSH
@@ -270,8 +270,7 @@ deploy:prod:
       ssh -p $SSH_PORT $SSH_USER@$SSH_HOST "export DEPLOY_PATH='$DEPLOY_PATH' && \
         export DOCKER_REGISTRY='$DOCKER_REGISTRY' && \
         export DOCKER_IMAGE='$DOCKER_IMAGE' && \
-        export DEPLOY_TOKEN_USERNAME='$DEPLOY_TOKEN_USERNAME' && \
-        export DEPLOY_TOKEN_PASSWORD='$DEPLOY_TOKEN_PASSWORD' && \
+        export CI_JOB_TOKEN='$CI_JOB_TOKEN' && \
         bash /tmp/deploy_script.sh && \
         rm -f /tmp/deploy_script.sh"
 
@@ -315,7 +314,7 @@ security:sast:
     - pip install safety bandit
   script:
     # Экспорт зависимостей из Poetry и проверка безопасности
-    - poetry export -f requirements.txt --without-hashes --dev -o requirements.txt
+    - poetry export --without-hashes --dev -o requirements.txt
     - safety check --json --output safety-report.json --file requirements.txt || true
     - bandit -r src/ -f json -o bandit-report.json || true
   artifacts:

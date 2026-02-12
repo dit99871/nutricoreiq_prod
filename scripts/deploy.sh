@@ -48,15 +48,26 @@ docker logout "$DOCKER_REGISTRY" 2>/dev/null || true
 # Логин в Docker Registry
 echo "=== Логин в Docker Registry ==="
 echo "Registry: $DOCKER_REGISTRY"
-echo "Username: $DEPLOY_TOKEN_USERNAME"
+echo "Используем CI_JOB_TOKEN для аутентификации"
 
-if ! echo "$DEPLOY_TOKEN_PASSWORD" | docker login -u "$DEPLOY_TOKEN_USERNAME" --password-stdin "$DOCKER_REGISTRY"; then
-    echo "ОШИБКА: Не удалось войти в Docker Registry"
-    echo "Проверьте:"
-    echo "1. Deploy Token создан и активен"
-    echo "2. Username и Password правильные"
-    echo "3. Scope 'read_registry' включен"
-    exit 1
+if ! echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token --password-stdin "$DOCKER_REGISTRY"; then
+    echo "ОШИБКА: Не удалось войти в Docker Registry с CI_JOB_TOKEN"
+    echo "Пробуем Deploy Token..."
+    
+    if [ -n "$DEPLOY_TOKEN_USERNAME" ] && [ -n "$DEPLOY_TOKEN_PASSWORD" ]; then
+        if ! echo "$DEPLOY_TOKEN_PASSWORD" | docker login -u "$DEPLOY_TOKEN_USERNAME" --password-stdin "$DOCKER_REGISTRY"; then
+            echo "ОШИБКА: Не удалось войти в Docker Registry"
+            echo "Проверьте:"
+            echo "1. CI_JOB_TOKEN имеет права на read_registry"
+            echo "2. Deploy Token создан и активен"
+            echo "3. Username и Password правильные"
+            echo "4. Scope 'read_registry' включен"
+            exit 1
+        fi
+    else
+        echo "ОШИБКА: Deploy Token переменные не установлены"
+        exit 1
+    fi
 fi
 
 echo "✓ Успешная авторизация в registry"
