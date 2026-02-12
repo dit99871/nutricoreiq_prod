@@ -304,9 +304,9 @@ security:sast:
   stage: test
   image: python:3.13-slim
   before_script:
-    # Установка Poetry через официальный installer
+    # Установка Poetry и зависимостей
     - python -m pip install --upgrade pip
-    - curl -sSL https://install.python-poetry.org | python3 -
+    - pip install poetry
     - poetry config virtualenvs.create true
     - poetry config virtualenvs.in-project true
     - poetry install --no-interaction --no-root
@@ -314,7 +314,7 @@ security:sast:
     - pip install safety bandit
   script:
     # Экспорт зависимостей из Poetry и проверка безопасности
-    - poetry export --format=requirements.txt --without-hashes --dev -o requirements.txt
+    - poetry export -f requirements.txt --without-hashes --dev -o requirements.txt
     - safety check --json --output safety-report.json --file requirements.txt || true
     - bandit -r src/ -f json -o bandit-report.json || true
   artifacts:

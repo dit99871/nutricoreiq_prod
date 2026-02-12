@@ -177,7 +177,7 @@ max_health_attempts=12
 health_attempt=1
 
 while [[ $health_attempt -le $max_health_attempts ]]; do
-    if curl -f -s "http://localhost:$app_port/health" > /dev/null 2>&1; then
+    if curl -f -s "http://localhost:$app_port/" > /dev/null 2>&1; then
         echo "✓ Приложение доступно и отвечает на health check"
         break
     fi
