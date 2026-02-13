@@ -145,6 +145,33 @@ while [[ $db_attempt -le $max_db_attempts ]]; do
     ((db_attempt++))
 done
 
+# Ожидание запуска web_app контейнера
+echo "=== Ожидание запуска web_app ==="
+max_app_attempts=30
+app_attempt=1
+
+while [[ $app_attempt -le $max_app_attempts ]]; do
+    if docker-compose -f docker-compose.prod.yml ps web_app | grep -q "Up"; then
+        echo "✓ Контейнер web_app запущен"
+        break
+    fi
+    
+    if [[ $app_attempt -eq $max_app_attempts ]]; then
+        echo "ОШИБКА: Контейнер web_app не запустился за $max_app_attempts попыток"
+        echo "Статус всех контейнеров:"
+        docker-compose -f docker-compose.prod.yml ps
+        exit 1
+    fi
+    
+    echo "Ожидание запуска web_app... ($app_attempt/$max_app_attempts)"
+    sleep 2
+    ((app_attempt++))
+done
+
+# Дополнительное ожидание готовности приложения
+echo "=== Ожидание готовности приложения ==="
+sleep 10
+
 # Применение миграций
 echo "=== Применение миграций базы данных ==="
 if ! docker-compose -f docker-compose.prod.yml exec -T web_app alembic upgrade head; then
