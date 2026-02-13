@@ -123,65 +123,6 @@ if ! docker-compose -f docker-compose.prod.yml up -d; then
     exit 1
 fi
 
-# Ожидание запуска базы данных
-echo "=== Ожидание запуска базы данных ==="
-# Проверяем готовность БД вместо фиксированного ожидания
-max_db_attempts=30
-db_attempt=1
-
-while [[ $db_attempt -le $max_db_attempts ]]; do
-    if docker-compose -f docker-compose.prod.yml exec -T db pg_isready -U ${APP_CONFIG__POSTGRES_USER} -d ${APP_CONFIG__POSTGRES_DB} > /dev/null 2>&1; then
-        echo "✓ База данных готова"
-        break
-    fi
-    
-    if [[ $db_attempt -eq $max_db_attempts ]]; then
-        echo "ОШИБКА: База данных не стала готовой за $max_db_attempts попыток"
-        exit 1
-    fi
-    
-    echo "Ожидание базы данных... ($db_attempt/$max_db_attempts)"
-    sleep 2
-    ((db_attempt++))
-done
-
-# Ожидание запуска web_app контейнера
-echo "=== Ожидание запуска web_app ==="
-max_app_attempts=30
-app_attempt=1
-
-while [[ $app_attempt -le $max_app_attempts ]]; do
-    if docker-compose -f docker-compose.prod.yml ps web_app | grep -q "Up"; then
-        echo "✓ Контейнер web_app запущен"
-        break
-    fi
-    
-    if [[ $app_attempt -eq $max_app_attempts ]]; then
-        echo "ОШИБКА: Контейнер web_app не запустился за $max_app_attempts попыток"
-        echo "Статус всех контейнеров:"
-        docker-compose -f docker-compose.prod.yml ps
-        exit 1
-    fi
-    
-    echo "Ожидание запуска web_app... ($app_attempt/$max_app_attempts)"
-    sleep 2
-    ((app_attempt++))
-done
-
-# Дополнительное ожидание готовности приложения
-echo "=== Ожидание готовности приложения ==="
-sleep 10
-
-# Применение миграций
-echo "=== Применение миграций базы данных ==="
-if ! docker-compose -f docker-compose.prod.yml exec -T web_app alembic upgrade head; then
-    echo "ОШИБКА: Не удалось применить миграции"
-    echo "Проверяем логи контейнера web_app:"
-    docker-compose -f docker-compose.prod.yml logs web_app --tail 20 || true
-    exit 1
-fi
-echo "✓ Миграции успешно применены"
-
 # Очистка неиспользуемых образов
 echo "=== Очистка старых образов ==="
 docker image prune -f
