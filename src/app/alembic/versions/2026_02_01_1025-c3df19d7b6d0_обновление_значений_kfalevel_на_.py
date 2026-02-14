@@ -23,8 +23,12 @@ def upgrade() -> None:
     """Upgrade schema."""
     # Обновляем enum тип consent_type на верхний регистр
     op.execute("ALTER TYPE consenttype RENAME TO consenttype_old")
-    op.execute("CREATE TYPE consenttype AS ENUM ('PERSONAL_DATA', 'COOKIES', 'MARKETING')")
-    op.execute("ALTER TABLE privacy_consents ALTER COLUMN consent_type TYPE consenttype USING consent_type::text::consenttype")
+    op.execute(
+        "CREATE TYPE consenttype AS ENUM ('PERSONAL_DATA', 'COOKIES', 'MARKETING')"
+    )
+    op.execute(
+        "ALTER TABLE privacy_consents ALTER COLUMN consent_type TYPE consenttype USING consent_type::text::consenttype"
+    )
     op.execute("DROP TYPE consenttype_old")
 
 
@@ -32,6 +36,10 @@ def downgrade() -> None:
     """Downgrade schema."""
     # Возвращаем enum тип в нижний регистр
     op.execute("ALTER TYPE consenttype RENAME TO consenttype_upper")
-    op.execute("CREATE TYPE consenttype AS ENUM ('personal_data', 'cookies', 'marketing')")
-    op.execute("ALTER TABLE privacy_consents ALTER COLUMN consent_type TYPE consenttype USING consent_type::text::consenttype")
+    op.execute(
+        "CREATE TYPE consenttype AS ENUM ('personal_data', 'cookies', 'marketing')"
+    )
+    op.execute(
+        "ALTER TABLE privacy_consents ALTER COLUMN consent_type TYPE consenttype USING consent_type::text::consenttype"
+    )
     op.execute("DROP TYPE consenttype_upper")
