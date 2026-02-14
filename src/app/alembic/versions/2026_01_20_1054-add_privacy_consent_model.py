@@ -1,8 +1,8 @@
 """add_privacy_consent_model
 
-Revision ID: 2025_01_20_1054
-Revises: 2025_08_25_1052
-Create Date: 2025-01-20 10:54:00.000000
+Revision ID: 2026_01_20_1054
+Revises: 2026_01_20_1054
+Create Date: 2026-01-20 10:54:00.000000
 
 """
 
