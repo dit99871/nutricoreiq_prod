@@ -1,6 +1,6 @@
 """add_privacy_consent_model
 
-Revision ID: 2026_01_20_1054
+Revision ID: 2025_01_20_1054
 Revises: 0fe3bb26940a
 Create Date: 2026-01-20 10:54:00.000000
 
@@ -10,9 +10,10 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = "2026_01_20_1054"
+revision: str = "2025_01_20_1054"
 down_revision: Union[str, None] = "0fe3bb26940a"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -34,7 +35,13 @@ def upgrade() -> None:
         sa.Column("user_agent", sa.String(), nullable=False),
         sa.Column(
             "consent_type",
-            sa.Enum("personal_data", "cookies", "marketing", name="consenttype"),
+            postgresql.ENUM(
+                "personal_data",
+                "cookies",
+                "marketing",
+                name="consenttype",
+                create_type=False,
+            ),
             nullable=False,
         ),
         sa.Column("is_granted", sa.Boolean(), nullable=False),
