@@ -6,8 +6,10 @@ from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.core import db_helper
+from src.app.core.config import settings
 from src.app.core.logger import get_logger
 from src.app.core.models.privacy_consent import ConsentType
+from src.app.core.middleware.http_middleware import get_client_ip
 from src.app.core.repo.privacy_consent import (
     create_privacy_consent,
     get_user_consents,
@@ -50,7 +52,9 @@ async def save_privacy_consent(
         session_id = redis_session.get("redis_session_id")
 
         # Получаем IP и User-Agent
-        ip_address = request.client.host
+        ip_address = getattr(request.state, "client_ip", None) or get_client_ip(
+            request, trusted_proxies=settings.run.trusted_proxies
+        )
         user_agent = request.headers.get("user-agent", "unknown")
 
         # Сохраняем согласие на персональные данные

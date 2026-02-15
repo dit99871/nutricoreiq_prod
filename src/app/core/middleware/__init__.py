@@ -48,4 +48,4 @@ def setup_middleware(app: FastAPI) -> None:
         allow_headers=settings.cors.allow_headers,
         max_age=600,
     )
-    app.add_middleware(HTTPMiddleware)
+    app.add_middleware(HTTPMiddleware, trusted_proxies=settings.run.trusted_proxies)
