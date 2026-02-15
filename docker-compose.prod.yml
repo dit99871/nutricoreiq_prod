@@ -112,7 +112,7 @@ services:
         max-file: "3"
 
   fastapi:
-    image: ${DOCKER_IMAGE}
+    image: ${DOCKER_IMAGE:-nutricoreiq-fastapi}
     ports:
       - "127.0.0.1:${APP_CONFIG__RUN__PORT}:${APP_CONFIG__RUN__PORT}"
     volumes:
@@ -151,7 +151,7 @@ services:
         env: "os,customer"
 
   taskiq_worker:
-    image: ${DOCKER_IMAGE}
+    image: ${DOCKER_IMAGE:-nutricoreiq-fastapi}
     container_name: taskiq_worker
     command: >
       bash -c "sleep 30 && taskiq worker src.app.core.services.taskiq_broker:broker --workers 1 --fs-discover --tasks-pattern '**/tasks'"
