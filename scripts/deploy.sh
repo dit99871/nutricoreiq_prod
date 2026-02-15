@@ -144,7 +144,10 @@ while [[ $attempt -le $max_attempts ]]; do
     echo "Попытка $attempt/$max_attempts"
     
     # Проверяем статус всех сервисов
-    unhealthy_services=$(docker ps --services --filter "status=running" | xargs -I {} docker-compose -f docker-compose.prod.yml ps -q {} | xargs -I {} docker inspect --format='{{.State.Health.Status}}' {} 2>/dev/null | grep -v "healthy" || true)
+    unhealthy_services=$(docker-compose -f docker-compose.prod.yml ps -q \
+        | xargs -r -I {} docker inspect --format='{{if .State.Health}}{{.Name}} {{.State.Health.Status}}{{end}}' {} 2>/dev/null \
+        | awk 'NF && $2!="healthy" {print $0}' \
+        || true)
     
     if [[ -z "$unhealthy_services" ]]; then
         echo "✓ Все сервисы здоровы"
