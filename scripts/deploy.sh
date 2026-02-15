@@ -140,14 +140,27 @@ echo "=== Проверка health checks ==="
 max_attempts=30
 attempt=1
 
+# Проверяем health только у критичных сервисов, от которых зависит работоспособность приложения.
+critical_services=(db redis rabbitmq fastapi)
+
 while [[ $attempt -le $max_attempts ]]; do
     echo "Попытка $attempt/$max_attempts"
     
     # Проверяем статус всех сервисов
-    unhealthy_services=$(docker-compose -f docker-compose.prod.yml ps -q \
-        | xargs -r -I {} docker inspect --format='{{if .State.Health}}{{.Name}} {{.State.Health.Status}}{{end}}' {} 2>/dev/null \
-        | awk 'NF && $2!="healthy" {print $0}' \
-        || true)
+    unhealthy_services=$(
+        for svc in "${critical_services[@]}"; do
+            cid=$(docker-compose -f docker-compose.prod.yml ps -q "$svc" 2>/dev/null || true)
+            if [[ -z "$cid" ]]; then
+                echo "$svc missing"
+                continue
+            fi
+
+            status=$(docker inspect --format='{{if .State.Health}}{{.State.Health.Status}}{{else}}no_healthcheck{{end}}' "$cid" 2>/dev/null || true)
+            if [[ "$status" != "healthy" && "$status" != "no_healthcheck" ]]; then
+                echo "$svc $status"
+            fi
+        done
+    )
     
     if [[ -z "$unhealthy_services" ]]; then
         echo "✓ Все сервисы здоровы"
@@ -155,16 +168,22 @@ while [[ $attempt -le $max_attempts ]]; do
     fi
     
     if [[ $attempt -eq $max_attempts ]]; then
-        echo "ОШИБКА: Сервисы не стали здоровыми за $max_attempts попыток"
-        echo "Нездоровые сервисы:"
-        docker ps -a | grep -E "(Up.*unhealthy|Exited)"
-        
-        # Показываем логи упавших сервисов
-        failed_services=$(docker ps -a | grep Exited | awk '{print $1}' || true)
-        for service in $failed_services; do
-            echo "Логи сервиса $service:"
-            docker logs "$service" --tail 50 || true
-        done
+        echo "ОШИБКА: Критичные сервисы не стали healthy за $max_attempts попыток"
+        echo "Критичные сервисы: ${critical_services[*]}"
+        echo "Нездоровые критичные сервисы (healthcheck):"
+        echo "$unhealthy_services" | sed 's/^/ - /'
+
+        # Если есть реально упавшие контейнеры (Exited) — это считаем ошибкой деплоя.
+        failed_services=$(docker ps -a --filter "status=exited" --format "{{.ID}}" || true)
+        if [[ -n "$failed_services" ]]; then
+            echo "ОШИБКА: Найдены упавшие контейнеры (Exited). Деплой прерван."
+            for service in $failed_services; do
+                echo "Логи контейнера $service:"
+                docker logs "$service" --tail 50 || true
+            done
+            exit 1
+        fi
+
         exit 1
     fi
     
