@@ -1,6 +1,7 @@
 #!/bin/bash
+set -e
 # Выполнение миграций
-alembic upgrade head
+python -m alembic upgrade head
 # Проверка и исправление прав для логов
 echo "Checking log directory permissions:"
 ls -ld /nutricoreiq/src/app/logs
