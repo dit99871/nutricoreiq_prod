@@ -1,7 +1,7 @@
 """Обновление значений KFALevel на коэффициенты активности
 
 Revision ID: c3df19d7b6d0
-Revises: 2025_01_20_1054
+Revises: 2026_01_20_1054
 Create Date: 2026-02-01 10:25:43.817325
 
 """
@@ -14,7 +14,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = "c3df19d7b6d0"
-down_revision: Union[str, None] = "2025_01_20_1054"
+down_revision: Union[str, None] = "2026_01_20_1054"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
