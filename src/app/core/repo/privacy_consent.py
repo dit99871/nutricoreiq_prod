@@ -93,26 +93,26 @@ async def _has_consent(
             PrivacyConsent.consent_type == consent_type,
             PrivacyConsent.is_granted == True,
         ]
-        
+
         if user_id is not None:
             filters.append(PrivacyConsent.user_id == user_id)
         elif session_id is not None:
             filters.append(PrivacyConsent.session_id == session_id)
         else:
             raise ValueError("Нужно указать user_id или session_id")
-            
+
         stmt = (
             select(PrivacyConsent)
             .filter(*filters)
             .order_by(PrivacyConsent.granted_at.desc())
             .limit(1)
         )
-        
+
         result = await session.execute(stmt)
         consent = result.scalar_one_or_none()
-        
+
         return consent is not None
-        
+
     except SQLAlchemyError as e:
         log.error("Ошибка при проверке согласия: %s", str(e))
         return False
