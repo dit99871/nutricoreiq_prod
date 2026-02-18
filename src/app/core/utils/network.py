@@ -84,3 +84,25 @@ def get_client_ip(request: Request, trusted_proxies: Optional[List[str]] = None)
 
     request.state.client_ip = "unknown"
     return "unknown"
+
+
+def get_scheme_and_host(
+    request: Request, trusted_proxies: Optional[List[str]] = None
+) -> tuple[str, str]:
+    trusted_proxies = trusted_proxies or []
+
+    scheme = request.url.scheme
+    host = request.headers.get("Host", "") or (request.url.hostname or "")
+
+    peer_ip = None
+    if request.client and request.client.host:
+        peer_ip = request.client.host
+
+    if trusted_proxies and peer_ip and _is_trusted_proxy(peer_ip, trusted_proxies):
+        scheme = request.headers.get("X-Forwarded-Proto", scheme)
+        host = request.headers.get("X-Forwarded-Host", "").split(",")[0].strip() or host
+
+    request.state.scheme = scheme
+    request.state.host = host
+
+    return scheme, host

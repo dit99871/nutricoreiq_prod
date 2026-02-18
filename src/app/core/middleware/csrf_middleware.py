@@ -1,6 +1,5 @@
 from fastapi import HTTPException, Request, status
 from starlette.middleware.base import BaseHTTPMiddleware
-from typing import Union
 
 from src.app.core.config import settings
 from src.app.core.logger import get_logger
@@ -13,18 +12,19 @@ class CSRFMiddleware(BaseHTTPMiddleware):
     def __init__(
         self,
         app,
-        trusted_proxies: list[Union[str, int]] | None = None,
+        trusted_proxies: list[str] | None = None,
     ) -> None:
         super().__init__(app)
-        self.trusted_proxies = set(trusted_proxies or [])
+        self.trusted_proxies = list(trusted_proxies or [])
 
     async def dispatch(self, request: Request, call_next):
         # получаем реальный IP клиента
-        client_ip = get_client_ip(request, trusted_proxies=list(self.trusted_proxies))
-        
-        # используем X-Forwarded-Proto для определения схемы
-        scheme = request.headers.get(
-            "X-Forwarded-Proto", request.scope.get("scheme", "http")
+        client_ip = getattr(request.state, "client_ip", None) or get_client_ip(
+            request, trusted_proxies=self.trusted_proxies
+        )
+
+        scheme = getattr(request.state, "scheme", None) or request.scope.get(
+            "scheme", "http"
         )
         request_url = str(request.url).replace(
             f"{request.scope['scheme']}://", f"{scheme}://"
