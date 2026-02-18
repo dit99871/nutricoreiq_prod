@@ -1,7 +1,6 @@
 import time
 import uuid
-from ipaddress import ip_address, ip_network
-from typing import Optional, List, Union
+from typing import List, Union
 
 from fastapi import Request, Response, status
 from fastapi.responses import JSONResponse
@@ -9,79 +8,9 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.types import ASGIApp
 
 from src.app.core.logger import get_logger
+from src.app.core.utils.network import get_client_ip
 
 log = get_logger("http_middleware")
-
-
-def _is_trusted_proxy(peer_ip: str, trusted_proxies: List[str]) -> bool:
-    try:
-        peer = ip_address(peer_ip)
-    except ValueError:
-        return False
-
-    for proxy in trusted_proxies:
-        try:
-            if "/" in proxy:
-                if peer in ip_network(proxy, strict=False):
-                    return True
-            else:
-                if peer == ip_address(proxy):
-                    return True
-        except ValueError:
-            continue
-
-    return False
-
-
-def get_client_ip(request: Request, trusted_proxies: Optional[List[str]] = None) -> str:
-    """
-    Получает реальный IP-адрес клиента, учитывая заголовки прокси.
-    """
-    trusted_proxies = trusted_proxies or []
-
-    peer_ip = None
-    if request.client and request.client.host:
-        peer_ip = request.client.host
-
-    # Без явного списка доверенных прокси не доверяем заголовкам X-Forwarded-*.
-    # Это защищает от подделки X-Forwarded-For при прямом доступе к приложению.
-    if not trusted_proxies:
-        request.state.client_ip = peer_ip or "unknown"
-        return request.state.client_ip
-
-    # Если peer не является доверенным прокси, не используем X-Forwarded-*.
-    if peer_ip and not _is_trusted_proxy(peer_ip, trusted_proxies):
-        request.state.client_ip = peer_ip
-        return peer_ip
-
-    # список заголовков, в которых может быть реальный ip
-    headers_to_check = [
-        "X-Forwarded-For",
-        "X-Real-IP",
-        "X-Client-IP",
-        "HTTP_X_FORWARDED_FOR",
-        "HTTP_X_REAL_IP",
-    ]
-
-    for header in headers_to_check:
-        if header in request.headers:
-            # берем первый ip из списка, если их несколько
-            ip = request.headers[header].split(",")[0].strip()
-            try:
-                # валидируем, что это корректный ip-адрес
-                ip_address(ip)
-                request.state.client_ip = ip
-                return ip
-            except ValueError:
-                continue
-
-    # eсли заголовков нет, используем стандартный способ
-    if peer_ip:
-        request.state.client_ip = peer_ip
-        return peer_ip
-
-    request.state.client_ip = "unknown"
-    return "unknown"
 
 
 class HTTPMiddleware(BaseHTTPMiddleware):

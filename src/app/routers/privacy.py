@@ -9,7 +9,7 @@ from src.app.core import db_helper
 from src.app.core.config import settings
 from src.app.core.logger import get_logger
 from src.app.core.models.privacy_consent import ConsentType
-from src.app.core.middleware.http_middleware import get_client_ip
+from src.app.core.utils.network import get_client_ip
 from src.app.core.repo.privacy_consent import (
     create_privacy_consent,
     get_user_consents,
