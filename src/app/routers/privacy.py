@@ -1,6 +1,6 @@
 """API для работы с согласием на обработку персональных данных"""
 
-from typing import Annotated
+from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,6 +17,8 @@ from src.app.core.repo.privacy_consent import (
     has_user_consent,
     has_session_consent,
 )
+from src.app.core.schemas.user import UserPublic
+from src.app.core.utils.user import optional_current_user
 from src.app.core.schemas.privacy import (
     ConsentStatusResponse,
     PrivacyConsentRequest,
@@ -27,6 +29,7 @@ log = get_logger("privacy_router")
 
 # Алиасы типов зависимостей
 session_dep = Annotated[AsyncSession, Depends(db_helper.session_getter)]
+optional_user_dep = Annotated[Optional[UserPublic], Depends(optional_current_user())]
 
 router = APIRouter(
     tags=["Privacy"],
@@ -38,6 +41,7 @@ async def save_privacy_consent(
     request: Request,
     consent_data: PrivacyConsentRequest,
     session: session_dep,
+    user: optional_user_dep,
 ) -> PrivacyConsentResponse:
     """
     Сохраняет согласие на обработку персональных данных.
@@ -46,8 +50,7 @@ async def save_privacy_consent(
     Для неавторизованных пользователей сохраняет в БД с привязкой к session_id.
     """
     try:
-        # Получаем информацию о пользователе
-        user = getattr(request.state, "user", None)
+        # Получаем информацию о сессии
         redis_session = request.scope.get("redis_session", {})
         session_id = redis_session.get("redis_session_id")
 
@@ -116,12 +119,13 @@ async def save_privacy_consent(
 async def get_consent_status(
     request: Request,
     session: session_dep,
+    user: optional_user_dep,
 ) -> ConsentStatusResponse:
     """
     Возвращает текущий статус согласия на обработку персональных данных.
     """
     try:
-        user = getattr(request.state, "user", None)
+        # Получаем информацию о сессии
         redis_session = request.scope.get("redis_session", {})
         session_id = redis_session.get("redis_session_id")
 
