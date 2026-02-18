@@ -1,14 +1,27 @@
 from fastapi import HTTPException, Request, status
 from starlette.middleware.base import BaseHTTPMiddleware
+from typing import Union
 
 from src.app.core.config import settings
 from src.app.core.logger import get_logger
+from src.app.core.utils.network import get_client_ip
 
 log = get_logger("csrf_middleware")
 
 
 class CSRFMiddleware(BaseHTTPMiddleware):
+    def __init__(
+        self,
+        app,
+        trusted_proxies: list[Union[str, int]] | None = None,
+    ) -> None:
+        super().__init__(app)
+        self.trusted_proxies = set(trusted_proxies or [])
+
     async def dispatch(self, request: Request, call_next):
+        # получаем реальный IP клиента
+        client_ip = get_client_ip(request, trusted_proxies=list(self.trusted_proxies))
+        
         # используем X-Forwarded-Proto для определения схемы
         scheme = request.headers.get(
             "X-Forwarded-Proto", request.scope.get("scheme", "http")
@@ -37,7 +50,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 log.error(
                     "Invalid origin for request: %s, IP: %s, User-Agent: %s",
                     request_url,
-                    request.client.host,
+                    client_ip,
                     request.headers.get("user-agent", "unknown"),
                 )
                 raise HTTPException(
@@ -52,7 +65,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 log.error(
                     "CSRF token missing in cookie for request: %s, IP: %s, User-Agent: %s",
                     request_url,
-                    request.client.host,
+                    client_ip,
                     request.headers.get("user-agent", "unknown"),
                 )
                 raise HTTPException(
@@ -76,7 +89,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 log.error(
                     "CSRF token missing in session for request: %s, IP: %s, User-Agent: %s",
                     request_url,
-                    request.client.host,
+                    client_ip,
                     request.headers.get("user-agent", "unknown"),
                 )
                 raise HTTPException(
@@ -109,7 +122,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 log.error(
                     "Invalid CSRF token for request: %s, IP: %s, User-Agent: %s",
                     request_url,
-                    request.client.host,
+                    client_ip,
                     request.headers.get("user-agent", "unknown"),
                 )
                 raise HTTPException(

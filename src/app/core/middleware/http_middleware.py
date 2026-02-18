@@ -1,6 +1,6 @@
 import time
 import uuid
-from typing import List, Union
+from typing import Union
 
 from fastapi import Request, Response, status
 from fastapi.responses import JSONResponse
@@ -22,7 +22,7 @@ class HTTPMiddleware(BaseHTTPMiddleware):
     def __init__(
         self,
         app: ASGIApp,
-        trusted_proxies: Optional[List[Union[str, int]]] = None,
+        trusted_proxies: list[Union[str, int]] | None = None,
     ) -> None:
         super().__init__(app)
         self.trusted_proxies = set(trusted_proxies or [])
