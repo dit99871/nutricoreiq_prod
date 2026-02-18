@@ -1,3 +1,5 @@
+"""Утилиты для работы с аутентификацией"""
+
 import datetime as dt
 
 import bcrypt
@@ -15,14 +17,15 @@ log = get_logger("auth_utils")
 
 def get_password_hash(password: str) -> bytes:
     """
-    Returns bytes object of hashed password.
+    Возвращает хеш пароля в виде байтов.
 
-    Hashes given password with random salt and returns it as bytes.
+    Хеширует переданный пароль со случайной солью и возвращает в виде байтов.
 
-    :param password: Password to be hashed.
-    :return: Hashed password as bytes.
+    :param password: Пароль для хеширования.
+    :return: Хешированный пароль в виде байтов.
     """
     salt = bcrypt.gensalt()
+
     return bcrypt.hashpw(password.encode(), salt)
 
 
@@ -31,14 +34,14 @@ def verify_password(
     hashed_password: bytes,
 ) -> bool:
     """
-    Verifies if given password matches given hashed password.
+    Проверяет, соответствует ли пароль хешированному паролю.
 
-    Compares given password with given hashed password using
-    `bcrypt.checkpw` and returns `True` if they match and `False` otherwise.
+    Сравнивает переданный пароль с хешированным паролем с помощью
+    `bcrypt.checkpw` и возвращает `True`, если они совпадают, и `False` в противном случае.
 
-    :param password: Password to be verified.
-    :param hashed_password: Hashed password to compare with.
-    :return: `True` if password matches, `False` otherwise.
+    :param password: Пароль для проверки.
+    :param hashed_password: Хешированный пароль для сравнения.
+    :return: `True`, если пароль совпадает, `False` в противном случае.
     """
 
     return bcrypt.checkpw(
@@ -49,10 +52,10 @@ def verify_password(
 
 async def create_response(user: UserPublic) -> ORJSONResponse:
     """
-    Creates an ORJSONResponse object with the user's access and refresh tokens.
+    Создает объект ORJSONResponse с токенами доступа пользователя.
 
-    :param user: The user object for which to create the tokens.
-    :return: An ORJSONResponse object with the access and refresh tokens.
+    :param user: Объект пользователя, для которого создаются токены.
+    :return: Объект ORJSONResponse с токенами доступа.
     """
 
     access_token = create_access_jwt(user)
