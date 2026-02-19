@@ -1,7 +1,7 @@
 import json
 from typing import Callable, Any
 
-from fastapi import HTTPException, Request, Response, status
+from fastapi import HTTPException, Request, status
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.app.core import db_helper

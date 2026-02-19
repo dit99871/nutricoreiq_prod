@@ -3,7 +3,7 @@
 """
 
 from src.app.core.logger import get_logger
-from src.app.core.models.user import KFALevel, GoalType
+from src.app.core.models.user import KFALevel
 from src.app.core.schemas.user import UserProfile
 
 log = get_logger("health_calculator")
