@@ -37,7 +37,7 @@ async def test_handle_product_search_exact_match():
 
     with (
         patch(
-            "src.app.core.repo.product.map_to_schema", return_value="mapped_product"
+            "src.app.core.services.product_service.ProductService.map_to_schema", return_value="mapped_product"
         ) as mock_mapper,
         patch(
             "src.app.core.repo.product.create_pending_product", new_callable=AsyncMock
@@ -129,7 +129,7 @@ async def test_handle_product_details_success():
     session.execute.return_value = FakeResult(scalar=product)
 
     with patch(
-        "src.app.core.repo.product.map_to_schema", return_value="product_details"
+        "src.app.core.services.product_service.ProductService.map_to_schema", return_value="product_details"
     ) as mock_mapper:
         response = await handle_product_details(session, product_id=7)
 

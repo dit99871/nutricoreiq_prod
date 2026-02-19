@@ -6,7 +6,7 @@ from starlette import status
 
 from src.app.core.logger import get_logger
 from src.app.core.models import Product, ProductNutrient
-from src.app.core.models import map_to_schema
+from src.app.core.services.product_service import ProductService
 from src.app.core.schemas.product import (
     ProductDetailResponse,
     ProductSuggestion,
@@ -62,7 +62,7 @@ async def handle_product_search(
 
     if product:
         # log.info("Точное совпадение: %s", product.title)
-        response.exact_match = map_to_schema(product)
+        response.exact_match = ProductService.map_to_schema(product)
         return response
 
     # Поиск предложений
@@ -160,4 +160,4 @@ async def handle_product_details(
             },
         )
 
-    return map_to_schema(product)
+    return ProductService.map_to_schema(product)
