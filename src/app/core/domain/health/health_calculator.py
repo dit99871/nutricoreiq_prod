@@ -101,14 +101,14 @@ class HealthCalculator:
             log.error("Ошибка значения kfa: %s", str(e))
             raise ValueError(
                 f"Недопустимое значение kfa: {user.kfa}. "
-                "Должно быть число от 1.4 до 2.5."
+                "Должно быть число от 1.2 до 1.9."
             )
 
-        if kfa < 1.4 or kfa > 2.5:
+        if kfa < 1.2 or kfa > 1.9:
             log.error("Недопустимое значение kfa: %s", kfa)
             raise ValueError(
                 f"Недопустимый коэффициент активности (kfa): {kfa}. "
-                "Должен быть от 1.4 до 2.5."
+                "Должен быть от 1.2 до 1.9."
             )
 
         bmr = cls.calculate_bmr(user)

@@ -207,35 +207,35 @@ class TestCalculateTDEE:
     """Тесты для расчёта суточной нормы калорий (TDEE)"""
 
     def test_tdee_with_kfa_medium(self, male_user_profile):
-        """Тест TDEE с средней активностью (KFA=1.9)"""
-        expected_tdee = 1780.0 * 1.9
+        """Тест TDEE с средней активностью (KFA=1.55)"""
+        expected_tdee = 1780.0 * 1.55
         result = HealthCalculator.calculate_tdee(male_user_profile)
         assert result == expected_tdee
 
     def test_tdee_with_kfa_low(self, female_user_profile):
-        """Тест TDEE с низкой активностью (KFA=1.6)"""
-        expected_tdee = 1345.25 * 1.6
+        """Тест TDEE с низкой активностью (KFA=1.375)"""
+        expected_tdee = 1345.25 * 1.375
         result = HealthCalculator.calculate_tdee(female_user_profile)
         assert result == expected_tdee
 
     def test_tdee_with_kfa_very_low(self, male_user_profile):
-        """Тест TDEE с очень низкой активностью (KFA=1.4)"""
+        """Тест TDEE с очень низкой активностью (KFA=1.2)"""
         male_user_profile.kfa = KFALevel.VERY_LOW
-        expected_tdee = 1780.0 * 1.4
+        expected_tdee = 1780.0 * 1.2
         result = HealthCalculator.calculate_tdee(male_user_profile)
         assert result == expected_tdee
 
     def test_tdee_with_kfa_high(self, male_user_profile):
-        """Тест TDEE с высокой активностью (KFA=2.2)"""
+        """Тест TDEE с высокой активностью (KFA=1.725)"""
         male_user_profile.kfa = KFALevel.HIGH
-        expected_tdee = 1780.0 * 2.2
+        expected_tdee = 1780.0 * 1.725
         result = HealthCalculator.calculate_tdee(male_user_profile)
         assert result == expected_tdee
 
     def test_tdee_with_kfa_very_high(self, male_user_profile):
-        """Тест TDEE с очень высокой активностью (KFA=2.5)"""
+        """Тест TDEE с очень высокой активностью (KFA=1.9)"""
         male_user_profile.kfa = KFALevel.VERY_HIGH
-        expected_tdee = 1780.0 * 2.5
+        expected_tdee = 1780.0 * 1.9
         result = HealthCalculator.calculate_tdee(male_user_profile)
         assert result == expected_tdee
 
@@ -258,11 +258,11 @@ class TestCalculateTDEE:
     @pytest.mark.parametrize(
         "kfa_level,expected_multiplier",
         [
-            (KFALevel.VERY_LOW, 1.4),
-            (KFALevel.LOW, 1.6),
-            (KFALevel.MEDIUM, 1.9),
-            (KFALevel.HIGH, 2.2),
-            (KFALevel.VERY_HIGH, 2.5),
+            (KFALevel.VERY_LOW, 1.2),
+            (KFALevel.LOW, 1.375),
+            (KFALevel.MEDIUM, 1.55),
+            (KFALevel.HIGH, 1.725),
+            (KFALevel.VERY_HIGH, 1.9),
         ],
     )
     def test_tdee_all_kfa_levels(
@@ -287,23 +287,23 @@ class TestCalculateAdjustedTDEE:
 
     def test_adjusted_tdee_maintain_weight(self, male_user_profile):
         """Тест скорректированного TDEE для поддержания веса (без изменений)"""
-        base_tdee = 1780.0 * 1.9  # 3382 ккал
+        base_tdee = 1780.0 * 1.55  # 2759 ккал
         result = HealthCalculator.calculate_adjusted_tdee(male_user_profile)
         assert result == base_tdee
 
     def test_adjusted_tdee_gain_weight(self, male_user_profile):
         """Тест скорректированного TDEE для набора веса (+400 ккал)"""
         male_user_profile.goal = GoalType.GAIN_WEIGHT
-        base_tdee = 1780.0 * 1.9  # 3382 ккал
-        expected = base_tdee + 400  # 3782 ккал
+        base_tdee = 1780.0 * 1.55  # 2759 ккал
+        expected = base_tdee + 400  # 3159 ккал
         result = HealthCalculator.calculate_adjusted_tdee(male_user_profile)
         assert result == expected
 
     def test_adjusted_tdee_lose_weight(self, male_user_profile):
         """Тест скорректированного TDEE для снижения веса (-500 ккал)"""
         male_user_profile.goal = GoalType.LOSE_WEIGHT
-        base_tdee = 1780.0 * 1.9  # 3382 ккал
-        expected = base_tdee - 500  # 2882 ккал
+        base_tdee = 1780.0 * 1.55  # 2759 ккал
+        expected = base_tdee - 500  # 2259 ккал
         result = HealthCalculator.calculate_adjusted_tdee(male_user_profile)
         assert result == expected
 
@@ -451,8 +451,8 @@ class TestUserServiceNutrients:
         result = user_service.calculate_user_nutrients(male_user_profile)
         
         assert result is not None
-        base_tdee = 1780.0 * 1.9  # 3382 ккал
-        expected_tdee = base_tdee + 400  # 3782 ккал
+        base_tdee = 1780.0 * 1.55  # 2759 ккал
+        expected_tdee = base_tdee + 400  # 3159 ккал
         assert result["tdee"] == expected_tdee
 
     def test_calculate_user_nutrients_incomplete_profile(self, male_user_profile):
