@@ -94,7 +94,7 @@ class HealthCalculator:
 
         try:
             if isinstance(user.kfa, KFALevel):
-                kfa = float(user.kfa.value)  # "1.4".."2.5" -> 1.4..2.5
+                kfa = float(user.kfa.value)  # "1.2".."1.9" -> 1.2..1.9
             else:
                 kfa = float(user.kfa)  # fallback для исторических значений
         except Exception as e:
