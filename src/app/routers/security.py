@@ -33,6 +33,10 @@ async def csp_report(request: Request) -> CSPReportResponse:
         # Получаем сырой JSON без валидации Pydantic
         report = await request.json()
 
+        # ВРЕМЕННОЕ ЛОГИРОВАНИЕ ДЛЯ ОТЛАДКИ
+        import json
+        log.info(f"RAW CSP REPORT: {json.dumps(report, indent=2)}")
+
         # Валидация обязательных полей
         if not report:
             raise ValueError("Получен пустой отчет")
@@ -67,6 +71,7 @@ async def csp_report(request: Request) -> CSPReportResponse:
 
         # Проверяем наличие document_uri
         if not violation.get("document_uri"):
+            log.error(f"VIOLATION WITHOUT document_uri: {violation}")
             raise ValueError("Отсутствует document_uri в отчете о нарушении")
 
         log.warning(
