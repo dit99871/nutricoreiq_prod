@@ -3,7 +3,7 @@ from fastapi.requests import Request
 from fastapi.responses import ORJSONResponse
 
 from src.app.core.logger import get_logger
-from src.app.core.schemas.security import CSPReportResponse, CSPViolationReport
+from src.app.core.schemas.security import CSPReportResponse
 
 router = APIRouter(
     tags=["Security"],
@@ -14,9 +14,7 @@ log = get_logger("security_router")
 
 
 @router.post("/csp-report")
-async def csp_report(
-    request: Request, report_data: CSPViolationReport | None = None
-) -> CSPReportResponse:
+async def csp_report(request: Request) -> CSPReportResponse:
     """
     Эндпоинт для получения отчетов о нарушениях CSP с валидацией.
 
@@ -28,18 +26,12 @@ async def csp_report(
     обработки статус будет "error" и ответ будет содержать сообщение об ошибке.
 
     :param request: Входящий запрос.
-    :param report_data: Валидированные данные отчета о нарушении CSP.
     :return: JSON-ответ со статусом и опциональным сообщением об ошибке.
     """
 
     try:
-        # Пробуем сначала валидировать через Pydantic
-        if report_data:
-            report = report_data.model_dump()
-        else:
-            # Fallback для legacy формата
-            raw_report = await request.json()
-            report = raw_report
+        # Получаем сырой JSON без валидации Pydantic
+        report = await request.json()
 
         # Валидация обязательных полей
         if not report:
