@@ -87,5 +87,12 @@ def get_logger(name: Optional[str] = None) -> logging.Logger:
     Возвращает логгер с указанным именем.
     Если имя не указано, возвращает корневой логгер.
     """
-
-    return logging.getLogger(name)
+    
+    logger = logging.getLogger(name)
+    
+    # Если это именованный логгер (не корневой), отключаем propagation
+    # чтобы избежать дублирования записей от родительских handlers
+    if name is not None:
+        logger.propagate = False
+    
+    return logger
