@@ -47,8 +47,10 @@ def setup_logging() -> None:
     # Проверяем, что логирование еще не настроено
     root_logger = logging.getLogger()
     if root_logger.handlers:
-        # Логгеры уже настроены, выходим
-        return
+        # Очищаем существующие handlers чтобы избежать дублирования
+        for handler in root_logger.handlers[:]:
+            root_logger.removeHandler(handler)
+            handler.close()
 
     # создание директории для логов
     log_dir = Path(settings.logging.log_file).parent
@@ -72,13 +74,14 @@ def setup_logging() -> None:
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(text_formatter)
 
-    # настройка корневого логгера
+    # настройка корневого логгера с принудительной перенастройкой
     logging.basicConfig(
         level=settings.logging.log_level_value,
         handlers=[
             file_handler,
             console_handler,
         ],
+        force=True,  # Принудительно перенастраиваем логирование
     )
 
 
