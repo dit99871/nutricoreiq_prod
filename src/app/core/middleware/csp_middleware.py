@@ -16,10 +16,10 @@ class CSPMiddleware(BaseHTTPMiddleware):
         csp_policy = (
             "default-src 'self'; "
             f"script-src 'self' 'nonce-{csp_nonce}' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
-            f"style-src 'self' 'nonce-{csp_nonce}' https://cdn.jsdelivr.net; "
+            f"style-src 'self' 'nonce-{csp_nonce}' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
             f"style-src-attr 'nonce-{csp_nonce}'; "
-            "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
-            "img-src 'self' data:; "
+            "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+            "img-src 'self' data: https:; "
             f"connect-src 'self'; "
             "frame-src 'none'; "
             "object-src 'none'; "
