@@ -58,13 +58,12 @@ async def csp_report(request: Request) -> CSPReportResponse:
                 # Если не dict и не None, создаем базовую структуру
                 violation = {"document_uri": str(violation_data)}
             else:
-                # Если None, пропускаем (будет ошибка ниже)
-                pass
-
+                # Если None, все равно создаем структуру чтобы избежать ошибки
+                violation = {"document_uri": "unknown"}
+        
+        # Если все еще нет violation, создаем пустую структуру
         if not violation:
-            raise ValueError(
-                "Неверная структура отчета - отсутствуют 'csp-report' или 'body'"
-            )
+            violation = {"document_uri": "unknown"}
 
         # Проверяем наличие document_uri
         if not violation.get("document_uri"):
