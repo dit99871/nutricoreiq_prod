@@ -35,6 +35,7 @@ async def csp_report(request: Request) -> CSPReportResponse:
 
         # ВРЕМЕННОЕ ЛОГИРОВАНИЕ ДЛЯ ОТЛАДКИ
         import json
+
         log.info(f"RAW CSP REPORT: {json.dumps(report, indent=2)}")
 
         # Валидация обязательных полей
