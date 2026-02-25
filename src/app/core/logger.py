@@ -46,11 +46,11 @@ def setup_logging() -> None:
     Настройка логирования на основе конфигурации из settings.
     Логи записываются в JSON для Loki и в текстовом формате для консоли.
     """
-    
+
     global _logging_setup_done
     if _logging_setup_done:
         return
-    
+
     # Проверяем, что логирование еще не настроено
     root_logger = logging.getLogger()
     if root_logger.handlers:
@@ -90,7 +90,7 @@ def setup_logging() -> None:
         ],
         force=True,  # Принудительно перенастраиваем логирование
     )
-    
+
     _logging_setup_done = True
 
 
