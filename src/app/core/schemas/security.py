@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Any
 from pydantic import BaseModel, Field
 
 
@@ -20,10 +20,10 @@ class CSPBlockedURI(BaseModel):
 class CSPViolationReport(BaseModel):
     """Схема отчета о нарушении CSP"""
 
-    csp_report: Union[CSPBlockedURI, dict, None] = None
+    csp_report: CSPBlockedURI | None = None
 
-    # Для legacy формата - принимаем любой тип
-    body: Union[CSPBlockedURI, dict, str, int, float, bool, None] = None
+    # Для legacy формата - принимаем абсолютно любой тип без валидации
+    body: Any = None
 
     class Config:
         extra = "forbid"  # Запрещаем лишние поля
