@@ -4,6 +4,7 @@ from fastapi.responses import ORJSONResponse
 
 from src.app.core.logger import get_logger
 from src.app.core.schemas.security import CSPReportResponse
+from src.app.core.services.csp_service import CSPReportService
 
 router = APIRouter(
     tags=["Security"],
@@ -16,10 +17,10 @@ log = get_logger("security_router")
 @router.post("/csp-report")
 async def csp_report(request: Request) -> CSPReportResponse:
     """
-    Эндпоинт для получения отчетов о нарушениях CSP с валидацией.
+    Эндпоинт для получения отчетов о нарушениях CSP.
 
     Эндпоинт принимает JSON-полезную нагрузку с отчетом о нарушении CSP.
-    Валидирует структуру отчета и логирует нарушения.
+    Обрабатывает отчет через CSPReportService и логирует нарушения.
 
     Возвращает JSON-ответ со статусом "received" или "error". Если отчет
     успешно обработан, статус будет "received". При ошибке
@@ -30,55 +31,19 @@ async def csp_report(request: Request) -> CSPReportResponse:
     """
 
     try:
-        # Получаем сырой JSON без валидации Pydantic
+        # Получаем сырой JSON
         report = await request.json()
 
-        # ВРЕМЕННОЕ ЛОГИРОВАНИЕ ДЛЯ ОТЛАДКИ
-        import json
+        # Обрабатываем отчет через сервис
+        effective_directive, doc_uri, blocked_uri = CSPReportService.process_report(
+            report
+        )
 
-        log.info(f"RAW CSP REPORT: {json.dumps(report, indent=2)}")
-
-        # Валидация обязательных полей
-        if not report:
-            raise ValueError("Получен пустой отчет")
-
-        # Дополнительная валидация структуры
-        violation = None
-        if "csp-report" in report:
-            violation_data = report["csp-report"]
-            # Если это dict, пробуем извлечь document_uri
-            if isinstance(violation_data, dict):
-                violation = violation_data
-            else:
-                # Если не dict, создаем базовую структуру
-                violation = {
-                    "document_uri": str(violation_data) if violation_data else "unknown"
-                }
-        elif "body" in report:
-            violation_data = report["body"]
-            # Если это dict, используем его
-            if isinstance(violation_data, dict):
-                violation = violation_data
-            elif violation_data is not None:
-                # Если не dict и не None, создаем базовую структуру
-                violation = {"document_uri": str(violation_data)}
-            else:
-                # Если None, все равно создаем структуру чтобы избежать ошибки
-                violation = {"document_uri": "unknown"}
-
-        # Если все еще нет violation, создаем пустую структуру
-        if not violation:
-            violation = {"document_uri": "unknown"}
-
-        # Проверяем наличие document_uri
-        if not violation.get("document_uri"):
-            log.error(f"VIOLATION WITHOUT document_uri: {violation}")
-            raise ValueError("Отсутствует document_uri в отчете о нарушении")
-
+        # Логируем нарушение
         log.warning(
-            f"Обнаружено нарушение CSP: {violation.get('effective_directive')} "
-            f"с {violation.get('document_uri')} - "
-            f"заблокировано: {violation.get('blocked_uri', 'unknown')}"
+            f"Обнаружено нарушение CSP: {effective_directive} "
+            f"с {doc_uri} - "
+            f"заблокировано: {blocked_uri}"
         )
 
         return CSPReportResponse(status="received")
