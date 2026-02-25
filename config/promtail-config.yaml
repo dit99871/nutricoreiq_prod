@@ -19,6 +19,7 @@ scrape_configs:
       - match:
           selector: '{container=~"web_app.*"}'
           stages:
+            # Сначала пробуем парсить структурированные логи приложения
             - regex:
                 expression: '^\[(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\]\s+(?P<module>[\w\.]+):(?P<line>\d+)\s+(?P<level>\w+)\s+-\s+(?P<message>.*)'
             - timestamp:
@@ -32,12 +33,9 @@ scrape_configs:
             - drop:
                 expression: ".*\\n.*"
                 drop_counter_reason: "multiline_log"
-      - match:
-          selector: '{container=~"web_app.*"}'
-          stages:
+            # Если regex не сработал (fallback), обрабатываем как обычный лог
             - regex:
                 expression: '^(?P<message>.*)'
-                source: "message"
             - output:
                 source: message
 
