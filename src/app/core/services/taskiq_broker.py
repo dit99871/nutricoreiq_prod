@@ -7,9 +7,10 @@ from taskiq import TaskiqEvents, TaskiqState
 from taskiq_aio_pika import AioPikaBroker
 
 from src.app.core.config import settings
+from src.app.core.logger import get_logger
 from src.app.core.services.sentry import init_sentry
 
-log = logging.getLogger("taskiq_broker")
+log = get_logger("taskiq_broker")
 
 if settings.env.env == "prod":
     init_sentry()
