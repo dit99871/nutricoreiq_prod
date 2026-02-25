@@ -46,11 +46,28 @@ async def csp_report(
             raise ValueError("Получен пустой отчет")
 
         # Дополнительная валидация структуры
+        violation = None
         if "csp-report" in report:
-            violation = report["csp-report"]
+            violation_data = report["csp-report"]
+            # Если это dict, пробуем извлечь document_uri
+            if isinstance(violation_data, dict):
+                violation = violation_data
+            else:
+                # Если не dict, создаем базовую структуру
+                violation = {"document_uri": str(violation_data) if violation_data else "unknown"}
         elif "body" in report:
-            violation = report["body"]
-        else:
+            violation_data = report["body"]
+            # Если это dict, используем его
+            if isinstance(violation_data, dict):
+                violation = violation_data
+            elif violation_data is not None:
+                # Если не dict и не None, создаем базовую структуру
+                violation = {"document_uri": str(violation_data)}
+            else:
+                # Если None, пропускаем (будет ошибка ниже)
+                pass
+        
+        if not violation:
             raise ValueError(
                 "Неверная структура отчета - отсутствуют 'csp-report' или 'body'"
             )
