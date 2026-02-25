@@ -54,7 +54,9 @@ async def csp_report(
                 violation = violation_data
             else:
                 # Если не dict, создаем базовую структуру
-                violation = {"document_uri": str(violation_data) if violation_data else "unknown"}
+                violation = {
+                    "document_uri": str(violation_data) if violation_data else "unknown"
+                }
         elif "body" in report:
             violation_data = report["body"]
             # Если это dict, используем его
@@ -66,7 +68,7 @@ async def csp_report(
             else:
                 # Если None, пропускаем (будет ошибка ниже)
                 pass
-        
+
         if not violation:
             raise ValueError(
                 "Неверная структура отчета - отсутствуют 'csp-report' или 'body'"
