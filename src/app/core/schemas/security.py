@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 
 class CSPBlockedURI(BaseModel):
     """Схема для данных о нарушении CSP"""
+
     blocked_uri: str | None = None
     document_uri: str | None = None
     effective_directive: str | None = None
@@ -17,16 +18,18 @@ class CSPBlockedURI(BaseModel):
 
 class CSPViolationReport(BaseModel):
     """Схема отчета о нарушении CSP"""
+
     csp_report: CSPBlockedURI | None = None
-    
+
     # Для legacy формата
     body: CSPBlockedURI | None = None
-    
+
     class Config:
         extra = "forbid"  # Запрещаем лишние поля
 
 
 class CSPReportResponse(BaseModel):
     """Схема ответа для CSP отчетов"""
+
     status: str = Field(..., pattern="^(received|error)$")
     message: str | None = None
