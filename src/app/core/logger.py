@@ -43,6 +43,12 @@ def setup_logging() -> None:
     Настройка логирования на основе конфигурации из settings.
     Логи записываются в JSON для Loki и в текстовом формате для консоли.
     """
+    
+    # Проверяем, что логирование еще не настроено
+    root_logger = logging.getLogger()
+    if root_logger.handlers:
+        # Логгеры уже настроены, выходим
+        return
 
     # создание директории для логов
     log_dir = Path(settings.logging.log_file).parent

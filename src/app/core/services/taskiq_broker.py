@@ -25,13 +25,5 @@ if settings.env.env == "prod":
 
     @broker.on_event(TaskiqEvents.WORKER_STARTUP)
     async def on_worker_startup(state: TaskiqState) -> None:
-        logging.basicConfig(
-            level=settings.logging.log_level_value,
-            format=settings.logging.log_taskiq_format,
-            datefmt=settings.logging.log_date_format,
-            handlers=[
-                logging.FileHandler(settings.logging.log_file),
-                logging.StreamHandler(),
-            ],
-        )
+        # Логирование уже настроено в main.py через setup_logging()
         log.info("Worker startup complete, got state: %s", state)
