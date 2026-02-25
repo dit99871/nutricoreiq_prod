@@ -60,7 +60,7 @@ async def csp_report(request: Request) -> CSPReportResponse:
             else:
                 # Если None, все равно создаем структуру чтобы избежать ошибки
                 violation = {"document_uri": "unknown"}
-        
+
         # Если все еще нет violation, создаем пустую структуру
         if not violation:
             violation = {"document_uri": "unknown"}
