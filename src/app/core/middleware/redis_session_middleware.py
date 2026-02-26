@@ -4,6 +4,7 @@ from datetime import datetime
 import anyio
 from fastapi import HTTPException, Request, Response, status
 from redis.asyncio import RedisError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import ClientDisconnect
 
@@ -111,6 +112,23 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
                 raise  # пропускаем ошибки csrf для обработки в CSRFMiddleware
             log.error(
                 "Ошибка в RedisSessionMiddleware: %s, IP: %s, User-Agent: %s",
+                str(e),
+                request.client.host,
+                request.headers.get("user-agent", "unknown"),
+            )
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "message": "Сервис недоступен. Пожалуйста, попробуйте позже.",
+                },
+            )
+
+        except StarletteHTTPException as e:
+            if e.status_code == status.HTTP_404_NOT_FOUND:
+                # 404 ошибки пробрасываем без обработки
+                raise
+            log.error(
+                "Starlette HTTP ошибка в RedisSessionMiddleware: %s, IP: %s, User-Agent: %s",
                 str(e),
                 request.client.host,
                 request.headers.get("user-agent", "unknown"),
