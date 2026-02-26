@@ -1,9 +1,11 @@
 import json
 from datetime import datetime
 
+import anyio
 from fastapi import HTTPException, Request, Response, status
 from redis.asyncio import RedisError
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import ClientDisconnect
 
 from src.app.core.config import settings
 from src.app.core.logger import get_logger
@@ -16,20 +18,20 @@ log = get_logger("redis_session_middleware")
 class RedisSessionMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
         """
-        Middleware for handling redis session.
+        Middleware для обработки redis сессии.
 
-        This middleware gets or generates session id from cookies and retrieves session data from redis.
-        If session data exists, it extends session expiration time and stores the session in request scope.
-        If session data doesn't exist, it creates a new session.
-        If session data has changed or it's a new session, it saves the session in redis.
-        CSRF token is generated if it's not present in the session.
-        After processing of the request, the session is saved in redis.
-        Session id and CSRF token are set in response cookies.
-        If an exception occurs during the process, it is logged and an HTTP exception with a 503 status code is raised.
+        Это middleware получает или генерирует ID сессии из cookies и извлекает данные сессии из redis.
+        Если данные сессии существуют, продлевает время жизни сессии и сохраняет сессию в области запроса.
+        Если данные сессии отсутствуют, создает новую сессию.
+        Если данные сессии изменились или это новая сессия, сохраняет сессию в redis.
+        CSRF-токен генерируется, если он отсутствует в сессии.
+        После обработки запроса сессия сохраняется в redis.
+        ID сессии и CSRF-токен устанавливаются в cookies ответа.
+        Если в процессе возникает исключение, оно логируется и генерируется HTTP-исключение со статусом 503.
 
-        :param request: The current request object.
-        :param call_next: The next middleware in the chain.
-        :return: The response object.
+        :param request: Объект текущего запроса.
+        :param call_next: Следующее middleware в цепочке.
+        :return: Объект ответа.
         """
 
         # пропуск статических ресурсов и сервисов не требующих сессии
@@ -103,6 +105,7 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
             )
 
             return response
+
         except HTTPException as e:
             if e.status_code == status.HTTP_403_FORBIDDEN:
                 raise  # пропускаем ошибки csrf для обработки в CSRFMiddleware
@@ -118,6 +121,7 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
                     "message": "Сервис недоступен. Пожалуйста, попробуйте позже.",
                 },
             )
+
         except RedisError as e:
             log.error(
                 "Ошибка в RedisSessionMiddleware: %s, IP: %s, User-Agent: %s",
@@ -131,10 +135,34 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
                     "message": "Сервис недоступен. Пожалуйста, попробуйте позже.",
                 },
             )
+
+        except anyio.EndOfStream:
+            # Клиент прервал соединение
+            client_ip = getattr(request.state, "client_ip", None) or request.client.host
+            log.warning(
+                "Клиент прервал соединение: %s, IP: %s, User-Agent: %s",
+                request.url,
+                client_ip,
+                request.headers.get("user-agent", "unknown"),
+            )
+            # Возвращаем 499 - клиент закрыл соединение
+            return Response(status_code=499)
+
+        except ClientDisconnect:
+            # Клиент отключился - нормальная ситуация
+            client_ip = getattr(request.state, "client_ip", None) or request.client.host
+            log.info(
+                "Клиент отключился: %s, IP: %s, User-Agent: %s",
+                request.url,
+                client_ip,
+                request.headers.get("user-agent", "unknown"),
+            )
+            return Response(status_code=499)  # Client Closed Request
+
         except Exception as e:
             # логируем непредвиденные ошибки и возвращаем 500
             log.error(
-                "Непредвиденная ошибка в CSRF middleware: %s, URL: %s, Заголовки: %s",
+                "Непредвиденная ошибка в RedisSessionMiddleware: %s, URL: %s, Заголовки: %s",
                 str(e),
                 request.url,
                 dict(request.headers),
