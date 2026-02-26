@@ -1,4 +1,5 @@
-from fastapi import HTTPException, Request, status
+from fastapi import Request, status
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.app.core.config import settings
@@ -48,55 +49,48 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 origin.startswith(allowed) for allowed in settings.cors.allow_origins
             ):
                 log.error(
-                    "Invalid origin for request: %s, IP: %s, User-Agent: %s",
+                    "Неверный origin для запроса: %s, IP: %s, User-Agent: %s",
                     request_url,
                     client_ip,
                     request.headers.get("user-agent", "unknown"),
                 )
-                raise HTTPException(
+                raise StarletteHTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail={
-                        "message": "Нет доступа. Пожалуйста, убедитесь, что вы обращаетесь с авторизованного домена.",
-                    },
+                    detail="Нет доступа. Пожалуйста, убедитесь, что вы обращаетесь с авторизованного домена.",
                 )
 
             csrf_token_cookie = request.cookies.get("csrf_token")
             if not csrf_token_cookie:
                 log.error(
-                    "CSRF token missing in cookie for request: %s, IP: %s, User-Agent: %s",
+                    "CSRF-токен отсутствует в cookie для запроса: %s, IP: %s, User-Agent: %s",
                     request_url,
                     client_ip,
                     request.headers.get("user-agent", "unknown"),
                 )
-                raise HTTPException(
+                raise StarletteHTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail={
-                        "message": "Нет доступа. Пожалуйста, обновите страницу и попробуйте ещё раз.",
-                    },
+                    detail="Нет доступа. Пожалуйста, обновите страницу и попробуйте ещё раз.",
                 )
 
             session = request.scope.get("redis_session", {})
             if session is None:
-                log.error("Session not found for request: %s", request_url)
-                raise HTTPException(
+                log.error("Сессия не найдена для запроса: %s", request_url)
+                raise StarletteHTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail={
-                        "message": "Время сессии истекло. Пожалуйста, войдите снова.",
-                    },
+                    detail="Время сессии истекло. Пожалуйста, войдите снова.",
                 )
+
             session_csrf_token = session.get("csrf_token")
             if not session_csrf_token:
                 log.error(
-                    "CSRF token missing in session for request: %s, IP: %s, User-Agent: %s",
+                    "CSRF токен отсутствует в сессии для запроса: %s, IP: %s, User-Agent: %s",
                     request_url,
                     client_ip,
                     request.headers.get("user-agent", "unknown"),
                 )
-                raise HTTPException(
+                raise StarletteHTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail={
-                        "message": "Нет доступа. Пожалуйста, обновите страницу и попробуйте ещё раз.",
-                    },
+                    detail="Нет доступа. Пожалуйста, обновите страницу и попробуйте ещё раз.",
                 )
 
             # извлечение csrf-токена из заголовка или формы
@@ -105,8 +99,8 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 form_data = await request.form()
                 csrf_token = form_data.get("_csrf_token")
 
-            log.debug(
-                "CSRF check: cookie=%s, header/form=%s, session=%s, URL=%s",
+            log.info(
+                "Проверка CSRF: cookie=%s, header/form=%s, session=%s, URL=%s",
                 csrf_token_cookie,
                 csrf_token,
                 session_csrf_token,
@@ -120,16 +114,14 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 or csrf_token != session_csrf_token
             ):
                 log.error(
-                    "Invalid CSRF token for request: %s, IP: %s, User-Agent: %s",
+                    "Неверный CSRF-токен для запроса: %s, IP: %s, User-Agent: %s",
                     request_url,
                     client_ip,
                     request.headers.get("user-agent", "unknown"),
                 )
-                raise HTTPException(
+                raise StarletteHTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail={
-                        "message": "Нет доступа. Пожалуйста, обновите страницу и попробуйте ещё раз.",
-                    },
+                    detail="Нет доступа. Пожалуйста, обновите страницу и попробуйте ещё раз.",
                 )
 
         return await call_next(request)
