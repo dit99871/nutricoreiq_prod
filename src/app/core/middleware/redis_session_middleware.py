@@ -151,7 +151,7 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
         except ClientDisconnect:
             # Клиент отключился - нормальная ситуация
             client_ip = getattr(request.state, "client_ip", None) or request.client.host
-            log.info(
+            log.warning(
                 "Клиент отключился: %s, IP: %s, User-Agent: %s",
                 request.url,
                 client_ip,
@@ -162,12 +162,14 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             # логируем непредвиденные ошибки и возвращаем 500
             log.error(
-                "Непредвиденная ошибка в RedisSessionMiddleware: %s, URL: %s, Заголовки: %s",
+                "Непредвиденная ошибка в RedisSessionMiddleware: %s, URL: %s, Заголовки: %s, Тип исключения: %s",
                 str(e),
                 request.url,
                 dict(request.headers),
+                type(e).__name__,
                 exc_info=True,
             )
+            # Создаем новое 500 исключение для непредвиденных ошибок
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail={"message": "Внутренняя ошибка сервера при обработке запроса"},
