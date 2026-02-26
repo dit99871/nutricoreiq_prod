@@ -33,9 +33,13 @@ scrape_configs:
             - drop:
                 expression: ".*\\n.*"
                 drop_counter_reason: "multiline_log"
+      - match:
+          selector: '{container=~"web_app.*"}'
+          stages:
             # Если regex не сработал (fallback), обрабатываем как обычный лог
             - regex:
                 expression: '^(?P<message>.*)'
+                source: "message"
             - output:
                 source: message
 
@@ -63,10 +67,6 @@ scrape_configs:
         target_label: 'service'
       - source_labels: ['__meta_docker_container_label_com_docker_compose_project']
         target_label: 'project'
-      # Исключаем web_app, так как он обрабатывается в job fastapi
-      - source_labels: ['__meta_docker_container_name']
-        regex: '/web_app.*'
-        action: drop
       - source_labels: ['__meta_docker_container_name']
         regex: '/(promtail|loki)'
         action: drop
