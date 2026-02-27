@@ -31,9 +31,9 @@ CREDENTIAL_EXCEPTION = HTTPException(
 
 # Константы логирования
 LOG_DEFAULT_FORMAT = (
-    "[%(asctime)s.%(msecs)03d] %(name)24s:%(lineno)-4d %(levelname)-7s - %(message)s"
+    "[%(asctime)s.%(msecs)03d] %(name)s:%(lineno)d %(levelname)s - %(message)s"
 )
 WORKER_LOG_DEFAULT_FORMAT = (
-    "[%(asctime)s.%(msecs)03d] [%(processName)s] %(module)16s:%(lineno)-3d "
-    "%(levelname)-7s - %(message)s"
+    "[%(asctime)s.%(msecs)03d] [%(processName)s] %(module)s:%(lineno)d "
+    "%(levelname)s - %(message)s"
 )

@@ -21,13 +21,14 @@ scrape_configs:
           stages:
             # Сначала пробуем парсить структурированные логи приложения
             - regex:
-                expression: '^\[(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\]\s+(?P<module>[\w\.]+):(?P<line>\d+)\s+(?P<level>\w+)\s+-\s+(?P<message>.*)'
+                expression: '^\[(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\]\s+(?:\[(?P<process_name>[\w\s]+)\]\s+)?(?P<module>[\w\.]+):(?P<line>\d+)\s+(?P<level>\w+)\s+-\s+(?P<message>.*)'
             - timestamp:
                 source: timestamp
                 format: "2006-01-02 15:04:05.000"
             - labels:
                 level:
                 module:
+                process_name:
             - output:
                 source: message
             - drop:
