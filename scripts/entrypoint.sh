@@ -41,4 +41,7 @@ exec runuser -u appuser -- gunicorn \
   --max-requests-jitter 200 \
   --timeout 60 \
   --graceful-timeout 30 \
-  --keep-alive 5
+  --keep-alive 5 \
+  --access-logfile - \
+  --error-logfile - \
+  --log-level info

@@ -102,9 +102,14 @@ def get_logger(name: Optional[str] = None) -> logging.Logger:
 
     logger = logging.getLogger(name)
 
-    # Если это именованный логгер (не корневой), отключаем propagation
-    # чтобы избежать дублирования записей от родительских handlers
+    # Если это именованный логгер (не корневой), настраиваем его handlers
     if name is not None:
-        logger.propagate = False
+        # Включаем propagation чтобы логи доходили до корневого логгера
+        logger.propagate = True
+        
+        # Устанавливаем уровень логирования не выше корневого
+        root_logger = logging.getLogger()
+        if logger.level > root_logger.level:
+            logger.setLevel(root_logger.level)
 
     return logger
