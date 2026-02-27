@@ -44,7 +44,7 @@ class CustomTextFormatter(logging.Formatter):
 def setup_logging() -> None:
     """
     Настройка логирования на основе конфигурации из settings.
-    Логи записываются в JSON для Loki и в текстовом формате для консоли.
+    Логи записываются и в файлы (персистентность), и в stdout (для Grafana).
     """
 
     global _logging_setup_done
@@ -69,7 +69,7 @@ def setup_logging() -> None:
         datefmt=settings.logging.log_date_format,
     )
 
-    # хэндлер для записи в файл с ротацией
+    # хэндлер для записи в файл с ротацией (персистентность)
     file_handler = RotatingFileHandler(
         settings.logging.log_file,
         maxBytes=settings.logging.log_file_max_size,
@@ -77,7 +77,7 @@ def setup_logging() -> None:
     )
     file_handler.setFormatter(text_formatter)
 
-    # хэндлер для вывода в консоль
+    # хэндлер для вывода в консоль (для Grafana через Docker)
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(text_formatter)
 
@@ -85,8 +85,8 @@ def setup_logging() -> None:
     logging.basicConfig(
         level=settings.logging.log_level_value,
         handlers=[
-            file_handler,
-            console_handler,
+            file_handler,      # Файлы для персистентности
+            console_handler,   # Stdout для Grafana
         ],
         force=True,  # Принудительно перенастраиваем логирование
     )

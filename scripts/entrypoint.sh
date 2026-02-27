@@ -42,6 +42,7 @@ exec runuser -u appuser -- gunicorn \
   --timeout 60 \
   --graceful-timeout 30 \
   --keep-alive 5 \
-  --access-logfile /dev/null \
+  --access-logfile - \
   --error-logfile - \
-  --log-level error
+  --log-level info \
+  --capture-output
