@@ -106,7 +106,7 @@ def get_logger(name: Optional[str] = None) -> logging.Logger:
     if name is not None:
         # Включаем propagation чтобы логи доходили до корневого логгера
         logger.propagate = True
-        
+
         # Устанавливаем уровень логирования не выше корневого
         root_logger = logging.getLogger()
         if logger.level > root_logger.level:
