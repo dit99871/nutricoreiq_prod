@@ -1,45 +1,43 @@
 from fastapi import Request, Response, status
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import RequestResponseEndpoint
+from starlette.types import ASGIApp
 
 from src.app.core.config import settings
-from src.app.core.logger import get_logger
-from src.app.core.utils.network import get_client_ip
-
-log = get_logger("csrf_middleware")
+from src.app.core.middleware.base_middleware import BaseMiddleware
 
 
-class CSRFMiddleware(BaseHTTPMiddleware):
+class CSRFMiddleware(BaseMiddleware):
+    """Middleware для защиты от CSRF-атак"""
+
+    # пути, которые не требуют CSRF защиты
+    EXEMPT_PATHS = [
+        f"{settings.router.auth}/login",
+        f"{settings.router.auth}/register",
+        f"{settings.router.auth}/refresh",
+        f"{settings.router.security}/csp-report",
+        f"{settings.router.product}/pending",
+        "/apis/features.grafana.app/v0alpha1/namespaces/default/ofrep/v1/evaluate/flags",
+    ]
+
     def __init__(
         self,
-        app,
+        app: ASGIApp,
         trusted_proxies: list[str] | None = None,
     ) -> None:
-        super().__init__(app)
-        self.trusted_proxies = list(trusted_proxies or [])
+        super().__init__(app, trusted_proxies)
 
-    async def dispatch(self, request: Request, call_next) -> Response:
-        # получаем реальный IP клиента
-        client_ip = getattr(request.state, "client_ip", None) or get_client_ip(
-            request, trusted_proxies=self.trusted_proxies
-        )
+    async def handle_request(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
+        """Основная логика CSRF middleware"""
 
-        scheme = getattr(request.state, "scheme", None) or request.scope.get(
-            "scheme", "http"
-        )
-        request_url = str(request.url).replace(
-            f"{request.scope['scheme']}://", f"{scheme}://"
-        )
+        context = self._get_request_context(request)
 
         # пропуск публичных маршрутов
-        if request.url.path in [
-            f"{settings.router.auth}/login",
-            f"{settings.router.auth}/register",
-            f"{settings.router.auth}/refresh",
-            f"{settings.router.security}/csp-report",
-            f"{settings.router.product}/pending",
-            "/apis/features.grafana.app/v0alpha1/namespaces/default/ofrep/v1/evaluate/flags",
-        ] or request.url.path.endswith("/login"):
+        if self._should_skip_path(
+            request, set(self.EXEMPT_PATHS)
+        ) or request.url.path.endswith("/login"):
             return await call_next(request)
 
         if request.method in ["POST", "PUT", "DELETE", "PATCH"]:
@@ -48,11 +46,11 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             if origin and not any(
                 origin.startswith(allowed) for allowed in settings.cors.allow_origins
             ):
-                log.error(
+                self.logger.error(
                     "Неверный origin для запроса: %s, IP: %s, User-Agent: %s",
-                    request_url,
-                    client_ip,
-                    request.headers.get("user-agent", "unknown"),
+                    context["url"],
+                    context["client_ip"],
+                    context["user_agent"],
                 )
                 raise StarletteHTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
@@ -61,11 +59,11 @@ class CSRFMiddleware(BaseHTTPMiddleware):
 
             csrf_token_cookie = request.cookies.get("csrf_token")
             if not csrf_token_cookie:
-                log.error(
+                self.logger.error(
                     "CSRF-токен отсутствует в cookie для запроса: %s, IP: %s, User-Agent: %s",
-                    request_url,
-                    client_ip,
-                    request.headers.get("user-agent", "unknown"),
+                    context["url"],
+                    context["client_ip"],
+                    context["user_agent"],
                 )
                 raise StarletteHTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
@@ -74,7 +72,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
 
             session = request.scope.get("redis_session", {})
             if session is None:
-                log.error("Сессия не найдена для запроса: %s", request_url)
+                self.logger.error("Сессия не найдена для запроса: %s", context["url"])
                 raise StarletteHTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Время сессии истекло. Пожалуйста, войдите снова.",
@@ -82,11 +80,11 @@ class CSRFMiddleware(BaseHTTPMiddleware):
 
             session_csrf_token = session.get("csrf_token")
             if not session_csrf_token:
-                log.error(
+                self.logger.error(
                     "CSRF токен отсутствует в сессии для запроса: %s, IP: %s, User-Agent: %s",
-                    request_url,
-                    client_ip,
-                    request.headers.get("user-agent", "unknown"),
+                    context["url"],
+                    context["client_ip"],
+                    context["user_agent"],
                 )
                 raise StarletteHTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
@@ -99,12 +97,12 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 form_data = await request.form()
                 csrf_token = form_data.get("_csrf_token")
 
-            log.info(
+            self.logger.info(
                 "Проверка CSRF: cookie=%s, header/form=%s, session=%s, URL=%s",
                 csrf_token_cookie,
                 csrf_token,
                 session_csrf_token,
-                request_url,
+                context["url"],
             )
 
             # проверка совпадения токенов
@@ -113,11 +111,11 @@ class CSRFMiddleware(BaseHTTPMiddleware):
                 or csrf_token != csrf_token_cookie
                 or csrf_token != session_csrf_token
             ):
-                log.error(
+                self.logger.error(
                     "Неверный CSRF-токен для запроса: %s, IP: %s, User-Agent: %s",
-                    request_url,
-                    client_ip,
-                    request.headers.get("user-agent", "unknown"),
+                    context["url"],
+                    context["client_ip"],
+                    context["user_agent"],
                 )
                 raise StarletteHTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,

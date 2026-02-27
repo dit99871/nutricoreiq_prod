@@ -2,30 +2,20 @@ import json
 from typing import Callable, Any
 
 from fastapi import HTTPException, Request, Response, status
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import RequestResponseEndpoint
+from starlette.types import ASGIApp
 
 from src.app.core import db_helper
-from src.app.core.logger import get_logger
+from src.app.core.middleware.base_middleware import BaseMiddleware
 from src.app.core.repo.privacy_consent import has_user_consent
-from src.app.core.utils.network import get_client_ip
-
-log = get_logger("privacy_consent_middleware")
 
 
-class PrivacyConsentMiddleware(BaseHTTPMiddleware):
+class PrivacyConsentMiddleware(BaseMiddleware):
     """Middleware для проверки согласия на обработку персональных данных"""
 
-    def __init__(
-        self,
-        app,
-        trusted_proxies: list[str] | None = None,
-    ) -> None:
-        super().__init__(app)
-        self.trusted_proxies = list(trusted_proxies or [])
-
-    # Пути, которые не требуют проверки согласия
+    # пути, которые не требуют проверки согласия
     EXEMPT_PATHS = {
-        "/",  # Главная страница
+        "/",
         "/privacy",
         "/about",
         "/static/",
@@ -36,53 +26,53 @@ class PrivacyConsentMiddleware(BaseHTTPMiddleware):
         "/openapi.json",
         "/docs",
         "/redoc",
-        "/privacy/consent",  # Эндпоинт для сохранения согласия
-        "/privacy/consent/status",  # Эндпоинт для проверки статуса
+        "/privacy/consent",
+        "/privacy/consent/status",
         "/auth/login",
         "/auth/register",
         "/auth/logout",
         "/auth/refresh",
     }
 
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        """
-        Проверяет наличие согласия на обработку персональных данных.
+    def __init__(
+        self,
+        app: ASGIApp,
+        trusted_proxies: list[str] | None = None,
+    ) -> None:
+        super().__init__(app, trusted_proxies)
 
-        Для авторизованных пользователей проверяет наличие согласия в БД.
-        Для неавторизованных пользователей проверяет наличие согласия в localStorage
-        через заголовок или cookie.
-        """
-        path = request.url.path
+    async def handle_request(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
+        """Основная логика PrivacyConsent middleware"""
 
-        # Пропускаем исключенные пути
-        if any(path.startswith(exempt_path) for exempt_path in self.EXEMPT_PATHS):
+        # пропускаем исключенные пути
+        if self._should_skip_path(request, self.EXEMPT_PATHS):
             return await call_next(request)
 
         try:
-            # Добавляем сессию БД в request scope
+            # добавляем сессию БД в request scope
             async for session in db_helper.session_getter():
                 request.scope["db_session"] = session
 
-                # Проверяем согласие в зависимости от типа пользователя
+                # проверяем согласие в зависимости от типа пользователя
                 user = getattr(request.state, "user", None)
 
                 if user:
-                    # Авторизованный пользователь - проверяем в БД
+                    # авторизованный пользователь - проверяем в БД
                     has_consent = await has_user_consent(session, user.id)
                 else:
-                    # Неавторизованный пользователь - проверяем через заголовок/cookie
+                    # неавторизованный пользователь - проверяем через заголовок/cookie
                     has_consent = await self._check_anonymous_consent(request)
 
-                # Если согласия нет, возвращаем ошибку
+                # если согласия нет, возвращаем ошибку
                 if not has_consent:
-                    client_ip = getattr(
-                        request.state, "client_ip", None
-                    ) or get_client_ip(request, trusted_proxies=self.trusted_proxies)
-                    log.warning(
+                    context = self._get_request_context(request)
+                    self.logger.warning(
                         "Попытка доступа без согласия на обработку данных: %s, IP: %s, User-Agent: %s",
-                        path,
-                        client_ip,
-                        request.headers.get("user-agent", "unknown"),
+                        context["url"],
+                        context["client_ip"],
+                        context["user_agent"],
                     )
                     raise HTTPException(
                         status_code=status.HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS,
@@ -96,27 +86,26 @@ class PrivacyConsentMiddleware(BaseHTTPMiddleware):
                 return await call_next(request)
 
         except HTTPException:
-            # Пробрасываем HTTP исключения дальше
+            # пробрасываем HTTP исключения дальше
             raise
+
         except Exception as e:
             # Логируем ошибки БД и другие непредвиденные ошибки
-            client_ip = getattr(request.state, "client_ip", None) or get_client_ip(
-                request, trusted_proxies=self.trusted_proxies
-            )
-            log.error(
+            context = self._get_request_context(request)
+            self.logger.error(
                 "Ошибка в PrivacyConsentMiddleware: %s, IP: %s, User-Agent: %s",
                 str(e),
-                client_ip,
-                request.headers.get("user-agent", "unknown"),
+                context["client_ip"],
+                context["user_agent"],
                 exc_info=True,
             )
-            # В случае ошибки БД, продолжаем выполнение запроса для доступности сервиса
+            # в случае ошибки БД, продолжаем выполнение запроса для доступности сервиса
             return await call_next(request)
 
     async def _check_anonymous_consent(self, request: Request) -> bool:
         """Проверяет наличие согласия для неавторизованного пользователя"""
         try:
-            # Проверяем заголовок X-Privacy-Consent
+            # проверяем заголовок X-Privacy-Consent
             consent_header = request.headers.get("X-Privacy-Consent")
             if consent_header:
                 try:
@@ -136,7 +125,7 @@ class PrivacyConsentMiddleware(BaseHTTPMiddleware):
 
             return False
         except Exception as e:
-            log.error(
+            self.logger.error(
                 "Ошибка при проверке согласия анонимного пользователя: %s", str(e)
             )
             return False
