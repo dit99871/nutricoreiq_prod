@@ -85,8 +85,8 @@ def setup_logging() -> None:
     logging.basicConfig(
         level=settings.logging.log_level_value,
         handlers=[
-            file_handler,      # Файлы для персистентности
-            console_handler,   # Stdout для Grafana
+            file_handler,  # Файлы для персистентности
+            console_handler,  # Stdout для Grafana
         ],
         force=True,  # Принудительно перенастраиваем логирование
     )
