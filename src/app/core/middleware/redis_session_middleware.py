@@ -11,12 +11,21 @@ from starlette.requests import ClientDisconnect
 from src.app.core.config import settings
 from src.app.core.logger import get_logger
 from src.app.core.redis import redis_client
+from src.app.core.utils.network import get_client_ip
 from src.app.core.utils.security import generate_csrf_token, generate_redis_session_id
 
 log = get_logger("redis_session_middleware")
 
 
 class RedisSessionMiddleware(BaseHTTPMiddleware):
+    def __init__(
+        self,
+        app,
+        trusted_proxies: list[str] | None = None,
+    ) -> None:
+        super().__init__(app)
+        self.trusted_proxies = list(trusted_proxies or [])
+
     async def dispatch(self, request: Request, call_next) -> Response:
         """
         Middleware для обработки redis сессии.
@@ -110,10 +119,13 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
         except HTTPException as e:
             if e.status_code == status.HTTP_403_FORBIDDEN:
                 raise  # пропускаем ошибки csrf для обработки в CSRFMiddleware
+            client_ip = getattr(request.state, "client_ip", None) or get_client_ip(
+                request, trusted_proxies=self.trusted_proxies
+            )
             log.error(
                 "Ошибка в RedisSessionMiddleware: %s, IP: %s, User-Agent: %s",
                 str(e),
-                request.client.host,
+                client_ip,
                 request.headers.get("user-agent", "unknown"),
             )
             raise HTTPException(
@@ -127,10 +139,13 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
             if e.status_code == status.HTTP_404_NOT_FOUND:
                 # 404 ошибки пробрасываем без обработки
                 raise
+            client_ip = getattr(request.state, "client_ip", None) or get_client_ip(
+                request, trusted_proxies=self.trusted_proxies
+            )
             log.error(
                 "Starlette HTTP ошибка в RedisSessionMiddleware: %s, IP: %s, User-Agent: %s",
                 str(e),
-                request.client.host,
+                client_ip,
                 request.headers.get("user-agent", "unknown"),
             )
             raise HTTPException(
@@ -141,10 +156,13 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
             )
 
         except RedisError as e:
+            client_ip = getattr(request.state, "client_ip", None) or get_client_ip(
+                request, trusted_proxies=self.trusted_proxies
+            )
             log.error(
                 "Ошибка в RedisSessionMiddleware: %s, IP: %s, User-Agent: %s",
                 str(e),
-                request.client.host,
+                client_ip,
                 request.headers.get("user-agent", "unknown"),
             )
             raise HTTPException(
@@ -156,7 +174,9 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
 
         except anyio.EndOfStream:
             # Клиент прервал соединение
-            client_ip = getattr(request.state, "client_ip", None) or request.client.host
+            client_ip = getattr(request.state, "client_ip", None) or get_client_ip(
+                request, trusted_proxies=self.trusted_proxies
+            )
             log.warning(
                 "Клиент прервал соединение: %s, IP: %s, User-Agent: %s",
                 request.url,
@@ -168,7 +188,9 @@ class RedisSessionMiddleware(BaseHTTPMiddleware):
 
         except ClientDisconnect:
             # Клиент отключился - нормальная ситуация
-            client_ip = getattr(request.state, "client_ip", None) or request.client.host
+            client_ip = getattr(request.state, "client_ip", None) or get_client_ip(
+                request, trusted_proxies=self.trusted_proxies
+            )
             log.warning(
                 "Клиент отключился: %s, IP: %s, User-Agent: %s",
                 request.url,

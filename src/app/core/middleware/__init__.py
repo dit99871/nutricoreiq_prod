@@ -21,6 +21,7 @@ def setup_middleware(app: FastAPI) -> None:
     - CSPMiddleware (innermost: устанавливает CSP nonce для безопасности контента).
     - CSRFMiddleware (обрабатывает защиту от CSRF, зависит от сессии).
     - RedisSessionMiddleware (управляет сессиями на базе Redis и CSRF-токенами).
+    - PrivacyConsentMiddleware (проверяет согласие на обработку персональных данных).
     - SentryAsgiMiddleware (если в production: для трассировки ошибок и мониторинга).
     - CORSMiddleware (обрабатывает cross-origin запросы рано, чтобы избежать ненужной обработки).
     - HTTPMiddleware (outermost: логирование, обработка ошибок и коррекции прокси).
@@ -31,8 +32,12 @@ def setup_middleware(app: FastAPI) -> None:
 
     app.add_middleware(CSPMiddleware)
     app.add_middleware(CSRFMiddleware)
-    app.add_middleware(RedisSessionMiddleware)
-    app.add_middleware(PrivacyConsentMiddleware)
+    app.add_middleware(
+        RedisSessionMiddleware, trusted_proxies=settings.run.trusted_proxies
+    )
+    app.add_middleware(
+        PrivacyConsentMiddleware, trusted_proxies=settings.run.trusted_proxies
+    )
     if settings.env.env == "prod":
         app.add_middleware(SentryAsgiMiddleware)
     app.add_middleware(

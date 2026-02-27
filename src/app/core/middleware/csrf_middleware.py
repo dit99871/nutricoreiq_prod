@@ -1,4 +1,4 @@
-from fastapi import Request, status
+from fastapi import Request, Response, status
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -18,7 +18,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.trusted_proxies = list(trusted_proxies or [])
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next) -> Response:
         # получаем реальный IP клиента
         client_ip = getattr(request.state, "client_ip", None) or get_client_ip(
             request, trusted_proxies=self.trusted_proxies
