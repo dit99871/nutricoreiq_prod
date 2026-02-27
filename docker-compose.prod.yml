@@ -300,6 +300,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./config/promtail-config.yaml:/etc/promtail/promtail-config.yaml
+      - /home/deployer/nutricoreiq/src/app/logs:/home/deployer/nutricoreiq/src/app/logs:ro
     command: -config.file=/etc/promtail/promtail-config.yaml
     depends_on:
       - loki

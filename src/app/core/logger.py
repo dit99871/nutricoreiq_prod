@@ -102,11 +102,12 @@ def get_logger(name: Optional[str] = None) -> logging.Logger:
 
     logger = logging.getLogger(name)
 
-    # Если это именованный логгер (не корневой), настраиваем его handlers
+    # Если это именованный логгер (не корневой), настраиваем propagation
     if name is not None:
-        # Включаем propagation чтобы логи доходили до корневого логгера
+        # В проде используем propagation чтобы логи попадали в файл
+        # В dev среде тоже работает, т.к. setup_logging() вызывается в main.py
         logger.propagate = True
-
+        
         # Устанавливаем уровень логирования не выше корневого
         root_logger = logging.getLogger()
         if logger.level > root_logger.level:
