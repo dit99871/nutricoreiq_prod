@@ -90,56 +90,22 @@ class RedisSessionMiddleware(BaseMiddleware):
 
         except HTTPException as e:
             if e.status_code == status.HTTP_403_FORBIDDEN:
-                raise  # пропускаем ошибки csrf для обработки в CSRFMiddleware
-            context = self._get_request_context(request)
-            self.logger.error(
-                "Ошибка в RedisSessionMiddleware: %s, IP: %s, User-Agent: %s",
-                str(e),
-                context["client_ip"],
-                context["user_agent"],
-            )
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail={
-                    "message": "Сервис недоступен. Пожалуйста, попробуйте позже.",
-                },
-            )
+                raise  # пробрасываем ошибки csrf для обработки в CSRFMiddleware
+            # для других HTTP исключений используем стандартную обработку
+            return await self._handle_exception(request, e)
 
         except StarletteHTTPException as e:
             if e.status_code == status.HTTP_404_NOT_FOUND:
-                # 404 ошибки пробрасываем без обработки
-                raise
-            context = self._get_request_context(request)
-            self.logger.error(
-                "Starlette HTTP ошибка в RedisSessionMiddleware: %s, IP: %s, User-Agent: %s",
-                str(e),
-                context["client_ip"],
-                context["user_agent"],
-            )
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail={
-                    "message": "Сервис недоступен. Пожалуйста, попробуйте позже.",
-                },
-            )
+                raise  # 404 ошибки пробрасываем без обработки
+            # для других Starlette HTTP исключений используем стандартную обработку
+            return await self._handle_exception(request, e)
 
         except RedisError as e:
-            context = self._get_request_context(request)
-            self.logger.error(
-                "Ошибка Redis в RedisSessionMiddleware: %s, IP: %s, User-Agent: %s",
-                str(e),
-                context["client_ip"],
-                context["user_agent"],
-            )
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail={
-                    "message": "Сервис недоступен. Пожалуйста, попробуйте позже.",
-                },
-            )
+            # redis ошибки обрабатываем стандартно
+            return await self._handle_exception(request, e)
 
         except (anyio.EndOfStream, ClientDisconnect):
-            # Клиент прервал соединение - нормальная ситуация
+            # клиент прервал соединение
             context = self._get_request_context(request)
             self.logger.warning(
                 "Клиент прервал соединение: %s, IP: %s, User-Agent: %s",
@@ -147,12 +113,16 @@ class RedisSessionMiddleware(BaseMiddleware):
                 context["client_ip"],
                 context["user_agent"],
             )
+            # создаем специальный Response для отключившегося клиента
+            from fastapi import Response
+
             return Response(status_code=499)
 
     def _set_session_cookies(
         self, response: Response, session_id: str, csrf_token: str
     ) -> None:
         """Устанавливает cookies для сессии и CSRF-токена"""
+
         secure = settings.env.env == "prod"
         samesite = "strict" if secure else "lax"
 

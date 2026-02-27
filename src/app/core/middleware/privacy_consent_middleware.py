@@ -1,5 +1,4 @@
 import json
-from typing import Callable, Any
 
 from fastapi import HTTPException, Request, Response, status
 from starlette.middleware.base import RequestResponseEndpoint
