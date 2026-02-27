@@ -38,14 +38,6 @@ scrape_configs:
       - match:
           selector: '{container=~"web_app.*"}'
           stages:
-            # Фильтруем gunicorn access логи (оставляем только error логи)
-            - regex:
-                expression: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+\s+\d+\.\d+\.\d+\.\d+:\d+\s+-\s+"[A-Z]+\s+.*'
-            - drop:
-                expression: ".*"
-      - match:
-          selector: '{container=~"web_app.*"}'
-          stages:
             # Остальные логи (gunicorn ошибки и т.д.)
             - regex:
                 expression: '^(?P<message>.*)'
