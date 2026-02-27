@@ -107,7 +107,7 @@ def get_logger(name: Optional[str] = None) -> logging.Logger:
         # В проде используем propagation чтобы логи попадали в файл
         # В dev среде тоже работает, т.к. setup_logging() вызывается в main.py
         logger.propagate = True
-        
+
         # Устанавливаем уровень логирования не выше корневого
         root_logger = logging.getLogger()
         if logger.level > root_logger.level:
