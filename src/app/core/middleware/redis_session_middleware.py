@@ -89,16 +89,13 @@ class RedisSessionMiddleware(BaseMiddleware):
             return response
 
         except HTTPException as e:
-            if e.status_code == status.HTTP_403_FORBIDDEN:
-                raise  # пробрасываем ошибки csrf для обработки в CSRFMiddleware
-            # для других HTTP исключений используем стандартную обработку
-            return await self._handle_exception(request, e)
+            # HTTP исключения от FastAPI должны пробрасываться без обработки
+            # чтобы их обработали вышестоящие middleware или exception handlers
+            raise
 
-        except StarletteHTTPException as e:
-            if e.status_code == status.HTTP_404_NOT_FOUND:
-                raise  # 404 ошибки пробрасываем без обработки
-            # для других Starlette HTTP исключений используем стандартную обработку
-            return await self._handle_exception(request, e)
+        except StarletteHTTPException:
+            # пробрасываем HTTP исключения для обработки в FastAPI
+            raise
 
         except RedisError as e:
             # redis ошибки обрабатываем стандартно

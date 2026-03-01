@@ -2,6 +2,7 @@ from abc import ABC
 from typing import Optional
 
 from fastapi import HTTPException, Request, Response, status
+from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.types import ASGIApp
@@ -45,12 +46,12 @@ class BaseMiddleware(BaseHTTPMiddleware, ABC):
             # пробрасываем HTTP исключения для обработки в FastAPI
             raise
 
-        except HTTPException:
-            # пробрасываем FastAPI HTTP исключения
-            raise
-
         except Exception as e:
-            # обрабатываем непредвиденные ошибки
+            # проверяем, является ли исключение HTTPException от FastAPI
+            # если да, пробрасываем его для корректной обработки
+            if hasattr(e, 'status_code') and hasattr(e, 'detail'):
+                raise
+            # для всех остальных исключений используем стандартную обработку
             return await self._handle_exception(request, e)
 
     async def handle_request(
@@ -103,7 +104,7 @@ class BaseMiddleware(BaseHTTPMiddleware, ABC):
             exc_info=True,
         )
 
-        return Response(
+        return JSONResponse(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             content={"message": "Сервис временно недоступен. Попробуйте позже."},
         )
