@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import Optional
 
-from fastapi import HTTPException, Request, Response, status
+from fastapi import Request, Response, status
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
@@ -9,6 +9,7 @@ from starlette.types import ASGIApp
 
 from src.app.core.logger import get_logger
 from src.app.core.utils.network import get_client_ip, get_scheme_and_host
+from src.app.core.services.middleware_service import tracing_service, exception_service
 
 
 class BaseMiddleware(BaseHTTPMiddleware, ABC):
@@ -38,9 +39,21 @@ class BaseMiddleware(BaseHTTPMiddleware, ABC):
         # устанавливаем общие атрибуты запроса
         self._setup_request_attributes(request)
 
+        # устанавливаем trace ID для unified tracing
+        if not hasattr(request.state, "trace_id"):
+            request.state.trace_id = tracing_service.create_trace_id()
+
         try:
+            # логируем вход в мидлвари
+            context = tracing_service.get_request_context(request)
+            tracing_service.log_middleware_entry(self.__class__.__name__, context)
+
             # вызываем конкретную реализацию в дочернем классе
-            return await self.handle_request(request, call_next)
+            response = await self.handle_request(request, call_next)
+
+            # логируем выход из мидлвари
+            tracing_service.log_middleware_exit(self.__class__.__name__, context)
+            return response
 
         except StarletteHTTPException:
             # пробрасываем HTTP исключения для обработки в FastAPI
@@ -51,8 +64,12 @@ class BaseMiddleware(BaseHTTPMiddleware, ABC):
             # если да, пробрасываем его для корректной обработки
             if hasattr(e, "status_code") and hasattr(e, "detail"):
                 raise
-            # для всех остальных исключений используем стандартную обработку
-            return await self._handle_exception(request, e)
+
+            # используем стандартизированную обработку исключений
+            context = tracing_service.get_request_context(request)
+            return exception_service.handle_middleware_exception(
+                self.__class__.__name__, request, e, context
+            )
 
     async def handle_request(
         self, request: Request, call_next: RequestResponseEndpoint
