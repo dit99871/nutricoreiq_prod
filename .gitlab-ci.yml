@@ -136,13 +136,38 @@ before_script:
 .test:template: &test_template
   stage: test
   script:
+    # Запуск приложения в фоне для интеграционных тестов
+    - echo "🚀 Запуск приложения для интеграционных тестов..."
+    - poetry run uvicorn src.app.main:app --host 0.0.0.0 --port 8080 &
+    - APP_PID=$!
+    
+    # Ожидание запуска приложения
+    - echo "⏳ Ожидание запуска приложения..."
+    - sleep 10
+    
+    # Проверка того, что приложение запущено
+    - |
+      for i in {1..30}; do
+        if curl -s http://localhost:8080/ > /dev/null 2>&1; then
+          echo "✅ Приложение запущено на http://localhost:8080"
+          break
+        else
+          echo "⏳ Ожидание приложения... ($i/30)"
+          sleep 2
+        fi
+      done
+    
     # Запуск юнит-тестов
     - echo "Running unit tests..."
     - poetry run pytest tests/unit/ --asyncio-mode=auto --cov=src --cov-report=xml --cov-report=html --disable-warnings -v
     
-    # Запуск интеграционных тестов
+    # Запуск интеграционных тестов (без покрытия)
     - echo "Running integration tests..."
-    - poetry run pytest tests/integration/ --asyncio-mode=auto --cov=src --cov-report=xml --cov-report=html --disable-warnings -v --cov-append
+    - poetry run pytest tests/integration/ --asyncio-mode=auto --disable-warnings -v
+    
+    # Остановка приложения
+    - echo "🛑 Остановка приложения..."
+    - kill $APP_PID || true
     
     - echo "All tests completed successfully!"
   coverage: '/^TOTAL.+\s+(\d+%)$/'
@@ -164,9 +189,17 @@ before_script:
 test:unit:
   <<: *test_template
   script:
-    # Только юнит-тесты
+    # Только юнит-тесты с покрытием
     - echo "Running unit tests only..."
     - poetry run pytest tests/unit/ --asyncio-mode=auto --cov=src --cov-report=xml --cov-report=html --disable-warnings -v
+  coverage: '/^TOTAL.+\s+(\d+%)$/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+    paths:
+      - htmlcov/
   only:
     - merge_requests
     - main
@@ -176,9 +209,9 @@ test:unit:
 test:integration:
   <<: *test_template
   script:
-    # Только интеграционные тесты
+    # Только интеграционные тесты (без покрытия)
     - echo "Running integration tests only..."
-    - poetry run pytest tests/integration/ --asyncio-mode=auto --cov=src --cov-report=xml --cov-report=html --disable-warnings -v --cov-append
+    - poetry run pytest tests/integration/ --asyncio-mode=auto --disable-warnings -v
   only:
     - merge_requests
     - main
