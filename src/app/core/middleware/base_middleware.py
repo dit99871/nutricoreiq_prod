@@ -49,7 +49,7 @@ class BaseMiddleware(BaseHTTPMiddleware, ABC):
         except Exception as e:
             # проверяем, является ли исключение HTTPException от FastAPI
             # если да, пробрасываем его для корректной обработки
-            if hasattr(e, 'status_code') and hasattr(e, 'detail'):
+            if hasattr(e, "status_code") and hasattr(e, "detail"):
                 raise
             # для всех остальных исключений используем стандартную обработку
             return await self._handle_exception(request, e)
