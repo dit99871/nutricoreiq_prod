@@ -22,6 +22,7 @@ class CSRFProtectionMiddleware(BaseMiddleware):
         f"{settings.router.auth}/refresh",
         f"{settings.router.security}/csp-report",
         f"{settings.router.product}/pending",
+        "http://nutricoreiq.ru/apis/features.grafana.app/v0alpha1/namespaces/default/ofrep/v1/evaluate/flags",
     ]
 
     def __init__(
