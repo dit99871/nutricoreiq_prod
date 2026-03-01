@@ -4,39 +4,37 @@ from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 
 from src.app.core.config import settings
 
-from .csp_middleware import CSPMiddleware
-from .csrf_middleware import CSRFMiddleware
-from .http_middleware import HTTPMiddleware
-from .privacy_consent_middleware import PrivacyConsentMiddleware
-from .redis_session_middleware import RedisSessionMiddleware
+from .csp_security_middleware import CSPSecurityMiddleware
+from .csrf_protection_middleware import CSRFProtectionMiddleware
+from .http_enhanced_middleware import HTTPEnhancedMiddleware
+from .privacy_consent_middleware import PrivacyConsentV2Middleware
+from .session_middleware import SessionMiddleware
 
 __all__ = ("setup_middleware",)
 
 
 def setup_middleware(app: FastAPI) -> None:
     """
-    Добавляет middleware в приложение FastAPI.
+    Добавляет улучшенные middleware в приложение FastAPI.
 
-    Middleware включает:
-    - CSPMiddleware (innermost: устанавливает CSP nonce для безопасности контента).
-    - CSRFMiddleware (обрабатывает защиту от CSRF, зависит от сессии).
-    - RedisSessionMiddleware (управляет сессиями на базе Redis и CSRF-токенами).
-    - PrivacyConsentMiddleware (проверяет согласие на обработку персональных данных).
-    - SentryAsgiMiddleware (если в production: для трассировки ошибок и мониторинга).
-    - CORSMiddleware (обрабатывает cross-origin запросы рано, чтобы избежать ненужной обработки).
-    - HTTPMiddleware (outermost: логирование, обработка ошибок и коррекции прокси).
+    Новая архитектура с разделенными обязанностями:
+    - CSPSecurityMiddleware - innermost: CSP безопасность
+    - CSRFProtectionMiddleware - CSRF защита
+    - SessionMiddleware - управление сессиями
+    - PrivacyConsentV2Middleware - проверка согласия с кешированием
+    - SentryAsgiMiddleware - если в production: мониторинг
+    - CORSMiddleware - cross-origin запросы
+    - HTTPEnhancedMiddleware - outermost: логирование с unified tracing
 
     :param app: Приложение FastAPI, к которому добавляются middleware.
     :return: None
     """
 
-    app.add_middleware(CSPMiddleware)
-    app.add_middleware(CSRFMiddleware)
+    app.add_middleware(CSPSecurityMiddleware)
+    app.add_middleware(CSRFProtectionMiddleware)
+    app.add_middleware(SessionMiddleware, trusted_proxies=settings.run.trusted_proxies)
     app.add_middleware(
-        RedisSessionMiddleware, trusted_proxies=settings.run.trusted_proxies
-    )
-    app.add_middleware(
-        PrivacyConsentMiddleware, trusted_proxies=settings.run.trusted_proxies
+        PrivacyConsentV2Middleware, trusted_proxies=settings.run.trusted_proxies
     )
     if settings.env.env == "prod":
         app.add_middleware(SentryAsgiMiddleware)
@@ -48,4 +46,6 @@ def setup_middleware(app: FastAPI) -> None:
         allow_headers=settings.cors.allow_headers,
         max_age=600,
     )
-    app.add_middleware(HTTPMiddleware, trusted_proxies=settings.run.trusted_proxies)
+    app.add_middleware(
+        HTTPEnhancedMiddleware, trusted_proxies=settings.run.trusted_proxies
+    )

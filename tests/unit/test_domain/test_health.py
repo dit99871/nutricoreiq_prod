@@ -420,7 +420,7 @@ class TestUserServiceNutrients:
         from src.app.core.services.user_service import UserService
         from unittest.mock import Mock
         
-        # Создаем мок сессии
+        # Создаем мок-сессии
         mock_session = Mock()
         user_service = UserService(mock_session)
         
