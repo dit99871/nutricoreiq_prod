@@ -14,6 +14,57 @@ __all__ = ("setup_exception_handlers",)
 log = get_logger("exc_handlers")
 
 
+def not_found_exception_handler(
+    request: Request,
+    exc: StarletteHTTPException,
+) -> ORJSONResponse:
+    """
+    Обработчик 404 ошибок.
+
+    :param request: Входящий HTTP-запрос
+    :param exc: Объект StarletteHTTPException
+    :return: JSON-ответ с информацией об ошибке
+    """
+    
+    # Определяем источник 404 для логирования
+    path = str(request.url.path)
+    method = request.method
+    
+    # Ботовые пути логируем на уровне DEBUG, остальные на WARNING
+    bot_paths = ["/xmlrpc.php", "/wp-login.php", "/wp-admin/", "/.well-known/"]
+    is_bot_request = any(path.startswith(bot_path) for bot_path in bot_paths)
+    
+    if is_bot_request:
+        log_level = "debug"
+        log.debug(
+            "404 для бот-запроса: %s %s | IP: %s | UA: %s",
+            method,
+            path,
+            request.client.host if request.client else "unknown",
+            request.headers.get("user-agent", "unknown")[:100],
+        )
+    else:
+        log.warning(
+            "404 ошибка по адресу %s: %s",
+            request.url,
+            exc.detail,
+        )
+    
+    error_detail = ErrorDetail(
+        message="Ресурс не найден",
+        details={
+            "path": path,
+            "method": method
+        }
+    )
+    error_response = ErrorResponse(status="error", error=error_detail)
+
+    return ORJSONResponse(
+        status_code=404,
+        content=error_response.model_dump(),
+    )
+
+
 def expired_token_exception_handler(
     request: Request,
     exc: ExpiredTokenException,
@@ -201,6 +252,9 @@ def setup_exception_handlers(app: FastAPI) -> None:
 
     Обработчики регистрируются в порядке от наиболее специфичных к наиболее общим.
     """
+
+    # обработчик 404 ошибок (должен быть добавлен до HTTPException)
+    app.add_exception_handler(404, not_found_exception_handler)
 
     # кастомные исключения
     app.add_exception_handler(ExpiredTokenException, expired_token_exception_handler)
