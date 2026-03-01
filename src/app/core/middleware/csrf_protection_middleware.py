@@ -45,6 +45,14 @@ class CSRFProtectionMiddleware(BaseMiddleware):
         ) or request.url.path.endswith("/login"):
             return await call_next(request)
 
+        # для путей ботов возвращаем 404 без CSRF валидации
+        bot_paths = ["/xmlrpc.php", "/wp-login.php", "/wp-admin/", "/.well-known/"]
+        if any(request.url.path.startswith(path) for path in bot_paths):
+            raise StarletteHTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Not Found",
+            )
+
         if request.method in ["POST", "PUT", "DELETE", "PATCH"]:
             # проверка Origin/Referer
             if not security_service.validate_origin(request):

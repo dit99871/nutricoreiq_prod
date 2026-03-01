@@ -55,7 +55,16 @@ class BaseMiddleware(BaseHTTPMiddleware, ABC):
             tracing_service.log_middleware_exit(self.__class__.__name__, context)
             return response
 
-        except StarletteHTTPException:
+        except StarletteHTTPException as e:
+            # HTTP исключения логируем тихо, без полного stack trace
+            context = tracing_service.get_request_context(request)
+            self.logger.warning(
+                "HTTP исключение в %s: %s [status=%s] %s",
+                self.__class__.__name__,
+                e.detail,
+                e.status_code,
+                context.get("trace_info", ""),
+            )
             # пробрасываем HTTP исключения для обработки в FastAPI
             raise
 
