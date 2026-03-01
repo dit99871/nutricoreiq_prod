@@ -25,15 +25,15 @@ def not_found_exception_handler(
     :param exc: Объект StarletteHTTPException
     :return: JSON-ответ с информацией об ошибке
     """
-    
+
     # Определяем источник 404 для логирования
     path = str(request.url.path)
     method = request.method
-    
+
     # Ботовые пути логируем на уровне DEBUG, остальные на WARNING
     bot_paths = ["/xmlrpc.php", "/wp-login.php", "/wp-admin/", "/.well-known/"]
     is_bot_request = any(path.startswith(bot_path) for bot_path in bot_paths)
-    
+
     if is_bot_request:
         log_level = "debug"
         log.debug(
@@ -49,13 +49,9 @@ def not_found_exception_handler(
             request.url,
             exc.detail,
         )
-    
+
     error_detail = ErrorDetail(
-        message="Ресурс не найден",
-        details={
-            "path": path,
-            "method": method
-        }
+        message="Ресурс не найден", details={"path": path, "method": method}
     )
     error_response = ErrorResponse(status="error", error=error_detail)
 
