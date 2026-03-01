@@ -5,9 +5,6 @@ from typing import Optional
 
 from src.app.core.config import settings
 
-# Глобальный флаг для защиты от множественных вызовов setup_logging()
-_logging_setup_done = False
-
 
 class CustomTextFormatter(logging.Formatter):
     """Кастомный текстовый форматтер для логов."""
@@ -44,20 +41,7 @@ class CustomTextFormatter(logging.Formatter):
 def setup_logging() -> None:
     """
     Настройка логирования на основе конфигурации из settings.
-    Логи записываются и в файлы (персистентность), и в stdout (для Grafana).
     """
-
-    global _logging_setup_done
-    if _logging_setup_done:
-        return
-
-    # Проверяем, что логирование еще не настроено
-    root_logger = logging.getLogger()
-    if root_logger.handlers:
-        # Очищаем существующие handlers чтобы избежать дублирования
-        for handler in root_logger.handlers[:]:
-            root_logger.removeHandler(handler)
-            handler.close()
 
     # создание директории для логов
     log_dir = Path(settings.logging.log_file).parent
@@ -69,7 +53,7 @@ def setup_logging() -> None:
         datefmt=settings.logging.log_date_format,
     )
 
-    # хэндлер для записи в файл с ротацией (персистентность)
+    # хэндлер для записи в файл с ротацией
     file_handler = RotatingFileHandler(
         settings.logging.log_file,
         maxBytes=settings.logging.log_file_max_size,
@@ -77,21 +61,18 @@ def setup_logging() -> None:
     )
     file_handler.setFormatter(text_formatter)
 
-    # хэндлер для вывода в консоль (для Grafana через Docker)
+    # хэндлер для вывода в консоль
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(text_formatter)
 
-    # настройка корневого логгера с принудительной перенастройкой
+    # настройка корневого логгера
     logging.basicConfig(
         level=settings.logging.log_level_value,
         handlers=[
-            file_handler,  # Файлы для персистентности
-            console_handler,  # Stdout для Grafana
+            file_handler,
+            console_handler,
         ],
-        force=True,  # Принудительно перенастраиваем логирование
     )
-
-    _logging_setup_done = True
 
 
 def get_logger(name: Optional[str] = None) -> logging.Logger:
@@ -101,16 +82,5 @@ def get_logger(name: Optional[str] = None) -> logging.Logger:
     """
 
     logger = logging.getLogger(name)
-
-    # Если это именованный логгер (не корневой), настраиваем propagation
-    if name is not None:
-        # В проде используем propagation чтобы логи попадали в файл
-        # В dev среде тоже работает, т.к. setup_logging() вызывается в main.py
-        logger.propagate = True
-
-        # Устанавливаем уровень логирования не выше корневого
-        root_logger = logging.getLogger()
-        if logger.level > root_logger.level:
-            logger.setLevel(root_logger.level)
 
     return logger
