@@ -35,8 +35,7 @@ def not_found_exception_handler(
     is_bot_request = any(path.startswith(bot_path) for bot_path in bot_paths)
 
     if is_bot_request:
-        log_level = "debug"
-        log.debug(
+        log.warning(
             "404 для бот-запроса: %s %s | IP: %s | UA: %s",
             method,
             path,
