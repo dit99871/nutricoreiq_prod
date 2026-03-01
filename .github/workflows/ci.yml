@@ -64,7 +64,7 @@ jobs:
     - name: Install dependencies
       run: |
         poetry install --no-interaction --no-root
-        poetry run pip install pytest-cov pytest-asyncio asyncpg
+        poetry run pip install pytest-cov pytest-asyncio asyncpg redis
 
     - name: Wait for services
       run: |
@@ -75,7 +75,7 @@ jobs:
         done
         
         echo "Waiting for Redis..."
-        until redis-cli -h localhost -p 6379 ping; do
+        until python -c "import redis; r=redis.Redis(host='localhost', port=6379); r.ping()"; do
           echo "Redis is unavailable - sleeping"
           sleep 2
         done
