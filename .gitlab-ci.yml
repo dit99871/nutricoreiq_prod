@@ -120,14 +120,31 @@ before_script:
       fi
       sleep 1
     done
+  # Ожидание готовности Redis
+  - |
+    echo "Waiting for Redis to be ready..."
+    for i in {1..30}; do
+      if redis-cli -h localhost -p 6379 ping; then
+        echo "Redis is ready"
+        break
+      fi
+      sleep 1
+    done
   # Создание тестовой базы данных
   - psql -h $POSTGRES_HOST -U $POSTGRES_USER -c "CREATE DATABASE $POSTGRES_DB;" || true
 
 .test:template: &test_template
   stage: test
   script:
-    # Запуск тестов
-    - poetry run pytest --asyncio-mode=auto --cov=src --cov-report=xml --cov-report=html
+    # Запуск юнит-тестов
+    - echo "Running unit tests..."
+    - poetry run pytest tests/unit/ --asyncio-mode=auto --cov=src --cov-report=xml --cov-report=html --disable-warnings -v
+    
+    # Запуск интеграционных тестов
+    - echo "Running integration tests..."
+    - poetry run pytest tests/integration/ --asyncio-mode=auto --cov=src --cov-report=xml --cov-report=html --disable-warnings -v --cov-append
+    
+    - echo "All tests completed successfully!"
   coverage: '/^TOTAL.+\s+(\d+%)$/'
   artifacts:
     reports:
@@ -144,6 +161,32 @@ before_script:
       - runner_system_failure
       - stuck_or_timeout_failure
 
+test:unit:
+  <<: *test_template
+  script:
+    # Только юнит-тесты
+    - echo "Running unit tests only..."
+    - poetry run pytest tests/unit/ --asyncio-mode=auto --cov=src --cov-report=xml --cov-report=html --disable-warnings -v
+  only:
+    - merge_requests
+    - main
+    - develop
+  timeout: 10m
+
+test:integration:
+  <<: *test_template
+  script:
+    # Только интеграционные тесты
+    - echo "Running integration tests only..."
+    - poetry run pytest tests/integration/ --asyncio-mode=auto --cov=src --cov-report=xml --cov-report=html --disable-warnings -v --cov-append
+  only:
+    - merge_requests
+    - main
+    - develop
+  timeout: 15m
+  dependencies:
+    - test:unit
+
 # Линтеры
 .lint:template: &lint_template
   stage: lint
@@ -153,14 +196,6 @@ before_script:
   retry:
     max: 1
     when: runner_system_failure
-
-test:unit:
-  <<: *test_template
-  only:
-    - merge_requests
-    - main
-    - develop
-  timeout: 10m
 
 lint:code:
   <<: *lint_template

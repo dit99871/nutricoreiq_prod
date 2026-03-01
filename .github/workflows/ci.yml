@@ -36,6 +36,16 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+      redis:
+        image: redis:6.2.0
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
     - uses: actions/checkout@v3
 
@@ -55,6 +65,22 @@ jobs:
       run: |
         poetry install --no-interaction --no-root
         poetry run pip install pytest-cov pytest-asyncio asyncpg
+
+    - name: Wait for services
+      run: |
+        echo "Waiting for PostgreSQL..."
+        until pg_isready -h localhost -p 5432; do
+          echo "PostgreSQL is unavailable - sleeping"
+          sleep 2
+        done
+        
+        echo "Waiting for Redis..."
+        until redis-cli -h localhost -p 6379 ping; do
+          echo "Redis is unavailable - sleeping"
+          sleep 2
+        done
+        
+        echo "All services are ready!"
 
     - name: Run tests
       env:
@@ -131,7 +157,14 @@ jobs:
         APP_CONFIG__TASKIQ__URL: "amqp://guest:guest@localhost:5672//"
         
       run: |
-        poetry run pytest --asyncio-mode=auto
+        # Запускаем тесты по частям чтобы избежать конфликтов event loops
+        echo "Running unit tests..."
+        poetry run pytest tests/unit/ --asyncio-mode=auto --disable-warnings -v
+        
+        echo "Running integration tests..."
+        poetry run pytest tests/integration/ --asyncio-mode=auto --disable-warnings -v
+        
+        echo "All tests completed successfully!"
 
   lint:
     runs-on: ubuntu-latest
