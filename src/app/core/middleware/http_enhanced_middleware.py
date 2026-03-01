@@ -1,3 +1,7 @@
+"""
+Улучшенный HTTP middleware с unified tracing и оптимизацией
+"""
+
 import time
 import uuid
 from typing import Optional
@@ -9,12 +13,12 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.types import ASGIApp
 
 from src.app.core.middleware.base_middleware import BaseMiddleware
+from src.app.core.services.middleware_service import tracing_service
 
 
-class HTTPMiddleware(BaseMiddleware):
+class HTTPEnhancedMiddleware(BaseMiddleware):
     """
-    Middleware для логирования HTTP-запросов, обработки общих исключений
-    и коррекции URL при работе за обратным прокси.
+    Улучшенный middleware для логирования HTTP-запросов с unified tracing
     """
 
     def __init__(
@@ -33,21 +37,17 @@ class HTTPMiddleware(BaseMiddleware):
         request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
         request.state.request_id = request_id
 
+        # получаем унифицированный контекст
+        context = tracing_service.get_request_context(request)
+
         # логируем начало обработки запроса
         start_time = time.time()
-        context = self._get_request_context(request)
-
-        self.logger.info(
-            "Начало обработки запроса",
-            extra={
+        tracing_service.log_middleware_entry(
+            self.__class__.__name__,
+            context,
+            extra_data={
+                "process_start": start_time,
                 "request_id": request_id,
-                "method": context["method"],
-                "url": str(context["url"]),
-                "client_ip": context["client_ip"],
-                "user_agent": context["user_agent"],
-                "scheme": context["scheme"],
-                "path": context["path"],
-                "query": str(context["url"].query) if context["url"].query else None,
             },
         )
 
@@ -57,25 +57,20 @@ class HTTPMiddleware(BaseMiddleware):
 
             # логируем успешное завершение
             process_time = (time.time() - start_time) * 1000
-            self.logger.info(
-                "Запрос успешно обработан",
-                extra={
-                    "request_id": request_id,
-                    "method": context["method"],
-                    "url": str(context["url"]),
+            tracing_service.log_middleware_exit(
+                self.__class__.__name__,
+                context,
+                extra_data={
                     "status_code": response.status_code,
                     "process_time_ms": f"{process_time:.2f}",
-                    "scheme": context["scheme"],
-                    "path": context["path"],
-                    "query": (
-                        str(context["url"].query) if context["url"].query else None
-                    ),
+                    "request_id": request_id,
                 },
             )
 
             # добавляем полезные заголовки в ответ
             response.headers["X-Process-Time"] = f"{process_time:.2f}ms"
             response.headers["X-Request-ID"] = request_id
+            response.headers["X-Trace-ID"] = context["trace_id"]
 
             # отключаем кеширование для API ответов (без статических файлов)
             if not context["path"].startswith("/static/"):
@@ -103,20 +98,14 @@ class HTTPMiddleware(BaseMiddleware):
         """
 
         request_id = getattr(request.state, "request_id", "unknown")
-        context = self._get_request_context(request)
+        context = tracing_service.get_request_context(request)
 
-        self.logger.error(
-            "Ошибка при обработке запроса",
-            exc_info=True,
-            extra={
+        tracing_service.log_middleware_error(
+            self.__class__.__name__,
+            context,
+            exception,
+            extra_data={
                 "request_id": request_id,
-                "method": context["method"],
-                "url": str(context["url"]),
-                "client_ip": context["client_ip"],
-                "user_agent": context["user_agent"],
-                "scheme": context["scheme"],
-                "path": context["path"],
-                "query": str(context["url"].query) if context["url"].query else None,
                 "error_type": type(exception).__name__,
                 "error_message": str(exception),
             },
