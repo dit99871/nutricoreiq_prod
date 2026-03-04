@@ -92,16 +92,25 @@ def not_found_exception_handler(
     :param exc: Объект StarletteHTTPException
     :return: JSON-ответ с информацией об ошибке
     """
+
     path = str(request.url.path)
     method = request.method
     user_agent = request.headers.get("user-agent", "unknown")
     client_ip = get_client_ip(request, settings.run.trusted_proxies)
 
-    # Определяем тип запроса
+    # определяем тип запроса
     is_bot, bot_type = _is_bot_request(path, user_agent)
 
+    # пропускаем логирование для Grafana API путей
+    if "features.grafana.app" in path or "apis/" in path:
+        # возвращаем стандартный 404 ответ без логирования
+        return ORJSONResponse(
+            status_code=404,
+            content={"status": "error", "message": "Not found"},
+        )
+
     if is_bot:
-        # Для ботов логируем на DEBUG уровне
+        # для ботов логируем на дебаг уровне
         log.debug(
             "404 для бот-запроса: %s %s | IP: %s | UA: %s | Тип: %s",
             method,
@@ -111,14 +120,14 @@ def not_found_exception_handler(
             bot_type,
         )
 
-        # Для некоторых типов ботов можно возвращать упрощенный ответ
+        # для некоторых типов ботов можно возвращать упрощенный ответ
         if bot_type in ["path_based"]:
             return ORJSONResponse(
                 status_code=404,
                 content={"status": "error", "message": "Not found"},
             )
     else:
-        # Для людей логируем на WARNING уровне
+        # для легитимных запросов логируем на ворнинг уровне
         log.warning(
             "404 ошибка: %s %s | IP: %s | UA: %s | Referrer: %s",
             method,
@@ -128,7 +137,7 @@ def not_found_exception_handler(
             request.headers.get("referer", "none")[:200],
         )
 
-    # Стандартный ответ для людей и остальных ботов
+    # стандартный ответ
     error_detail = ErrorDetail(
         message="Ресурс не найден",
         details={
