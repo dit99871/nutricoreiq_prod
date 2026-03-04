@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Юнит-тесты для сервисов мидлвари
 """
@@ -14,7 +13,7 @@ class MockRequest:
         self.method = method
         self.headers = headers or {}
         self.cookies = cookies or {}
-        self.url = type('obj', (object,), {'path': path, 'query': ''})()
+        self.url = type('obj', (object,), {'path': path, 'query': '', '__str__': lambda self: f"http://testserver{path}"})()
         self.state = type('obj', (object,), {})()
 
 
@@ -95,7 +94,7 @@ class TestTracingService:
         assert context["trace_id"] == "trace-456"
         assert context["request_id"] == "req-123"
         assert context["method"] == "POST"
-        assert context["path"] == "/api/test"
+        assert context["url"] == "http://testserver/api/test"
         assert context["user_agent"] == "test-agent"
 
 
