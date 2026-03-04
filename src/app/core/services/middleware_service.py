@@ -14,6 +14,7 @@ from redis.asyncio import RedisError
 from src.app.core.config import settings
 from src.app.core.logger import get_logger
 from src.app.core.redis import redis_client
+from src.app.core.services.log_context_service import LogContextService
 from src.app.core.utils.security import (
     generate_csrf_token,
     generate_csp_nonce,
@@ -34,6 +35,7 @@ class CircuitBreaker:
 
     async def call(self, func, *args, **kwargs):
         """Выполняет функцию с защитой circuit breaker"""
+
         if self.state == "OPEN":
             if time.time() - self.last_failure_time > self.recovery_timeout:
                 self.state = "HALF_OPEN"
@@ -46,6 +48,7 @@ class CircuitBreaker:
                 self.state = "CLOSED"
                 self.failure_count = 0
             return result
+
         except Exception as e:
             self.failure_count += 1
             self.last_failure_time = time.time()
@@ -65,34 +68,29 @@ class TracingService:
     @staticmethod
     def create_trace_id() -> str:
         """Создает уникальный trace ID"""
+
         return str(uuid.uuid4())
 
     @staticmethod
     def get_request_context(request: Request) -> dict[str, Any]:
         """Возвращает унифицированный контекст запроса"""
-        return {
-            "trace_id": getattr(request.state, "trace_id", "unknown"),
-            "request_id": getattr(request.state, "request_id", "unknown"),
-            "client_ip": getattr(request.state, "client_ip", "unknown"),
-            "user_agent": request.headers.get("user-agent", "unknown"),
-            "method": request.method,
-            "path": request.url.path,
-            "query": str(request.url.query) if request.url.query else None,
-            "url": str(getattr(request.state, "effective_url", request.url)),
-        }
+
+        return LogContextService.extract_context_from_request(request)
 
     @staticmethod
     def log_middleware_entry(
         middleware_name: str, context: dict[str, Any], extra_data: Optional[dict] = None
     ):
         """Логирует вход в мидлвари"""
+
+        # объединяем контекст с дополнительными данными
+        full_context = {**context, **(extra_data or {})}
+
         logger.info(
             f"[{middleware_name}] Entry",
             extra={
-                **context,
-                "middleware": middleware_name,
-                "event": "entry",
-                **(extra_data or {}),
+                **full_context,
+                "context_string": LogContextService.format_context_string(full_context),
             },
         )
 
@@ -101,13 +99,15 @@ class TracingService:
         middleware_name: str, context: dict[str, Any], extra_data: Optional[dict] = None
     ):
         """Логирует выход из мидлвари"""
+
+        # объединяем контекст с дополнительными данными
+        full_context = {**context, **(extra_data or {})}
+
         logger.info(
             f"[{middleware_name}] Exit",
             extra={
-                **context,
-                "middleware": middleware_name,
-                "event": "exit",
-                **(extra_data or {}),
+                **full_context,
+                "context_string": LogContextService.format_context_string(full_context),
             },
         )
 
@@ -119,14 +119,21 @@ class TracingService:
         extra_data: Optional[dict] = None,
     ):
         """Логирует ошибку в мидлвари"""
+
+        # объединяем контекст с дополнительными данными
+        full_context = {
+            **context,
+            "middleware": middleware_name,
+            "event": "error",
+            "error_type": type(error).__name__,
+            **(extra_data or {}),
+        }
+
         logger.error(
             f"[{middleware_name}] Error: {str(error)}",
             extra={
-                **context,
-                "middleware": middleware_name,
-                "event": "error",
-                "error_type": type(error).__name__,
-                **(extra_data or {}),
+                **full_context,
+                "context_string": LogContextService.format_context_string(full_context),
             },
             exc_info=True,
         )
@@ -142,21 +149,22 @@ class SessionService:
 
     async def get_session(self, session_id: str) -> Optional[dict]:
         """Получает сессию с кешированием"""
-        # Проверяем кеш
+
+        # проверяем кеш
         if session_id in self._session_cache:
             cached_data = self._session_cache[session_id]
             if time.time() - cached_data["cached_at"] < self._cache_ttl:
                 return cached_data["session"]
 
         try:
-            # Получаем из Redis с защитой circuit breaker
+            # получаем из редиса с защитой circuit breaker
             session_data = await self.redis_circuit_breaker.call(
                 redis_client.get, f"redis_session:{session_id}"
             )
 
             if session_data:
                 session = json.loads(session_data)
-                # Кешируем
+                # кешируем
                 self._session_cache[session_id] = {
                     "session": session,
                     "cached_at": time.time(),
@@ -165,7 +173,7 @@ class SessionService:
 
         except RedisError as e:
             logger.warning(f"Redis unavailable for session {session_id}: {e}")
-            # Пробуем вернуть из кеша если есть
+            # пробуем вернуть из кеша если есть
             if session_id in self._session_cache:
                 return self._session_cache[session_id]["session"]
 
@@ -173,6 +181,7 @@ class SessionService:
 
     async def save_session(self, session_id: str, session: dict) -> None:
         """Сохраняет сессию в Redis и кеше"""
+
         try:
             await self.redis_circuit_breaker.call(
                 redis_client.set,
@@ -189,7 +198,7 @@ class SessionService:
 
         except RedisError as e:
             logger.warning(f"Failed to save session {session_id}: {e}")
-            # Сохраняем только в кеш
+            # сохраняем только в кеш
             self._session_cache[session_id] = {
                 "session": session,
                 "cached_at": time.time(),
@@ -197,6 +206,7 @@ class SessionService:
 
     def create_new_session(self, session_id: str) -> dict:
         """Создает новую сессию"""
+
         return {
             "redis_session_id": session_id,
             "created_at": datetime.now().isoformat(),
@@ -204,8 +214,10 @@ class SessionService:
 
     def ensure_csrf_token(self, session: dict) -> str:
         """Обеспечивает наличие CSRF токена в сессии"""
+
         csrf_token = session.get("csrf_token") or generate_csrf_token()
         session["csrf_token"] = csrf_token
+
         return csrf_token
 
 
@@ -215,6 +227,7 @@ class SecurityService:
     @staticmethod
     def generate_csp_nonce() -> str:
         """Генерирует CSP nonce"""
+
         return generate_csp_nonce()
 
     @staticmethod
@@ -234,7 +247,7 @@ class SecurityService:
             "upgrade-insecure-requests;"
         )
 
-        # Добавляем report-uri только в production
+        # добавляем report-uri только в production
         if settings.env.env == "prod":
             policy += f"report-uri {settings.router.security}/csp-report;"
 
@@ -243,7 +256,7 @@ class SecurityService:
     @staticmethod
     def validate_csrf_token(request: Request, session: dict) -> bool:
         """Валидирует CSRF токен"""
-        # Получаем токен из разных источников
+        # получаем токен из разных источников
         csrf_token = request.headers.get("X-CSRF-Token")
         if not csrf_token and request.method == "POST":
             # Для POST форм пробуем получить из формы
@@ -255,6 +268,7 @@ class SecurityService:
                 pass
 
         if not csrf_token:
+
             return False
 
         # Проверяем совпадение с токеном в сессии и cookie
@@ -266,9 +280,10 @@ class SecurityService:
     @staticmethod
     def validate_origin(request: Request) -> bool:
         """Валидирует Origin/Referer"""
+
         origin = request.headers.get("origin") or request.headers.get("referer")
         if not origin:
-            return True  # Некоторые браузеры не отправляют Origin
+            return True  # я некоторые браузеры не отправляют Origin
 
         return any(
             origin.startswith(allowed) for allowed in settings.cors.allow_origins

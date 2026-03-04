@@ -8,6 +8,7 @@ from src.app.core.config import settings
 from src.app.core.exceptions import ExpiredTokenException
 from src.app.core.logger import get_logger
 from src.app.core.schemas.responses import ErrorDetail, ErrorResponse
+from src.app.core.services.log_context_service import LogContextService
 from src.app.core.utils.network import get_client_ip
 
 __all__ = ("setup_exception_handlers",)
@@ -297,8 +298,18 @@ def generic_exception_handler(
         status="error",
         error=ErrorDetail(message="Внутренняя ошибка сервера", details=details),
     )
+
+    # создаем унифицированный контекст
+    context = LogContextService.extract_context_from_request(request)
+    context["url"] = request_url  # Добавляем корректный URL
+
     log.error(
-        "Непредвиденная ошибка по адресу %s: %s", request_url, str(exc), exc_info=True
+        f"Непредвиденная ошибка по адресу {request_url}: {str(exc)}",
+        extra={
+            **context,
+            "context_string": LogContextService.format_context_string(context),
+        },
+        exc_info=True,
     )
 
     return ORJSONResponse(

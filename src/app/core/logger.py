@@ -7,33 +7,15 @@ from src.app.core.config import settings
 
 
 class CustomTextFormatter(logging.Formatter):
-    """Кастомный текстовый форматтер для логов."""
+    """Кастомный текстовый форматтер для логов с унифицированным контекстом."""
 
     def format(self, record):
         # формируем базовое сообщение
         result = super().format(record)
 
-        # добавляем дополнительные поля, если они есть
-        extra_info = []
-        if hasattr(record, "request_id"):
-            extra_info.append(f"request_id={record.request_id}")
-
-            # добавляем дополнительные поля, которые могут быть полезны
-            for field in [
-                "method",
-                "url",
-                "client_ip",
-                "user_agent",
-                "status_code",
-                "process_time_ms",
-            ]:
-                if hasattr(record, field):
-                    value = getattr(record, field)
-                    if value is not None:
-                        extra_info.append(f"{field}={value}")
-
-        if extra_info:
-            result = f"{result} [{' | '.join(extra_info)}]"
+        # добавляем контекст, если он есть
+        if hasattr(record, "context_string"):
+            result = f"{result} [{record.context_string}]"
 
         return result
 

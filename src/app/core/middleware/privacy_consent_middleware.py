@@ -44,7 +44,7 @@ class PrivacyConsentV2Middleware(BaseMiddleware):
 
     async def handle_request(
         self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
+    ) -> Response | None:
         """Основная логика PrivacyConsent middleware"""
 
         # пропускаем исключенные пути
