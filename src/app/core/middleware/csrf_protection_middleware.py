@@ -23,6 +23,7 @@ class CSRFProtectionMiddleware(BaseMiddleware):
         f"{settings.router.security}/csp-report",
         f"{settings.router.product}/pending",
         "/apis/features.grafana.app/v0alpha1/namespaces/default/ofrep/v1/evaluate/flags",
+        "/webhook-test/import",
     ]
 
     def __init__(
