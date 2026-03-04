@@ -134,7 +134,7 @@ def not_found_exception_handler(
         details={
             "path": path,
             "method": method,
-            "timestamp": request.state.get("request_id", "unknown"),
+            "timestamp": getattr(request.state, "request_id", "unknown"),
         },
     )
     error_response = ErrorResponse(status="error", error=error_detail)
