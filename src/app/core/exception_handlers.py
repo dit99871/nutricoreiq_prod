@@ -8,10 +8,48 @@ from src.app.core.config import settings
 from src.app.core.exceptions import ExpiredTokenException
 from src.app.core.logger import get_logger
 from src.app.core.schemas.responses import ErrorDetail, ErrorResponse
+from src.app.core.utils.network import get_client_ip
 
 __all__ = ("setup_exception_handlers",)
 
 log = get_logger("exc_handlers")
+
+
+def _is_bot_request(path: str, user_agent: str) -> tuple[bool, str]:
+    """
+    Определяет, является ли запрос от бота.
+    
+    :param path: Путь запроса
+    :param user_agent: User-Agent строка
+    :return: (is_bot, bot_type)
+    """
+    # Расширенный список бот-путей
+    bot_paths = [
+        "/xmlrpc.php", "/wp-login.php", "/wp-admin/", "/wp-content/",
+        "/wp-includes/", "/wp-json/", "/.well-known/", "/robots.txt",
+        "/sitemap.xml", "/feed/", "/rss/", "/track/", "/ping/",
+        "/phpmyadmin/", "/admin.php", "/administrator/", "/config/",
+        "/test/", "/debug/", "/api/", "/graphql/", "/webhook/"
+    ]
+    
+    # Проверка путей
+    for bot_path in bot_paths:
+        if path.startswith(bot_path):
+            return True, "path_based"
+    
+    # Проверка User-Agent наKnown ботов
+    bot_patterns = [
+        "bot", "crawler", "spider", "scraper", "curl", "wget",
+        "python-requests", "httpie", "postman", "insomnia",
+        "googlebot", "bingbot", "slurp", "duckduckbot", "baiduspider"
+    ]
+    
+    user_agent_lower = user_agent.lower()
+    for pattern in bot_patterns:
+        if pattern in user_agent_lower:
+            return True, "ua_based"
+    
+    return False, "human"
 
 
 def not_found_exception_handler(
@@ -19,38 +57,56 @@ def not_found_exception_handler(
     exc: StarletteHTTPException,
 ) -> ORJSONResponse:
     """
-    Обработчик 404 ошибок.
+    Обработчик 404 ошибок с улучшенной детекцией ботов.
 
     :param request: Входящий HTTP-запрос
     :param exc: Объект StarletteHTTPException
     :return: JSON-ответ с информацией об ошибке
     """
-
-    # Определяем источник 404 для логирования
     path = str(request.url.path)
     method = request.method
-
-    # Ботовые пути логируем на уровне DEBUG, остальные на WARNING
-    bot_paths = ["/xmlrpc.php", "/wp-login.php", "/wp-admin/", "/.well-known/"]
-    is_bot_request = any(path.startswith(bot_path) for bot_path in bot_paths)
-
-    if is_bot_request:
-        log.warning(
-            "404 для бот-запроса: %s %s | IP: %s | UA: %s",
+    user_agent = request.headers.get("user-agent", "unknown")
+    client_ip = get_client_ip(request, settings.run.trusted_proxies)
+    
+    # Определяем тип запроса
+    is_bot, bot_type = _is_bot_request(path, user_agent)
+    
+    if is_bot:
+        # Для ботов логируем на DEBUG уровне
+        log.debug(
+            "404 для бот-запроса: %s %s | IP: %s | UA: %s | Тип: %s",
             method,
             path,
-            request.client.host if request.client else "unknown",
-            request.headers.get("user-agent", "unknown")[:100],
+            client_ip,
+            user_agent[:100],
+            bot_type,
         )
+        
+        # Для некоторых типов ботов можно возвращать упрощенный ответ
+        if bot_type in ["path_based"]:
+            return ORJSONResponse(
+                status_code=404,
+                content={"status": "error", "message": "Not found"},
+            )
     else:
+        # Для людей логируем на WARNING уровне
         log.warning(
-            "404 ошибка по адресу %s: %s",
-            request.url,
-            exc.detail,
+            "404 ошибка: %s %s | IP: %s | UA: %s | Referrer: %s",
+            method,
+            path,
+            client_ip,
+            user_agent[:100],
+            request.headers.get("referer", "none")[:200],
         )
-
+    
+    # Стандартный ответ для людей и остальных ботов
     error_detail = ErrorDetail(
-        message="Ресурс не найден", details={"path": path, "method": method}
+        message="Ресурс не найден", 
+        details={
+            "path": path, 
+            "method": method,
+            "timestamp": request.state.get("request_id", "unknown")
+        }
     )
     error_response = ErrorResponse(status="error", error=error_detail)
 
