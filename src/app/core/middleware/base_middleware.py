@@ -9,7 +9,7 @@ from starlette.types import ASGIApp
 
 from src.app.core.logger import get_logger
 from src.app.core.utils.network import get_client_ip, get_scheme_and_host
-from src.app.core.services.middleware_service import tracing_service, exception_service
+import uuid
 
 
 class BaseMiddleware(BaseHTTPMiddleware, ABC):
@@ -41,23 +41,18 @@ class BaseMiddleware(BaseHTTPMiddleware, ABC):
 
         # устанавливаем trace ID для unified tracing
         if not hasattr(request.state, "trace_id"):
-            request.state.trace_id = tracing_service.create_trace_id()
+            request.state.trace_id = str(uuid.uuid4())
 
         try:
-            # логируем вход в мидлвари
-            context = tracing_service.get_request_context(request)
-            tracing_service.log_middleware_entry(self.__class__.__name__, context)
-
             # вызываем конкретную реализацию в дочернем классе
             response = await self.handle_request(request, call_next)
-
-            # логируем выход из мидлвари
-            tracing_service.log_middleware_exit(self.__class__.__name__, context)
             return response
 
         except StarletteHTTPException as e:
             # HTTP исключения логируем тихо, без полного stack trace
-            context = tracing_service.get_request_context(request)
+            context = {
+                "trace_id": getattr(request.state, "trace_id", "unknown"),
+            }
             self.logger.warning(
                 "HTTP исключение в %s: %s [status=%s] %s",
                 self.__class__.__name__,
@@ -74,11 +69,19 @@ class BaseMiddleware(BaseHTTPMiddleware, ABC):
             if hasattr(e, "status_code") and hasattr(e, "detail"):
                 raise
 
-            # используем стандартизированную обработку исключений
-            context = tracing_service.get_request_context(request)
-            return exception_service.handle_middleware_exception(
-                self.__class__.__name__, request, e, context
+            self.logger.error(
+                "Непредвиденная ошибка в %s: %s",
+                self.__class__.__name__,
+                str(e),
+                extra={
+                    "trace_id": getattr(request.state, "trace_id", "unknown"),
+                    "request_id": getattr(request.state, "request_id", "unknown"),
+                    "path": request.url.path,
+                    "method": request.method,
+                },
+                exc_info=True,
             )
+            raise
 
     async def handle_request(
         self, request: Request, call_next: RequestResponseEndpoint

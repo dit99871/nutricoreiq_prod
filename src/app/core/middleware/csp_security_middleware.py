@@ -6,7 +6,8 @@ from fastapi import Request, Response
 from starlette.middleware.base import RequestResponseEndpoint
 
 from src.app.core.middleware.base_middleware import BaseMiddleware
-from src.app.core.services.middleware_service import security_service
+from src.app.core.config import settings
+from src.app.core.utils.security import generate_csp_nonce
 
 
 class CSPSecurityMiddleware(BaseMiddleware):
@@ -18,14 +19,30 @@ class CSPSecurityMiddleware(BaseMiddleware):
         """Основная логика CSP middleware"""
 
         # генерируем CSP nonce
-        csp_nonce = security_service.generate_csp_nonce()
+        csp_nonce = generate_csp_nonce()
         request.state.csp_nonce = csp_nonce
+
+        csp_policy = (
+            "default-src 'self'; "
+            f"script-src 'self' 'nonce-{csp_nonce}' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+            f"style-src 'self' 'nonce-{csp_nonce}' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+            f"style-src-attr 'nonce-{csp_nonce}'; "
+            "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+            "img-src 'self' data: https:; "
+            "connect-src 'self'; "
+            "frame-src 'none'; "
+            "object-src 'none'; "
+            "form-action 'self'; "
+            "upgrade-insecure-requests;"
+        )
+
+        if settings.env.env == "prod":
+            csp_policy += f"report-uri {settings.router.security}/csp-report;"
 
         # продолжаем выполнение запроса
         response = await call_next(request)
 
         # формируем и добавляем CSP политику
-        csp_policy = security_service.build_csp_policy(csp_nonce)
         response.headers["Content-Security-Policy-Report-Only"] = csp_policy
 
         return response

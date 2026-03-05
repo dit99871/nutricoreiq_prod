@@ -8,7 +8,9 @@ from starlette.types import ASGIApp
 
 from src.app.core import db_helper
 from src.app.core.middleware.base_middleware import BaseMiddleware
-from src.app.core.services.middleware_service import privacy_service, tracing_service
+from src.app.core.logger import get_logger
+
+log = get_logger(__name__)
 
 
 class PrivacyConsentV2Middleware(BaseMiddleware):
@@ -54,28 +56,36 @@ class PrivacyConsentV2Middleware(BaseMiddleware):
         try:
             # добавляем сессию БД в request scope
             async for session in db_helper.session_getter():
-                request.scope["db_session"] = session
-
-                # проверяем согласие в зависимости от типа пользователя
+                # получаем пользователя из запроса
                 user = getattr(request.state, "user", None)
 
                 if user:
-                    # авторизованный пользователь - проверяем в БД с кешированием
-                    has_consent = await privacy_service.check_user_consent(
-                        user.id, session
-                    )
-                else:
-                    # неавторизованный пользователь - проверяем через заголовок/cookie
-                    has_consent = privacy_service.check_anonymous_consent(request)
+                    from src.app.core.repo.privacy_consent import has_user_consent
 
-                # если согласия нет, возвращаем ошибку
+                    has_consent = await has_user_consent(session, user.id)
+                else:
+                    consent_header = request.headers.get("X-Privacy-Consent")
+                    has_consent = False
+                    if consent_header:
+                        try:
+                            consent_data = json.loads(consent_header)
+                            has_consent = bool(consent_data.get("personal_data", False))
+                        except json.JSONDecodeError:
+                            has_consent = False
+
+                    if not has_consent:
+                        consent_cookie = request.cookies.get("privacy_consent")
+                        if consent_cookie:
+                            try:
+                                consent_data = json.loads(consent_cookie)
+                                has_consent = bool(
+                                    consent_data.get("personal_data", False)
+                                )
+                            except json.JSONDecodeError:
+                                has_consent = False
+
                 if not has_consent:
-                    context = tracing_service.get_request_context(request)
-                    tracing_service.log_middleware_error(
-                        self.__class__.__name__,
-                        context,
-                        Exception("Privacy consent required"),
-                    )
+                    log.warning("Privacy consent required")
                     raise HTTPException(
                         status_code=status.HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS,
                         detail={
@@ -92,8 +102,5 @@ class PrivacyConsentV2Middleware(BaseMiddleware):
             raise
 
         except Exception as e:
-            # Логируем ошибки БД и другие непредвиденные ошибки
-            context = tracing_service.get_request_context(request)
-            tracing_service.log_middleware_error(self.__class__.__name__, context, e)
-            # в случае ошибки БД, продолжаем выполнение запроса для доступности сервиса
+            log.error("PrivacyConsent middleware error: %s", str(e), exc_info=True)
             return await call_next(request)

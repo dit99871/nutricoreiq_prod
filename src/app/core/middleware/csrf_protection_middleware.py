@@ -9,7 +9,9 @@ from starlette.types import ASGIApp
 
 from src.app.core.config import settings
 from src.app.core.middleware.base_middleware import BaseMiddleware
-from src.app.core.services.middleware_service import security_service, tracing_service
+from src.app.core.logger import get_logger
+
+log = get_logger(__name__)
 
 
 class CSRFProtectionMiddleware(BaseMiddleware):
@@ -38,8 +40,6 @@ class CSRFProtectionMiddleware(BaseMiddleware):
     ) -> Response:
         """Основная логика CSRF middleware"""
 
-        context = tracing_service.get_request_context(request)
-
         # пропуск публичных маршрутов
         if self._should_skip_path(
             request, set(self.EXEMPT_PATHS)
@@ -56,12 +56,11 @@ class CSRFProtectionMiddleware(BaseMiddleware):
 
         if request.method in ["POST", "PUT", "DELETE", "PATCH"]:
             # проверка Origin/Referer
-            if not security_service.validate_origin(request):
-                tracing_service.log_middleware_error(
-                    self.__class__.__name__,
-                    context,
-                    Exception(f"Invalid origin for {request.url.path}"),
-                )
+            origin = request.headers.get("origin") or request.headers.get("referer")
+            if origin and not any(
+                origin.startswith(allowed) for allowed in settings.cors.allow_origins
+            ):
+                log.warning("Invalid origin for %s", request.url.path)
                 raise StarletteHTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Нет доступа. Пожалуйста, убедитесь, что вы обращаетесь с авторизованного домена.",
@@ -70,22 +69,19 @@ class CSRFProtectionMiddleware(BaseMiddleware):
             # проверка CSRF токена
             session = request.scope.get("redis_session", {})
             if not session:
-                tracing_service.log_middleware_error(
-                    self.__class__.__name__,
-                    context,
-                    Exception("No session found for CSRF validation"),
-                )
+                log.warning("No session found for CSRF validation")
                 raise StarletteHTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Время сессии истекло. Пожалуйста, войдите снова.",
                 )
 
-            if not security_service.validate_csrf_token(request, session):
-                tracing_service.log_middleware_error(
-                    self.__class__.__name__,
-                    context,
-                    Exception("CSRF token validation failed"),
-                )
+            csrf_token = request.headers.get("X-CSRF-Token")
+            if not csrf_token:
+                csrf_token = request.cookies.get("csrf_token")
+
+            session_csrf_token = session.get("csrf_token")
+            if not csrf_token or csrf_token != session_csrf_token:
+                log.warning("CSRF token validation failed")
                 raise StarletteHTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Нет доступа. Пожалуйста, обновите страницу и попробуйте ещё раз.",
