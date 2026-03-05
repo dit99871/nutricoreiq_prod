@@ -18,6 +18,5 @@ user_service_dep = Annotated[UserService, Depends(get_user_service)]
 
 # зависимость для получения текущего пользователя
 current_user_dep = Annotated[
-    UserPublic, 
-    Depends(user_service_dep.get_user_by_access_jwt)
+    UserPublic, Depends(user_service_dep.get_user_by_access_jwt)
 ]
