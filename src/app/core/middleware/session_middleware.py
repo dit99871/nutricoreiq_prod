@@ -9,11 +9,14 @@ from starlette.types import ASGIApp
 
 from src.app.core.config import settings
 from src.app.core.middleware.base_middleware import BaseMiddleware
-from src.app.core.services.middleware_service import session_service, tracing_service
+from src.app.core.logger import get_logger
+from src.app.core.services.session_service import session_service
 
 
 class SessionMiddleware(BaseMiddleware):
-    """Мидлвари только для управления сессиями"""
+    """Middleware для управления сессиями через Redis"""
+
+    log = get_logger(__name__)
 
     # пути, которые не требуют сессии
     EXEMPT_PATHS = {
@@ -45,9 +48,12 @@ class SessionMiddleware(BaseMiddleware):
 
         # получаем session_id из cookie или создаем новый
         cookie_session_id = request.cookies.get("redis_session_id")
-        session_id = cookie_session_id or session_service.create_new_session(
-            cookie_session_id or "generated"
-        )["redis_session_id"]
+        session_id = (
+            cookie_session_id
+            or session_service.create_new_session(cookie_session_id or "generated")[
+                "redis_session_id"
+            ]
+        )
 
         try:
             # получаем сессию с кешированием и circuit breaker
@@ -77,9 +83,17 @@ class SessionMiddleware(BaseMiddleware):
             raise
 
         except Exception as e:
-            # логируем и пробрасываем для обработки в BaseMiddleware
-            context = tracing_service.get_request_context(request)
-            tracing_service.log_middleware_error(self.__class__.__name__, context, e)
+            self.log.error(
+                "Session middleware error: %s",
+                str(e),
+                extra={
+                    "trace_id": getattr(request.state, "trace_id", "unknown"),
+                    "request_id": getattr(request.state, "request_id", "unknown"),
+                    "path": request.url.path,
+                    "method": request.method,
+                },
+                exc_info=True,
+            )
             raise
 
     def _set_session_cookies(
