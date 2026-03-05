@@ -5,15 +5,28 @@ from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from src.app.core.config import settings
-from src.app.core.exceptions import ExpiredTokenException
 from src.app.core.logger import get_logger
-from src.app.core.schemas.responses import ErrorDetail, ErrorResponse
+from src.app.core.exceptions import (
+    BaseApplicationError,
+    ConflictError,
+    ExpiredTokenException,
+)
 from src.app.core.services.log_context_service import LogContextService
+from src.app.core.schemas.responses import ErrorDetail, ErrorResponse
 from src.app.core.utils.network import get_client_ip
 
-__all__ = ("setup_exception_handlers",)
 
-log = get_logger("exc_handlers")
+log = get_logger(__name__)
+
+
+class ExceptionHandlerManager:
+    """Менеджер обработки исключений с унифицированным логированием"""
+
+    def __init__(self) -> None:
+        self.logger = get_logger(__name__)
+
+
+handler_manager = ExceptionHandlerManager()
 
 
 def _is_bot_request(path: str, user_agent: str) -> tuple[bool, str]:
@@ -50,12 +63,12 @@ def _is_bot_request(path: str, user_agent: str) -> tuple[bool, str]:
         "/webhook/",
     ]
 
-    # Проверка путей
+    # проверка путей
     for bot_path in bot_paths:
         if path.startswith(bot_path):
             return True, "path_based"
 
-    # Проверка User-Agent наKnown ботов
+    # проверка User-Agent на известных ботов
     bot_patterns = [
         "bot",
         "crawler",
@@ -105,10 +118,11 @@ def not_found_exception_handler(
     # пропускаем логирование для Grafana API путей
     if "features.grafana.app" in path or "apis/" in path:
         # возвращаем стандартный 404 ответ без логирования
-        return ORJSONResponse(
-            status_code=404,
-            content={"status": "error", "message": "Not found"},
+        error_response = ErrorResponse(
+            status="error",
+            error=ErrorDetail(message="Not found", details=None),
         )
+        return ORJSONResponse(status_code=404, content=error_response.model_dump())
 
     if is_bot:
         # для ботов логируем на дебаг уровне
@@ -123,10 +137,11 @@ def not_found_exception_handler(
 
         # для некоторых типов ботов можно возвращать упрощенный ответ
         if bot_type in ["path_based"]:
-            return ORJSONResponse(
-                status_code=404,
-                content={"status": "error", "message": "Not found"},
+            error_response = ErrorResponse(
+                status="error",
+                error=ErrorDetail(message="Not found", details=None),
             )
+            return ORJSONResponse(status_code=404, content=error_response.model_dump())
     else:
         # для легитимных запросов логируем на ворнинг уровне
         log.warning(
@@ -346,6 +361,42 @@ def rate_limit_exceeded_handler(
     )
 
 
+async def application_error_handler(
+    request: Request, exc: BaseApplicationError
+) -> ORJSONResponse:
+    """Обработчик базовых ошибок приложения"""
+
+    context = LogContextService.extract_context_from_request(request)
+    handler_manager.logger.error(
+        str(exc),
+        extra={
+            "request_id": context.get("request_id"),
+            "trace_id": context.get("trace_id"),
+            "method": context.get("method"),
+            "path": context.get("path"),
+            "client_ip": context.get("client_ip"),
+            "user_agent": context.get("user_agent"),
+        },
+        exc_info=True,
+    )
+
+    error_response = ErrorResponse(
+        status="error",
+        error=ErrorDetail(
+            message=exc.message,
+            details=exc.details or None,
+        ),
+    )
+
+    return ORJSONResponse(
+        status_code=exc.status_code,
+        content=error_response.model_dump(),
+    )
+
+
+__all__ = ("setup_exception_handlers", "ConflictError")
+
+
 def setup_exception_handlers(app: FastAPI) -> None:
     """
     Настройка обработчиков исключений приложения.
@@ -359,6 +410,9 @@ def setup_exception_handlers(app: FastAPI) -> None:
     # кастомные исключения
     app.add_exception_handler(ExpiredTokenException, expired_token_exception_handler)
     app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+
+    # обработчик базовых ошибок приложения
+    app.add_exception_handler(BaseApplicationError, application_error_handler)
 
     # стандартные http исключения
     app.add_exception_handler(HTTPException, http_exception_handler)
