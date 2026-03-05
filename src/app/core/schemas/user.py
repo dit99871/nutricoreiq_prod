@@ -24,7 +24,6 @@ from src.app.core.utils.validators import (
     validate_password_strength,
 )
 from src.app.core.models.user import GoalType, KFALevel
-
 from .base import BaseSchema, FormSchema
 
 
@@ -93,8 +92,14 @@ class UserProfileUpdate(FormSchema):
     @model_validator(mode="after")
     def check_consistency(cls, values):
         # кросс-валидация (например, если age указан, проверить weight)
-        if values.age is not None and values.weight is None:
-            raise ValueError("Если указан возраст, укажите вес для полноты профиля")
+        updated_fields = values.model_fields_set
+
+        age_is_updated = "age" in updated_fields
+        weight_is_updated = "weight" in updated_fields
+
+        if age_is_updated and weight_is_updated:
+            if values.age is not None and values.weight is None:
+                raise ValueError("Если указан возраст, укажите вес для полноты профиля")
         return values
 
 

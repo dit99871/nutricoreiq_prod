@@ -25,6 +25,7 @@ from src.app.core.services.redis import (
     validate_refresh_jwt,
 )
 from src.app.core.utils.auth import create_response, verify_password
+from src.app.core.utils.security import mask_email
 from src.app.core.repo.user import (
     create_user,
     get_user_by_email,
@@ -122,7 +123,7 @@ class UserService:
         if existing_email:
             log.warning(
                 "Ошибка регистрации: email уже зарегистрирован: %s, IP: %s",
-                user_in.email,
+                mask_email(user_in.email),
                 client_ip,
             )
             raise UserAlreadyExistsError(
@@ -134,7 +135,7 @@ class UserService:
             user = await create_user(self.session, user_in)
             log.info(
                 "Пользователь успешно зарегистрирован: %s (ID: %s), IP: %s",
-                user.email,
+                mask_email(user.email),
                 user.id,
                 client_ip,
             )
@@ -147,7 +148,7 @@ class UserService:
         except Exception as e:
             log.error(
                 "Ошибка при регистрации пользователя (email: %s, IP: %s): %s",
-                user_in.email,
+                mask_email(user_in.email),
                 client_ip,
                 str(e),
                 exc_info=True,
@@ -255,7 +256,7 @@ class UserService:
         except Exception as e:
             log.error(
                 "Ошибка при отправке приветственного письма (email: %s): %s",
-                user.email,
+                mask_email(user.email),
                 str(e),
                 exc_info=True,
             )
@@ -325,10 +326,11 @@ class UserService:
         payload: dict = await get_jwt_payload(token)
         token_type: str | None = payload.get(TOKEN_TYPE_FIELD)
         if token_type is None or token_type != ACCESS_TOKEN_TYPE:
+            uid: str | None = payload.get("sub")
             log.error(
-                "Такого типа токена %s не существует в payload токена: %s",
+                "Некорректный тип токена: %s (sub=%s)",
                 token_type,
-                payload,
+                uid,
             )
             raise CREDENTIAL_EXCEPTION
 

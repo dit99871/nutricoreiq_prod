@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from fastapi import APIRouter,HTTPException, Request, status, Response
+from fastapi import APIRouter, HTTPException, Request, status, Response
 from fastapi.responses import HTMLResponse, ORJSONResponse
 from starlette.responses import RedirectResponse
 
@@ -15,7 +15,7 @@ from src.app.core.utils import templates
 from src.app.core.repo.profile import get_user_profile, update_user_profile
 from src.app.core.repo.user import choose_subscribe_status
 from src.app.core.models.user import KFALevel
-from src.app.core.schemas.user import UserProfileUpdate, UserPublic
+from src.app.core.schemas.user import UserProfileUpdate
 
 router = APIRouter(
     tags=["User"],
