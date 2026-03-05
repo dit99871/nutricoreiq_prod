@@ -83,6 +83,7 @@ python_functions = ["test_*"]
 markers = [
     "slow: slow running tests",
     "integration: integration tests",
+    "e2e: end-to-end tests requiring running services",
     "asyncio: asynchronous tests",
     "db: tests requiring database access",
     "api: tests for API endpoints"
