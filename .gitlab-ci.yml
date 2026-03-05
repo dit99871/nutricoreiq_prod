@@ -189,9 +189,8 @@ before_script:
 test:unit:
   <<: *test_template
   script:
-    # Только юнит-тесты с покрытием
-    - echo "Running unit tests only..."
-    - poetry run pytest tests/unit/ --asyncio-mode=auto --cov=src --cov-report=xml --cov-report=html --disable-warnings -v
+    - echo "Running tests (excluding e2e)..."
+    - poetry run pytest -m "not e2e" --asyncio-mode=auto --cov=src --cov-report=xml --cov-report=html --disable-warnings -v
   coverage: '/^TOTAL.+\s+(\d+%)$/'
   artifacts:
     reports:
@@ -209,9 +208,8 @@ test:unit:
 test:integration:
   <<: *test_template
   script:
-    # Только интеграционные тесты (без покрытия)
-    - echo "Running integration tests only..."
-    - poetry run pytest tests/integration/ --asyncio-mode=auto --disable-warnings -v
+    - echo "Running e2e tests only..."
+    - poetry run pytest -m e2e --asyncio-mode=auto --disable-warnings -v
   only:
     - merge_requests
     - main

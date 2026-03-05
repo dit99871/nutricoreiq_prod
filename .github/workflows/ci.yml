@@ -157,14 +157,35 @@ jobs:
         APP_CONFIG__TASKIQ__URL: "amqp://guest:guest@localhost:5672//"
         
       run: |
-        # Запускаем тесты по частям чтобы избежать конфликтов event loops
-        echo "Running unit tests..."
-        poetry run pytest tests/unit/ --asyncio-mode=auto --disable-warnings -v
-        
-        echo "Running integration tests..."
-        poetry run pytest tests/integration/ --asyncio-mode=auto --disable-warnings -v
-        
+        echo "Running tests (excluding e2e)..."
+        poetry run pytest -m "not e2e" --asyncio-mode=auto --disable-warnings -v
         echo "All tests completed successfully!"
+
+    - name: Run e2e tests (optional)
+      if: ${{ vars.RUN_E2E == 'true' }}
+      env:
+        APP_CONFIG__ENV__ENV: "test"
+      run: |
+        echo "Starting app for e2e tests..."
+        poetry run uvicorn src.app.main:app --host 0.0.0.0 --port 8080 &
+        APP_PID=$!
+
+        echo "Waiting for app readiness..."
+        for i in {1..30}; do
+          if curl -s http://localhost:8080/ > /dev/null 2>&1; then
+            echo "App is ready on http://localhost:8080"
+            break
+          else
+            echo "Waiting for app... ($i/30)"
+            sleep 2
+          fi
+        done
+
+        echo "Running e2e tests..."
+        poetry run pytest -m e2e --asyncio-mode=auto --disable-warnings -v
+
+        echo "Stopping app..."
+        kill $APP_PID || true
 
   lint:
     runs-on: ubuntu-latest
