@@ -18,7 +18,11 @@ from src.app.core.dependencies import (
     user_service_dep,
     current_user_dep,
 )
-from src.app.core.exceptions import ConflictError, ExpiredTokenException, UserAlreadyExistsError
+from src.app.core.exceptions import (
+    ConflictError,
+    ExpiredTokenException,
+    UserAlreadyExistsError,
+)
 from src.app.core.logger import get_logger
 from src.app.core.services.limiter import limiter
 from src.app.core.schemas.user import PasswordChange, UserCreate, UserPublic
