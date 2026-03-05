@@ -3,9 +3,8 @@
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, Request
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.app.core import db_helper
+from src.app.core.dependencies import db_session_dep
 from src.app.core.logger import get_logger
 from src.app.core.schemas.user import UserPublic
 from src.app.core.utils.user import optional_current_user
@@ -19,7 +18,6 @@ from src.app.core.services.privacy_service import PrivacyService, get_privacy_se
 log = get_logger("privacy_router")
 
 # Алиасы типов зависимостей
-session_dep = Annotated[AsyncSession, Depends(db_helper.session_getter)]
 optional_user_dep = Annotated[Optional[UserPublic], Depends(optional_current_user())]
 privacy_service_dep = Annotated[PrivacyService, Depends(get_privacy_service)]
 
@@ -32,7 +30,7 @@ router = APIRouter(
 async def save_privacy_consent(
     request: Request,
     consent_data: PrivacyConsentRequest,
-    session: session_dep,
+    session: db_session_dep,
     user: optional_user_dep,
     privacy_service: privacy_service_dep,
 ) -> PrivacyConsentResponse:
@@ -65,7 +63,7 @@ async def save_privacy_consent(
 @router.get("/consent/status")
 async def get_consent_status(
     request: Request,
-    session: session_dep,
+    session: db_session_dep,
     user: optional_user_dep,
     privacy_service: privacy_service_dep,
 ) -> ConsentStatusResponse:

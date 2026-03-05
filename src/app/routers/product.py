@@ -1,11 +1,9 @@
 from datetime import datetime
-from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import HTMLResponse, ORJSONResponse
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.app.core import db_helper
+from src.app.core.dependencies import db_session_dep, current_user_dep
 from src.app.core.logger import get_logger
 from src.app.core.repo.product import handle_product_search, handle_product_details
 from src.app.core.repo.pending_product import create_pending_product
@@ -22,12 +20,10 @@ router = APIRouter(
     default_response_class=ORJSONResponse,
 )
 
-session_dep = Annotated[AsyncSession, Depends(db_helper.session_getter)]
-
 
 @router.get("/search", response_model=UnifiedProductResponse)
 async def search_products(
-    session: session_dep,
+    session: db_session_dep,
     query: str = Query(..., min_length=3),
     confirmed: bool = Query(False),
 ):
@@ -52,8 +48,8 @@ async def search_products(
 async def get_product_details(
     request: Request,
     product_id: int,
-    session: session_dep,
-    current_user: Annotated[UserPublic, Depends(UserService.get_user_by_access_jwt)],
+    session: db_session_dep,
+    current_user: current_user_dep,
 ):
     """
     Retrieves the details of a product.
@@ -88,7 +84,7 @@ async def get_product_details(
 @router.post("/pending")
 async def add_pending_product(
     data: PendingProductCreate,
-    session: session_dep,
+    session: db_session_dep,
 ):
     """
     Adds a new pending product to the database.

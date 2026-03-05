@@ -11,27 +11,20 @@ from fastapi import (
 )
 from fastapi.responses import ORJSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
-from redis.asyncio import Redis
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.app.core import db_helper
 from src.app.core.config import settings
+from src.app.core.dependencies import (
+    db_session_dep,
+    redis_service_dep,
+    user_service_dep,
+    current_user_dep,
+)
 from src.app.core.exceptions import ExpiredTokenException, UserAlreadyExistsError
 from src.app.core.logger import get_logger
-from src.app.core.redis import get_redis_service
 from src.app.core.services.limiter import limiter
-from src.app.core.services.user_service import UserService, get_user_service
 from src.app.core.schemas.user import PasswordChange, UserCreate, UserPublic
 
 log = get_logger("auth_router")
-
-# алиасы типов зависимостей
-user_service_dep = Annotated[UserService, Depends(get_user_service)]
-db_session_dep = Annotated[AsyncSession, Depends(db_helper.session_getter)]
-current_user_dep = Annotated[
-    UserPublic, Depends(user_service_dep.get_user_by_access_jwt)
-]
-redis_service_dep = Annotated[Redis, Depends(get_redis_service)]
 
 router = APIRouter(
     tags=["Authentication"],

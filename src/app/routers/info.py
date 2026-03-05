@@ -1,19 +1,16 @@
 from datetime import datetime
-from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 
+from src.app.core.dependencies import current_user_dep
 from src.app.core import templates
-from src.app.core.services.user_service import UserService
 from src.app.core.schemas.user import UserPublic
 
 router = APIRouter(
     tags=["Info"],
     default_response_class=HTMLResponse,
 )
-
-current_user_dep = Annotated[UserPublic, Depends(UserService.get_user_by_access_jwt)]
 
 
 @router.get("/privacy")
