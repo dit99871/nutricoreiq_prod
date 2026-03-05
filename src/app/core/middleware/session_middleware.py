@@ -43,12 +43,11 @@ class SessionMiddleware(BaseMiddleware):
         if self._should_skip_path(request, self.EXEMPT_PATHS):
             return await call_next(request)
 
-        session_id = (
-            request.cookies.get("redis_session_id")
-            or session_service.create_new_session(
-                request.cookies.get("redis_session_id") or "generated"
-            )["redis_session_id"]
-        )
+        # получаем session_id из cookie или создаем новый
+        cookie_session_id = request.cookies.get("redis_session_id")
+        session_id = cookie_session_id or session_service.create_new_session(
+            cookie_session_id or "generated"
+        )["redis_session_id"]
 
         try:
             # получаем сессию с кешированием и circuit breaker
