@@ -20,8 +20,8 @@ def setup_middleware(app: FastAPI) -> None:
     Корректный порядок (inner -> outer):
     - CORSMiddleware - innermost: обработка preflight запросов
     - CSPSecurityMiddleware - CSP безопасность
-    - CSRFProtectionMiddleware - CSRF защита
     - SessionMiddleware - управление сессиями
+    - CSRFProtectionMiddleware - CSRF защита
     - PrivacyConsentV2Middleware - проверка согласия с кешированием
     - SentryAsgiMiddleware - если в production: мониторинг
     - HTTPEnhancedMiddleware - outermost: логирование с unified tracing
@@ -39,8 +39,8 @@ def setup_middleware(app: FastAPI) -> None:
         max_age=600,
     )
     app.add_middleware(CSPSecurityMiddleware)
-    app.add_middleware(CSRFProtectionMiddleware)
     app.add_middleware(SessionMiddleware, trusted_proxies=settings.run.trusted_proxies)
+    app.add_middleware(CSRFProtectionMiddleware)
     app.add_middleware(
         PrivacyConsentV2Middleware, trusted_proxies=settings.run.trusted_proxies
     )
