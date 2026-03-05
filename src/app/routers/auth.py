@@ -23,6 +23,7 @@ from src.app.core.exceptions import ExpiredTokenException, UserAlreadyExistsErro
 from src.app.core.logger import get_logger
 from src.app.core.services.limiter import limiter
 from src.app.core.schemas.user import PasswordChange, UserCreate, UserPublic
+from src.app.core.utils.security import mask_email
 
 log = get_logger("auth_router")
 
@@ -60,9 +61,9 @@ async def register_user(
         return await user_service.register_user(user_in=user_in, request=request)
 
     except UserAlreadyExistsError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"message": str(e)},
+        raise ConflictError(
+            message="Пользователь с таким email уже существует",
+            details={"email": mask_email(user_in.email)},
         )
 
 

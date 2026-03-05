@@ -8,6 +8,7 @@ from src.app.core import broker, db_helper
 from src.app.core.logger import get_logger
 from src.app.core.services.email import send_welcome_email as send_welcome
 from src.app.core.repo.user import get_user_by_email
+from src.app.core.utils.security import mask_email
 
 log = get_logger("email_tasks")
 
@@ -22,9 +23,9 @@ async def send_welcome_email(
 ) -> None:
     user = await get_user_by_email(session, user_email)
     if user is None:
-        log.error("User with email %s not found", user_email)
+        log.error("User with email %s not found", mask_email(user_email))
         return
 
-    log.info("Sending welcome email to: %s", user.email)
+    log.info("Sending welcome email to: %s", mask_email(user.email))
 
     await send_welcome(user)
