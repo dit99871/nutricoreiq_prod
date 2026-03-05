@@ -5,7 +5,6 @@ from typing import Annotated
 from fastapi import (
     APIRouter,
     Depends,
-    HTTPException,
     Request,
     status,
 )
@@ -19,13 +18,14 @@ from src.app.core.dependencies import (
     user_service_dep,
     current_user_dep,
 )
+from src.app.core.exception_handlers import ConflictError
 from src.app.core.exceptions import ExpiredTokenException, UserAlreadyExistsError
 from src.app.core.logger import get_logger
 from src.app.core.services.limiter import limiter
 from src.app.core.schemas.user import PasswordChange, UserCreate, UserPublic
 from src.app.core.utils.security import mask_email
 
-log = get_logger("auth_router")
+log = get_logger(__name__)
 
 router = APIRouter(
     tags=["Authentication"],
@@ -47,15 +47,15 @@ async def register_user(
     Регистрирует нового пользователя в базе данных.
 
     Принимает валидный объект `UserCreate` и регистрирует нового пользователя.
-    Если пользователь уже зарегистрирован, вызывает `HTTPException` со статусом 400
-    и сообщением об ошибке.
+    Если пользователь уже зарегистрирован, вызывает ошибку валидации.
 
     :param request: Объект текущего запроса.
     :param user_in: Данные пользователя для регистрации.
     :param user_service: Сервис для работы с пользователями, создается автоматически.
     :return: Зарегистрированный пользователь.
-    :raises HTTPException: Если пользователь уже зарегистрирован.
+    :raises ValidationError: Если пользователь уже зарегистрирован.
     """
+    log.info("Register attempt")
 
     try:
         return await user_service.register_user(user_in=user_in, request=request)
