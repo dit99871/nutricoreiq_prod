@@ -11,6 +11,8 @@ from src.app.core.logger import get_logger
 from src.app.core.utils.network import get_client_ip, get_scheme_and_host
 import uuid
 
+logger = get_logger("base_middleware")
+
 
 class BaseMiddleware(BaseHTTPMiddleware, ABC):
     """
@@ -53,7 +55,7 @@ class BaseMiddleware(BaseHTTPMiddleware, ABC):
             context = {
                 "trace_id": getattr(request.state, "trace_id", "unknown"),
             }
-            self.logger.warning(
+            logger.warning(
                 "HTTP исключение в %s: %s [status=%s] %s",
                 self.__class__.__name__,
                 e.detail,
@@ -69,7 +71,7 @@ class BaseMiddleware(BaseHTTPMiddleware, ABC):
             if hasattr(e, "status_code") and hasattr(e, "detail"):
                 raise
 
-            self.logger.error(
+            logger.error(
                 "Непредвиденная ошибка в %s: %s",
                 self.__class__.__name__,
                 str(e),
@@ -123,7 +125,7 @@ class BaseMiddleware(BaseHTTPMiddleware, ABC):
         client_ip = getattr(request.state, "client_ip", "unknown")
         effective_url = getattr(request.state, "effective_url", request.url)
 
-        self.logger.error(
+        logger.error(
             "Непредвиденная ошибка в %s: %s, URL: %s, IP: %s, User-Agent: %s",
             self.__class__.__name__,
             str(exception),

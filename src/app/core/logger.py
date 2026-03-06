@@ -1,4 +1,10 @@
-import logging
+from logging import (
+    Formatter,
+    Logger,
+    StreamHandler,
+    basicConfig,
+    getLogger,
+)
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Optional
@@ -6,7 +12,7 @@ from typing import Optional
 from src.app.core.config import settings
 
 
-class CustomTextFormatter(logging.Formatter):
+class CustomTextFormatter(Formatter):
     """Кастомный текстовый форматтер для логов с унифицированным контекстом."""
 
     def format(self, record):
@@ -44,11 +50,11 @@ def setup_logging() -> None:
     file_handler.setFormatter(text_formatter)
 
     # хэндлер для вывода в консоль
-    console_handler = logging.StreamHandler()
+    console_handler = StreamHandler()
     console_handler.setFormatter(text_formatter)
 
     # настройка корневого логгера
-    logging.basicConfig(
+    basicConfig(
         level=settings.logging.log_level_value,
         handlers=[
             file_handler,
@@ -57,12 +63,12 @@ def setup_logging() -> None:
     )
 
 
-def get_logger(name: Optional[str] = None) -> logging.Logger:
+def get_logger(name: Optional[str] = None) -> Logger:
     """
     Возвращает логгер с указанным именем.
     Если имя не указано, возвращает корневой логгер.
     """
 
-    logger = logging.getLogger(name)
+    logger = getLogger(name)
 
     return logger
