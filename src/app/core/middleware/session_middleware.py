@@ -12,11 +12,12 @@ from src.app.core.middleware.base_middleware import BaseMiddleware
 from src.app.core.logger import get_logger
 from src.app.core.services.session_service import session_service
 
+log = get_logger("session_middleware")
+
 
 class SessionMiddleware(BaseMiddleware):
     """Middleware для управления сессиями через Redis"""
 
-    log = get_logger(__name__)
 
     # пути, которые не требуют сессии
     EXEMPT_PATHS = {

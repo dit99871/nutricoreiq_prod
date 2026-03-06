@@ -10,7 +10,7 @@ from src.app.core import db_helper
 from src.app.core.middleware.base_middleware import BaseMiddleware
 from src.app.core.logger import get_logger
 
-log = get_logger(__name__)
+log = get_logger("privacy_middleware")
 
 
 class PrivacyConsentV2Middleware(BaseMiddleware):

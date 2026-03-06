@@ -16,7 +16,7 @@ from src.app.core.exceptions import (
 from src.app.core.middleware.base_middleware import BaseMiddleware
 from src.app.core.logger import get_logger
 
-log = get_logger(__name__)
+log = get_logger("csrf_middleware")
 
 
 class CSRFProtectionMiddleware(BaseMiddleware):

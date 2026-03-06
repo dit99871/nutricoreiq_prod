@@ -15,7 +15,7 @@ from src.app.core.schemas.responses import ErrorDetail, ErrorResponse
 from src.app.core.utils.network import get_client_ip
 
 
-log = get_logger(__name__)
+log = get_logger("exception_handlers")
 
 
 class ExceptionHandlerManager:
