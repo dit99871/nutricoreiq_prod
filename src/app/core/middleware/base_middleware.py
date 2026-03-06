@@ -29,7 +29,7 @@ class BaseMiddleware(BaseHTTPMiddleware, ABC):
     ) -> None:
         super().__init__(app)
         self.trusted_proxies = list(trusted_proxies or [])
-        self.logger = get_logger(self.__class__.__name__.lower())
+        # self.logger = get_logger(self.__class__.__name__.lower())
 
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
