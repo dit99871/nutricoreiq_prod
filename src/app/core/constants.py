@@ -28,12 +28,3 @@ CREDENTIAL_EXCEPTION = HTTPException(
     detail={"message": "Oшибка аутентификации. Пожалуйста, войдите заново"},
     headers={"WWW-Authenticate": "Bearer"},
 )
-
-# Константы логирования
-LOG_DEFAULT_FORMAT = (
-    "[%(asctime)s.%(msecs)03d] %(name)s:%(lineno)d %(levelname)s - %(message)s"
-)
-WORKER_LOG_DEFAULT_FORMAT = (
-    "[%(asctime)s.%(msecs)03d] [%(processName)s] %(module)s:%(lineno)d "
-    "%(levelname)s - %(message)s"
-)
