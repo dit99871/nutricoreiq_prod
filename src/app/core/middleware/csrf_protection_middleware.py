@@ -8,7 +8,11 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.types import ASGIApp
 
 from src.app.core.config import settings
-from src.app.core.exceptions import CSRFDomainError, CSRFSessionExpiredError, CSRFTokenError
+from src.app.core.exceptions import (
+    CSRFDomainError,
+    CSRFSessionExpiredError,
+    CSRFTokenError,
+)
 from src.app.core.middleware.base_middleware import BaseMiddleware
 from src.app.core.logger import get_logger
 
