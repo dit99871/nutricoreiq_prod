@@ -18,16 +18,6 @@ from src.app.core.utils.network import get_client_ip
 log = get_logger("exception_handlers")
 
 
-class ExceptionHandlerManager:
-    """Менеджер обработки исключений с унифицированным логированием"""
-
-    def __init__(self) -> None:
-        self.logger = get_logger(__name__)
-
-
-handler_manager = ExceptionHandlerManager()
-
-
 def _is_bot_request(path: str, user_agent: str) -> tuple[bool, str]:
     """
     Определяет, является ли запрос от бота.
@@ -365,15 +355,10 @@ async def application_error_handler(
     """Обработчик базовых ошибок приложения"""
 
     context = LogContextService.extract_context_from_request(request)
-    handler_manager.logger.error(
+    log.error(
         str(exc),
         extra={
-            "request_id": context.get("request_id"),
-            "trace_id": context.get("trace_id"),
-            "method": context.get("method"),
-            "path": context.get("path"),
-            "client_ip": context.get("client_ip"),
-            "user_agent": context.get("user_agent"),
+            "context_string": LogContextService.format_context_string(context),
         },
     )
 
