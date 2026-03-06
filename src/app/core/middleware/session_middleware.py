@@ -18,7 +18,6 @@ log = get_logger("session_middleware")
 class SessionMiddleware(BaseMiddleware):
     """Middleware для управления сессиями через Redis"""
 
-
     # пути, которые не требуют сессии
     EXEMPT_PATHS = {
         "/static/",
