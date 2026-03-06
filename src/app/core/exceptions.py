@@ -152,3 +152,36 @@ class ExternalServiceError(BaseApplicationError):
                 "original_error": str(original_error) if original_error else None,
             },
         )
+
+
+class CSRFDomainError(BaseApplicationError):
+    """Ошибка CSRF - недопустимый домен"""
+
+    def __init__(self, message: str = "Нет доступа. Пожалуйста, убедитесь, что вы обращаетесь с авторизованного домена."):
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_403_FORBIDDEN,
+            error_code="CSRF_DOMAIN_ERROR",
+        )
+
+
+class CSRFSessionExpiredError(BaseApplicationError):
+    """Ошибка CSRF - сессия истекла"""
+
+    def __init__(self, message: str = "Время сессии истекло. Пожалуйста, войдите снова."):
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_403_FORBIDDEN,
+            error_code="CSRF_SESSION_EXPIRED_ERROR",
+        )
+
+
+class CSRFTokenError(BaseApplicationError):
+    """Ошибка CSRF - недействительный токен"""
+
+    def __init__(self, message: str = "Нет доступа. Пожалуйста, обновите страницу и попробуйте ещё раз."):
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_403_FORBIDDEN,
+            error_code="CSRF_TOKEN_ERROR",
+        )

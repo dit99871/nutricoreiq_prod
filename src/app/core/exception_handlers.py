@@ -8,7 +8,6 @@ from src.app.core.config import settings
 from src.app.core.logger import get_logger
 from src.app.core.exceptions import (
     BaseApplicationError,
-    ConflictError,
     ExpiredTokenException,
 )
 from src.app.core.services.log_context_service import LogContextService
@@ -324,7 +323,6 @@ def generic_exception_handler(
             **context,
             "context_string": LogContextService.format_context_string(context),
         },
-        exc_info=True,
     )
 
     return ORJSONResponse(
@@ -394,7 +392,7 @@ async def application_error_handler(
     )
 
 
-__all__ = ("setup_exception_handlers", "ConflictError")
+__all__ = ("setup_exception_handlers",)
 
 
 def setup_exception_handlers(app: FastAPI) -> None:

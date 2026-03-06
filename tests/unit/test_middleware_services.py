@@ -44,5 +44,61 @@ class TestSessionService:
         csrf_token2 = session_service.ensure_csrf_token(session)
         assert csrf_token == csrf_token2
 
+
+class TestCSRFExceptions:
+    """Тесты для CSRF исключений"""
+    
+    def test_csrf_domain_error_creation(self):
+        """Тест создания CSRFDomainError"""
+        from src.app.core.exceptions import CSRFDomainError
+        
+        error = CSRFDomainError()
+        assert error.status_code == 403
+        assert error.error_code == "CSRF_DOMAIN_ERROR"
+        assert "Нет доступа" in error.message
+        
+        # Тест с кастомным сообщением
+        custom_error = CSRFDomainError("Custom domain error")
+        assert custom_error.message == "Custom domain error"
+    
+    def test_csrf_session_expired_error_creation(self):
+        """Тест создания CSRFSessionExpiredError"""
+        from src.app.core.exceptions import CSRFSessionExpiredError
+        
+        error = CSRFSessionExpiredError()
+        assert error.status_code == 403
+        assert error.error_code == "CSRF_SESSION_EXPIRED_ERROR"
+        assert "Время сессии истекло" in error.message
+        
+        # Тест с кастомным сообщением
+        custom_error = CSRFSessionExpiredError("Custom session expired")
+        assert custom_error.message == "Custom session expired"
+    
+    def test_csrf_token_error_creation(self):
+        """Тест создания CSRFTokenError"""
+        from src.app.core.exceptions import CSRFTokenError
+        
+        error = CSRFTokenError()
+        assert error.status_code == 403
+        assert error.error_code == "CSRF_TOKEN_ERROR"
+        assert "Нет доступа" in error.message
+        
+        # Тест с кастомным сообщением
+        custom_error = CSRFTokenError("Custom token error")
+        assert custom_error.message == "Custom token error"
+    
+    def test_csrf_errors_inherit_from_base_application_error(self):
+        """Тест на то, что CSRF ошибки наследуются от BaseApplicationError"""
+        from src.app.core.exceptions import (
+            CSRFDomainError, 
+            CSRFSessionExpiredError, 
+            CSRFTokenError,
+            BaseApplicationError
+        )
+        
+        assert issubclass(CSRFDomainError, BaseApplicationError)
+        assert issubclass(CSRFSessionExpiredError, BaseApplicationError)
+        assert issubclass(CSRFTokenError, BaseApplicationError)
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

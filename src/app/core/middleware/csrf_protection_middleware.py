@@ -8,6 +8,7 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.types import ASGIApp
 
 from src.app.core.config import settings
+from src.app.core.exceptions import CSRFDomainError, CSRFSessionExpiredError, CSRFTokenError
 from src.app.core.middleware.base_middleware import BaseMiddleware
 from src.app.core.logger import get_logger
 
@@ -53,19 +54,13 @@ class CSRFProtectionMiddleware(BaseMiddleware):
                 origin.startswith(allowed) for allowed in settings.cors.allow_origins
             ):
                 log.warning("Invalid origin for %s", request.url.path)
-                raise StarletteHTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Нет доступа. Пожалуйста, убедитесь, что вы обращаетесь с авторизованного домена.",
-                )
+                raise CSRFDomainError()
 
             # проверка CSRF токена
             session = request.scope.get("redis_session", {})
             if not session:
                 log.warning("No session found for CSRF validation")
-                raise StarletteHTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Время сессии истекло. Пожалуйста, войдите снова.",
-                )
+                raise CSRFSessionExpiredError()
 
             csrf_token = request.headers.get("X-CSRF-Token")
             if not csrf_token:
@@ -74,9 +69,6 @@ class CSRFProtectionMiddleware(BaseMiddleware):
             session_csrf_token = session.get("csrf_token")
             if not csrf_token or csrf_token != session_csrf_token:
                 log.warning("CSRF token validation failed")
-                raise StarletteHTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Нет доступа. Пожалуйста, обновите страницу и попробуйте ещё раз.",
-                )
+                raise CSRFTokenError()
 
         return await call_next(request)
