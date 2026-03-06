@@ -375,7 +375,6 @@ async def application_error_handler(
             "client_ip": context.get("client_ip"),
             "user_agent": context.get("user_agent"),
         },
-        exc_info=True,
     )
 
     error_response = ErrorResponse(
