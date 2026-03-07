@@ -53,7 +53,10 @@ class PrivacyConsentMiddleware(BaseMiddleware):
 
         # пропускаем исключенные пути
         if self._should_skip_path(request, self.EXEMPT_PATHS):
-            return await call_next(request)
+            try:
+                return await call_next(request)
+            except Exception:
+                raise
 
         try:
             # добавляем сессию бд в область видимости запроса
@@ -97,7 +100,10 @@ class PrivacyConsentMiddleware(BaseMiddleware):
                         },
                     )
 
-                return await call_next(request)
+                try:
+                    return await call_next(request)
+                except Exception:
+                    raise
 
         except HTTPException:
             # пробрасываем хттп исключения дальше

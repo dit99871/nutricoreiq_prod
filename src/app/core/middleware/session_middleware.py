@@ -44,7 +44,10 @@ class SessionMiddleware(BaseMiddleware):
 
         # пропуск статических ресурсов и сервисов не требующих сессии
         if self._should_skip_path(request, self.EXEMPT_PATHS):
-            return await call_next(request)
+            try:
+                return await call_next(request)
+            except Exception:
+                raise
 
         # получаем session_id из кук или создаем новый
         cookie_session_id = request.cookies.get("redis_session_id")

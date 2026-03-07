@@ -49,7 +49,10 @@ class CSRFProtectionMiddleware(BaseMiddleware):
         if self._should_skip_path(
             request, set(self.EXEMPT_PATHS)
         ) or request.url.path.endswith("/login"):
-            return await call_next(request)
+            try:
+                return await call_next(request)
+            except Exception:
+                raise
 
         if request.method in ["POST", "PUT", "DELETE", "PATCH"]:
             # проверка Origin/Referer
@@ -75,4 +78,7 @@ class CSRFProtectionMiddleware(BaseMiddleware):
                 log.warning("CSRF token validation failed")
                 raise CSRFTokenError()
 
-        return await call_next(request)
+        try:
+            return await call_next(request)
+        except Exception:
+            raise
