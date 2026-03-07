@@ -68,7 +68,7 @@ class BaseMiddleware(BaseHTTPMiddleware, ABC):
         except Exception as e:
             # проверяем, является ли исключение HTTPException от фастапи
             # если да, пробрасываем его для корректной обработки
-            if hasattr(e, "status_code") and hasattr(e, "detail"):
+            if hasattr(e, "status_code") and hasattr(e, "message"):
                 raise
 
             logger.error(
