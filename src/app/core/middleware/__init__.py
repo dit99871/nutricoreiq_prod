@@ -30,6 +30,12 @@ def setup_middleware(app: FastAPI) -> None:
     :return: None
     """
 
+    app.add_middleware(CSPSecurityMiddleware)
+    app.add_middleware(SessionMiddleware, trusted_proxies=settings.run.trusted_proxies)
+    app.add_middleware(CSRFProtectionMiddleware)
+    app.add_middleware(
+        PrivacyConsentV2Middleware, trusted_proxies=settings.run.trusted_proxies
+    )
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors.allow_origins,
@@ -37,12 +43,6 @@ def setup_middleware(app: FastAPI) -> None:
         allow_methods=settings.cors.allow_methods,
         allow_headers=settings.cors.allow_headers,
         max_age=600,
-    )
-    app.add_middleware(CSPSecurityMiddleware)
-    app.add_middleware(SessionMiddleware, trusted_proxies=settings.run.trusted_proxies)
-    app.add_middleware(CSRFProtectionMiddleware)
-    app.add_middleware(
-        PrivacyConsentV2Middleware, trusted_proxies=settings.run.trusted_proxies
     )
     if settings.env.env == "prod":
         app.add_middleware(SentryAsgiMiddleware)
