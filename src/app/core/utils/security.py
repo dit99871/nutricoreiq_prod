@@ -6,9 +6,9 @@ from src.app.core.config import settings
 
 def generate_csrf_token() -> str:
     """
-    Generates a random string of 32 hexadecimal digits to be used as a CSRF token.
+    Генерирует случайную строку из 32 шестнадцатеричных символов для использования в качестве CSRF токена.
 
-    :return: A string of 32 hexadecimal digits.
+    :return: Строка из 32 шестнадцатеричных символов.
     """
 
     return token_hex(32)
@@ -16,9 +16,9 @@ def generate_csrf_token() -> str:
 
 def generate_redis_session_id() -> str:
     """
-    Generates a random hexadecimal string of 16 characters to be used as a Redis session ID.
+    Генерирует случайную шестнадцатеричную строку из 16 символов для использования в качестве ID сессии Redis.
 
-    :return: A string of 16 hexadecimal characters.
+    :return: Строка из 16 шестнадцатеричных символов.
     """
 
     return token_hex(16)
@@ -47,10 +47,10 @@ def mask_email(email: str | None) -> str:
 
 def generate_csp_nonce() -> str:
     """
-    Generates a random URL-safe string of 32 characters to be used as a nonce
-    for Content Security Policy (CSP).
+    Генерирует случайную URL-безопасную строку из 32 символов для использования в качестве nonce
+    для Content Security Policy (CSP).
 
-    :return: A URL-safe string of 32 characters.
+    :return: URL-безопасная строка из 32 символов.
     """
 
     return token_urlsafe(32)
@@ -58,13 +58,13 @@ def generate_csp_nonce() -> str:
 
 def generate_hash_token(token: str) -> str:
     """
-    Generates a hash token from given token with added salt.
+    Генерирует хеш-токен из заданного токена с добавлением соли.
 
-    This function takes a given token and adds a salt to it from the configuration.
-    The salted token is then hashed using SHA256 and returned as a hexadecimal string.
+    Эта функция принимает заданный токен, добавляет к нему соль из конфигурации.
+    Соленый токен затем хешируется с использованием SHA256 и возвращается в виде шестнадцатеричной строки.
 
-    :param token: The token to be salted and hashed.
-    :return: The hashed token as a hexadecimal string.
+    :param token: Токен для добавления соли и хеширования.
+    :return: Хешированный токен в виде шестнадцатеричной строки.
     """
 
     salted = f"{token}{settings.redis.salt}"

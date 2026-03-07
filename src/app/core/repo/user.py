@@ -11,7 +11,7 @@ from src.app.core.utils.auth import get_password_hash
 from src.app.core.models import User
 from src.app.core.schemas.user import UserCreate, UserPublic
 
-log = get_logger("user_crud")
+log = get_logger("user_repo")
 
 
 async def _get_user_by_filter(

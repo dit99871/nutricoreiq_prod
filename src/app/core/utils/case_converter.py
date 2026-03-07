@@ -1,8 +1,10 @@
-""" """
+"""Утилиты для преобразования регистра строк."""
 
 
 def camel_case_to_snake_case(input_str: str) -> str:
     """
+    Преобразует CamelCase в snake_case.
+    
     >>> camel_case_to_snake_case("SomeSDK")
     'some_sdk'
     >>> camel_case_to_snake_case("RServoDrive")

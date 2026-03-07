@@ -8,7 +8,7 @@ from .config import settings
 from .db_helper import db_helper
 from .utils.templates import templates
 
-# Экспортируем broker всегда: в prod — реальный, иначе — заглушка
+# экспортируем broker всегда: в prod — реальный, иначе — заглушка
 if settings.env.env == "prod":
     from src.app.core.services.taskiq_broker import broker
 else:

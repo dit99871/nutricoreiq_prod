@@ -21,7 +21,7 @@ redis_client = Redis.from_url(
 
 async def get_redis_service() -> AsyncGenerator[Any, Redis]:
     """
-    Yields a Redis connection object for dependency injection.
+    Предоставляет объект подключения Redis для внедрения зависимостей.
     """
 
     async with redis_client.client() as redis:
@@ -33,7 +33,7 @@ async def get_redis_service() -> AsyncGenerator[Any, Redis]:
 
 async def init_redis():
     """
-    Initialize Redis connection at application startup.
+    Инициализирует подключение Redis при запуске приложения.
     """
 
     await redis_client.ping()
@@ -41,7 +41,7 @@ async def init_redis():
 
 async def close_redis():
     """
-    Close Redis connection at application shutdown.
+    Закрывает подключение Redis при остановке приложения.
     """
 
     await redis_client.aclose()

@@ -79,7 +79,7 @@ class User(IntIdPkMixin, Base):
         default=lambda: datetime.datetime.now(datetime.UTC), index=True
     )
 
-    # Связь с согласиями на обработку персональных данных
+    # связь с согласиями на обработку персональных данных
     privacy_consents: Mapped[list["PrivacyConsent"]] = relationship(
         "PrivacyConsent", back_populates="user", cascade="all, delete-orphan"
     )

@@ -14,7 +14,7 @@ from src.app.core.schemas.product import (
 )
 from src.app.core.repo.pending_product import create_pending_product
 
-log = get_logger("product_services")
+log = get_logger("product_repo")
 
 
 async def handle_product_search(
@@ -23,28 +23,28 @@ async def handle_product_search(
     confirmed: bool,
 ) -> UnifiedProductResponse:
     """
-    Searches for products based on a query string.
+    Ищет продукты на основе строки запроса.
 
-    This function performs a search for products by matching the query string
-    against the product titles in the database. It returns a `UnifiedProductResponse`
-    containing an exact match if found, or suggests similar products.
+    Эта функция выполняет поиск продуктов путем сопоставления строки запроса
+    с названиями продуктов в базе данных. Она возвращает `UnifiedProductResponse`,
+    содержащий точное совпадение, если найдено, или предлагает похожие продукты.
 
-    The function takes a query string and a boolean flag indicating whether to skip
-    suggestions.
+    Функция принимает строку запроса и булев флаг, указывающий, нужно ли
+    пропускать предложения.
 
-    If the `confirmed` flag is set to `True`, the function adds the product to the
-    pending queue if it does not already exist.
+    Если флаг `confirmed` установлен в `True`, функция добавляет продукт в
+    очередь ожидания, если он еще не существует.
 
-    If a database error occurs, raises an `HTTPException` with a 404 status code and
-    a detail string containing the error message. If an unexpected error occurs,
-    raises an `HTTPException` with a 500 status code and a detail string containing the
-    error message.
+    При ошибке базы данных вызывает `HTTPException` с кодом 404 и
+    сообщением об ошибке. При неожиданной ошибке вызывает `HTTPException`
+    с кодом 500 и сообщением об ошибке.
 
-    :param session: The current database session.
-    :param query: The search query string. It must be at least 2 characters long.
-    :param confirmed: A boolean flag indicating whether to skip suggestions.
-    :return: A `UnifiedProductResponse` object with the search results.
+    :param session: Текущая сессия базы данных.
+    :param query: Строка поискового запроса. Должна содержать минимум 2 символа.
+    :param confirmed: Булев флаг, указывающий, нужно ли пропускать предложения.
+    :return: Объект `UnifiedProductResponse` с результатами поиска.
     """
+
     response = UnifiedProductResponse()
     query = query.strip().lower()
 
@@ -61,13 +61,13 @@ async def handle_product_search(
     product = exact_match.unique().scalar_one_or_none()
 
     if product:
-        # log.info("Точное совпадение: %s", product.title)
+        log.debug("Точное совпадение: %s", product.title)
         response.exact_match = ProductService.map_to_schema(product)
         return response
 
-    # Поиск предложений
+    # поиск предложений
     if not confirmed:
-        # log.info("Поиск предложений: %s", query)
+        log.debug("Поиск предложений: %s", query)
         suggestions = await session.execute(
             select(Product)
             .options(
@@ -95,7 +95,7 @@ async def handle_product_search(
         suggestions = suggestions.unique().scalars().all()
 
         if suggestions:
-            # log.info("Загрузка предложений: %s", query)
+            log.debug("Загрузка предложений: %s", query)
             response.suggestions = [
                 ProductSuggestion(
                     id=p.id, title=p.title, group_name=p.product_groups.name
@@ -121,20 +121,21 @@ async def handle_product_details(
     product_id: int,
 ) -> ProductDetailResponse:
     """
-    Retrieves the details of a product by its ID.
+    Получает детали продукта по его ID.
 
-    This function queries the database for a product with the given `product_id`.
-    It uses eager loading to fetch related product groups and nutrient associations
-    for efficient data retrieval. If the product is found, it is mapped to a
-    `ProductDetailResponse` schema and returned. If the product is not found, an
-    HTTP 404 exception is raised. In case of other exceptions, an HTTP 500 exception
-    is raised with the error details.
+    Эта функция запрашивает в базе данных продукт с указанным `product_id`.
+    Она использует загрузку связанных данных для получения связанных групп продуктов
+    и ассоциаций нутриентов для эффективного извлечения данных. Если продукт найден,
+    он преобразуется в схему `ProductDetailResponse` и возвращается. Если продукт
+    не найден, вызывается исключение HTTP 404. В случае других исключений вызывается
+    исключение HTTP 500 с деталями ошибки.
 
-    :param session: The current database session.
-    :param product_id: The unique identifier of the product to retrieve.
-    :return: A `ProductDetailResponse` object containing the product details.
+    :param session: Текущая сессия базы данных.
+    :param product_id: Уникальный идентификатор продукта для получения.
+    :return: Объект `ProductDetailResponse`, содержащий детали продукта.
     """
-    # log.info("Start product detail handler")
+
+    log.debug("Start product detail handler")
     product = await session.execute(
         select(Product)
         .options(

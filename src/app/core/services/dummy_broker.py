@@ -33,19 +33,18 @@ class DummyBroker:
             async def kiq(*args: Any, **kwargs: Any) -> Any:
                 return await func(*args, **kwargs)
 
-            # Дополнительно можно имитировать .apply, если где-то потребуется
+            # дополнительно можно имитировать .apply, если где-то потребуется
             async def apply(*args: Any, **kwargs: Any) -> Any:
                 return await func(*args, **kwargs)
 
-            # Присваиваем атрибуты к исходной функции
+            # присваиваем атрибуты к исходной функции
             setattr(func, "kiq", kiq)
             setattr(func, "apply", apply)
 
-            # Для совместимости можно вернуть объект с теми же ссылками
+            #для совместимости можно вернуть объект с теми же ссылками
             return func
 
         return decorator
 
 
-# Экземпляр заглушки, аналогично реальному broker
 broker = DummyBroker()

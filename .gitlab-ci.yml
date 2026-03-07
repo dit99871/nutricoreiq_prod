@@ -4,18 +4,18 @@ services:
   - postgres:17
   - redis:alpine
 
-# Общие переменные
+# oбщие переменные
 variables:
-    # Настройки окружения
+    # настройки окружения
     APP_CONFIG__ENV__ENV: "test"
     
-    # Версия Python
+    # версия python
     PYTHON_VERSION: "3.13"
     
-    # Настройки кеширования
+    # настройки кеширования
     CACHE_VERSION: "v1"
 
-    # Настройки базы данных
+    # настройки базы данных
     POSTGRES_DB: test_db
     POSTGRES_USER: postgres
     POSTGRES_PASSWORD: postgres
@@ -23,17 +23,17 @@ variables:
     POSTGRES_PORT: 5432
     POSTGRES_SSL_MODE: disable
 
-    # Настройки для работы с БД в тестах
+    # настройки для работы с бд в тестах
     APP_CONFIG__DB__TEST_URL: "postgresql+asyncpg://postgres:postgres@postgres:5432/test_db"
     APP_CONFIG__DB__ECHO: "false"
 
-    # Настройки JWT
+    # настройки jwt
     APP_CONFIG__AUTH__SECRET_KEY: test-secret-key-for-ci-123
     APP_CONFIG__AUTH__ALGORITHM: HS256
     APP_CONFIG__AUTH__ACCESS_TOKEN_EXPIRES: "7"
     APP_CONFIG__AUTH__REFRESH_TOKEN_EXPIRES: "7"
 
-    # Настройки Redis
+    # настройки redis
     REDIS_PORT: 6379
     REDIS_ADDR: localhost
     APP_CONFIG__REDIS__URL: "redis://localhost:6379/0"
@@ -41,34 +41,34 @@ variables:
     APP_CONFIG__REDIS__PASSWORD: test-password
     APP_CONFIG__REDIS__SESSION_TTL: "3600"
 
-    # Настройки кеширования
+    # настройки кеширования
     APP_CONFIG__CACHE__USER_TTL: "3600"
 
-    # Настройки приложения
+    # настройки приложения
     HTTP_PORT: 80
     HTTPS_PORT: 443
     APP_CONFIG__RUN__HOST: "0.0.0.0"
     APP_CONFIG__RUN__PORT: "8080"
 
-    # Настройки CORS
+    # настройки CORS
     APP_CONFIG__CORS__ALLOW_ORIGINS: '["*"]'
     APP_CONFIG__CORS__ALLOW_METHODS: '["GET", "HEAD", "POST", "DELETE"]'
     APP_CONFIG__CORS__ALLOW_HEADERS: '["Accept", "Authorization", "Content-Type", "X-CSRF-Token"]'
     APP_CONFIG__CORS__ALLOW_CREDENTIALS: "true"
 
-    # Настройки лимитов
+    # настройки лимитов
     APP_CONFIG__RATE_LIMIT__REGISTER: "1000/minute"
     APP_CONFIG__RATE_LIMIT__LOGIN: "1000/minute"
     APP_CONFIG__RATE_LIMIT__PASSWORD_CHANGE: "1000/minute"
 
-    # Настройки логирования
+    # настройки логирования
     APP_CONFIG__LOGGING__LOG_LEVEL: "INFO"
 
-    # Настройки Loki
+    # настройки loki
     APP_CONFIG__LOKI__URL: "http://localhost:3100"
     APP_CONFIG__LOKI__ENABLED: "false"
 
-    # Настройки почты (обязательные поля с тестовыми значениями)
+    # настройки почты (обязательные поля с тестовыми значениями)
     APP_CONFIG__MAIL__HOST: "smtp.example.com"
     APP_CONFIG__MAIL__PORT: "587"
     APP_CONFIG__MAIL__BUTTON_LINK: "https://example.com/verify"
@@ -77,13 +77,13 @@ variables:
     APP_CONFIG__MAIL__PASSWORD: "test-password"
     APP_CONFIG__MAIL__USE_TLS: "true"
 
-    # Настройки Sentry (обязательные поля)
+    # настройки sentry (обязательные поля)
     APP_CONFIG__SENTRY__DSN: "https://test@example.com/123"
 
-    # Настройки Taskiq
+    # настройки taskiq
     APP_CONFIG__TASKIQ__URL: "amqp://guest:guest@localhost:5672//"
 
-# Кэширование зависимостей
+# кэширование зависимостей
 cache:
   key: 
     files:
@@ -102,15 +102,15 @@ stages:
   - deploy
 
 before_script:
-  # Установка системных зависимостей для slim образа
+  # установка системных зависимостей для slim образа
   - apt-get update && apt-get install -y --no-install-recommends libpq-dev curl && rm -rf /var/lib/apt/lists/*
-  # Установка зависимостей
+  # установка зависимостей
   - python -m pip install --upgrade pip
   - pip install poetry
   - poetry config virtualenvs.create true
   - poetry config virtualenvs.in-project true
   - poetry install --no-interaction --no-root
-  # Ожидание готовности PostgreSQL
+  # ожидание готовности постгре
   - |
     echo "Waiting for PostgreSQL to be ready..."
     for i in {1..30}; do
@@ -120,7 +120,7 @@ before_script:
       fi
       sleep 1
     done
-  # Ожидание готовности Redis
+  # ожидание готовности редиса
   - |
     echo "Waiting for Redis to be ready..."
     for i in {1..30}; do
@@ -130,22 +130,19 @@ before_script:
       fi
       sleep 1
     done
-  # Создание тестовой базы данных
+  # создание тестовой бд
   - psql -h $POSTGRES_HOST -U $POSTGRES_USER -c "CREATE DATABASE $POSTGRES_DB;" || true
 
 .test:template: &test_template
   stage: test
   script:
-    # Запуск приложения в фоне для интеграционных тестов
     - echo "🚀 Запуск приложения для интеграционных тестов..."
     - poetry run uvicorn src.app.main:app --host 0.0.0.0 --port 8080 &
     - APP_PID=$!
-    
-    # Ожидание запуска приложения
     - echo "⏳ Ожидание запуска приложения..."
     - sleep 10
     
-    # Проверка того, что приложение запущено
+    # проверка того, что приложение запущено
     - |
       for i in {1..30}; do
         if curl -s http://localhost:8080/ > /dev/null 2>&1; then
@@ -157,15 +154,15 @@ before_script:
         fi
       done
     
-    # Запуск юнит-тестов
+    # запуск юнит-тестов
     - echo "Running unit tests..."
     - poetry run pytest tests/unit/ --asyncio-mode=auto --cov=src --cov-report=xml --cov-report=html --disable-warnings -v
     
-    # Запуск интеграционных тестов (без покрытия)
+    # запуск интеграционных тестов (без покрытия)
     - echo "Running integration tests..."
     - poetry run pytest tests/integration/ --asyncio-mode=auto --disable-warnings -v
     
-    # Остановка приложения
+    # остановка приложения
     - echo "🛑 Остановка приложения..."
     - kill $APP_PID || true
     
@@ -218,7 +215,7 @@ test:integration:
   dependencies:
     - test:unit
 
-# Линтеры
+# линтеры
 .lint:template: &lint_template
   stage: lint
   script:
@@ -236,7 +233,7 @@ lint:code:
     - develop
   timeout: 5m
 
-# Сборка Docker-образа
+# сборка докер-образа
 build:image:
   stage: build
   image: docker:24.0.6
@@ -252,7 +249,7 @@ build:image:
     - echo "Logging into GitLab Container Registry..."
     - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token --password-stdin $CI_REGISTRY
 
-    # Определяем тег
+    # определяем тег
     - |
       if [ "$CI_COMMIT_REF_NAME" = "main" ]; then
         TAG="latest"
@@ -263,13 +260,13 @@ build:image:
       fi
       echo "Building image with tag: $TAG"
 
-    # Собираем образ
+    # собираем образ
     - docker build -t "$CI_REGISTRY_IMAGE:$TAG" .
 
-    # Пушим образ
+    # пушим образ
     - docker push "$CI_REGISTRY_IMAGE:$TAG"
 
-    # Если это main и тег не latest - создаем дополнительно latest
+    # если это main и тег не latest - создаем дополнительно latest
     - |
       if [ "$CI_COMMIT_REF_NAME" = "main" ] && [ "$TAG" != "latest" ]; then
         docker tag "$CI_REGISTRY_IMAGE:$TAG" "$CI_REGISTRY_IMAGE:latest"
@@ -285,7 +282,7 @@ build:image:
     max: 1
     when: runner_system_failure
 
-# Деплой на прод
+# деплой на прод
 deploy:prod:
   stage: deploy
   tags:
@@ -303,11 +300,11 @@ deploy:prod:
     DOCKER_REGISTRY: $CI_REGISTRY
     DOCKER_IMAGE: $CI_REGISTRY_IMAGE:latest
     DEPLOY_PATH: $DEPLOY_PATH
-    # Альтернатива: использовать CI_JOB_TOKEN вместо Deploy Token
+    # альтернатива: использовать CI_JOB_TOKEN вместо Deploy Token
     CI_JOB_TOKEN: $CI_JOB_TOKEN
   
   script:
-    # Настройка SSH
+    # настройка SSH
     - command -v ssh || (echo "Ошибка - ssh не установлен" && exit 1)
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
@@ -323,15 +320,15 @@ deploy:prod:
     - ssh-keyscan -p $SSH_PORT -H $SSH_HOST >> ~/.ssh/known_hosts 2>/dev/null
     - chmod 644 ~/.ssh/known_hosts
 
-    # Тестовое подключение
+    # тестовое подключение
     - echo "=== Проверка SSH подключения ==="
     - ssh -p $SSH_PORT $SSH_USER@$SSH_HOST "echo 'SSH connected successfully'"
 
-    # Копируем скрипт деплоя на удалённый сервер
+    # копируем скрипт деплоя на удалённый сервер
     - scp -P $SSH_PORT scripts/deploy.sh $SSH_USER@$SSH_HOST:/tmp/deploy_script.sh
     - ssh -p $SSH_PORT $SSH_USER@$SSH_HOST "chmod +x /tmp/deploy_script.sh"
 
-    # Запускаем скрипт деплоя
+    # запускаем скрипт деплоя
     - |
       ssh -p $SSH_PORT $SSH_USER@$SSH_HOST "export DEPLOY_PATH='$DEPLOY_PATH' && \
         export DOCKER_REGISTRY='$DOCKER_REGISTRY' && \
@@ -347,7 +344,7 @@ deploy:prod:
       else
         echo "Деплой успешно завершен!"
       fi
-    # Очистка SSH ключей
+    # очистка SSH ключей
     - rm -rf ~/.ssh
 
   only:

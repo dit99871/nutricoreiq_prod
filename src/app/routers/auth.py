@@ -28,7 +28,7 @@ from src.app.core.services.limiter import limiter
 from src.app.core.schemas.user import PasswordChange, UserCreate, UserPublic
 from src.app.core.utils.security import mask_email
 
-log = get_logger(__name__)
+log = get_logger("auth_router")
 
 router = APIRouter(
     tags=["Authentication"],
@@ -58,6 +58,7 @@ async def register_user(
     :return: Зарегистрированный пользователь.
     :raises ValidationError: Если пользователь уже зарегистрирован.
     """
+
     log.info("Register attempt")
 
     try:

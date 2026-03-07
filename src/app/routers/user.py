@@ -30,14 +30,14 @@ async def read_current_user(
     user: current_user_dep,
 ) -> dict:
     """
-    Retrieves the current authenticated user's basic information.
+    Получает базовую информацию о текущем аутентифицированном пользователе.
 
-    This endpoint returns the username and email of the authenticated user.
-    If the user is not authenticated, it raises an HTTPException with a 401 status code.
+    Этот эндпоинт возвращает имя пользователя и email аутентифицированного пользователя.
+    Если пользователь не аутентифицирован, вызывает HTTPException с кодом 401.
 
-    :param user: The authenticated user object obtained from the dependency.
-    :return: A dictionary containing the username and email of the user.
-    :raises HTTPException: If the user is not authenticated.
+    :param user: Аутентифицированный объект пользователя, полученный из зависимости.
+    :return: Словарь, содержащий имя пользователя и email.
+    :raises HTTPException: Если пользователь не аутентифицирован.
     """
 
     if user is None:
@@ -58,17 +58,17 @@ async def get_profile(
     user_service: user_service_dep,
 ) -> Response:
     """
-    Retrieves the current authenticated user's profile information.
+    Получает информацию о профиле текущего аутентифицированного пользователя.
 
-    This endpoint returns the profile information of the authenticated user.
-    If the user is not authenticated, it raises an HTTPException with a 401 status code.
+    Этот эндпоинт возвращает информацию о профиле аутентифицированного пользователя.
+    Если пользователь не аутентифицирован, вызывает HTTPException с кодом 401.
 
-    :param request: The incoming request object.
-    :param user: The authenticated user object obtained from the dependency.
-    :param db_session: The current database db_session.
-    :param user_service: The user service instance.
-    :return: A rendered HTML template with the user's profile information.
-    :raises HTTPException: If the user is not authenticated.
+    :param request: Входящий объект запроса.
+    :param user: Аутентифицированный объект пользователя, полученный из зависимости.
+    :param db_session: Текущая сессия базы данных.
+    :param user_service: Экземпляр сервиса пользователя.
+    :return: Отрендеренный HTML-шаблон с информацией о профиле пользователя.
+    :raises HTTPException: Если пользователь не аутентифицирован.
     """
 
     if user is None:
@@ -77,7 +77,7 @@ async def get_profile(
 
     user = await get_user_profile(db_session, user.id)
 
-    # Расчет нутриентов через сервисный слой
+    # расчет нутриентов через сервисный слой
     nutrition_data = user_service.calculate_user_nutrients(user)
     is_filled = nutrition_data is not None
 
@@ -107,18 +107,18 @@ async def update_profile(
     db_session: db_session_dep,
 ) -> dict:
     """
-    Updates the current authenticated user's profile information.
+    Обновляет информацию о профиле текущего аутентифицированного пользователя.
 
-    This endpoint accepts a `UserProfile` object containing the updated
-    profile details and updates the current user's profile in the database.
-    If the user is not authenticated, it raises a 401 HTTPException. If
-    the provided data is invalid, it raises a 400 HTTPException.
+    Этот эндпоинт принимает объект `UserProfile`, содержащий обновленные
+    детали профиля и обновляет профиль текущего пользователя в базе данных.
+    Если пользователь не аутентифицирован, вызывает HTTPException с кодом 401. Если
+    предоставленные данные невалидны, вызывает HTTPException с кодом 400.
 
-    :param data_in: The updated user profile information.
-    :param user: The authenticated user object obtained from the dependency.
-    :param db_session: The current database db_session.
-    :return: A JSON response indicating the success of the profile update.
-    :raises HTTPException: If the user is not authenticated or if the provided data is invalid.
+    :param data_in: Обновленная информация о профиле пользователя.
+    :param user: Аутентифицированный объект пользователя, полученный из зависимости.
+    :param db_session: Текущая сессия базы данных.
+    :return: JSON-ответ, указывающий на успешное обновление профиля.
+    :raises HTTPException: Если пользователь не аутентифицирован или предоставленные данные невалидны.
     """
 
     if user is None:
@@ -142,19 +142,18 @@ async def unsubscribe_email_notification(
     db_session: db_session_dep,
 ) -> None:
     """
-    Unsubscribes the current authenticated user from email notifications.
+    Отписывает текущего аутентифицированного пользователя от email-уведомлений.
 
-    This endpoint accepts the current authenticated user object and the
-    current database session. It then calls the `choose_subscribe_status`
-    function with the user object and the database session, along with the
-    boolean value `False` to indicate that the user wants to unsubscribe from
-    email notifications. If the user is not authenticated, it raises an
-    HTTPException with a 401 status code.
+    Этот эндпоинт принимает объект текущего аутентифицированного пользователя и
+    текущую сессию базы данных. Затем вызывает функцию `choose_subscribe_status`
+    с объектом пользователя и сессией базы данных, а также с булевым значением `False`,
+    указывающим, что пользователь хочет отписаться от email-уведомлений. Если пользователь
+    не аутентифицирован, вызывает HTTPException с кодом 401.
 
-    :param user: The authenticated user object obtained from the dependency.
-    :param db_session: The current database db_session.
-    :return: A JSON response indicating the success of the unsubscription.
-    :raises HTTPException: If the user is not authenticated.
+    :param user: Аутентифицированный объект пользователя, полученный из зависимости.
+    :param db_session: Текущая сессия базы данных.
+    :return: JSON-ответ, указывающий на успешную отписку.
+    :raises HTTPException: Если пользователь не аутентифицирован.
     """
 
     if user is None:
@@ -169,19 +168,18 @@ async def subscribe_email_notification(
     db_session: db_session_dep,
 ) -> None:
     """
-    Subscribes the current authenticated user to email notifications.
+    Подписывает текущего аутентифицированного пользователя на email-уведомления.
 
-    This endpoint accepts the current authenticated user object and the
-    current database session. It then calls the `choose_subscribe_status`
-    function with the user object and the database session, along with the
-    boolean value `True` to indicate that the user wants to subscribe to
-    email notifications. If the user is not authenticated, it raises an
-    HTTPException with a 401 status code.
+    Этот эндпоинт принимает объект текущего аутентифицированного пользователя и
+    текущую сессию базы данных. Затем вызывает функцию `choose_subscribe_status`
+    с объектом пользователя и сессией базы данных, а также с булевым значением `True`,
+    указывающим, что пользователь хочет подписаться на email-уведомления. Если пользователь
+    не аутентифицирован, вызывает HTTPException с кодом 401.
 
-    :param user: The authenticated user object obtained from the dependency.
-    :param db_session: The current database db_session.
-    :return: A JSON response indicating the success of the subscription.
-    :raises HTTPException: If the user is not authenticated.
+    :param user: Аутентифицированный объект пользователя, полученный из зависимости.
+    :param db_session: Текущая сессия базы данных.
+    :return: JSON-ответ, указывающий на успешную подписку.
+    :raises HTTPException: Если пользователь не аутентифицирован.
     """
 
     if user is None:
@@ -193,12 +191,12 @@ async def subscribe_email_notification(
 @router.get("/login")
 async def login_get() -> RedirectResponse:
     """
-    Redirects the user to the homepage with an action parameter set to unsubscribe.
+    Перенаправляет пользователя на домашнюю страницу с параметром действия, установленным в unsubscribe.
 
-    This endpoint is used to handle login requests to the `/login` endpoint.
-    It returns a 302 redirect response to the homepage with an action parameter set to unsubscribe.
+    Этот эндпоинт используется для обработки запросов на вход к эндпоинту `/login`.
+    Возвращает ответ с редиректом 302 на домашнюю страницу с параметром действия, установленным в unsubscribe.
 
-    :return: A 302 redirect response.
+    :return: Ответ с редиректом 302.
     """
 
     return RedirectResponse(url="/?action=unsubscribe")

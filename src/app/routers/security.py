@@ -31,15 +31,15 @@ async def csp_report(request: Request) -> CSPReportResponse:
     """
 
     try:
-        # Получаем сырой JSON
+        # получаем сырой json
         report = await request.json()
 
-        # Обрабатываем отчет через сервис
+        # обрабатываем отчет через сервис
         effective_directive, doc_uri, blocked_uri = CSPReportService.process_report(
             report
         )
 
-        # Логируем нарушение
+        # логируем нарушение
         log.warning(
             f"Обнаружено нарушение CSP: {effective_directive} "
             f"с {doc_uri} - "

@@ -15,26 +15,26 @@ for var in "${required_vars[@]}"; do
     fi
 done
 
-# Проверка доступных методов аутентификации
+# проверка доступных методов аутентификации
 if [[ -z "$CI_JOB_TOKEN" && -z "$DEPLOY_TOKEN_USERNAME" ]]; then
     echo "ОШИБКА: Ни CI_JOB_TOKEN ни DEPLOY_TOKEN_USERNAME не доступны"
     echo "Установите хотя бы один метод аутентификации"
     exit 1
 fi
 
-# Создание директории проекта
+# создание директории проекта
 if ! mkdir -p "$DEPLOY_PATH"; then
     echo "ОШИБКА: Не удалось создать директорию $DEPLOY_PATH"
     exit 1
 fi
 
-# Проверка доступа к Docker
+# проверка доступа к Docker
 if ! docker ps > /dev/null; then
     echo "ОШИБКА: Нет доступа к Docker"
     exit 1
 fi
 
-# Копирование .env файла
+# копирование .env файла
 if [[ -f "/etc/nutricoreiq/.env" ]]; then
     if ! cp /etc/nutricoreiq/.env "$DEPLOY_PATH/.env"; then
         echo "ОШИБКА: Не удалось скопировать .env файл"
@@ -45,18 +45,16 @@ else
     echo "ПРЕДУПРЕЖДЕНИЕ: .env файл не найден в /etc/nutricoreiq/.env"
 fi
 
-# Переход в директорию проекта
+# переход в директорию проекта
 cd "$DEPLOY_PATH" || { echo "ОШИБКА: Не удалось перейти в $DEPLOY_PATH"; exit 1; }
 
-# Логаут из старых сессий
 echo "=== Выход из предыдущих Docker сессий ==="
 docker logout "$DOCKER_REGISTRY" 2>/dev/null || true
 
-# Логин в Docker Registry
 echo "=== Логин в Docker Registry ==="
 echo "Registry: $DOCKER_REGISTRY"
 
-# Проверяем доступные методы аутентификации
+# проверяем доступные методы аутентификации
 if [ -n "$CI_JOB_TOKEN" ]; then
     echo "Используем CI_JOB_TOKEN для аутентификации"
     if echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token --password-stdin "$DOCKER_REGISTRY"; then
@@ -102,11 +100,9 @@ else
     fi
 fi
 
-# Остановка старых контейнеров
 echo "=== Остановка старых контейнеров ==="
 docker-compose -f docker-compose.prod.yml down || echo "ПРЕДУПРЕЖДЕНИЕ: старые контейнеры не найдены"
 
-# Загрузка нового Docker-образа
 echo "=== Загрузка Docker образа: $DOCKER_IMAGE ==="
 if ! docker pull "$DOCKER_IMAGE"; then
     echo "ОШИБКА: Не удалось загрузить образ $DOCKER_IMAGE"
@@ -116,37 +112,32 @@ fi
 
 echo "✓ Образ успешно загружен"
 
-# Запуск сервисов
 echo "=== Запуск сервисов ==="
 if ! docker-compose -f docker-compose.prod.yml up -d; then
     echo "ОШИБКА: Не удалось запустить сервисы"
     exit 1
 fi
 
-# Очистка неиспользуемых образов
 echo "=== Очистка старых образов ==="
 docker image prune -f
 
-# Ожидание запуска сервисов
 echo "=== Ожидание запуска сервисов ==="
 sleep 10
 
-# Проверка статуса контейнеров
 echo "=== Проверка статуса контейнеров ==="
 docker ps -a
 
-# Проверка health checks
 echo "=== Проверка health checks ==="
 max_attempts=30
 attempt=1
 
-# Проверяем health только у критичных сервисов, от которых зависит работоспособность приложения.
+# проверяем здоровье только у критичных сервисов, от которых зависит работоспособность приложения.
 critical_services=(db redis rabbitmq fastapi)
 
 while [[ $attempt -le $max_attempts ]]; do
     echo "Попытка $attempt/$max_attempts"
     
-    # Проверяем статус всех сервисов
+    # проверяем статус всех сервисов
     unhealthy_services=$(
         for svc in "${critical_services[@]}"; do
             cid=$(docker-compose -f docker-compose.prod.yml ps -q "$svc" 2>/dev/null || true)
@@ -173,7 +164,7 @@ while [[ $attempt -le $max_attempts ]]; do
         echo "Нездоровые критичные сервисы (healthcheck):"
         echo "$unhealthy_services" | sed 's/^/ - /'
 
-        # Если есть реально упавшие контейнеры (Exited) — это считаем ошибкой деплоя.
+        # если есть реально упавшие контейнеры (Exited) — это считаем ошибкой деплоя.
         failed_services=$(docker ps -a --filter "status=exited" --format "{{.ID}}" || true)
         if [[ -n "$failed_services" ]]; then
             echo "ОШИБКА: Найдены упавшие контейнеры (Exited). Деплой прерван."
@@ -192,7 +183,6 @@ while [[ $attempt -le $max_attempts ]]; do
     ((attempt++))
 done
 
-# Проверка доступности основного приложения
 echo "=== Проверка доступности приложения ==="
 app_port=$(grep APP_CONFIG__RUN__PORT .env 2>/dev/null | cut -d'=' -f2 || echo "8080")
 max_health_attempts=12
@@ -219,7 +209,6 @@ done
 echo "=== Деплой успешно завершен ==="
 echo "Приложение доступно на порту: $app_port"
 
-# Выход из Docker Registry
 echo "=== Выход из Docker Registry ==="
 docker logout "$DOCKER_REGISTRY" || true
 

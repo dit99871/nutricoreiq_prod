@@ -33,7 +33,7 @@ def coerce_kfa(v: Any) -> KFALevel | None:
     if isinstance(v, KFALevel):
         return v
     try:
-        # Пробуем преобразовать в строку и создать KFALevel
+        # пробуем преобразовать в строку и создать KFALevel
         return KFALevel(str(v))
     except (ValueError, TypeError) as e:
         raise ValueError(f"Недопустимое значение KFA: {v}") from e

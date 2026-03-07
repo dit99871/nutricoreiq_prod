@@ -9,26 +9,27 @@ class ProductService:
     @staticmethod
     def map_to_schema(product: Product) -> ProductDetailResponse:
         """
-        Maps a `Product` object to a `ProductDetailResponse` object.
+        Преобразует объект `Product` в объект `ProductDetailResponse`.
 
-        Iterates over the product's nutrient associations and maps the nutrient
-        amounts to the corresponding fields in the response object.
+        Итерирует по ассоциациям нутриентов продукта и сопоставляет количества
+        нутриентов с соответствующими полями в объекте ответа.
 
-        :param product: The product to map.
-        :return: The mapped response object.
+        :param product: Продукт для преобразования.
+        :return: Преобразованный объект ответа.
         """
+
         response = ProductDetailResponse(
             id=product.id,
             title=product.title,
             group_name=product.product_groups.name,
         )
-        # log.info("Mapping product %s to schema", product.title)
+        log.debug("Mapping product %s to schema", product.title)
         for assoc in product.nutrient_associations:
             nutrient = assoc.nutrients
             amount = assoc.amount
             unit = nutrient.unit
 
-            # Обработка макронутриентов
+            # обработка макронутриентов
             if nutrient.category == NutrientCategory.MACRO:
                 if "белки" in nutrient.name.lower():
                     response.proteins.total = amount
@@ -42,7 +43,7 @@ class ProductService:
             elif nutrient.category == NutrientCategory.ENERGY_VALUE:
                 response.energy_value = amount
 
-            # Обработка аминокислот
+            # обработка аминокислот
             elif nutrient.category == NutrientCategory.ESSENTIAL_AMINO:
                 response.proteins.amino_acids.essential += amount
 
@@ -52,7 +53,7 @@ class ProductService:
             elif nutrient.category == NutrientCategory.NONESSENTIAL_AMINO:
                 response.proteins.amino_acids.nonessential += amount
 
-            # Обработка жиров
+            # обработка жиров
             elif nutrient.category == NutrientCategory.SATURATED_FATS:
                 if "холестерин" in nutrient.name.lower():
                     response.fats.breakdown.cholesterol = amount
@@ -70,26 +71,26 @@ class ProductService:
                 elif "омега-6" in nutrient.name.lower():
                     response.fats.breakdown.polyunsaturated.omega6 = amount
 
-            # Обработка углеводов
+            # обработка углеводов
             elif nutrient.category == NutrientCategory.CARBS:
                 if "клетчатка" in nutrient.name.lower():
                     response.carbs.breakdown.fiber = amount
                 elif "сахар" in nutrient.name.lower():
                     response.carbs.breakdown.sugar = amount
 
-            # Витамины
+            # витамины
             elif nutrient.category == NutrientCategory.VITAMINS:
                 response.vitamins.vits.append(
                     NutrientBase(name=nutrient.name, amount=amount, unit=unit)
                 )
 
-            # Витаминоподобные
+            # витаминоподобные вещества
             elif nutrient.category == NutrientCategory.VITAMIN_LIKE:
                 response.vitamin_like.vitslk.append(
                     NutrientBase(name=nutrient.name, amount=amount, unit=unit)
                 )
 
-            # Минералы
+            # минералы
             elif nutrient.category == NutrientCategory.MINERALS_MACRO:
                 response.minerals.macro.append(
                     NutrientBase(name=nutrient.name, amount=amount, unit=unit)
@@ -100,7 +101,7 @@ class ProductService:
                     NutrientBase(name=nutrient.name, amount=amount, unit=unit)
                 )
 
-            # Прочие нутриенты
+            # прочие нутриенты
             elif nutrient.category == NutrientCategory.OTHER:
                 response.other.oths.append(
                     NutrientBase(name=nutrient.name, amount=amount, unit=unit)

@@ -1,4 +1,4 @@
-"""JWT token service for handling token creation and validation."""
+"""JWT сервис для обработки создания и валидации токенов."""
 
 import datetime as dt
 import uuid

@@ -30,7 +30,7 @@ class HealthCalculator:
         :return: Рассчитанный BMR (float).
         :raises ValueError: Если отсутствуют обязательные поля или их значения недопустимы.
         """
-        # Проверка на наличие всех необходимых полей
+        # проверка на наличие всех необходимых полей
         required_fields = ["gender", "age", "weight", "height"]
         missing_fields = [
             field for field in required_fields if getattr(user, field) is None
@@ -44,13 +44,13 @@ class HealthCalculator:
                 f"Отсутствуют обязательные поля для расчёта BMR: {', '.join(missing_fields)}"
             )
 
-        # Извлечение данных
+        # извлечение данных
         gender = user.gender
         age = user.age
         weight = user.weight
         height = user.height
 
-        # Валидация значений
+        # валидация значений
         if age <= 0 or age > 120:
             raise ValueError(
                 f"Недопустимый возраст: {age}. Должен быть от 1 до 120 лет."
@@ -64,7 +64,7 @@ class HealthCalculator:
                 f"Недопустимый рост: {height}. Должен быть от 1 до 300 см."
             )
 
-        # Расчёт BMR
+        # расчёт BMR
         bmr = 10 * weight + 6.25 * height - 5 * age
         if gender == "male":
             bmr += 5
@@ -85,7 +85,7 @@ class HealthCalculator:
         :return: Рассчитанный TDEE (float).
         :raises ValueError: Если отсутствует или недопустим коэффициент активности (kfa).
         """
-        # Проверка kfa
+        # проверка kfa
         if user.kfa is None:
             log.error(
                 "Отсутствует коэффициент активности (kfa) для пользователя: %s", user
@@ -132,10 +132,10 @@ class HealthCalculator:
                 "Для расчета скорректированного TDEE необходимо указать цель."
             )
 
-        # Получаем строковое значение цели
+        # получаем строковое значение цели
         goal_value = user.goal.value if hasattr(user.goal, "value") else str(user.goal)
 
-        # Корректировка TDEE в зависимости от цели
+        # корректировка tdee в зависимости от цели
         if goal_value == "Увеличение веса":
             return base_tdee + 400
         elif goal_value == "Снижение веса":
@@ -158,23 +158,23 @@ class HealthCalculator:
         if not user.goal:
             raise ValueError("Для расчёта нутриентов необходимо указать цель.")
 
-        # Процентное соотношение нутриентов в зависимости от цели
+        # процентное соотношение нутриентов в зависимости от цели
         goal_ratios = {
             "Поддержание веса": {"carbs": 0.55, "protein": 0.20, "fat": 0.25},
             "Увеличение веса": {"carbs": 0.55, "protein": 0.25, "fat": 0.20},
             "Снижение веса": {"carbs": 0.45, "protein": 0.30, "fat": 0.25},
         }
 
-        # Получаем строковое значение цели
+        # получаем строковое значение цели
         goal_value = user.goal.value if hasattr(user.goal, "value") else str(user.goal)
         ratios = goal_ratios[goal_value]
 
-        # Расчет калорийности по нутриентам
+        # расчет калорийности по нутриентам
         carbs_calories = tdee * ratios["carbs"]
         protein_calories = tdee * ratios["protein"]
         fat_calories = tdee * ratios["fat"]
 
-        # Перевод в граммы (углеводы и белки - 4 ккал/г, жиры - 9 ккал/г)
+        # перевод в граммы (углеводы и белки - 4 ккал/г, жиры - 9 ккал/г)
         carbs_grams = round(carbs_calories / 4)
         protein_grams = round(protein_calories / 4)
         fat_grams = round(fat_calories / 9)

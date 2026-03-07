@@ -8,10 +8,8 @@ from src.app.core.logger import get_logger
 from src.app.core.repo.product import handle_product_search, handle_product_details
 from src.app.core.repo.pending_product import create_pending_product
 from src.app.core.services.redis import get_redis_session_from_request
-from src.app.core.services.user_service import UserService
 from src.app.core.utils import templates
 from src.app.core.schemas.product import PendingProductCreate, UnifiedProductResponse
-from src.app.core.schemas.user import UserPublic
 
 log = get_logger("product_router")
 
@@ -28,16 +26,16 @@ async def search_products(
     confirmed: bool = Query(False),
 ):
     """
-    Searches for products based on a query string.
+    Ищет продукты на основе строки запроса.
 
-    This endpoint performs a search for products by matching the query string
-    against the product titles in the database. It returns a `UnifiedProductResponse`
-    containing an exact match if found, or suggests similar products.
+    Этот эндпоинт выполняет поиск продуктов путем сопоставления строки запроса
+    с названиями продуктов в базе данных. Возвращает `UnifiedProductResponse`
+    содержащий точное совпадение, если найдено, или предлагает похожие продукты.
 
-    :param session: The current database session.
-    :param query: The search query string. It must be at least 2 characters long.
-    :param confirmed: A boolean flag indicating whether to skip suggestions.
-    :return: A `UnifiedProductResponse` object with the search results.
+    :param session: Текущая сессия базы данных.
+    :param query: Строка поискового запроса. Должна содержать минимум 3 символа.
+    :param confirmed: Булев флаг, указывающий нужно ли пропускать предложения.
+    :return: Объект `UnifiedProductResponse` с результатами поиска.
     """
 
     return await handle_product_search(session, query, confirmed)
@@ -52,20 +50,20 @@ async def get_product_details(
     current_user: current_user_dep,
 ):
     """
-    Retrieves the details of a product.
+    Получает детали продукта.
 
-    This endpoint retrieves the details of a product and renders its information
-    using an HTML template.
+    Этот эндпоинт получает детали продукта и отображает его информацию
+    с использованием HTML-шаблона.
 
-    :param request: The incoming request object.
-    :param product_id: The ID of the product to retrieve.
-    :param session: The current database session.
-    :param current_user: The authenticated user object obtained from the dependency.
-    :return: A rendered HTML template with the product details.
+    :param request: Входящий объект запроса.
+    :param product_id: ID продукта для получения.
+    :param session: Текущая сессия базы данных.
+    :param current_user: Аутентифицированный объект пользователя, полученный из зависимости.
+    :return: Отрендеренный HTML-шаблон с деталями продукта.
     """
 
     product_data = await handle_product_details(session, product_id)
-    # log.info("Rendering template")
+    log.debug("Rendering template")
     redis_session = get_redis_session_from_request(request)
 
     return templates.TemplateResponse(
@@ -87,15 +85,15 @@ async def add_pending_product(
     session: db_session_dep,
 ):
     """
-    Adds a new pending product to the database.
+    Добавляет новый ожидающий продукт в базу данных.
 
-    This endpoint checks if a product with the given name is already in the pending
-    queue. If not, it adds the product to the queue.
+    Этот эндпоинт проверяет, находится ли продукт с заданным именем уже в очереди
+    ожидания. Если нет, добавляет продукт в очередь.
 
-    :param data: The pending product data containing the product name.
-    :param session: The current database session.
-    :raises HTTPException: If the product is already in the pending queue.
-    :return: A JSON response indicating success.
+    :param data: Данные ожидающего продукта, содержащие название продукта.
+    :param session: Текущая сессия базы данных.
+    :raises HTTPException: Если продукт уже находится в очереди ожидания.
+    :return: JSON-ответ, указывающий на успех.
     """
 
     await create_pending_product(session, data.name)

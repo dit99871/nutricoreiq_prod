@@ -7,7 +7,7 @@ from src.app.core.logger import get_logger
 from src.app.core.models import User
 from src.app.core.schemas.user import UserProfile, UserProfileUpdate, UserPublic
 
-log = get_logger("profile_crud")
+log = get_logger("profile_repo")
 
 
 async def get_user_profile(
@@ -15,12 +15,12 @@ async def get_user_profile(
     user_id: int,
 ) -> UserProfile:
     """
-    Fetches a user's profile information from the database.
+    Получает информацию о профиле пользователя из базы данных.
 
-    :param session: The current database session.
-    :param user_id: The ID of the user to fetch the profile for.
-    :return: The user's profile information.
-    :raises HTTPException: If the user is not found in the database.
+    :param session: Текущая сессия базы данных.
+    :param user_id: ID пользователя для получения профиля.
+    :return: Информация о профиле пользователя.
+    :raises HTTPException: Если пользователь не найден в базе данных.
     """
 
     stmt = select(User).filter(
@@ -61,14 +61,14 @@ async def update_user_profile(
     session: AsyncSession,
 ) -> UserProfile:
     """
-    Updates the current authenticated user's profile information in the database.
+    Обновляет информацию о профиле текущего аутентифицированного пользователя в базе данных.
 
-    :param data_in: The updated user profile information.
-    :param current_user: The authenticated user whose profile is to be updated.
-    :param session: The current database session.
-    :return: The user's updated profile information.
-    :raises HTTPException: If the user is not found in the database or
-                           if an error occurs during the update.
+    :param data_in: Обновленная информация о профиле пользователя.
+    :param current_user: Аутентифицированный пользователь, чей профиль нужно обновить.
+    :param session: Текущая сессия базы данных.
+    :return: Обновленная информация о профиле пользователя.
+    :raises HTTPException: Если пользователь не найден в базе данных или
+                           если произошла ошибка во время обновления.
     """
 
     # обновляем только переданные поля
@@ -99,7 +99,7 @@ async def update_user_profile(
             )
         await session.commit()
 
-        # возвращаем через Pydantic-валидацию, используя атрибуты ORM
+        # возвращаем через pydantic-валидацию, используя атрибуты orm
         return UserProfile.model_validate(updated_user, from_attributes=True)
 
     except SQLAlchemyError as e:

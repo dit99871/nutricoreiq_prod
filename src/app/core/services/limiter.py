@@ -7,8 +7,8 @@ storage_uri = (
     settings.rate_limit.storage_uri or settings.redis.url
 )  # e.g., "redis://redis:6379/0"
 limiter = Limiter(
-    key_func=get_remote_address,  # Default: по IP
-    default_limits=["1000/hour"],  # Глобальный, если нужно (дополняет Nginx)
+    key_func=get_remote_address,  # по умолчанию: по ip
+    default_limits=["1000/hour"],  # глобальный, если нужно (дополняет nginx)
     storage_uri=storage_uri,
-    strategy="fixed-window",  # Для точности с Redis
+    strategy="fixed-window",  # для точности с редисом
 )

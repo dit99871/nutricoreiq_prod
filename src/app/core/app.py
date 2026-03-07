@@ -31,7 +31,7 @@ def create_app() -> FastAPI:
     # настройка prometheus
     Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
-    # Монтирование статических файлов
+    # монтирование статических файлов
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     static_dir = os.path.join(base_dir, "app", "static")
     if os.path.exists(static_dir) and os.path.isdir(static_dir):

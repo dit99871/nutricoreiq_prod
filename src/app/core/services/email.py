@@ -11,7 +11,7 @@ from src.app.core.logger import get_logger
 from src.app.core.utils.security import mask_email
 from src.app.core.schemas.user import UserPublic
 
-log = get_logger("email_services")
+log = get_logger("email_service")
 
 env = Environment(loader=FileSystemLoader(str((BASE_DIR / "templates").resolve())))
 
@@ -24,38 +24,38 @@ async def send_email(
     context: dict,
 ) -> None:
     """
-    Asynchronously sends an email to the recipient using the given template.
+    Асинхронно отправляет email получателю используя указанный шаблон.
 
-    The template will be rendered with the given context dictionary.
-    The rendered HTML content is then sent as a MIME message with an
-    "alternative" type, which allows the recipient's email client to decide
-    whether to render the HTML or not.
+    Шаблон будет отрендерен с использованием переданного словаря контекста.
+    Отрендеренный HTML-контент затем отправляется как MIME-сообщение с
+    типом "alternative", что позволяет почтовому клиенту получателя решить,
+    рендерить HTML или нет.
 
-    :param recipient: The recipient's email address
-    :param sender: The sender's email address
-    :param subject: The email's subject
-    :param template: The name of the template to use (should be in the
-                     templates directory)
-    :param context: The dictionary of values to use when rendering the template
-    :raises Exception: If there is an error sending the email
+    :param recipient: Email адрес получателя
+    :param sender: Email адрес отправителя
+    :param subject: Тема письма
+    :param template: Имя шаблона для использования (должен быть в
+                     директории templates)
+    :param context: Словарь значений для использования при рендеринге шаблона
+    :raises Exception: Если произошла ошибка при отправке email
     """
 
     try:
-        # Рендеринг HTML-шаблона
+        # рендеринг хтмл-шаблона
         template_obj = env.get_template(template)
         html_content = template_obj.render(**context)
 
-        # Создание сообщения (для поддержки HTML)
+        # создание сообщения (для поддержки хтмл)
         message = MIMEMultipart("alternative")
         message["From"] = sender
         message["To"] = recipient
         message["Subject"] = subject
 
-        # Добавление HTML-части
+        # добавление хтмл-части
         html_part = MIMEText(html_content, "html")
         message.attach(html_part)
 
-        # Подготовка аргументов для SMTP: без AUTH, если не заданы и логин, и пароль
+        # подготовка аргументов для smtp: без auth, если не заданы и логин, и пароль
         send_kwargs = dict(
             recipients=[recipient],
             sender=sender,
@@ -84,12 +84,12 @@ async def send_email(
 
 async def send_welcome_email(user: UserPublic) -> None:
     """
-    Sends a welcome email to a new user.
+    Отправляет приветственное письмо новому пользователю.
 
-    This function sends an email to the specified user using the `send_email`
-    function. The email contains a welcome message and an unsubscribe link.
+    Эта функция отправляет email указанному пользователю используя функцию `send_email`.
+    Письмо содержит приветственное сообщение и ссылку для отписки.
 
-    :param user: The user object containing email and username information.
+    :param user: Объект пользователя содержащий email и информацию об имени пользователя.
     :return: None
     """
 

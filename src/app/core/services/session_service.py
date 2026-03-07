@@ -8,7 +8,7 @@ from src.app.core.logger import get_logger
 from src.app.core.redis import redis_client
 from src.app.core.utils.security import generate_csrf_token
 
-logger = get_logger(__name__)
+logger = get_logger("session_service")
 
 
 class SessionService:

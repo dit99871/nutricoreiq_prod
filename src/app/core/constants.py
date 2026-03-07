@@ -4,10 +4,10 @@ from pathlib import Path
 
 from fastapi import HTTPException, status
 
-# Константа базовой директории проекта (src/app/)
+# константа базовой директории проекта (src/app/)
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Константы профилей
+# константы профилей
 MIN_AGE: int = 10
 MAX_AGE: int = 120
 
@@ -22,7 +22,7 @@ TOKEN_TYPE_FIELD = "type"
 ACCESS_TOKEN_TYPE = "access_token"
 REFRESH_TOKEN_TYPE = "refresh_token"
 
-# Константы аутентификации
+# константы аутентификации
 CREDENTIAL_EXCEPTION = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
     detail={"message": "Oшибка аутентификации. Пожалуйста, войдите заново"},

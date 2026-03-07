@@ -21,12 +21,13 @@ class CSPReportService:
         :return: Dict с данными о нарушении
         :raises ValueError: Если отчет пустой или не содержит данных о нарушении
         """
+
         if not report:
             raise ValueError("Получен пустой отчет")
 
         violation = None
 
-        # Извлекаем данные о нарушении из разных форматов
+        # извлекаем данные о нарушении из разных форматов
         if "csp-report" in report:
             violation_data = report["csp-report"]
             if isinstance(violation_data, dict):
@@ -45,7 +46,7 @@ class CSPReportService:
             else:
                 violation = {"document-uri": "unknown"}
 
-        # Если все еще нет violation, создаем базовую структуру
+        # если все еще нет violation, создаем базовую структуру
         if not violation:
             violation = {"document-uri": "unknown"}
 
@@ -60,7 +61,8 @@ class CSPReportService:
         :return: document_uri
         :raises ValueError: Если document_uri отсутствует
         """
-        # Поддерживаем разные форматы имен полей
+
+        # поддерживаем разные форматы имен полей
         doc_uri = violation.get("document-uri") or violation.get("document_uri")
 
         if not doc_uri:
@@ -77,9 +79,10 @@ class CSPReportService:
         :param violation: Данные о нарушении
         :return: Кортеж (effective_directive, document_uri, blocked_uri)
         """
+
         doc_uri = CSPReportService.validate_violation(violation)
 
-        # Поддерживаем разные форматы имен полей
+        # поддерживаем разные форматы имен полей
         effective_directive = (
             violation.get("effective-directive")
             or violation.get("effective_directive")
@@ -102,6 +105,7 @@ class CSPReportService:
         :return: Кортеж (effective_directive, document_uri, blocked_uri)
         :raises ValueError: Если отчет невалидный
         """
+
         violation = CSPReportService.extract_violation_data(report)
 
         return CSPReportService.extract_violation_details(violation)

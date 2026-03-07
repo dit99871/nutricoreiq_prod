@@ -1,24 +1,22 @@
 #!/bin/bash
 set -e
 
-# Выполнение миграций
+# выполнение миграций
 python -m alembic -c /nutricoreiq/alembic.ini upgrade head
 
-# Создание и настройка директории логов Nginx (внутри контейнера это /var/log/nginx)
 echo "Настройка логов Nginx..."
 LOG_DIR="/var/log/nginx"
-APP_LOG_DIR="/nutricoreiq/src/app/logs"  # если нужно для приложения
+APP_LOG_DIR="/nutricoreiq/src/app/logs"
 
-# Создаём директорию и файлы, если их нет
+# создаём директорию и файлы, если их нет
 mkdir -p "$LOG_DIR"
 touch "$LOG_DIR/access.log" "$LOG_DIR/error.log"
 
-# Права: appuser должен писать, Fail2Ban (root) должен читать
+# права: appuser должен писать, Fail2Ban (root) должен читать
 chown -R appuser:appuser "$LOG_DIR"
-chmod -R 755 "$LOG_DIR"                # директория
-chmod 644 "$LOG_DIR"/*.log             # файлы логов (rw-r--r--)
+chmod -R 755 "$LOG_DIR"
+chmod 644 "$LOG_DIR"/*.log
 
-# Если приложение тоже пишет логи в /nutricoreiq/src/app/logs (например app.log)
 mkdir -p "$APP_LOG_DIR"
 touch "$APP_LOG_DIR/app.log"
 chown -R appuser:appuser "$APP_LOG_DIR"
@@ -31,7 +29,7 @@ ls -l "$LOG_DIR"
 ls -ld "$APP_LOG_DIR"
 ls -l "$APP_LOG_DIR"
 
-# Права на сертификаты (JWT)
+# права на сертификаты (jwt)
 CERTS_DIR="/nutricoreiq/src/app/core/certs"
 echo "Настройка прав на сертификаты..."
 mkdir -p "$CERTS_DIR"
@@ -49,7 +47,7 @@ echo "Права на сертификаты после изменений:"
 ls -ld "$CERTS_DIR"
 ls -l "$CERTS_DIR"
 
-# Запуск Gunicorn от имени appuser
+# запуск гуникорна от имени appuser
 echo "Запуск Gunicorn..."
 exec runuser -u appuser -- gunicorn \
   -w 4 \

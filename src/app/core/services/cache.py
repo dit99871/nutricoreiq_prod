@@ -9,21 +9,21 @@ log = get_logger("cache_service")
 
 
 class CacheService:
-    """Service for handling Redis caching operations."""
+    """Сервис для обработки операций кеширования Redis."""
 
     @staticmethod
     def _get_user_cache_key(uid: str) -> str:
-        """Generate cache key for user data."""
+        """Сгенерировать ключ кеша для данных пользователя."""
 
         return f"user:{uid}"
 
     @classmethod
     async def get_user(cls, uid: str) -> Optional[dict]:
         """
-        Get user data from cache.
+        Получить данные пользователя из кеша.
 
-        :param uid: User ID
-        :return: User data if found, None otherwise
+        :param uid: ID пользователя
+        :return: Данные пользователя если найдены, иначе None
         """
 
         try:
@@ -50,10 +50,10 @@ class CacheService:
     @classmethod
     async def set_user(cls, uid: str, user_data: dict) -> None:
         """
-        Cache user data.
+        Кешировать данные пользователя.
 
-        :param uid: User ID
-        :param user_data: User data to cache
+        :param uid: ID пользователя
+        :param user_data: Данные пользователя для кеширования
         """
 
         try:
@@ -84,9 +84,9 @@ class CacheService:
     @classmethod
     async def invalidate_user(cls, uid: str) -> None:
         """
-        Invalidate cache for a specific user.
+        Инвалидировать кеш для конкретного пользователя.
 
-        :param uid: User ID to invalidate
+        :param uid: ID пользователя для инвалидации
         """
 
         try:

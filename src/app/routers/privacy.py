@@ -40,6 +40,7 @@ async def save_privacy_consent(
     Для авторизованных пользователей сохраняет в БД с привязкой к user_id.
     Для неавторизованных пользователей сохраняет в БД с привязкой к session_id.
     """
+
     try:
         await privacy_service.save_consent(
             request=request,
@@ -70,6 +71,7 @@ async def get_consent_status(
     """
     Возвращает текущий статус согласия на обработку персональных данных.
     """
+
     try:
         consent_data = await privacy_service.get_consent_status(
             request=request,

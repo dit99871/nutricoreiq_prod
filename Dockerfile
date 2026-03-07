@@ -1,11 +1,11 @@
-# Этап сборки
+# этап сборки
 FROM python:3.13-slim AS builder
 RUN pip install --no-cache-dir poetry==1.8.3
 WORKDIR /nutricoreiq
 COPY pyproject.toml poetry.lock ./
 RUN poetry export -f requirements.txt --output requirements.txt --without-hashes
 
-# Финальный образ
+# финальный образ
 FROM python:3.13-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
@@ -15,7 +15,7 @@ COPY --from=builder /nutricoreiq/requirements.txt .
 RUN pip install --no-cache-dir --root-user-action=ignore -r requirements.txt gunicorn
 COPY . .
 
-# Создаем пользователя, директории logs и certs с правильными правами
+# создаем пользователя, директории logs и certs с правильными правами
 RUN useradd -m appuser && \
     mkdir -p /nutricoreiq/src/app/logs && \
     chown appuser:appuser /nutricoreiq/src/app/logs && \
@@ -25,7 +25,7 @@ RUN useradd -m appuser && \
 COPY scripts/entrypoint.sh .
 RUN chmod +x entrypoint.sh
 
-# Настройка PYTHONPATH
+# настройка PYTHONPATH
 ENV PYTHONPATH=/nutricoreiq
 
 CMD ["./entrypoint.sh"]

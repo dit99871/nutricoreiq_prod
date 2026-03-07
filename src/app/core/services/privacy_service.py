@@ -37,21 +37,21 @@ class PrivacyService:
         Для авторизованных пользователей сохраняет в БД с привязкой к user_id.
         Для неавторизованных пользователей сохраняет в БД с привязкой к session_id.
         """
-        # Получаем информацию о сессии
+        # получаем информацию о сессии
         redis_session = request.scope.get("redis_session", {})
         session_id = redis_session.get("redis_session_id")
 
-        # Получаем IP и User-Agent
+        # получаем ip и ua
         ip_address = getattr(request.state, "client_ip", None) or get_client_ip(
             request, trusted_proxies=settings.run.trusted_proxies
         )
         user_agent = request.headers.get("user-agent", "unknown")
 
-        # Определяем параметры для сохранения
+        # определяем параметры для сохранения
         user_id = user.id if user else None
         session_param = session_id if not user else None
 
-        # Сохраняем согласия
+        # сохраняем согласия
         consent_types = []
         if consent_data.personal_data:
             consent_types.append(ConsentType.PERSONAL_DATA)
@@ -87,15 +87,16 @@ class PrivacyService:
         """
         Возвращает текущий статус согласия на обработку персональных данных.
         """
-        # Получаем информацию о сессии
+
+        # получаем информацию о сессии
         redis_session = request.scope.get("redis_session", {})
         session_id = redis_session.get("redis_session_id")
 
         if user:
-            # Проверяем согласие для авторизованного пользователя
+            # проверяем согласие для авторизованного пользователя
             consents = await get_user_consents(session, user.id)
 
-            # Проверяем наличие каждого типа согласия
+            # проверяем наличие каждого типа согласия
             personal_data_consent = await has_user_consent(
                 session, user.id, ConsentType.PERSONAL_DATA
             )
@@ -106,10 +107,10 @@ class PrivacyService:
                 session, user.id, ConsentType.MARKETING
             )
         else:
-            # Проверяем согласие для неавторизованного пользователя
+            # проверяем согласие для неавторизованного пользователя
             consents = await get_session_consents(session, session_id)
 
-            # Проверяем наличие каждого типа согласия
+            # проверяем наличие каждого типа согласия
             personal_data_consent = await has_session_consent(
                 session, session_id, ConsentType.PERSONAL_DATA
             )
@@ -120,7 +121,7 @@ class PrivacyService:
                 session, session_id, ConsentType.MARKETING
             )
 
-        # Формируем ответ
+        # формируем ответ
         last_updated = consents[0].granted_at if consents else None
 
         return {
@@ -134,4 +135,5 @@ class PrivacyService:
 
 def get_privacy_service() -> PrivacyService:
     """Возвращает экземпляр PrivacyService."""
+
     return PrivacyService()

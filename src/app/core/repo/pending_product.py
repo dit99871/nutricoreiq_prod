@@ -9,7 +9,7 @@ async def pending_product_exists(
     session: AsyncSession,
     name: str,
 ) -> bool:
-    """Check if a pending product with the given name already exists."""
+    """Проверяет, существует ли ожидающий продукт с данным именем."""
 
     normalized_name = name.strip()
     if not normalized_name:
@@ -31,9 +31,9 @@ async def create_pending_product(
     raise_if_exists: bool = True,
 ) -> bool:
     """
-    Create a new pending product. Returns True if the product was created.
+    Создает продукт в очереди на добавление. Возвращает True, если продукт был создан.
 
-    If ``raise_if_exists`` is True, raises HTTP 400 when the product is already queued.
+    Если ``raise_if_exists`` == True, вызывает 400ю ошибку, когда продукт уже находится в очереди.
     """
 
     normalized_name = name.strip()

@@ -18,14 +18,14 @@ def get_privacy_info(
     user: current_user_dep,
 ):
     """
-    Retrieves the privacy policy information of the NutriCoreIQ project.
+    Получает информацию о политике конфиденциальности проекта NutriCoreIQ.
 
-    This endpoint renders an HTML template with the privacy policy details,
-    including information on data collection, usage, and protection.
+    Этот эндпоинт рендерит HTML-шаблон с деталями политики конфиденциальности,
+    включая информацию о сборе, использовании и защите данных.
 
-    :param request: The incoming request object.
-    :param user: The authenticated user object obtained from the dependency.
-    :return: A rendered HTML template with the privacy policy information.
+    :param request: Входящий объект запроса.
+    :param user: Аутентифицированный объект пользователя, полученный из зависимости.
+    :return: Отрендеренный HTML-шаблон с информацией о политике конфиденциальности.
     """
 
     return templates.TemplateResponse(
@@ -45,14 +45,14 @@ def get_info_about_project(
     user: current_user_dep,
 ):
     """
-    Retrieves information about the NutriCoreIQ project.
+    Получает информацию о проекте NutriCoreIQ.
 
-    This endpoint renders an HTML template with information about the project,
-    including its goals, features, and team.
+    Этот эндпоинт рендерит HTML-шаблон с информацией о проекте,
+    включая его цели, функции и команду.
 
-    :param request: The incoming request object.
-    :param user: The authenticated user object obtained from the dependency.
-    :return: A rendered HTML template with information about the project.
+    :param request: Входящий объект запроса.
+    :param user: Аутентифицированный объект пользователя, полученный из зависимости.
+    :return: Отрендеренный HTML-шаблон с информацией о проекте.
     """
 
     return templates.TemplateResponse(
@@ -75,14 +75,14 @@ def start_page(
     user: current_user_dep,
 ):
     """
-    Retrieves the home page of NutriCoreIQ.
+    Получает домашнюю страницу NutriCoreIQ.
 
-    This endpoint renders an HTML template for the home page, which
-    displays a welcome message and the current year.
+    Этот эндпоинт рендерит HTML-шаблон для домашней страницы, который
+    отображает приветственное сообщение и текущий год.
 
-    :param request: The incoming request object.
-    :param user: The authenticated user object obtained from the dependency.
-    :return: A rendered HTML template for the home page.
+    :param request: Входящий объект запроса.
+    :param user: Аутентифицированный объект пользователя, полученный из зависимости.
+    :return: Отрендеренный HTML-шаблон для домашней страницы.
     """
     return templates.TemplateResponse(
         request=request,

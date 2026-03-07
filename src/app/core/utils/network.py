@@ -45,13 +45,13 @@ def get_client_ip(request: Request, trusted_proxies: Optional[List[str]] = None)
     if request.client and request.client.host:
         peer_ip = request.client.host
 
-    # Без явного списка доверенных прокси не доверяем заголовкам X-Forwarded-*.
-    # Это защищает от подделки X-Forwarded-For при прямом доступе к приложению.
+    # без явного списка доверенных прокси не доверяем заголовкам X-Forwarded-*.
+    # это защищает от подделки X-Forwarded-For при прямом доступе к приложению.
     if not trusted_proxies:
         request.state.client_ip = peer_ip or "unknown"
         return request.state.client_ip
 
-    # Если peer не является доверенным прокси, не используем X-Forwarded-*.
+    # если peer не является доверенным прокси, не используем X-Forwarded-*.
     if peer_ip and not _is_trusted_proxy(peer_ip, trusted_proxies):
         request.state.client_ip = peer_ip
         return peer_ip

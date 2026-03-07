@@ -33,26 +33,26 @@ async def get_user_from_request(
         from src.app.core.constants import TOKEN_TYPE_FIELD, ACCESS_TOKEN_TYPE
         from src.app.core.repo.user import get_user_by_uid
 
-        # Получаем токен из cookies
+        # получаем токен из кук
         token = await get_jwt_from_cookies(request)
         if not token:
             return None
 
-        # Валидируем и расшифровываем токен
+        # валидируем и расшифровываем токен
         payload = await get_jwt_payload(token)
         if payload.get(TOKEN_TYPE_FIELD) != ACCESS_TOKEN_TYPE:
             return None
 
-        # Получаем ID пользователя
+        # получаем id пользователя
         uid = payload.get("sub")
         if not uid:
             return None
 
-        # Находим пользователя в БД
+        # находим пользователя в бд
         return await get_user_by_uid(session, uid)
 
     except Exception:
-        # Любая ошибка означает что пользователь не авторизован
+        # любая ошибка означает что пользователь не авторизован
         return None
 
 
