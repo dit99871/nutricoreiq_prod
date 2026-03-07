@@ -1,5 +1,5 @@
 """
-Улучшенный HTTP middleware с unified tracing и оптимизацией
+HTTP middleware
 """
 
 import time
@@ -15,9 +15,9 @@ from starlette.types import ASGIApp
 from src.app.core.middleware.base_middleware import BaseMiddleware
 
 
-class HTTPEnhancedMiddleware(BaseMiddleware):
+class HTTPMiddleware(BaseMiddleware):
     """
-    Улучшенный middleware для логирования HTTP-запросов с unified tracing
+    Middleware для логирования http-запросов
     """
 
     def __init__(
@@ -30,7 +30,7 @@ class HTTPEnhancedMiddleware(BaseMiddleware):
     async def handle_request(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
-        """Основная логика HTTP middleware"""
+        """Основная логика http middleware"""
 
         # получаем request_id из заголовка или генерируем новый
         request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
@@ -53,7 +53,7 @@ class HTTPEnhancedMiddleware(BaseMiddleware):
                 request.state, "trace_id", "unknown"
             )
 
-            # отключаем кеширование для API ответов (без статических файлов)
+            # отключаем кеширование для api ответов (без статических файлов)
             if not request.url.path.startswith("/static/"):
                 response.headers["Cache-Control"] = (
                     "no-store, no-cache, must-revalidate, max-age=0"

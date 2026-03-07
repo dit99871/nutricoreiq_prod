@@ -4,10 +4,10 @@ from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 
 from src.app.core.config import settings
 
-from .csp_security_middleware import CSPSecurityMiddleware
+from .csp_middleware import CSPMiddleware
 from .csrf_protection_middleware import CSRFProtectionMiddleware
-from .http_enhanced_middleware import HTTPEnhancedMiddleware
-from .privacy_consent_middleware import PrivacyConsentV2Middleware
+from .http_middleware import HTTPMiddleware
+from .privacy_consent_middleware import PrivacyConsentMiddleware
 from .session_middleware import SessionMiddleware
 
 __all__ = ("setup_middleware",)
@@ -15,26 +15,30 @@ __all__ = ("setup_middleware",)
 
 def setup_middleware(app: FastAPI) -> None:
     """
-    Добавляет улучшенные middleware в приложение FastAPI.
+    Добавляет middleware в приложение FastAPI.
 
-    Корректный порядок (inner -> outer):
-    - CORSMiddleware - innermost: обработка preflight запросов
-    - CSPSecurityMiddleware - CSP безопасность
-    - SessionMiddleware - управление сессиями
-    - CSRFProtectionMiddleware - CSRF защита
-    - PrivacyConsentV2Middleware - проверка согласия с кешированием
-    - SentryAsgiMiddleware - если в production: мониторинг
-    - HTTPEnhancedMiddleware - outermost: логирование с unified tracing
+    Порядок выполнения запроса (outer -> inner):
+    - HTTPMiddleware  — outermost: логирование и unified tracing
+    - SentryAsgiMiddleware    — мониторинг ошибок (только в production)
+    - CORSMiddleware          — обработка CORS и preflight запросов
+    - PrivacyConsentMiddleware — проверка согласия на обработку данных
+    - CSRFMiddleware — защита от CSRF атак
+    - SessionMiddleware       — управление сессиями
+    - CSPMiddleware   — innermost: заголовки Content Security Policy
+
+    Важно: CORSMiddleware расположен снаружи security-middleware, чтобы
+    заголовки Access-Control-Allow-Origin присутствовали в любом ответе,
+    включая ошибки 4xx от CSRF и PrivacyConsent.
 
     :param app: Приложение FastAPI, к которому добавляются middleware.
     :return: None
     """
 
-    app.add_middleware(CSPSecurityMiddleware)
+    app.add_middleware(CSPMiddleware)
     app.add_middleware(SessionMiddleware, trusted_proxies=settings.run.trusted_proxies)
     app.add_middleware(CSRFProtectionMiddleware)
     app.add_middleware(
-        PrivacyConsentV2Middleware, trusted_proxies=settings.run.trusted_proxies
+        PrivacyConsentMiddleware, trusted_proxies=settings.run.trusted_proxies
     )
     app.add_middleware(
         CORSMiddleware,
@@ -47,5 +51,5 @@ def setup_middleware(app: FastAPI) -> None:
     if settings.env.env == "prod":
         app.add_middleware(SentryAsgiMiddleware)
     app.add_middleware(
-        HTTPEnhancedMiddleware, trusted_proxies=settings.run.trusted_proxies
+        HTTPMiddleware, trusted_proxies=settings.run.trusted_proxies
     )

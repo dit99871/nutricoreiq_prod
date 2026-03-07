@@ -10,7 +10,7 @@ from src.app.core.config import settings
 from src.app.core.utils.security import generate_csp_nonce
 
 
-class CSPSecurityMiddleware(BaseMiddleware):
+class CSPMiddleware(BaseMiddleware):
     """Мидлвари только для CSP безопасности"""
 
     async def handle_request(
@@ -18,7 +18,7 @@ class CSPSecurityMiddleware(BaseMiddleware):
     ) -> Response:
         """Основная логика CSP middleware"""
 
-        # генерируем CSP nonce
+        # генерируем csp nonce
         csp_nonce = generate_csp_nonce()
         request.state.csp_nonce = csp_nonce
 
@@ -42,7 +42,7 @@ class CSPSecurityMiddleware(BaseMiddleware):
         # продолжаем выполнение запроса
         response = await call_next(request)
 
-        # формируем и добавляем CSP политику
+        # формируем и добавляем csp политику
         response.headers["Content-Security-Policy-Report-Only"] = csp_policy
 
         return response

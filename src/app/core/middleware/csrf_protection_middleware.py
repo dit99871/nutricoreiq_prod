@@ -22,7 +22,7 @@ log = get_logger("csrf_middleware")
 class CSRFProtectionMiddleware(BaseMiddleware):
     """Мидлвари только для CSRF защиты"""
 
-    # пути, которые не требуют CSRF защиты
+    # пути, которые не требуют csrf защиты
     EXEMPT_PATHS = [
         f"{settings.router.auth}/login",
         f"{settings.router.auth}/register",
@@ -60,7 +60,7 @@ class CSRFProtectionMiddleware(BaseMiddleware):
                 log.warning("Invalid origin for %s", request.url.path)
                 raise CSRFDomainError()
 
-            # проверка CSRF токена
+            # проверка csrf токена
             session = request.scope.get("redis_session", {})
             if not session:
                 log.warning("No session found for CSRF validation")

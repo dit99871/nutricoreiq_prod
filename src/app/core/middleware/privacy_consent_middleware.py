@@ -1,6 +1,7 @@
 """
 Улучшенный мидлвари для проверки согласия на обработку данных с кешированием
 """
+import json
 
 from fastapi import HTTPException, Request, Response, status
 from starlette.middleware.base import RequestResponseEndpoint
@@ -13,8 +14,8 @@ from src.app.core.logger import get_logger
 log = get_logger("privacy_middleware")
 
 
-class PrivacyConsentV2Middleware(BaseMiddleware):
-    """Улучшенный middleware для проверки согласия на обработку персональных данных"""
+class PrivacyConsentMiddleware(BaseMiddleware):
+    """Middleware для проверки согласия на обработку персональных данных"""
 
     # пути, которые не требуют проверки согласия
     EXEMPT_PATHS = {
@@ -54,7 +55,7 @@ class PrivacyConsentV2Middleware(BaseMiddleware):
             return await call_next(request)
 
         try:
-            # добавляем сессию БД в request scope
+            # добавляем сессию бд в область видимости запроса
             async for session in db_helper.session_getter():
                 # получаем пользователя из запроса
                 user = getattr(request.state, "user", None)
@@ -98,7 +99,7 @@ class PrivacyConsentV2Middleware(BaseMiddleware):
                 return await call_next(request)
 
         except HTTPException:
-            # пробрасываем HTTP исключения дальше
+            # пробрасываем хттп исключения дальше
             raise
 
         except Exception as e:

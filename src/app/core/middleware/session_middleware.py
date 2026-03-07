@@ -46,7 +46,7 @@ class SessionMiddleware(BaseMiddleware):
         if self._should_skip_path(request, self.EXEMPT_PATHS):
             return await call_next(request)
 
-        # получаем session_id из cookie или создаем новый
+        # получаем session_id из кук или создаем новый
         cookie_session_id = request.cookies.get("redis_session_id")
         session_id = (
             cookie_session_id
@@ -62,10 +62,10 @@ class SessionMiddleware(BaseMiddleware):
             if not session:
                 session = session_service.create_new_session(session_id)
 
-            # обеспечиваем наличие CSRF токена
+            # обеспечиваем наличие csrf токена
             session_service.ensure_csrf_token(session)
 
-            # сохраняем сессию в request scope
+            # сохраняем сессию в область видимости запроса
             request.scope["redis_session"] = session
 
             # вызов следующего обработчика
@@ -74,16 +74,16 @@ class SessionMiddleware(BaseMiddleware):
             # сохраняем сессию (только если изменилась)
             await session_service.save_session(session_id, session)
 
-            # устанавливаем cookies
+            # устанавливаем куки
             self._set_session_cookies(response, session_id, session["csrf_token"])
             return response
 
         except StarletteHTTPException:
-            # пробрасываем HTTP исключения для обработки в FastAPI
+            # пробрасываем хттп исключения для обработки в фастапи
             raise
 
         except Exception as e:
-            self.log.error(
+            log.error(
                 "Session middleware error: %s",
                 str(e),
                 extra={

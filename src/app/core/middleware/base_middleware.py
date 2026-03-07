@@ -51,7 +51,7 @@ class BaseMiddleware(BaseHTTPMiddleware, ABC):
             return response
 
         except StarletteHTTPException as e:
-            # HTTP исключения логируем тихо, без полного stack trace
+            # хттп исключения логируем тихо, без полного трейсбека
             context = {
                 "trace_id": getattr(request.state, "trace_id", "unknown"),
             }
@@ -62,11 +62,11 @@ class BaseMiddleware(BaseHTTPMiddleware, ABC):
                 e.status_code,
                 context.get("trace_info", ""),
             )
-            # пробрасываем HTTP исключения для обработки в FastAPI
+            # пробрасываем хттп исключения для обработки в фастапи
             raise
 
         except Exception as e:
-            # проверяем, является ли исключение HTTPException от FastAPI
+            # проверяем, является ли исключение HTTPException от фастапи
             # если да, пробрасываем его для корректной обработки
             if hasattr(e, "status_code") and hasattr(e, "detail"):
                 raise
@@ -98,7 +98,7 @@ class BaseMiddleware(BaseHTTPMiddleware, ABC):
     def _setup_request_attributes(self, request: Request) -> None:
         """Устанавливает общие атрибуты в request.state"""
 
-        # получаем IP-адрес клиента
+        # получаем ip клиента
         client_ip = getattr(request.state, "client_ip", None) or get_client_ip(
             request, trusted_proxies=self.trusted_proxies
         )
