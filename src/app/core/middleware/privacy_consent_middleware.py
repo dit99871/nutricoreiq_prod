@@ -1,6 +1,7 @@
 """
 Улучшенный мидлвари для проверки согласия на обработку данных с кешированием
 """
+
 import json
 
 from fastapi import HTTPException, Request, Response, status

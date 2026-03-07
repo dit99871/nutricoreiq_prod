@@ -50,6 +50,4 @@ def setup_middleware(app: FastAPI) -> None:
     )
     if settings.env.env == "prod":
         app.add_middleware(SentryAsgiMiddleware)
-    app.add_middleware(
-        HTTPMiddleware, trusted_proxies=settings.run.trusted_proxies
-    )
+    app.add_middleware(HTTPMiddleware, trusted_proxies=settings.run.trusted_proxies)
