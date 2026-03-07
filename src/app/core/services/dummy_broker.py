@@ -41,7 +41,7 @@ class DummyBroker:
             setattr(func, "kiq", kiq)
             setattr(func, "apply", apply)
 
-            #для совместимости можно вернуть объект с теми же ссылками
+            # для совместимости можно вернуть объект с теми же ссылками
             return func
 
         return decorator
