@@ -1,10 +1,9 @@
-from fastapi import status
-from fastapi.exceptions import HTTPException
 from pydantic import EmailStr
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
+from src.app.core.exceptions import DatabaseError, NotFoundError
 from src.app.core.logger import get_logger
 from src.app.core.services.cache import CacheService
 from src.app.core.utils.auth import get_password_hash
@@ -28,7 +27,7 @@ async def _get_user_by_filter(
     :param session: Асинхронная сессия SQLAlchemy для работы с базой данных.
     :param filter_condition: Условие фильтрации для поиска пользователя.
     :return: Объект UserPublic с данными пользователя или None, если пользователь не найден.
-    :raises SQLAlchemyError: При возникновении ошибок при работе с базой данных.
+    :raises DatabaseError: При возникновении ошибок при работе с базой данных.
     """
 
     try:
@@ -43,12 +42,7 @@ async def _get_user_by_filter(
             "Database error: %s",
             str(e),
         )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "message": "Внутренняя ошибка сервера",
-            },
-        )
+        raise DatabaseError("Внутренняя ошибка сервера", original_error=e)
 
 
 async def get_user_by_uid(
@@ -67,7 +61,7 @@ async def get_user_by_uid(
     :param uid: UID пользователя для поиска.
     :param use_cache: Флаг использования кеширования (по умолчанию: True).
     :return: Объект UserPublic с данными пользователя.
-    :raises HTTPException: Если пользователь не найден или произошла ошибка.
+    :raises NotFoundError: Если пользователь не найден или произошла ошибка.
     """
 
     # пытаемся получить из кеша
@@ -80,12 +74,7 @@ async def get_user_by_uid(
     user = await _get_user_by_filter(session, User.uid == uid)
     if user is None:
         log.error("User not found in db by uid")
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={
-                "message": "Пользователь не найден",
-            },
-        )
+        raise NotFoundError("Пользователь не найден", resource_type="user")
 
     # обновляем кеш
     if use_cache:
@@ -129,7 +118,6 @@ async def get_user_by_name(
     :param session: Асинхронная сессия SQLAlchemy для работы с базой данных.
     :param user_name: Имя пользователя для поиска.
     :return: Объект UserPublic с данными пользователя.
-    :raises HTTPException: Если пользователь не найден.
     """
 
     user = await _get_user_by_filter(session, User.username == user_name)
@@ -150,7 +138,7 @@ async def create_user(
     :param session: Асинхронная сессия SQLAlchemy для работы с базой данных.
     :param user_in: Данные для создания нового пользователя.
     :return: Объект UserPublic с данными созданного пользователя.
-    :raises HTTPException: Если произошла ошибка при создании пользователя.
+    :raises DatabaseError: Если произошла ошибка при создании пользователя.
     """
 
     try:
@@ -176,12 +164,7 @@ async def create_user(
             str(e),
         )
         await session.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "message": "Ошибка при создании пользователя",
-            },
-        )
+        raise DatabaseError("Ошибка при создании пользователя", original_error=e)
 
 
 async def choose_subscribe_status(
@@ -198,7 +181,8 @@ async def choose_subscribe_status(
     :param user: Объект пользователя (UserPublic), для которого обновляется подписка.
     :param session: Асинхронная сессия SQLAlchemy для работы с базой данных.
     :param condition: Булево значение нового статуса подписки.
-    :raises HTTPException: Если пользователь не найден или произошла ошибка при обновлении.
+    :raises NotFoundError: Если пользователь не найден.
+    :raises DatabaseError: Если произошла ошибка при обновлении бд.
     """
 
     stmt = select(User).filter(User.uid == user.uid, User.is_active == True)
@@ -210,10 +194,7 @@ async def choose_subscribe_status(
             "Пользователь с uid %s не найден или неактивен",
             user.uid,
         )
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={"message": "Пользователь не найден"},
-        )
+        raise NotFoundError("Пользователь не найден", resource_type="user")
     target_user.is_subscribed = condition
 
     try:
@@ -225,12 +206,7 @@ async def choose_subscribe_status(
             "Ошибка при фиксации изменений: %s",
             str(e),
         )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "message": "Внутренняя ошибка обновления данных",
-            },
-        )
+        raise DatabaseError("Внутренняя ошибка обновления данных", original_error=e)
 
 
 async def update_user_password(
@@ -247,7 +223,8 @@ async def update_user_password(
     :param session: Асинхронная сессия SQLAlchemy.
     :param user_uid: UID пользователя, для которого обновляется пароль.
     :param new_password: Новый пароль в открытом виде.
-    :raises HTTPException: Если пользователь не найден или произошла ошибка при обновлении.
+    :raises NotFoundError: Если пользователь не найден.
+    :raises DatabaseError: Если произошла ошибка при обновлении бд.
     """
 
     try:
@@ -257,10 +234,7 @@ async def update_user_password(
 
         if db_user is None:
             log.error("Пользователь с uid %s не найден", user_uid)
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"message": "Пользователь не найден"},
-            )
+            raise NotFoundError("Пользователь не найден", resource_type="user")
 
         db_user.hashed_password = get_password_hash(new_password)
         await session.commit()
@@ -268,7 +242,4 @@ async def update_user_password(
     except SQLAlchemyError as e:
         log.error("Ошибка при обновлении пароля пользователя %s: %s", user_uid, str(e))
         await session.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"message": "Ошибка при обновлении пароля"},
-        )
+        raise DatabaseError("Ошибка при обновлении пароля", original_error=e)

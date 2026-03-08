@@ -1,7 +1,7 @@
-from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.app.core.exceptions import ValidationError, ConflictError
 from src.app.core.models import PendingProduct
 
 
@@ -33,22 +33,16 @@ async def create_pending_product(
     """
     Создает продукт в очереди на добавление. Возвращает True, если продукт был создан.
 
-    Если ``raise_if_exists`` == True, вызывает 400ю ошибку, когда продукт уже находится в очереди.
+    Если ``raise_if_exists`` == True, вызывает ConflictError, когда продукт уже находится в очереди.
     """
 
     normalized_name = name.strip()
     if not normalized_name:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"message": "Название продукта не может быть пустым"},
-        )
+        raise ValidationError("Название продукта не может быть пустым", field="name")
 
     if await pending_product_exists(session, normalized_name):
         if raise_if_exists:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail={"message": "Продукт уже в очереди на добавление"},
-            )
+            raise ConflictError("Продукт уже в очереди на добавление")
         return False
 
     new_pending = PendingProduct(name=normalized_name)

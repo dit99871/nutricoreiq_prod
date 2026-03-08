@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, Request, status, Response
+from fastapi import APIRouter, Request, Response
 from fastapi.responses import HTMLResponse, ORJSONResponse
 from starlette.responses import RedirectResponse
 
@@ -9,7 +9,7 @@ from src.app.core.dependencies import (
     user_service_dep,
     current_user_dep,
 )
-from src.app.core.exceptions import ExpiredTokenException
+from src.app.core.exceptions import ValidationError, ExpiredTokenException
 from src.app.core.logger import get_logger
 from src.app.core.utils import templates
 from src.app.core.repo.profile import get_user_profile, update_user_profile
@@ -33,11 +33,11 @@ async def read_current_user(
     Получает базовую информацию о текущем аутентифицированном пользователе.
 
     Этот эндпоинт возвращает имя пользователя и email аутентифицированного пользователя.
-    Если пользователь не аутентифицирован, вызывает HTTPException с кодом 401.
+    Если пользователь не аутентифицирован, вызывает ExpiredTokenException с кодом 401.
 
     :param user: Аутентифицированный объект пользователя, полученный из зависимости.
     :return: Словарь, содержащий имя пользователя и email.
-    :raises HTTPException: Если пользователь не аутентифицирован.
+    :raises ExpiredTokenException: Если пользователь не аутентифицирован.
     """
 
     if user is None:
@@ -61,14 +61,14 @@ async def get_profile(
     Получает информацию о профиле текущего аутентифицированного пользователя.
 
     Этот эндпоинт возвращает информацию о профиле аутентифицированного пользователя.
-    Если пользователь не аутентифицирован, вызывает HTTPException с кодом 401.
+    Если пользователь не аутентифицирован, вызывает ExpiredTokenException с кодом 401.
 
     :param request: Входящий объект запроса.
     :param user: Аутентифицированный объект пользователя, полученный из зависимости.
     :param db_session: Текущая сессия базы данных.
     :param user_service: Экземпляр сервиса пользователя.
     :return: Отрендеренный HTML-шаблон с информацией о профиле пользователя.
-    :raises HTTPException: Если пользователь не аутентифицирован.
+    :raises ExpiredTokenException: Если пользователь не аутентифицирован.
     """
 
     if user is None:
@@ -111,26 +111,22 @@ async def update_profile(
 
     Этот эндпоинт принимает объект `UserProfile`, содержащий обновленные
     детали профиля и обновляет профиль текущего пользователя в базе данных.
-    Если пользователь не аутентифицирован, вызывает HTTPException с кодом 401. Если
-    предоставленные данные невалидны, вызывает HTTPException с кодом 400.
+    Если пользователь не аутентифицирован, вызывает ExpiredTokenException с кодом 401. Если
+    предоставленные данные невалидны, вызывает ValidationError с кодом 400.
 
     :param data_in: Обновленная информация о профиле пользователя.
     :param user: Аутентифицированный объект пользователя, полученный из зависимости.
     :param db_session: Текущая сессия базы данных.
     :return: JSON-ответ, указывающий на успешное обновление профиля.
-    :raises HTTPException: Если пользователь не аутентифицирован или предоставленные данные невалидны.
+    :raises ExpiredTokenException: Если пользователь не аутентифицирован или.
+    :raises ValidationError: Если предоставленные данные невалидны.
     """
 
     if user is None:
         raise ExpiredTokenException()
 
     if not data_in:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={
-                "message": "Произошла ошибка. Попробуйте позже!",
-            },
-        )
+        raise ValidationError("Произошла ошибка. Попробуйте позже!")
     await update_user_profile(data_in, user, db_session)
 
     return {"message": "Profile updated successfully"}
@@ -147,13 +143,12 @@ async def unsubscribe_email_notification(
     Этот эндпоинт принимает объект текущего аутентифицированного пользователя и
     текущую сессию базы данных. Затем вызывает функцию `choose_subscribe_status`
     с объектом пользователя и сессией базы данных, а также с булевым значением `False`,
-    указывающим, что пользователь хочет отписаться от email-уведомлений. Если пользователь
-    не аутентифицирован, вызывает HTTPException с кодом 401.
+    указывающим, что пользователь хочет отписаться от email-уведомлений.
 
     :param user: Аутентифицированный объект пользователя, полученный из зависимости.
     :param db_session: Текущая сессия базы данных.
     :return: JSON-ответ, указывающий на успешную отписку.
-    :raises HTTPException: Если пользователь не аутентифицирован.
+    :raises ExpiredTokenExceptio: Если пользователь не аутентифицирован.
     """
 
     if user is None:
@@ -179,7 +174,7 @@ async def subscribe_email_notification(
     :param user: Аутентифицированный объект пользователя, полученный из зависимости.
     :param db_session: Текущая сессия базы данных.
     :return: JSON-ответ, указывающий на успешную подписку.
-    :raises HTTPException: Если пользователь не аутентифицирован.
+    :raises ExpiredTokenException: Если пользователь не аутентифицирован.
     """
 
     if user is None:

@@ -1,11 +1,10 @@
 from typing import Optional
 
-from fastapi import status
-from fastapi.exceptions import HTTPException
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
+from src.app.core.exceptions import DatabaseError
 from src.app.core.logger import get_logger
 from src.app.core.models.privacy_consent import ConsentType, PrivacyConsent
 
@@ -34,7 +33,7 @@ async def create_privacy_consent(
     :param is_granted: Статус согласия
     :param policy_version: Версия политики конфиденциальности
     :return: Созданная запись согласия
-    :raises HTTPException: При ошибке базы данных
+    :raises DatabaseError: При ошибке базы данных
     """
 
     try:
@@ -65,10 +64,7 @@ async def create_privacy_consent(
     except SQLAlchemyError as e:
         log.error("Ошибка при создании согласия: %s", str(e))
         await session.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"message": "Ошибка при сохранении согласия"},
-        )
+        raise DatabaseError("Ошибка при сохранении согласия", original_error=e)
 
 
 async def _has_consent(

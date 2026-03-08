@@ -5,8 +5,13 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any
 
-from fastapi import HTTPException, Request, status
+from fastapi import Request
 from jose import ExpiredSignatureError, JWTError, jwt
+
+from src.app.core.exceptions import (
+    AuthenticationError,
+    ExternalServiceError,
+)
 
 from src.app.core.config import settings
 from src.app.core.constants import (
@@ -40,7 +45,6 @@ def create_jwt(
     :param expire_minutes: Время жизни токена в минутах.
     :param expire_timedelta: Время жизни токена в виде timedelta.
     :return: Закодированный JWT токен в виде строки.
-    :raises HTTPException: При ошибке кодирования токена.
     """
 
     jwt_payload = {
@@ -116,7 +120,9 @@ def decode_jwt(token: str) -> dict[str, Any] | None:
 
     :param token: JWT токен для декодирования.
     :return: Декодированные данные токена или None.
-    :raises HTTPException: Если файл с публичным ключом не найден, токен истек или произошла ошибка JWT.
+    :raises ExternalServiceError: Если файл с публичным ключом не найден, токен истек или произошла ошибка JWT.
+    :raises ExpiredSignatureError: Если истек срок жизни токена
+    :raises AuthenticationError: Если токен неверен
     """
 
     if token is None:
@@ -132,15 +138,10 @@ def decode_jwt(token: str) -> dict[str, Any] | None:
 
     except FileNotFoundError as e:
         log.error("Файл с публичным ключом не найден: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={
-                "message": "Ошибка авторизации",
-                "details": {
-                    "field": "file with public key",
-                    "message": "File with public key not found.",
-                },
-            },
+        raise ExternalServiceError(
+            "Ошибка авторизации",
+            service_name="JWT Service",
+            original_error=e,
         )
     except ExpiredSignatureError as e:
         log.error("Токен истек: %s", e)
@@ -148,12 +149,7 @@ def decode_jwt(token: str) -> dict[str, Any] | None:
 
     except JWTError as e:
         log.error("Неверный токен: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                "message": "Неверный токен. Пожалуйста, войдите заново.",
-            },
-        )
+        raise AuthenticationError("Неверный токен. Пожалуйста, войдите заново.")
 
 
 def encode_jwt(
@@ -172,7 +168,7 @@ def encode_jwt(
     :param expire_minutes: Время жизни токена в минутах.
     :param expire_timedelta: Время жизни токена в виде timedelta.
     :return: Закодированный JWT токен.
-    :raises HTTPException: Если файл с приватным ключом не найден или произошла ошибка кодирования.
+    :raises ExternalServiceError: Если файл с приватным ключом не найден или произошла ошибка кодирования.
     """
 
     try:
@@ -180,15 +176,10 @@ def encode_jwt(
 
     except FileNotFoundError as e:
         log.error("Файл с приватным ключом не найден: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={
-                "message": "Ошибка авторизации",
-                "details": {
-                    "field": "file with private key",
-                    "message": "File with private key not found.",
-                },
-            },
+        raise ExternalServiceError(
+            "Ошибка авторизации",
+            service_name="JWT Service",
+            original_error=e,
         )
 
     to_encode = payload.copy()
@@ -214,15 +205,10 @@ def encode_jwt(
 
     except JWTError as e:
         log.error("JWT ошибка при кодировании токена: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                "message": "Ошибка авторизации",
-                "details": {
-                    "field": "encode token",
-                    "message": "JWT error encoding token",
-                },
-            },
+        raise ExternalServiceError(
+            "Ошибка авторизации",
+            service_name="JWT Service",
+            original_error=e,
         )
 
 
@@ -249,7 +235,7 @@ async def get_jwt_payload(token: str) -> dict[str, Any]:
 
     :param token: JWT токен для декодирования.
     :return: Декодированная полезная нагрузка токена.
-    :raises HTTPException: Если не удалось декодировать токен.
+    :raises AuthenticationError: Если не удалось декодировать токен.
     """
 
     payload: dict[str, Any] | None = decode_jwt(token)

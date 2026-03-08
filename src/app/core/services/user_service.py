@@ -2,12 +2,13 @@
 
 from typing import Annotated, Any
 
-from fastapi import HTTPException, status, Depends, Request
+from fastapi import Depends, Request, status
 from fastapi.responses import ORJSONResponse
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.core import db_helper
+from src.app.core.exceptions import AuthenticationError, DatabaseError
 from src.app.core.config import settings
 from src.app.core.constants import (
     ACCESS_TOKEN_TYPE,
@@ -68,26 +69,20 @@ class UserService:
         :param username: Имя пользователя для аутентификации.
         :param password: Пароль пользователя для проверки.
         :return: Объект UserPublic.
-        :raises HTTPException: Если пароль неверный.
+        :raises AuthenticationError: Если логин или пароль неверные.
         """
 
         user = await get_user_by_name(session, username)
         if user is None:
             log.error("Пользователя с таким именем не существует в БД")
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={"message": "Пользователь с таким именем не найден"},
-            )
+            raise AuthenticationError("Неверные учетные данные")
 
         if not verify_password(password, user.hashed_password):
             log.error(
                 "Неверный пароль для пользователя: %s",
                 username,
             )
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail={"message": "Введён неверный пароль"},
-            )
+            raise AuthenticationError("Введён неверный пароль")
 
         return UserPublic.model_validate(user)
 
@@ -103,7 +98,7 @@ class UserService:
         :param request: Объект запроса
         :return: Зарегистрированный пользователь
         :raises UserAlreadyExistsError: Если пользователь с таким email или username уже существует
-        :raises HTTPException: При возникновении ошибки при создании пользователя
+        :raises DatabaseError: При возникновении ошибки при создании пользователя
         """
 
         client_ip = (request.client.host if request.client else None) or "неизвестен"
@@ -153,10 +148,7 @@ class UserService:
                 str(e),
                 exc_info=True,
             )
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail={"message": "Произошла ошибка при регистрации"},
-            )
+            raise DatabaseError("Произошла ошибка при регистрации", original_error=e)
 
     async def login(
         self,
@@ -173,9 +165,6 @@ class UserService:
         :param username: Имя пользователя для входа.
         :param password: Пароль пользователя.
         :return: ORJSONResponse для залогиненного пользователя.
-        :raises HTTPException:
-            - 401: Если имя пользователя или пароль неверны.
-            - 500: При возникновении ошибки при аутентификации.
         """
 
         client_ip = (request.client.host if request.client else None) or "неизвестен"
@@ -276,7 +265,6 @@ class UserService:
         :param user: Объект аутентифицированного пользователя.
         :param password_data: Данные для смены пароля (текущий и новый пароль).
         :return: Ответ об успешной смене пароля.
-        :raises HTTPException: Если текущий пароль неверный.
         """
 
         client_ip = (request.client.host if request.client else None) or "неизвестен"
@@ -315,9 +303,9 @@ class UserService:
         :param session: Асинхронная сессия базы данных.
         :param token: Access токен, полученный из cookies.
         :return: Объект UserPublic, если пользователь аутентифицирован.
-        :raises HTTPException:
-            - 401: Если токен недействителен, истек или пользователь не найден.
-            - 404: Если пользователь с указанным идентификатором не существует.
+        :raises CREDENTIAL_EXCEPTION:
+            - Если токен недействителен, истек или пользователь не найден.
+            - Если пользователь с указанным идентификатором не существует.
         """
 
         if token is None:
@@ -359,22 +347,16 @@ class UserService:
         :param session: Асинхронная сессия базы данных.
         :param redis_service: Клиент Redis для проверки валидности токена.
         :return: Объект ORJSONResponse, если пользователь аутентифицирован.
-        :raises HTTPException:
-            - 401: Если токен недействителен, истек или пользователь не найден.
-            - 404: Если пользователь с указанным идентификатором не существует.
+        :raises AuthenticationError:
+            - Если токен недействителен, истек или пользователь не найден.
+            - Если пользователь с указанным идентификатором не существует.
         """
 
         refresh_jwt = await get_jwt_from_cookies(request, REFRESH_TOKEN_TYPE)
         if not refresh_jwt:
             log.error("Refresh токен не найден в куках")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail={
-                    "message": "Ошибка аутентификации. Пожалуйста, войдите заново",
-                    "details": {
-                        "message": "Refresh token not found in cookies",
-                    },
-                },
+            raise AuthenticationError(
+                "Ошибка аутентификации. Пожалуйста, войдите заново"
             )
 
         payload: dict[str, Any] = await get_jwt_payload(refresh_jwt)

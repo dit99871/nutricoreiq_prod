@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import HTTPException, status
+from src.app.core.exceptions import AuthenticationError
 
 # константа базовой директории проекта (src/app/)
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,8 +23,6 @@ ACCESS_TOKEN_TYPE = "access_token"
 REFRESH_TOKEN_TYPE = "refresh_token"
 
 # константы аутентификации
-CREDENTIAL_EXCEPTION = HTTPException(
-    status_code=status.HTTP_401_UNAUTHORIZED,
-    detail={"message": "Oшибка аутентификации. Пожалуйста, войдите заново"},
-    headers={"WWW-Authenticate": "Bearer"},
+CREDENTIAL_EXCEPTION = AuthenticationError(
+    "Oшибка аутентификации. Пожалуйста, войдите заново"
 )

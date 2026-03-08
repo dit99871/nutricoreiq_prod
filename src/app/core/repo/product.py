@@ -1,8 +1,7 @@
-from fastapi import HTTPException
+from src.app.core.exceptions import NotFoundError
 from sqlalchemy import select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
-from starlette import status
 
 from src.app.core.logger import get_logger
 from src.app.core.models import Product, ProductNutrient
@@ -133,6 +132,7 @@ async def handle_product_details(
     :param session: Текущая сессия базы данных.
     :param product_id: Уникальный идентификатор продукта для получения.
     :return: Объект `ProductDetailResponse`, содержащий детали продукта.
+    :raises NotFoundError: Если продукт не найден
     """
 
     log.debug("Start product detail handler")
@@ -153,12 +153,6 @@ async def handle_product_details(
             "Продукт с id %s не найден",
             product_id,
         )
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={
-                "message": "Продукт не найден",
-                "details": f"Product with id {product_id} not found",
-            },
-        )
+        raise NotFoundError("Продукт не найден", resource_type="product")
 
     return ProductService.map_to_schema(product)

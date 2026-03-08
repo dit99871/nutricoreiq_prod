@@ -1,8 +1,8 @@
-from fastapi import HTTPException, status
 from sqlalchemy import select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.app.core.exceptions import NotFoundError, DatabaseError
 from src.app.core.logger import get_logger
 from src.app.core.models import User
 from src.app.core.schemas.user import UserProfile, UserProfileUpdate, UserPublic
@@ -20,7 +20,7 @@ async def get_user_profile(
     :param session: Текущая сессия базы данных.
     :param user_id: ID пользователя для получения профиля.
     :return: Информация о профиле пользователя.
-    :raises HTTPException: Если пользователь не найден в базе данных.
+    :raises DatabaseError: Если пользователь не найден в базе данных.
     """
 
     stmt = select(User).filter(
@@ -35,24 +35,12 @@ async def get_user_profile(
                 "User not found in db for user_id: %s",
                 user_id,
             )
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={
-                    "message": "Пользователь не найден",
-                    "user_id": user_id,
-                },
-            )
+            raise NotFoundError("Пользователь не найден", resource_type="user")
         return UserProfile.model_validate(user, from_attributes=True)
 
     except SQLAlchemyError as e:
         log.error("Ошибка БД при получении пользователя: %s", e)
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={
-                "field": "DB error",
-                "message": "Внутренняя ошибка сервера",
-            },
-        )
+        raise DatabaseError("Внутренняя ошибка сервера", original_error=e)
 
 
 async def update_user_profile(
@@ -67,7 +55,7 @@ async def update_user_profile(
     :param current_user: Аутентифицированный пользователь, чей профиль нужно обновить.
     :param session: Текущая сессия базы данных.
     :return: Обновленная информация о профиле пользователя.
-    :raises HTTPException: Если пользователь не найден в базе данных или
+    :raises DatabaseError: Если пользователь не найден в базе данных или
                            если произошла ошибка во время обновления.
     """
 
@@ -90,13 +78,7 @@ async def update_user_profile(
                 "Ошибка обновления профиля для %s",
                 current_user,
             )
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={
-                    "field": "Update user profile",
-                    "message": "При обновлении профиля произошла ошибка",
-                },
-            )
+            raise DatabaseError("При обновлении профиля произошла ошибка")
         await session.commit()
 
         # возвращаем через pydantic-валидацию, используя атрибуты orm
@@ -109,10 +91,4 @@ async def update_user_profile(
             e,
         )
         await session.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "field": "Update user profile",
-                "message": "Внутренняя ошибка сервера",
-            },
-        )
+        raise DatabaseError("Внутренняя ошибка сервера", original_error=e)
