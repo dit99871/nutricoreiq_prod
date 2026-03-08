@@ -69,7 +69,11 @@ class BaseMiddleware(BaseHTTPMiddleware, ABC):
             # проверяем, является ли исключение HTTPException от фастапи
             # если да, пробрасываем его для корректной обработки
             if hasattr(e, "status_code") and hasattr(e, "message"):
-                raise
+                # прямая обработка BaseApplicationError в middleware
+                from src.app.core.exception_handlers import application_error_handler
+
+                response = await application_error_handler(request, e)
+                return response
 
             logger.error(
                 "Непредвиденная ошибка в %s: %s",

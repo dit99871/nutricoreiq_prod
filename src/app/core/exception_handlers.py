@@ -8,6 +8,17 @@ from src.app.core.config import settings
 from src.app.core.logger import get_logger
 from src.app.core.exceptions import (
     BaseApplicationError,
+    CSRFSessionExpiredError,
+    CSRFDomainError,
+    CSRFTokenError,
+    ValidationError,
+    AuthenticationError,
+    AuthorizationError,
+    NotFoundError,
+    ConflictError,
+    DatabaseError,
+    ExternalServiceError,
+    LegalRestrictionError,
     ExpiredTokenException,
 )
 from src.app.core.services.log_context_service import LogContextService
@@ -390,10 +401,21 @@ def setup_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(404, not_found_exception_handler)
 
     # кастомные исключения
+    app.add_exception_handler(CSRFSessionExpiredError, application_error_handler)
+    app.add_exception_handler(CSRFDomainError, application_error_handler)
+    app.add_exception_handler(CSRFTokenError, application_error_handler)
+    app.add_exception_handler(ValidationError, application_error_handler)
+    app.add_exception_handler(AuthenticationError, application_error_handler)
+    app.add_exception_handler(AuthorizationError, application_error_handler)
+    app.add_exception_handler(NotFoundError, application_error_handler)
+    app.add_exception_handler(ConflictError, application_error_handler)
+    app.add_exception_handler(DatabaseError, application_error_handler)
+    app.add_exception_handler(ExternalServiceError, application_error_handler)
+    app.add_exception_handler(LegalRestrictionError, application_error_handler)
     app.add_exception_handler(ExpiredTokenException, expired_token_exception_handler)
     app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
-    # обработчик базовых ошибок приложения
+    # обработчик базовых ошибок приложения (для других BaseApplicationError)
     app.add_exception_handler(BaseApplicationError, application_error_handler)
 
     # стандартные http исключения

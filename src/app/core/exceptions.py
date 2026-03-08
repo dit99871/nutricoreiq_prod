@@ -18,22 +18,6 @@ class ExpiredTokenException(HTTPException):
         )
 
 
-class UserServiceError(Exception):
-    """Базовый класс для ошибок сервиса пользователей"""
-
-    pass
-
-
-class UserAlreadyExistsError(UserServiceError):
-    """Ошибка при попытке создать пользователя, который уже существует"""
-
-    status_code = status.HTTP_400_BAD_REQUEST
-
-    def __init__(self, message: str = "Пользователь с такими данными уже существует"):
-        self.detail = message
-        super().__init__(self.detail)
-
-
 class BaseApplicationError(Exception):
     """Базовый класс для всех ошибок приложения"""
 
@@ -49,6 +33,17 @@ class BaseApplicationError(Exception):
         self.error_code = error_code or self.__class__.__name__
         self.details = details or {}
         super().__init__(message)
+
+
+class UserAlreadyExistsError(BaseApplicationError):
+    """Ошибка при попытке создать пользователя, который уже существует"""
+
+    def __init__(self, message: str = "Пользователь с такими данными уже существует"):
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_409_CONFLICT,
+            error_code="USER_ALREADY_EXISTS_ERROR",
+        )
 
 
 class ValidationError(BaseApplicationError):
@@ -151,6 +146,19 @@ class ExternalServiceError(BaseApplicationError):
                 "service": service_name,
                 "original_error": str(original_error) if original_error else None,
             },
+        )
+
+
+class LegalRestrictionError(BaseApplicationError):
+    """Ошибка юридических ограничений (HTTP 451)"""
+
+    def __init__(
+        self, message: str = "Требуется согласие на обработку персональных данных"
+    ):
+        super().__init__(
+            message=message,
+            status_code=status.HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS,
+            error_code="LEGAL_RESTRICTION_ERROR",
         )
 
 

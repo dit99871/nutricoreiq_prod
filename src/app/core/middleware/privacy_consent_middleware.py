@@ -4,9 +4,11 @@
 
 import json
 
-from fastapi import HTTPException, Request, Response, status
+from fastapi import Request, Response, HTTPException
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.types import ASGIApp
+
+from src.app.core.exceptions import LegalRestrictionError
 
 from src.app.core import db_helper
 from src.app.core.middleware.base_middleware import BaseMiddleware
@@ -91,13 +93,8 @@ class PrivacyConsentMiddleware(BaseMiddleware):
 
                 if not has_consent:
                     log.warning("Privacy consent required")
-                    raise HTTPException(
-                        status_code=status.HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS,
-                        detail={
-                            "message": "Требуется согласие на обработку персональных данных",
-                            "code": "privacy_consent_required",
-                            "redirect_url": "/privacy",
-                        },
+                    raise LegalRestrictionError(
+                        "Требуется согласие на обработку персональных данных"
                     )
 
                 try:
