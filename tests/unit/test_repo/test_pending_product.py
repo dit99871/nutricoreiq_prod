@@ -1,8 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from fastapi import HTTPException, status
-
+from src.app.core.exceptions import ValidationError, ConflictError
 from src.app.core.repo.pending_product import (
     create_pending_product,
     pending_product_exists,
@@ -77,11 +76,10 @@ async def test_create_pending_product_success():
 async def test_create_pending_product_empty_name():
     session = AsyncMock()
 
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(ValidationError) as exc_info:
         await create_pending_product(session, "   ")
 
-    assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
-    assert exc_info.value.detail["message"] == "Название продукта не может быть пустым"
+    assert exc_info.value.message == "Название продукта не может быть пустым"
     session.execute.assert_not_called()
     session.commit.assert_not_awaited()
 
@@ -96,11 +94,10 @@ async def test_create_pending_product_exists_raise():
     ) as mock_exists:
         mock_exists.return_value = True
 
-        with pytest.raises(HTTPException) as exc_info:
+        with pytest.raises(ConflictError) as exc_info:
             await create_pending_product(session, "Орехи")
 
-    assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
-    assert exc_info.value.detail["message"] == "Продукт уже в очереди на добавление"
+    assert exc_info.value.message == "Продукт уже в очереди на добавление"
     mock_exists.assert_awaited_once_with(session, "Орехи")
     session.add.assert_not_called()
     session.commit.assert_not_awaited()

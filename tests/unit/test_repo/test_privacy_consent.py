@@ -1,10 +1,10 @@
 import datetime
 from unittest.mock import AsyncMock, patch, MagicMock
 import pytest
-from fastapi import HTTPException, status
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.app.core.exceptions import DatabaseError
+from src.app.core.models.privacy_consent import ConsentType, PrivacyConsent
 from src.app.core.repo.privacy_consent import (
     create_privacy_consent,
     has_user_consent,
@@ -12,7 +12,6 @@ from src.app.core.repo.privacy_consent import (
     get_user_consents,
     get_session_consents,
 )
-from src.app.core.models.privacy_consent import ConsentType, PrivacyConsent
 
 
 @pytest.fixture
@@ -127,7 +126,7 @@ class TestCreatePrivacyConsent:
         
         # Act & Assert
         with patch('src.app.core.repo.privacy_consent.log') as mock_log:
-            with pytest.raises(HTTPException) as exc_info:
+            with pytest.raises(DatabaseError) as exc_info:
                 await create_privacy_consent(
                     session=mock_session,
                     user_id=123,
@@ -138,8 +137,7 @@ class TestCreatePrivacyConsent:
                     is_granted=True,
                 )
         
-        assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
-        assert "Ошибка при сохранении согласия" in exc_info.value.detail["message"]
+        assert exc_info.value.message == "Ошибка при сохранении согласия"
         mock_session.rollback.assert_awaited_once()
         mock_log.error.assert_called_once()
 

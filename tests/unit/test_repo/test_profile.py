@@ -1,10 +1,10 @@
 import pytest
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
-from fastapi import HTTPException, status
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.app.core.exceptions import NotFoundError, DatabaseError
 from src.app.core.repo.profile import get_user_profile, update_user_profile
 from src.app.core.models import User
 from src.app.core.schemas.user import UserProfileUpdate, UserPublic
@@ -78,12 +78,11 @@ async def test_get_user_profile_not_found():
     mock_session = AsyncMock(spec=AsyncSession)
     mock_session.execute.return_value = mock_result
 
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(NotFoundError) as exc_info:
         await get_user_profile(mock_session, user_id=999)
 
-    assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
-    assert "Пользователь не найден" == exc_info.value.detail["message"]
-    assert exc_info.value.detail.get("user_id") == 999
+    assert exc_info.value.message == "Пользователь не найден"
+    assert exc_info.value.details.get("resource_type") == "user"
     mock_session.execute.assert_awaited_once()
 
 
@@ -265,13 +264,12 @@ async def test_update_user_profile_not_found(user_public):
     mock_session.execute.return_value = mock_result
 
     # Act & Assert
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(DatabaseError) as exc_info:
         await update_user_profile(
             data_in=update_data, current_user=user_public, session=mock_session
         )
 
-    assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
-    assert "При обновлении профиля произошла ошибка" in exc_info.value.detail["message"]
+    assert exc_info.value.message == "При обновлении профиля произошла ошибка"
     mock_session.execute.assert_awaited_once()
     mock_session.commit.assert_not_called()
 
@@ -284,11 +282,10 @@ async def test_get_user_profile_database_error():
     mock_session.execute.side_effect = SQLAlchemyError("Database error")
 
     # Act & Assert
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(DatabaseError) as exc_info:
         await get_user_profile(mock_session, user_id=1)
 
-    assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
-    assert "Внутренняя ошибка сервера" in exc_info.value.detail["message"]
+    assert exc_info.value.message == "Внутренняя ошибка сервера"
 
 
 @pytest.mark.asyncio
@@ -302,11 +299,10 @@ async def test_update_user_profile_database_error(mock_user, user_public):
     mock_session.execute.side_effect = SQLAlchemyError("Database error")
 
     # Act & Assert
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(DatabaseError) as exc_info:
         await update_user_profile(
             data_in=update_data, current_user=user_public, session=mock_session
         )
 
-    assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
-    assert "Внутренняя ошибка сервера" in exc_info.value.detail["message"]
+    assert exc_info.value.message == "Внутренняя ошибка сервера"
     mock_session.rollback.assert_called_once()

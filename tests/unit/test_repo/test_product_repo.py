@@ -2,8 +2,7 @@ import pytest
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from fastapi import HTTPException, status
-
+from src.app.core.exceptions import NotFoundError
 from src.app.core.repo.product import handle_product_search, handle_product_details
 
 
@@ -143,9 +142,8 @@ async def test_handle_product_details_not_found():
     session = AsyncMock()
     session.execute.return_value = FakeResult(scalar=None)
 
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(NotFoundError) as exc_info:
         await handle_product_details(session, product_id=999)
 
-    assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
-    assert exc_info.value.detail["message"] == "Продукт не найден"
+    assert exc_info.value.message == "Продукт не найден"
     session.execute.assert_awaited_once()

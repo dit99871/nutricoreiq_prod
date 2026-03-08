@@ -1,9 +1,10 @@
 import uuid
 from unittest.mock import AsyncMock, patch, MagicMock
 import pytest
-from fastapi import HTTPException, status
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.app.core.exceptions import NotFoundError, DatabaseError
 
 # First, import the modules we need to patch
 import src.app.core.utils.validators
@@ -115,10 +116,10 @@ async def test_get_user_by_uid_not_found():
     ) as mock_get_cache:
         mock_get_cache.return_value = None
 
-        with pytest.raises(HTTPException) as exc_info:
+        with pytest.raises(NotFoundError) as exc_info:
             await get_user_by_uid(mock_session, "non-existent-uid")
 
-        assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
+        assert exc_info.value.message == "Пользователь не найден"
 
 
 @pytest.mark.asyncio
@@ -198,13 +199,12 @@ async def test_create_user_database_error(user_create_data):
         "src.app.core.repo.user.get_password_hash", return_value=b"hashed_password"
     ):
         with patch("src.app.core.repo.user.log") as mock_logger:
-            with pytest.raises(HTTPException) as exc_info:
+            with pytest.raises(DatabaseError) as exc_info:
                 user_create = UserCreate(**user_create_data)
                 await create_user(mock_session, user_create)
 
             # Verify the exception
-            assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
-            assert "Ошибка при создании пользователя" in str(exc_info.value.detail)
+            assert exc_info.value.message == "Ошибка при создании пользователя"
 
             # Verify rollback was called
             mock_session.rollback.assert_called_once()
@@ -245,10 +245,10 @@ async def test_choose_subscribe_status_not_found():
         email="nonexistent@example.com",
     )
 
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(NotFoundError) as exc_info:
         await choose_subscribe_status(user_public, mock_session, False)
 
-    assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
+    assert exc_info.value.message == "Пользователь не найден"
 
 
 @pytest.mark.asyncio
@@ -294,11 +294,10 @@ async def test_update_user_password_user_not_found():
     mock_result.scalar_one_or_none.return_value = None
     mock_session.execute.return_value = mock_result
 
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(NotFoundError) as exc_info:
         await update_user_password(mock_session, "non-existent-uid", "NewPassword123!")
 
-    assert exc_info.value.status_code == status.HTTP_404_NOT_FOUND
-    assert "Пользователь не найден" in exc_info.value.detail["message"]
+    assert exc_info.value.message == "Пользователь не найден"
 
 
 @pytest.mark.asyncio
@@ -310,11 +309,10 @@ async def test_update_user_password_database_error():
     mock_session.execute.side_effect = SQLAlchemyError("Database connection error")
     mock_session.rollback = AsyncMock()
 
-    with pytest.raises(HTTPException) as exc_info:
+    with pytest.raises(DatabaseError) as exc_info:
         await update_user_password(mock_session, "test-uid-123", "NewPassword123!")
 
-    assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
-    assert "Ошибка при обновлении пароля" in exc_info.value.detail["message"]
+    assert exc_info.value.message == "Ошибка при обновлении пароля"
     mock_session.rollback.assert_called_once()
 
 
@@ -343,10 +341,10 @@ async def test_update_user_password_commit_error():
     with patch(
         "src.app.core.repo.user.get_password_hash", return_value=b"new_hashed_password"
     ):
-        with pytest.raises(HTTPException) as exc_info:
+        with pytest.raises(DatabaseError) as exc_info:
             await update_user_password(mock_session, "test-uid-123", "NewPassword123!")
 
-    assert exc_info.value.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert exc_info.value.message == "Ошибка при обновлении пароля"
     mock_session.rollback.assert_called_once()
 
 
