@@ -3,7 +3,6 @@ HTTP middleware
 """
 
 import time
-import uuid
 from typing import Optional
 
 from fastapi import Request, Response
@@ -12,7 +11,11 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.types import ASGIApp
 
+from src.app.core.logger import get_logger
 from src.app.core.middleware.base_middleware import BaseMiddleware
+from src.app.core.services.log_context_service import LogContextService
+
+logger = get_logger("http_middleware")
 
 
 class HTTPMiddleware(BaseMiddleware):
@@ -32,9 +35,7 @@ class HTTPMiddleware(BaseMiddleware):
     ) -> Response:
         """Основная логика http middleware"""
 
-        # получаем request_id из заголовка или генерируем новый
-        request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
-        request.state.request_id = request_id
+        request_id = getattr(request.state, "request_id", "unknown")
 
         start_time = time.time()
         request.state.process_start = start_time
@@ -45,6 +46,7 @@ class HTTPMiddleware(BaseMiddleware):
 
             process_time = (time.time() - start_time) * 1000
             request.state.process_time_ms = round(process_time, 2)
+            request.state.status_code = response.status_code
 
             # добавляем полезные заголовки в ответ
             response.headers["X-Process-Time"] = f"{process_time:.2f}ms"
@@ -65,7 +67,20 @@ class HTTPMiddleware(BaseMiddleware):
                 response.headers["Pragma"] = "no-cache"
                 response.headers["Expires"] = "0"
 
+            # логируем завершение запроса
+            context = LogContextService.get_safe_context(request)
+            logger.info(
+                "Request completed: %s",
+                LogContextService.format_context_string(context),
+            )
+
             return response
 
         except (StarletteHTTPException, RequestValidationError):
+            # логируем ошибки перед пробросом
+            context = LogContextService.get_safe_context(request)
+            logger.warning(
+                "Request error in HTTPMiddleware: %s",
+                LogContextService.format_context_string(context),
+            )
             raise

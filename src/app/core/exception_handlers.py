@@ -23,7 +23,6 @@ from src.app.core.exceptions import (
 )
 from src.app.core.services.log_context_service import LogContextService
 from src.app.core.schemas.responses import ErrorDetail, ErrorResponse
-from src.app.core.utils.network import get_client_ip
 
 
 log = get_logger("exception_handlers")
@@ -110,7 +109,10 @@ def not_found_exception_handler(
     path = str(request.url.path)
     method = request.method
     user_agent = request.headers.get("user-agent", "unknown")
-    client_ip = get_client_ip(request, settings.run.trusted_proxies)
+
+    # получаем контекст через LogContextService
+    context = LogContextService.get_safe_context(request)
+    client_ip = context["client_ip"]
 
     # определяем тип запроса
     is_bot, bot_type = _is_bot_request(path, user_agent)
@@ -127,11 +129,10 @@ def not_found_exception_handler(
     if is_bot:
         # для ботов логируем на дебаг уровне
         log.debug(
-            "404 для бот-запроса: %s %s | IP: %s | UA: %s | Тип: %s",
+            "404 для бот-запроса: %s %s | %s | Тип: %s",
             method,
             path,
-            client_ip,
-            user_agent[:100],
+            LogContextService.format_context_string(context),
             bot_type,
         )
 
@@ -145,11 +146,10 @@ def not_found_exception_handler(
     else:
         # для легитимных запросов логируем на ворнинг уровне
         log.warning(
-            "404 ошибка: %s %s | IP: %s | UA: %s | Referrer: %s",
+            "404 ошибка: %s %s | %s | Referrer: %s",
             method,
             path,
-            client_ip,
-            user_agent[:100],
+            LogContextService.format_context_string(context),
             request.headers.get("referer", "none")[:200],
         )
 
@@ -159,7 +159,7 @@ def not_found_exception_handler(
         details={
             "path": path,
             "method": method,
-            "timestamp": getattr(request.state, "request_id", "unknown"),
+            "timestamp": context.get("request_id", "unknown"),
         },
     )
     error_response = ErrorResponse(status="error", error=error_detail)
@@ -187,9 +187,13 @@ def expired_token_exception_handler(
         details=None,
     )
     error_response = ErrorResponse(status="error", error=error_detail)
+
+    # получаем контекст через LogContextService
+    context = LogContextService.get_safe_context(request)
+
     log.warning(
-        "Ошибка валидации токена по адресу %s: сообщение=%s, статус=%s",
-        request.url,
+        "Ошибка валидации токена: %s | сообщение=%s, статус=%s",
+        LogContextService.format_context_string(context),
         exc.detail,
         exc.status_code,
     )
@@ -230,9 +234,13 @@ def http_exception_handler(
         details=details,
     )
     error_response = ErrorResponse(status="error", error=error_detail)
+
+    # получаем контекст через LogContextService
+    context = LogContextService.get_safe_context(request)
+
     log.error(
-        "HTTP-ошибка по адресу %s: сообщение=%s, статус=%s",
-        request.url,
+        "HTTP-ошибка: %s | сообщение=%s, статус=%s",
+        LogContextService.format_context_string(context),
         message,
         exc.status_code,
     )
@@ -280,7 +288,15 @@ def validation_exception_handler(
             details={"fields": errors} if len(errors) > 1 else None,
         ),
     )
-    log.error("Ошибка валидации по адресу: %s, ошибки: %s", request.url, errors)
+
+    # получаем контекст через LogContextService
+    context = LogContextService.get_safe_context(request)
+
+    log.error(
+        "Ошибка валидации: %s | ошибки: %s",
+        LogContextService.format_context_string(context),
+        errors,
+    )
 
     return ORJSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -349,11 +365,16 @@ def rate_limit_exceeded_handler(
         details={"retry_after": exc.detail} if settings.DEBUG else None,
     )
     error_response = ErrorResponse(status="error", error=error_detail)
+
+    # получаем контекст через LogContextService
+    context = LogContextService.get_safe_context(request)
+
     log.warning(
-        "Rate limit exceeded по адресу %s: %s",
-        request.url,
+        "Rate limit exceeded: %s | %s",
+        LogContextService.format_context_string(context),
         exc.detail,
     )
+
     return ORJSONResponse(
         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
         content=error_response.model_dump(),
@@ -365,7 +386,7 @@ async def application_error_handler(
 ) -> ORJSONResponse:
     """Обработчик базовых ошибок приложения"""
 
-    context = LogContextService.extract_context_from_request(request)
+    context = LogContextService.get_safe_context(request)
     log.error(
         str(exc),
         extra={
@@ -387,7 +408,7 @@ async def application_error_handler(
     )
 
 
-__all__ = ("setup_exception_handlers",)
+__all__ = ("setup_exception_handlers", "application_error_handler")
 
 
 def setup_exception_handlers(app: FastAPI) -> None:

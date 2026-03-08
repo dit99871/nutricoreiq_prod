@@ -8,11 +8,11 @@ from fastapi import Request, Response, HTTPException
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.types import ASGIApp
 
-from src.app.core.exceptions import LegalRestrictionError
-
 from src.app.core import db_helper
-from src.app.core.middleware.base_middleware import BaseMiddleware
+from src.app.core.exceptions import LegalRestrictionError
 from src.app.core.logger import get_logger
+from src.app.core.middleware.base_middleware import BaseMiddleware
+from src.app.core.services.log_context_service import LogContextService
 
 log = get_logger("privacy_middleware")
 
@@ -92,7 +92,11 @@ class PrivacyConsentMiddleware(BaseMiddleware):
                                 has_consent = False
 
                 if not has_consent:
-                    log.warning("Privacy consent required")
+                    context = LogContextService.get_safe_context(request)
+                    log.warning(
+                        "Требуется согласие на обработку персональных данных: %s",
+                        LogContextService.format_context_string(context),
+                    )
                     raise LegalRestrictionError(
                         "Требуется согласие на обработку персональных данных"
                     )
@@ -107,5 +111,13 @@ class PrivacyConsentMiddleware(BaseMiddleware):
             raise
 
         except Exception as e:
-            log.error("PrivacyConsent middleware error: %s", str(e), exc_info=True)
+            context = LogContextService.get_safe_context(request)
+            log.error(
+                "Ошибка в PrivacyConsent мидлвари: %s",
+                str(e),
+                extra={
+                    "context_string": LogContextService.format_context_string(context),
+                },
+                exc_info=True,
+            )
             return await call_next(request)

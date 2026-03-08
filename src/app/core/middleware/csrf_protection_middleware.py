@@ -2,8 +2,7 @@
 Мидлвари только для CSRF защиты - разделенная ответственность
 """
 
-from fastapi import Request, Response, status
-from starlette.exceptions import HTTPException as StarletteHTTPException
+from fastapi import Request, Response
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.types import ASGIApp
 
@@ -13,8 +12,9 @@ from src.app.core.exceptions import (
     CSRFSessionExpiredError,
     CSRFTokenError,
 )
-from src.app.core.middleware.base_middleware import BaseMiddleware
 from src.app.core.logger import get_logger
+from src.app.core.middleware.base_middleware import BaseMiddleware
+from src.app.core.services.log_context_service import LogContextService
 
 log = get_logger("csrf_middleware")
 
@@ -60,13 +60,22 @@ class CSRFProtectionMiddleware(BaseMiddleware):
             if origin and not any(
                 origin.startswith(allowed) for allowed in settings.cors.allow_origins
             ):
-                log.warning("Invalid origin for %s", request.url.path)
+                context = LogContextService.get_safe_context(request)
+                log.warning(
+                    "Не валидный origin: %s | %s",
+                    origin,
+                    LogContextService.format_context_string(context),
+                )
                 raise CSRFDomainError()
 
             # проверка csrf токена
             session = request.scope.get("redis_session", {})
             if not session:
-                log.warning("No session found for CSRF validation")
+                context = LogContextService.get_safe_context(request)
+                log.warning(
+                    "Не найдена redis-сессия для валидации CSRF: %s",
+                    LogContextService.format_context_string(context),
+                )
                 raise CSRFSessionExpiredError()
 
             csrf_token = request.headers.get("X-CSRF-Token")
@@ -75,7 +84,11 @@ class CSRFProtectionMiddleware(BaseMiddleware):
 
             session_csrf_token = session.get("csrf_token")
             if not csrf_token or csrf_token != session_csrf_token:
-                log.warning("CSRF token validation failed")
+                context = LogContextService.get_safe_context(request)
+                log.warning(
+                    "Валидация csrf-токена провалена: %s",
+                    LogContextService.format_context_string(context),
+                )
                 raise CSRFTokenError()
 
         try:

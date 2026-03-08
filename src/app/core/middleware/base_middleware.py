@@ -1,15 +1,13 @@
 from abc import ABC
 from typing import Optional
 
-from fastapi import Request, Response, status
-from fastapi.responses import JSONResponse
+from fastapi import Request, Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.types import ASGIApp
 
 from src.app.core.logger import get_logger
-from src.app.core.utils.network import get_client_ip, get_scheme_and_host
-import uuid
+from src.app.core.services.log_context_service import LogContextService
 
 logger = get_logger("base_middleware")
 
@@ -31,19 +29,14 @@ class BaseMiddleware(BaseHTTPMiddleware, ABC):
     ) -> None:
         super().__init__(app)
         self.trusted_proxies = list(trusted_proxies or [])
-        # self.logger = get_logger(self.__class__.__name__.lower())
 
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
         """Основной метод dispatch с общей логикой"""
 
-        # устанавливаем общие атрибуты запроса
-        self._setup_request_attributes(request)
-
-        # устанавливаем trace ID для unified tracing
-        if not hasattr(request.state, "trace_id"):
-            request.state.trace_id = str(uuid.uuid4())
+        # устанавливаем общие атрибуты запроса через LogContextService
+        LogContextService.setup_request_context(request, self.trusted_proxies)
 
         try:
             # вызываем конкретную реализацию в дочернем классе
@@ -52,15 +45,13 @@ class BaseMiddleware(BaseHTTPMiddleware, ABC):
 
         except StarletteHTTPException as e:
             # хттп исключения логируем тихо, без полного трейсбека
-            context = {
-                "trace_id": getattr(request.state, "trace_id", "unknown"),
-            }
+            context = LogContextService.get_safe_context(request)
             logger.warning(
                 "HTTP исключение в %s: %s [status=%s] %s",
                 self.__class__.__name__,
                 e.detail,
                 e.status_code,
-                context.get("trace_info", ""),
+                LogContextService.format_context_string(context),
             )
             # пробрасываем хттп исключения для обработки в фастапи
             raise
@@ -75,15 +66,13 @@ class BaseMiddleware(BaseHTTPMiddleware, ABC):
                 response = await application_error_handler(request, e)
                 return response
 
+            context = LogContextService.get_safe_context(request)
             logger.error(
                 "Непредвиденная ошибка в %s: %s",
                 self.__class__.__name__,
                 str(e),
                 extra={
-                    "trace_id": getattr(request.state, "trace_id", "unknown"),
-                    "request_id": getattr(request.state, "request_id", "unknown"),
-                    "path": request.url.path,
-                    "method": request.method,
+                    "context_string": LogContextService.format_context_string(context),
                 },
                 exc_info=True,
             )
@@ -99,66 +88,8 @@ class BaseMiddleware(BaseHTTPMiddleware, ABC):
 
         return await call_next(request)
 
-    def _setup_request_attributes(self, request: Request) -> None:
-        """Устанавливает общие атрибуты в request.state"""
-
-        # получаем ip клиента
-        client_ip = getattr(request.state, "client_ip", None) or get_client_ip(
-            request, trusted_proxies=self.trusted_proxies
-        )
-        request.state.client_ip = client_ip
-
-        # получаем схему и хост
-        scheme, host = get_scheme_and_host(
-            request, trusted_proxies=self.trusted_proxies
-        )
-        request.state.scheme = scheme
-        request.state.host = host
-        request.state.effective_url = request.url.replace(scheme=scheme, netloc=host)
-
-    async def _handle_exception(
-        self, request: Request, exception: Exception
-    ) -> Response:
-        """
-        Стандартизированная обработка непредвиденных исключений.
-
-        По умолчанию логирует ошибку и возвращает 503 Service Unavailable.
-        Можно переопределить в дочерних классах для кастомной обработки.
-        """
-
-        client_ip = getattr(request.state, "client_ip", "unknown")
-        effective_url = getattr(request.state, "effective_url", request.url)
-
-        logger.error(
-            "Непредвиденная ошибка в %s: %s, URL: %s, IP: %s, User-Agent: %s",
-            self.__class__.__name__,
-            str(exception),
-            effective_url,
-            client_ip,
-            request.headers.get("user-agent", "unknown"),
-            exc_info=True,
-        )
-
-        return JSONResponse(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            content={"message": "Сервис временно недоступен. Попробуйте позже."},
-        )
-
     def _should_skip_path(self, request: Request, skip_paths: set[str]) -> bool:
         """Проверяет, нужно ли пропустить обработку для данного пути"""
 
         path = request.url.path
-
         return any(path.startswith(skip_path) for skip_path in skip_paths)
-
-    def _get_request_context(self, request: Request) -> dict:
-        """Возвращает контекст запроса для логирования"""
-
-        return {
-            "client_ip": getattr(request.state, "client_ip", "unknown"),
-            "user_agent": request.headers.get("user-agent", "unknown"),
-            "scheme": getattr(request.state, "scheme", "http"),
-            "url": getattr(request.state, "effective_url", request.url),
-            "path": request.url.path,
-            "method": request.method,
-        }

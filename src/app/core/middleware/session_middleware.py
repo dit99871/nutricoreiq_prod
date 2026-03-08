@@ -8,8 +8,9 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.types import ASGIApp
 
 from src.app.core.config import settings
-from src.app.core.middleware.base_middleware import BaseMiddleware
 from src.app.core.logger import get_logger
+from src.app.core.middleware.base_middleware import BaseMiddleware
+from src.app.core.services.log_context_service import LogContextService
 from src.app.core.services.session_service import session_service
 
 log = get_logger("session_middleware")
@@ -86,14 +87,12 @@ class SessionMiddleware(BaseMiddleware):
             raise
 
         except Exception as e:
+            context = LogContextService.get_safe_context(request)
             log.error(
-                "Session middleware error: %s",
+                "Ошибка в Session мидлвари: %s",
                 str(e),
                 extra={
-                    "trace_id": getattr(request.state, "trace_id", "unknown"),
-                    "request_id": getattr(request.state, "request_id", "unknown"),
-                    "path": request.url.path,
-                    "method": request.method,
+                    "context_string": LogContextService.format_context_string(context),
                 },
                 exc_info=True,
             )
