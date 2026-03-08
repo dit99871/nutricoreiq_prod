@@ -14,11 +14,11 @@ log = get_logger("sentry_service")
 
 def sentry_to_loki(event, hint):
     """
-    Converts a Sentry event to a format suitable for Loki and sends it there.
+    Конвертирует Sentry событие в формат, подходящий для Loki, и отправляет его туда.
 
-    :param event: The Sentry event
-    :param hint: The Sentry event hint
-    :return: The original event
+    :param event: Sentry событие
+    :param hint: Подсказка Sentry события
+    :return: Исходное событие
     """
     loki_url = settings.loki.url
     log_entry = {
@@ -50,12 +50,12 @@ def sentry_to_loki(event, hint):
         response = requests.post(loki_url, json=log_entry)
         response.raise_for_status()  # вызывает исключение при http-ошибке
         log.info(
-            "Successfully sent event to Loki: %s",
+            "Успешно отправлено в Loki: %s",
             event.get("event_id"),
         )
     except Exception as e:
         log.error(
-            "Failed to send to Loki: %s, error: %s",
+            "Ошибка при отправлении в Loki: %s, error: %s",
             loki_url,
             str(e),
         )
@@ -64,16 +64,13 @@ def sentry_to_loki(event, hint):
 
 def init_sentry():
     """
-    Initialize Sentry SDK with the given DSN and settings.
+    Инициализирует Sentry SDK с указанным DSN и настройками.
 
-    If `settings.sentry.dsn` is not set, the function will log an error and return.
-
-    :param: None
-    :return: None
+    Если `settings.sentry.dsn` не установлен, функция запишет ошибку в лог и вернет управление.
     """
     dsn = settings.sentry.dsn
     if not dsn:
-        log.error("Sentry DSN not configured, skipping initialization")
+        log.error("Sentry DSN не сконфигурирован, пропускаем инициализацию")
         return
 
     sentry_sdk.init(
