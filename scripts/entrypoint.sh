@@ -23,12 +23,6 @@ chown -R appuser:appuser "$APP_LOG_DIR"
 chmod -R 755 "$APP_LOG_DIR"
 chmod 644 "$APP_LOG_DIR"/*.log
 
-echo "Права на логи после изменений:"
-ls -ld "$LOG_DIR"
-ls -l "$LOG_DIR"
-ls -ld "$APP_LOG_DIR"
-ls -l "$APP_LOG_DIR"
-
 # права на сертификаты (jwt)
 CERTS_DIR="/nutricoreiq/src/app/core/certs"
 echo "Настройка прав на сертификаты..."
