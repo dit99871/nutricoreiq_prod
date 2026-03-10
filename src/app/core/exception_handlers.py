@@ -112,7 +112,6 @@ def not_found_exception_handler(
 
     # получаем контекст через LogContextService
     context = LogContextService.get_safe_context(request)
-    client_ip = context["client_ip"]
 
     # определяем тип запроса
     is_bot, bot_type = _is_bot_request(path, user_agent)

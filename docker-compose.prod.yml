@@ -117,6 +117,7 @@ services:
       - "127.0.0.1:${APP_CONFIG__RUN__PORT}:${APP_CONFIG__RUN__PORT}"
     volumes:
       - ./src/app/core/certs:/nutricoreiq/src/app/core/certs
+      - /home/deployer/nutricoreiq/src/app/logs:/nutricoreiq/src/app/logs
     container_name: web_app
     env_file:
       - .env

@@ -56,10 +56,11 @@ def setup_logging() -> None:
     # настройка корневого логгера
     basicConfig(
         level=settings.logging.log_level_value,
-        handlers=[
-            file_handler,
-            console_handler,
-        ],
+        handlers=(
+            [file_handler]
+            if settings.env.env == "prod"
+            else [file_handler, console_handler]
+        ),
     )
 
 

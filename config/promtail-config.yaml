@@ -10,13 +10,16 @@ clients:
       max_retries: 10
 
 scrape_configs:
-  # только логи контейнера web_app из stdout
+  # только файловые логи приложения
   - job_name: fastapi
-    docker_sd_configs:
-      - host: unix:///var/run/docker.sock
-        refresh_interval: 5s
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: fastapi
+          service: web_app
+          __path__: /home/deployer/nutricoreiq/src/app/logs/*.log
     pipeline_stages:
-      - docker: {}
       # парсим структурированные логи приложения с уровнями
       - regex:
           expression: '^\[(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\]\s+(?:\[(?P<process_name>[\w\s]+)\]\s+)?(?P<module>[\w\.]+):(?P<line>\d+)\s+(?P<level>\w+)\s*-\s*(?P<message>.*)'
@@ -29,19 +32,16 @@ scrape_configs:
           template: '{{ .level }} [{{ .timestamp }}] {{ if .process_name }}[{{ .process_name }}] {{ end }}{{ .module }}:{{ .line }} - {{ .message }}'
       - output:
           source: grafana_message
+      # создаем label уровня для Grafana
+      - regex:
+          expression: '^(?P<level>\w+)'
+      - labels:
+          level:
+      - output:
+          source: grafana_message
       - drop:
           expression: ".*\\n.*"
           drop_counter_reason: "multiline_log"
-
-    relabel_configs:
-      # оставляем ТОЛЬКО контейнер web_app
-      - source_labels: ['__meta_docker_container_name']
-        regex: '/web_app.*'
-        action: keep
-      - source_labels: ['__meta_docker_container_name']
-        target_label: 'container'
-      - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
-        target_label: 'service'
 
   - job_name: containers
     docker_sd_configs:
@@ -49,14 +49,6 @@ scrape_configs:
         refresh_interval: 5s
     pipeline_stages:
       - docker: {}
-      # фильтруем логи приложения (начинаются с [timestamp])
-      - match:
-          selector: '{container=~"web_app.*"}'
-          stages:
-            - regex:
-                expression: '^\[.*$'
-            - drop:
-                drop_counter_reason: "application_log"
     relabel_configs:
       - source_labels: ['__meta_docker_container_name']
         regex: '/(.+)'
