@@ -10,35 +10,50 @@ clients:
       max_retries: 10
 
 scrape_configs:
-  # основной источник: докер логи приложения для графаны
-  - job_name: fastapi
+  # основной источник: файловые логи приложения
+  - job_name: fastapi_files
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: fastapi
+          service: web_app
+          __path__: /home/deployer/nutricoreiq/src/app/logs/*.log
+    pipeline_stages:
+      # парсим структурированные логи приложения с уровнями
+      - regex:
+          expression: '^\[(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\]\s+(?:\[(?P<process_name>[\w\s]+)\]\s+)?(?P<module>[\w\.]+):(?P<line>\d+)\s+(?P<level>\w+)\s+-\s+(?P<message>.*)'
+      - timestamp:
+          source: timestamp
+          format: "2006-01-02 15:04:05.000"
+      - labels:
+          level:
+          module:
+          process_name:
+      - output:
+          source: message
+      - drop:
+          expression: ".*\\n.*"
+          drop_counter_reason: "multiline_log"
+
+  # системные логи из docker stdout (без логов приложения)
+  - job_name: fastapi_system
     docker_sd_configs:
       - host: unix:///var/run/docker.sock
         refresh_interval: 5s
     pipeline_stages:
       - docker: {}
+      # фильтруем логи приложения (они начинаются с [timestamp])
       - match:
           selector: '{container=~"web_app.*"}'
           stages:
-            # парсим структурированные логи приложения с уровнями
             - regex:
-                expression: '^\[(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\]\s+(?:\[(?P<process_name>[\w\s]+)\]\s+)?(?P<module>[\w\.]+):(?P<line>\d+)\s+(?P<level>\w+)\s+-\s+(?P<message>.*)'
-            - timestamp:
-                source: timestamp
-                format: "2006-01-02 15:04:05.000"
-            - labels:
-                level:
-                module:
-                process_name:
-            - output:
-                source: message
+                expression: '^\[.*$'
             - drop:
-                expression: ".*\\n.*"
-                drop_counter_reason: "multiline_log"
+                drop_counter_reason: "application_log"
       - match:
           selector: '{container=~"web_app.*"}'
           stages:
-            # остальные логи (гуникорн-ошибки и т.д.)
             - regex:
                 expression: '^(?P<message>.*)'
             - output:

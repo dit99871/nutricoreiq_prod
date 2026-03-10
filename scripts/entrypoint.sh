@@ -37,10 +37,6 @@ for file in jwt-private.pem jwt-public.pem; do
   fi
 done
 
-echo "Права на сертификаты после изменений:"
-ls -ld "$CERTS_DIR"
-ls -l "$CERTS_DIR"
-
 # запуск гуникорна от имени appuser
 echo "Запуск Gunicorn..."
 exec runuser -u appuser -- gunicorn \
