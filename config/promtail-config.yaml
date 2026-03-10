@@ -19,16 +19,16 @@ scrape_configs:
       - docker: {}
       # парсим структурированные логи приложения с уровнями
       - regex:
-          expression: '^\[(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\]\s+(?:\[(?P<process_name>[\w\s]+)\]\s+)?(?P<module>[\w\.]+):(?P<line>\d+)\s+(?P<level>\w+)\s+-\s+(?P<message>.*)'
+          expression: '^\[(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})\]\s+(?:\[(?P<process_name>[\w\s]+)\]\s+)?(?P<module>[\w\.]+):(?P<line>\d+)\s+(?P<level>\w+)\s*-\s*(?P<message>.*)'
       - timestamp:
           source: timestamp
           format: "2006-01-02 15:04:05.000"
-      - labels:
-          level:
-          module:
-          process_name:
+      # добавляем уровень в начало для Grafana
+      - template:
+          source: grafana_message
+          template: '{{ .level }} [{{ .timestamp }}] {{ if .process_name }}[{{ .process_name }}] {{ end }}{{ .module }}:{{ .line }} - {{ .message }}'
       - output:
-          source: message
+          source: grafana_message
       - drop:
           expression: ".*\\n.*"
           drop_counter_reason: "multiline_log"
@@ -49,6 +49,14 @@ scrape_configs:
         refresh_interval: 5s
     pipeline_stages:
       - docker: {}
+      # фильтруем логи приложения (начинаются с [timestamp])
+      - match:
+          selector: '{container=~"web_app.*"}'
+          stages:
+            - regex:
+                expression: '^\[.*$'
+            - drop:
+                drop_counter_reason: "application_log"
     relabel_configs:
       - source_labels: ['__meta_docker_container_name']
         regex: '/(.+)'
