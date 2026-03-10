@@ -19,13 +19,13 @@ class LogContextService:
 
     # стандартизированный порядок полей для логов
     CONTEXT_FIELDS_ORDER = [
-        "request_id",
+        "client_ip",
         "method",
         "url",
-        "client_ip",
         "user_agent",
-        "status_code",
+        # "status_code",
         "process_time_ms",
+        "request_id",
         "trace_id",
     ]
 
@@ -105,14 +105,14 @@ class LogContextService:
 
         # обязательные поля с fallback значениями
         required_fields = {
-            "request_id": "unknown",
+            "client_ip": "unknown",
             "method": "unknown",
             "url": "unknown",
-            "client_ip": "unknown",
             "user_agent": "unknown",
-            "trace_id": "unknown",
-            "status_code": None,
             "process_time_ms": None,
+            "request_id": "unknown",
+            "trace_id": "unknown",
+            # "status_code": None,
         }
 
         for field, fallback in required_fields.items():
@@ -171,7 +171,7 @@ class LogContextService:
         context = {}
 
         # извлекаем атрибуты из request.state
-        state_fields = ["trace_id", "request_id", "client_ip", "effective_url"]
+        state_fields = ["client_ip", "effective_url", "trace_id", "request_id"]
         for field in state_fields:
             value = getattr(request.state, field, None)
             if value:
