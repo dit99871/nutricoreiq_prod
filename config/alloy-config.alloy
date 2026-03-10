@@ -20,7 +20,7 @@ loki.process "fastapi" {
   forward_to = [loki.write.default.receiver]
 
   stage.regex {
-    expression = "^\\[(?P<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3})\\]\\s+(?:\\[(?P<process_name>[\\w\\s]+)\\]\\s+)?(?P<module>[\\w\\.]+):(?P<line>\\d+)\\s+(?P<level>\\w+)\\s*-\\s*(?P<message>.*)"
+    expression = "^\\[(?P<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3})\\]\\s+(?P<module>[\\w\\.]+):(?P<line>\\d+)\\s+(?P<level>\\w+)\\s*-\\s*(?P<message>.*)"
   }
 
   stage.timestamp {
@@ -30,30 +30,11 @@ loki.process "fastapi" {
 
   stage.template {
     source   = "grafana_message"
-    template = "{{ .level }} [{{ .timestamp }}] {{ if .process_name }}[{{ .process_name }}] {{ end }}{{ .module }}:{{ .line }} - {{ .message }}"
+    template = "{{ .level }} [{{ .timestamp }}] {{ .module }}:{{ .line }} - {{ .message }}"
   }
 
   stage.output {
     source = "grafana_message"
-  }
-
-  stage.regex {
-    expression = "^(?P<level>\\w+)"
-  }
-
-  stage.labels {
-    values = {
-      level = null,
-    }
-  }
-
-  stage.output {
-    source = "grafana_message"
-  }
-
-  stage.drop {
-    drop_counter_reason = "multiline_log"
-    expression          = ".*\\n.*"
   }
 }
 
