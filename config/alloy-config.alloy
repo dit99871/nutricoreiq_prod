@@ -1,0 +1,130 @@
+// конфигурация grafana alloy для логирования nutricoreiq
+
+// настройка логирования
+logging {
+  level  = "info"
+  format = "logfmt"
+}
+
+// настройка loki клиента
+loki.write "default" {
+  endpoint {
+    url                = "http://loki:3100/loki/api/v1/push"
+    max_backoff_period = "5s"
+  }
+  external_labels = {}
+}
+
+// обработка логов приложения из файлов
+loki.process "fastapi" {
+  forward_to = [loki.write.default.receiver]
+
+  stage.regex {
+    expression = "^\\[(?P<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3})\\]\\s+(?:\\[(?P<process_name>[\\w\\s]+)\\]\\s+)?(?P<module>[\\w\\.]+):(?P<line>\\d+)\\s+(?P<level>\\w+)\\s*-\\s*(?P<message>.*)"
+  }
+
+  stage.timestamp {
+    source = "timestamp"
+    format = "2006-01-02 15:04:05.000"
+  }
+
+  stage.template {
+    source   = "grafana_message"
+    template = "{{ .level }} [{{ .timestamp }}] {{ if .process_name }}[{{ .process_name }}] {{ end }}{{ .module }}:{{ .line }} - {{ .message }}"
+  }
+
+  stage.output {
+    source = "grafana_message"
+  }
+
+  stage.regex {
+    expression = "^(?P<level>\\w+)"
+  }
+
+  stage.labels {
+    values = {
+      level = null,
+    }
+  }
+
+  stage.output {
+    source = "grafana_message"
+  }
+
+  stage.drop {
+    drop_counter_reason = "multiline_log"
+    expression          = ".*\\n.*"
+  }
+}
+
+// чтение логов приложения из файлов
+loki.source.file "fastapi" {
+  targets = [{
+    __address__ = "localhost",
+    __path__    = "/var/log/app/*.log",  // исправлено для alloy volume
+    job         = "fastapi",
+    service     = "web_app",
+  }]
+  forward_to = [loki.process.fastapi.receiver]
+
+  file_match {
+    enabled = true
+  }
+  legacy_positions_file = "/var/log/positions.yaml"
+}
+
+// обнаружение docker контейнеров
+discovery.docker "containers" {
+  host             = "unix:///var/run/docker.sock"
+  refresh_interval = "5s"
+}
+
+// обработка логов контейнеров
+loki.process "containers" {
+  forward_to = [loki.write.default.receiver]
+
+  stage.docker { }
+}
+
+// правила перебивки меток контейнеров
+discovery.relabel "containers" {
+  targets = []
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.+)"
+    target_label  = "container"
+    replacement   = "${1}"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "service"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_project"]
+    target_label  = "project"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/web_app.*"
+    action        = "drop"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(alloy|loki)"
+    action        = "drop"
+  }
+}
+
+// чтение логов контейнеров
+loki.source.docker "containers" {
+  host             = "unix:///var/run/docker.sock"
+  targets          = discovery.docker.containers.targets
+  forward_to       = [loki.process.containers.receiver]
+  relabel_rules    = discovery.relabel.containers.rules
+  refresh_interval = "5s"
+}
