@@ -112,8 +112,8 @@ fi
 
 echo "✓ Образ успешно загружен"
 
-echo "=== Запуск сервисов ==="
-if ! docker-compose -f docker-compose.prod.yml up -d; then
+echo "=== Запуск сервисов с обновлением ==="
+if ! docker-compose -f docker-compose.prod.yml up -d --force-recreate; then
     echo "ОШИБКА: Не удалось запустить сервисы"
     exit 1
 fi
