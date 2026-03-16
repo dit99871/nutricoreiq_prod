@@ -42,7 +42,7 @@ loki.process "fastapi" {
 loki.source.file "fastapi" {
   targets = [{
     __address__ = "localhost",
-    __path__    = "/var/log/app/*.log",  // исправлено для alloy volume
+    __path__    = "/var/log/app/app.log",  // конкретный файл логов
     job         = "fastapi",
     service     = "web_app",
   }]
@@ -86,12 +86,6 @@ discovery.relabel "containers" {
   rule {
     source_labels = ["__meta_docker_container_label_com_docker_compose_project"]
     target_label  = "project"
-  }
-
-  rule {
-    source_labels = ["__meta_docker_container_name"]
-    regex         = "/web_app.*"
-    action        = "drop"
   }
 
   rule {
