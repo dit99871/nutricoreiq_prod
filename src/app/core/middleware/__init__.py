@@ -19,24 +19,26 @@ def setup_middleware(app: FastAPI) -> None:
 
     Порядок выполнения запроса (outer -> inner):
     - HTTPMiddleware  — outermost: логирование и unified tracing
-    - SentryAsgiMiddleware    — мониторинг ошибок (только в production)
     - CORSMiddleware          — обработка CORS и preflight запросов
     - PrivacyConsentMiddleware — проверка согласия на обработку данных
-    - CSRFMiddleware — защита от CSRF атак
     - SessionMiddleware       — управление сессиями
+    - CSRFMiddleware — защита от CSRF атак
     - CSPMiddleware   — innermost: заголовки Content Security Policy
 
     Важно: CORSMiddleware расположен снаружи security-middleware, чтобы
     заголовки Access-Control-Allow-Origin присутствовали в любом ответе,
     включая ошибки 4xx от CSRF и PrivacyConsent.
+    
+    Важно: SessionMiddleware находится снаружи CSRFMiddleware, чтобы сессия
+    создавалась ДО проверки CSRF токенов.
 
     :param app: Приложение FastAPI, к которому добавляются middleware.
     :return: None
     """
 
     app.add_middleware(CSPMiddleware)
-    app.add_middleware(SessionMiddleware, trusted_proxies=settings.run.trusted_proxies)
     app.add_middleware(CSRFProtectionMiddleware)
+    app.add_middleware(SessionMiddleware, trusted_proxies=settings.run.trusted_proxies)
     app.add_middleware(
         PrivacyConsentMiddleware, trusted_proxies=settings.run.trusted_proxies
     )
