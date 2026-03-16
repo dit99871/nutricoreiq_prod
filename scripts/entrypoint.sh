@@ -50,7 +50,7 @@ exec runuser -u appuser -- gunicorn \
   --graceful-timeout 30 \
   --keep-alive 5 \
   --disable-redirect-access-to-syslog \
-  --access-logfile - \
+  --access-logfile /dev/null \
   --error-logfile - \
-  --log-level info \
+  --log-level warning \
   --capture-output
