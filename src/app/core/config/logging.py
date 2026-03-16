@@ -24,25 +24,36 @@ class LoggingConfig(BaseSettings):
         "CRITICAL",
     ] = "INFO"
     log_format: str = Field(
-        default="[%(asctime)s.%(msecs)03d] %(name)s:%(lineno)d %(levelname)s - %(message)s",
-        description="Format for application logs",
+        default="[%(asctime)s] %(name)s:%(lineno)3d %(levelname)s - %(message)s",
+        description="Формат для логов приложения",
     )
     log_taskiq_format: str = Field(
         default="[%(asctime)s.%(msecs)03d] [%(processName)s] %(module)s:%(lineno)d %(levelname)s - %(message)s",
-        description="Format for TaskIQ worker logs",
+        description="Формат для логов TaskIQ worker",
     )
     log_date_format: str = Field(
-        default="%Y-%m-%d %H:%M:%S", description="Date format for logs"
+        default="%Y-%m-%d %H:%M:%S",
+        description="Формат даты для логов (используется как fallback, основной формат в CustomTextFormatter)",
     )
     log_file: str = Field(
-        default=str(BASE_DIR / "logs" / "app.log"), description="Path to log file"
+        default=str(BASE_DIR / "logs" / "app.log"),
+        description="Путь к файлу логов",
     )
-    log_file_max_size: int = Field(
-        default=5 * 1024 * 1024,
-        description="Maximum log file size in bytes (default: 5MB)",
+    log_interval: int = Field(
+        default=1,
+        description="Интервал ротации логов",
     )
     log_file_backup_count: int = Field(
-        default=3, description="Number of backup log files to keep"
+        default=7,
+        description="Количество резервных копий логов для хранения",
+    )
+    log_when: str = Field(
+        default="MIDNIGHT",
+        description="Когда происходит ротация логов",
+    )
+    log_utc: bool = Field(
+        default=True,
+        description="Ротация логов в UTC",
     )
 
     @property

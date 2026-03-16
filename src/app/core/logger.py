@@ -1,3 +1,4 @@
+import logging
 from logging import (
     Formatter,
     Logger,
@@ -5,7 +6,7 @@ from logging import (
     basicConfig,
     getLogger,
 )
-from logging.handlers import RotatingFileHandler
+from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 from typing import Optional
 
@@ -15,7 +16,7 @@ from src.app.core.config import settings
 class CustomTextFormatter(Formatter):
     """Кастомный текстовый форматтер для логов с унифицированным контекстом."""
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         # формируем базовое сообщение
         result = super().format(record)
 
@@ -35,6 +36,19 @@ def setup_logging() -> None:
     log_dir = Path(settings.logging.log_file).parent
     log_dir.mkdir(parents=True, exist_ok=True)
 
+    def _suffix_to_name(default_name: str) -> str:
+        """
+        Преобразует имя файла для ротации логов.
+
+        :param default_name: Имя файла в формате "base.ext.suffix"
+        :return: Имя файла в формате "base.suffix.ext"
+        :example: >>> _suffix_to_name("app.log.2024-03-16")
+        "app.2024-03-16.log"
+        """
+
+        name, ext, suffix = default_name.rsplit(".", 2)
+        return f"{name}.{suffix}.{ext}"
+
     # создаем кастомный текстовый форматтер
     text_formatter = CustomTextFormatter(
         fmt=settings.logging.log_format,
@@ -42,16 +56,31 @@ def setup_logging() -> None:
     )
 
     # хэндлер для записи в файл с ротацией
-    file_handler = RotatingFileHandler(
-        settings.logging.log_file,
-        maxBytes=settings.logging.log_file_max_size,
+    file_handler = TimedRotatingFileHandler(
+        filename=settings.logging.log_file,
+        when=settings.logging.log_when,
+        interval=settings.logging.log_interval,
         backupCount=settings.logging.log_file_backup_count,
+        utc=settings.logging.log_utc,
     )
     file_handler.setFormatter(text_formatter)
+    file_handler.namer = _suffix_to_name
 
     # хэндлер для вывода в консоль
     console_handler = StreamHandler()
     console_handler.setFormatter(text_formatter)
+
+    # микрооптимизация
+    # отключаем атрибуты, связанные с потоками (thread и threadName)
+    logging.logThreads = False
+
+    # отключаем атрибуты, связанные с процессами
+    # (processName управляется logMultiprocessing, process — logProcesses)
+    logging.logProcesses = False
+    # logging.logMultiprocessing = False
+
+    # отключаем атрибут имени асинхронной задачи
+    logging.logAsyncioTasks = False
 
     # настройка корневого логгера
     basicConfig(
@@ -62,6 +91,10 @@ def setup_logging() -> None:
             else [file_handler, console_handler]
         ),
     )
+
+    # отключаем инфо логи от watchfiles (uvicorn hot-reload)
+    if settings.env.env == "dev":
+        getLogger("watchfiles").setLevel(logging.WARNING)
 
 
 def get_logger(name: Optional[str] = None) -> Logger:
