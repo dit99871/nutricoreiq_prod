@@ -52,12 +52,14 @@ class SessionMiddleware(BaseMiddleware):
 
         # получаем session_id из кук или создаем новый
         cookie_session_id = request.cookies.get("redis_session_id")
-        
+
         if cookie_session_id:
             session_id = cookie_session_id
         else:
             # создаем новую сессию только если нет cookie
-            session_id = session_service.create_new_session("generated")["redis_session_id"]
+            session_id = session_service.create_new_session("generated")[
+                "redis_session_id"
+            ]
 
         try:
             # получаем сессию с кешированием и circuit breaker
@@ -77,7 +79,7 @@ class SessionMiddleware(BaseMiddleware):
 
             # сохраняем сессию (только если изменилась) с валидацией
             saved_successfully = await session_service.save_session(session_id, session)
-            
+
             if not saved_successfully:
                 context = LogContextService.get_safe_context(request)
                 log.error(

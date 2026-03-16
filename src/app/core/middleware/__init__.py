@@ -18,17 +18,17 @@ def setup_middleware(app: FastAPI) -> None:
     Добавляет middleware в приложение FastAPI.
 
     Порядок выполнения запроса (outer -> inner):
-    - HTTPMiddleware  — outermost: логирование и unified tracing
-    - CORSMiddleware          — обработка CORS и preflight запросов
+    - HTTPMiddleware — outermost: логирование и unified tracing
+    - CORSMiddleware — обработка CORS и preflight запросов
     - PrivacyConsentMiddleware — проверка согласия на обработку данных
-    - SessionMiddleware       — управление сессиями
+    - SessionMiddleware — управление сессиями
     - CSRFMiddleware — защита от CSRF атак
-    - CSPMiddleware   — innermost: заголовки Content Security Policy
+    - CSPMiddleware — innermost: заголовки Content Security Policy
 
     Важно: CORSMiddleware расположен снаружи security-middleware, чтобы
     заголовки Access-Control-Allow-Origin присутствовали в любом ответе,
     включая ошибки 4xx от CSRF и PrivacyConsent.
-    
+
     Важно: SessionMiddleware находится снаружи CSRFMiddleware, чтобы сессия
     создавалась ДО проверки CSRF токенов.
 
