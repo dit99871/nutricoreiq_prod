@@ -40,20 +40,37 @@ class SessionService:
 
         return None
 
-    async def save_session(self, session_id: str, session: dict) -> None:
-        """Сохраняет сессию в Redis и кеше"""
+    async def save_session(self, session_id: str, session: dict) -> bool:
+        """Сохраняет сессию в Redis и кеше с валидацией"""
+        
+        try:
+            await redis_client.set(
+                f"redis_session:{session_id}",
+                json.dumps(session),
+                ex=settings.redis.session_ttl,
+            )
+            
+            # Валидация: проверяем что сессия действительно сохранилась
+            saved_data = await redis_client.get(f"redis_session:{session_id}")
+            if not saved_data:
+                logger.error(f"Не удалось сохранить сессию {session_id} в Redis")
 
-        await redis_client.set(
-            f"redis_session:{session_id}",
-            json.dumps(session),
-            ex=settings.redis.session_ttl,
-        )
+                return False
+            
+            # Обновляем кеш только после успешного сохранения в Redis
+            self._session_cache[session_id] = {
+                "session": session,
+                "cached_at": time.time(),
+            }
+            
+            logger.debug(f"Сессия {session_id} успешно сохранена в Redis")
 
-        # Обновляем кеш
-        self._session_cache[session_id] = {
-            "session": session,
-            "cached_at": time.time(),
-        }
+            return True
+            
+        except Exception as e:
+            logger.error(f"Ошибка при сохранении сессии {session_id} в Redis: {e}")
+
+            return False
 
     def create_new_session(self, session_id: str) -> dict:
         """Создает новую сессию"""
