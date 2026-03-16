@@ -24,7 +24,7 @@ class LoggingConfig(BaseSettings):
         "CRITICAL",
     ] = "INFO"
     log_format: str = Field(
-        default="[%(asctime)s] %(name)s:%(lineno)3d %(levelname)s - %(message)s",
+        default="[%(asctime)s.%(msecs)03d] %(name)-20s:%(lineno)3d %(levelname)7s - %(message)s",
         description="Формат для логов приложения",
     )
     log_taskiq_format: str = Field(
@@ -33,7 +33,7 @@ class LoggingConfig(BaseSettings):
     )
     log_date_format: str = Field(
         default="%Y-%m-%d %H:%M:%S",
-        description="Формат даты для логов (используется как fallback, основной формат в CustomTextFormatter)",
+        description="Формат даты для логов",
     )
     log_file: str = Field(
         default=str(BASE_DIR / "logs" / "app.log"),

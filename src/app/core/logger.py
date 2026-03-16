@@ -86,9 +86,7 @@ def setup_logging() -> None:
     basicConfig(
         level=settings.logging.log_level_value,
         handlers=(
-            [file_handler]
-            if settings.env.env == "prod"
-            else [file_handler, console_handler]
+            [file_handler, console_handler]
         ),
     )
 
