@@ -86,7 +86,7 @@ class CSRFProtectionMiddleware(BaseMiddleware):
             if not csrf_token or csrf_token != session_csrf_token:
                 context = LogContextService.get_safe_context(request)
                 log.warning(
-                    "Валидация csrf-токена провалена: %s",
+                    "Не найден csrf-токен. %s",
                     LogContextService.format_context_string(context),
                 )
                 raise CSRFTokenError()

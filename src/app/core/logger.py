@@ -85,9 +85,7 @@ def setup_logging() -> None:
     # настройка корневого логгера
     basicConfig(
         level=settings.logging.log_level_value,
-        handlers=(
-            [file_handler, console_handler]
-        ),
+        handlers=([file_handler, console_handler]),
     )
 
     # отключаем инфо логи от watchfiles (uvicorn hot-reload)
