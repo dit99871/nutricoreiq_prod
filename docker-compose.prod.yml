@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   db:
-    image: postgres:17
+    image: postgres:17-alpine
     container_name: postgre
     ports:
       - "127.0.0.1:${APP_CONFIG__POSTGRES_PORT}:${APP_CONFIG__POSTGRES_PORT}"
@@ -27,7 +27,7 @@ services:
         max-file: "3"
 
   postgres_exporter:
-    image: quay.io/prometheuscommunity/postgres-exporter:latest
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.16.0
     container_name: postgres_exporter
     env_file:
       - .env
@@ -50,7 +50,7 @@ services:
         max-file: "3"
 
   redis:
-    image: redis:latest
+    image: redis:8-alpine
     container_name: redis
     ports:
       - "127.0.0.1:${APP_CONFIG__REDIS_PORT}:${APP_CONFIG__REDIS_PORT}"
@@ -72,7 +72,7 @@ services:
         max-file: "3"
 
   redis_exporter:
-    image: oliver006/redis_exporter:latest
+    image: oliver006/redis_exporter:v1.65.0
     container_name: redis_exporter
     environment:
       - REDIS_ADDR=${APP_CONFIG__REDIS_ADDR}
@@ -89,7 +89,7 @@ services:
         max-file: "3"
 
   rabbitmq:
-    image: rabbitmq:latest
+    image: rabbitmq:4-alpine
     hostname: rabbitmq
     container_name: rabbitmq
     ports:
@@ -183,7 +183,7 @@ services:
         max-file: "3"
 
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.54.1
     container_name: prometheus
     volumes:
       - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
@@ -199,7 +199,7 @@ services:
         max-file: "3"
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:11.3.0
     container_name: grafana
     ports:
       - "127.0.0.1:3000:3000"
@@ -245,7 +245,7 @@ services:
         max-file: "3"
 
   node_exporter:
-    image: prom/node-exporter:latest
+    image: prom/node-exporter:v1.8.2
     container_name: node_exporter
     ports:
       - "127.0.0.1:9100:9100"
@@ -260,7 +260,7 @@ services:
         max-file: "3"
 
   nginx_exporter:
-    image: nginx/nginx-prometheus-exporter:latest
+    image: nginx/nginx-prometheus-exporter:1.1.0
     container_name: nginx_exporter
     ports:
       - "127.0.0.1:9113:9113"
@@ -276,7 +276,7 @@ services:
         max-file: "3"
 
   loki:
-    image: grafana/loki:latest
+    image: grafana/loki:3.2.0
     container_name: loki
     labels:
       com.grafana.monitoring: "true"
@@ -300,7 +300,7 @@ services:
         max-file: "3"
 
   alloy:
-    image: grafana/alloy:latest
+    image: grafana/alloy:v1.4.0
     container_name: alloy
     labels:
       com.grafana.monitoring: "true"

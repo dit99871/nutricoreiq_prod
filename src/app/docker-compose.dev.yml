@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres
+    image: postgres:17-alpine
     container_name: db
     environment:
       POSTGRES_USER: ${APP_CONFIG__DB__USER}
@@ -33,7 +33,7 @@ services:
         max-size: "1m"
 
   test_db:
-    image: postgres
+    image: postgres:17-alpine
     container_name: test_db
     environment:
       POSTGRES_DB: ${APP_CONFIG__DB__TEST_NAME}
@@ -43,7 +43,7 @@ services:
       - "5435:5432"
 
   redis:
-    image: redis:alpine
+    image: redis:8-alpine
     container_name: redis
     ports:
       - "6378:6379"
