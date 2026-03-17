@@ -86,6 +86,14 @@ def test_product_suggestion_validation():
     assert suggestion.group_name == "Test Group"
 
 
+def test_product_suggestion_long_title():
+    long_title = "Шампиньон двуспоровый (белый), приготовленный в микроволновке"
+    suggestion = ProductSuggestion(
+        id=1, title=long_title, group_name="Test Group"
+    )
+    assert suggestion.title == long_title
+
+
 def test_pending_product_create_validation():
     # Проверка корректного создания
     pending = PendingProductCreate(name="New Product")

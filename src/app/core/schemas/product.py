@@ -89,7 +89,7 @@ class ProductDetailResponse(BaseSchema):
 
 class ProductSuggestion(BaseSchema):
     id: int
-    title: Annotated[str, Field(min_length=3, max_length=70)]
+    title: Annotated[str, Field(min_length=3, max_length=150)]
     group_name: str
 
 
