@@ -91,6 +91,10 @@ def setup_logging() -> None:
     # отключаем инфо логи от watchfiles (uvicorn hot-reload)
     if settings.env.env == "dev":
         getLogger("watchfiles").setLevel(logging.WARNING)
+    else:
+        # на проде отключаем логирование подключенных бибилиотек
+        getLogger("urllib3").setLevel(logging.ERROR)
+        getLogger("taskiq").setLevel(logging.ERROR)
 
 
 def get_logger(name: Optional[str] = None) -> Logger:
