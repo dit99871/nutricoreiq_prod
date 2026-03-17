@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   db:
-    image: postgres:17-alpine
+    image: postgres:17
     container_name: postgre
     ports:
       - "127.0.0.1:${APP_CONFIG__POSTGRES_PORT}:${APP_CONFIG__POSTGRES_PORT}"
@@ -10,9 +10,6 @@ services:
       - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./config/pg_hba.conf:/var/lib/postgresql/pg_hba.conf:ro
-      - ./config/postgresql.conf:/var/lib/postgresql/data/postgresql.conf:ro
-    command: -c config_file=/var/lib/postgresql/data/postgresql.conf
     networks:
       - app-network
     healthcheck:
