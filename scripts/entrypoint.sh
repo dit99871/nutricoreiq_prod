@@ -39,8 +39,11 @@ done
 
 # запуск гуникорна от имени appuser
 echo "Запуск Gunicorn..."
+# автоматическое определение количества воркеров: 2 * цпу ядра + 1
+WORKERS=$((2 * $(nproc) + 1))
+echo "Используется $WORKERS воркеров"
 exec runuser -u appuser -- gunicorn \
-  -w 4 \
+  -w $WORKERS \
   -k uvicorn.workers.UvicornWorker \
   src.app.main:app \
   --bind 0.0.0.0:8080 \
@@ -51,6 +54,5 @@ exec runuser -u appuser -- gunicorn \
   --keep-alive 5 \
   --disable-redirect-access-to-syslog \
   --access-logfile /dev/null \
-  --error-logfile - \
-  --log-level warning \
+  --log-level error \
   --capture-output
