@@ -26,6 +26,7 @@ loki.process "fastapi" {
   stage.timestamp {
     source = "timestamp"
     format = "2006-01-02 15:04:05.000"
+    location = "UTC"  // добавляем timezone
   }
 
   stage.template {
