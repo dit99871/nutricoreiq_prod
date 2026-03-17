@@ -29,12 +29,12 @@ loki.process "fastapi" {
   }
 
   stage.template {
-    source   = "grafana_message"
+    source   = "message"  // изменено с grafana_message на message
     template = "{{ .level }} [{{ .timestamp }}] {{ .module }}:{{ .line }} - {{ .message }}"
   }
 
   stage.output {
-    source = "grafana_message"
+    source = "message"  // изменено с grafana_message на message для совместимости с Grafana
   }
 }
 
