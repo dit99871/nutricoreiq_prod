@@ -72,7 +72,7 @@ class OtherSchema(BaseSchema):
 # главная схема продукта
 class ProductDetailResponse(BaseSchema):
     id: int
-    title: Annotated[str, Field(min_length=3, max_length=40)]
+    title: Annotated[str, Field(min_length=3, max_length=150)]
     group_name: Annotated[str, Field(min_length=3, max_length=40)]
 
     proteins: ProteinsSchema = ProteinsSchema()
