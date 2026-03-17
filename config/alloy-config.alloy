@@ -48,9 +48,6 @@ loki.source.file "fastapi" {
   }]
   forward_to = [loki.process.fastapi.receiver]
 
-  file_match {
-    enabled = true
-  }
   legacy_positions_file = "/var/log/positions.yaml"
 }
 
