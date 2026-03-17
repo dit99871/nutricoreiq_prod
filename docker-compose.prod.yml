@@ -24,7 +24,7 @@ services:
         max-file: "3"
 
   postgres_exporter:
-    image: quay.io/prometheuscommunity/postgres-exporter:v0.16.0
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.17.0
     container_name: postgres_exporter
     env_file:
       - .env
