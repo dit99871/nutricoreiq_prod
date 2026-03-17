@@ -57,16 +57,22 @@ class CSRFProtectionMiddleware(BaseMiddleware):
         if request.method in ["POST", "PUT", "DELETE", "PATCH"]:
             # проверка Origin/Referer
             origin = request.headers.get("origin") or request.headers.get("referer")
-            if origin and not any(
-                origin.startswith(allowed) for allowed in settings.cors.allow_origins
-            ):
-                context = LogContextService.get_safe_context(request)
-                log.warning(
-                    "Не валидный origin: %s | %s",
-                    origin,
-                    LogContextService.format_context_string(context),
-                )
-                raise CSRFDomainError()
+            if origin:
+                # нормализация origin - удаление завершающего слэша и параметров
+                origin = origin.rstrip("/").split("?")[0]
+                
+                if not any(
+                    origin == allowed or origin.startswith(allowed + "/") 
+                    for allowed in settings.cors.allow_origins
+                ):
+                    context = LogContextService.get_safe_context(request)
+                    log.warning(
+                        "Не валидный origin: %s | allowed: %s | %s",
+                        origin,
+                        settings.cors.allow_origins,
+                        LogContextService.format_context_string(context),
+                    )
+                    raise CSRFDomainError()
 
             # проверка csrf токена
             session = request.scope.get("redis_session", {})
