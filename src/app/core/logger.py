@@ -95,6 +95,7 @@ def setup_logging() -> None:
         # на проде отключаем логирование подключенных бибилиотек
         getLogger("urllib3").setLevel(logging.ERROR)
         getLogger("taskiq").setLevel(logging.ERROR)
+        getLogger("sentry_sdk.errors").setLevel(logging.ERROR)
 
 
 def get_logger(name: Optional[str] = None) -> Logger:
