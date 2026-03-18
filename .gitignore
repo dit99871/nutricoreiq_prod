@@ -159,6 +159,7 @@ config/nginx/*
 !/config/prometheus.yml
 !/config/promtail-config.yaml
 !/config/alloy-config.alloy
+!/config/lokiexplore.yaml
 
 # Application certs
 src/app/core/certs/*

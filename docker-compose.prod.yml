@@ -208,6 +208,7 @@ services:
       - GF_PLUGIN_GRAFANA_LOKIEXPLORE_APP_ENABLED=true  # включаем плагин
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./.config/lokiexplore.yaml:/etc/grafana/provisioning/plugins/lokiexplore.yaml
     networks:
       - app-network
     logging:
