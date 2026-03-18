@@ -88,7 +88,7 @@ discovery.relabel "containers" {
 
   rule {
     source_labels = ["__meta_docker_container_name"]
-    regex         = "/(alloy|loki)"
+    regex         = "/(alloy|loki|web_app)"
     action        = "drop"
   }
 }
