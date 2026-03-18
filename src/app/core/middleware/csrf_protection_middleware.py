@@ -60,9 +60,9 @@ class CSRFProtectionMiddleware(BaseMiddleware):
             if origin:
                 # нормализация origin - удаление завершающего слэша и параметров
                 origin = origin.rstrip("/").split("?")[0]
-                
+
                 if not any(
-                    origin == allowed or origin.startswith(allowed + "/") 
+                    origin == allowed or origin.startswith(allowed + "/")
                     for allowed in settings.cors.allow_origins
                 ):
                     context = LogContextService.get_safe_context(request)
