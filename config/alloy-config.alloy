@@ -88,7 +88,7 @@ discovery.relabel "containers" {
 
   rule {
     source_labels = ["__meta_docker_container_name"]
-    regex         = "/(alloy|loki|web_app)"
+    regex         = "/(alloy|loki|web_app|taskiq_worker)"
     action        = "drop"
   }
 }
@@ -96,7 +96,7 @@ discovery.relabel "containers" {
 // чтение логов контейнеров
 loki.source.docker "containers" {
   host             = "unix:///var/run/docker.sock"
-  targets          = discovery.docker.containers.targets
+  targets          = discovery.docker.containers.output
   forward_to       = [loki.process.containers.receiver]
   relabel_rules    = discovery.relabel.containers.rules
   refresh_interval = "5s"
