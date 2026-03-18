@@ -67,7 +67,7 @@ loki.process "containers" {
 
 // правила перебивки меток контейнеров
 discovery.relabel "containers" {
-  targets = []
+  targets = discovery.docker.containers.targets
 
   rule {
     source_labels = ["__meta_docker_container_name"]
