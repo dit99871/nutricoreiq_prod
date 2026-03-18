@@ -31,7 +31,7 @@ loki.process "fastapi" {
 
   stage.template {
     source   = "message"  // изменено с grafana_message на message
-    template = "[{{ .timestamp }}] {{ .module }}:{{ .line }} {{  .level }} - {{ .message }}"
+    template = "{{ .module }}:{{ .line }} {{  .level }} - {{ .message }}"
   }
 
   stage.output {
