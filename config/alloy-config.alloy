@@ -30,8 +30,19 @@ loki.process "fastapi" {
   }
 
   stage.template {
-    source   = "message"  // изменено с grafana_message на message
-    template = "{{ .module }}:{{ .line }} {{  .level }} - {{ .message }}"
+    source   = "level"
+    template = "{{ ToLower .Value }}"
+  }
+
+  stage.labels {
+    values = {
+      level = "",
+    }
+  }
+
+  stage.template {
+    source   = "message"
+    template = "{{ .module }}:{{ .line }} {{ ToUpper .level }} - {{ .message }}"
   }
 
   stage.output {
