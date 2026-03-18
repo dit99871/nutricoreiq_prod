@@ -29,6 +29,7 @@ storage_config:
 
 limits_config:
   retention_period: 84h
+  volume_enabled: true
 
 ingester:
   wal:
