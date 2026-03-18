@@ -205,6 +205,7 @@ services:
       - GF_SERVER_DOMAIN=${APP_CONFIG__GF_SERVER_DOMAIN}
       - GF_SERVER_ROOT_URL=${APP_CONFIG__GF_SERVER_ROOT_URL}
       - GF_INSTALL_PLUGINS=grafana-lokiexplore-app  # плагин для логов
+      - GF_PLUGIN_GRAFANA_LOKIEXPLORE_APP_ENABLED=true  # включаем плагин
     volumes:
       - grafana_data:/var/lib/grafana
     networks:
