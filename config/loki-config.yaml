@@ -41,8 +41,5 @@ compactor:
   retention_enabled: true
   delete_request_store: filesystem
 
-self_monitoring:
-  enabled: false
-
 analytics:
   reporting_enabled: false
