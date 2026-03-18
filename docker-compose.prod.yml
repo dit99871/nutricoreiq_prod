@@ -142,13 +142,7 @@ services:
       timeout: 5s
       retries: 5
     logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-        tag: "{{.Name}}"
-        labels: "production"
-        env: "os,customer"
+      driver: "none"
 
   taskiq_worker:
     image: ${DOCKER_IMAGE:-nutricoreiq-fastapi}
@@ -174,10 +168,7 @@ services:
     networks:
       - app-network
     logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+      driver: "none"
 
   prometheus:
     image: prom/prometheus:v2.54.1
@@ -208,7 +199,7 @@ services:
       - GF_PLUGIN_GRAFANA_LOKIEXPLORE_APP_ENABLED=true  # включаем плагин
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./.config/provisioning/plugins:/etc/grafana/provisioning/pluginsg
+      - ./.config/provisioning/plugins:/etc/grafana/provisioning/plugins
     networks:
       - app-network
     logging:
