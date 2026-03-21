@@ -219,7 +219,6 @@ services:
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt:ro
       - /var/www/certbot:/var/www/certbot
-      - ./logs/nginx:/var/log/nginx
     depends_on:
       - fastapi
       - prometheus

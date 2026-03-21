@@ -4,18 +4,7 @@ set -e
 # выполнение миграций
 python -m alembic -c /nutricoreiq/alembic.ini upgrade head
 
-echo "Настройка логов Nginx..."
-LOG_DIR="/var/log/nginx"
 APP_LOG_DIR="/nutricoreiq/src/app/logs"
-
-# создаём директорию и файлы, если их нет
-mkdir -p "$LOG_DIR"
-touch "$LOG_DIR/access.log" "$LOG_DIR/error.log"
-
-# права: appuser должен писать, Fail2Ban (root) должен читать
-chown -R appuser:appuser "$LOG_DIR"
-chmod -R 755 "$LOG_DIR"
-chmod 644 "$LOG_DIR"/*.log
 
 mkdir -p "$APP_LOG_DIR"
 touch "$APP_LOG_DIR/app.log"
@@ -31,10 +20,12 @@ chown -R appuser:appuser "$CERTS_DIR"
 chmod 700 "$CERTS_DIR"
 
 for file in jwt-private.pem jwt-public.pem; do
-  if [ -f "$CERTS_DIR/$file" ]; then
-    chown appuser:appuser "$CERTS_DIR/$file"
-    chmod 600 "$CERTS_DIR/$file"
+  if [ ! -f "$CERTS_DIR/$file" ]; then
+    echo "FATAL: сертификат $file не найден" >&2
+    exit 1
   fi
+  chown appuser:appuser "$CERTS_DIR/$file"
+  chmod 600 "$CERTS_DIR/$file"
 done
 
 # запуск гуникорна от имени appuser
@@ -54,5 +45,5 @@ exec runuser -u appuser -- gunicorn \
   --keep-alive 5 \
   --disable-redirect-access-to-syslog \
   --access-logfile /dev/null \
-  --log-level error \
+  --log-level warning \
   --capture-output
