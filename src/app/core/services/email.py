@@ -75,11 +75,13 @@ async def send_email(
             message,
             **send_kwargs,
         )
-        log.info("Email sent successfully to: %s", mask_email(recipient))
+        log.info("Успешная отправка письма: %s", mask_email(recipient))
 
     except SMTPException as e:
-        log.error("Error sending email to %s: %s", mask_email(recipient), str(e))
-        raise Exception(f"Failed to send email to {mask_email(recipient)}: {str(e)}")
+        log.error("Ошибка при отправке письма %s: %s", mask_email(recipient), str(e))
+        raise Exception(
+            f"Во время отправки письма {mask_email(recipient)} произошла ошибка: {str(e)}"
+        )
 
 
 async def send_welcome_email(user: UserPublic) -> None:
@@ -104,4 +106,4 @@ async def send_welcome_email(user: UserPublic) -> None:
             "unsubscribe_link": settings.mail.unsubscribe_link,
         },
     )
-    log.info("Welcome email sent successfully to: %s", mask_email(user.email))
+    log.info("Приветственное письмо отправлено: %s", mask_email(user.email))
