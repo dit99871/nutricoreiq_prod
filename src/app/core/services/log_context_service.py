@@ -3,7 +3,7 @@
 """
 
 import uuid
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import Request
 
@@ -66,7 +66,7 @@ class LogContextService:
 
     @classmethod
     def setup_request_context(
-        cls, request: Request, trusted_proxies: Optional[list[str]] = None
+        cls, request: Request, trusted_proxies: list[str] | None = None
     ) -> None:
         """
         Устанавливает атрибуты контекста в request.state.

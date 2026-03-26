@@ -1,10 +1,9 @@
 from ipaddress import ip_address, ip_network
-from typing import List, Optional
 
 from fastapi import Request
 
 
-def _is_trusted_proxy(peer_ip: str, trusted_proxies: List[str]) -> bool:
+def _is_trusted_proxy(peer_ip: str, trusted_proxies: list[str]) -> bool:
     """
     Проверяет, является ли IP-адрес доверенным прокси.
 
@@ -31,7 +30,7 @@ def _is_trusted_proxy(peer_ip: str, trusted_proxies: List[str]) -> bool:
     return False
 
 
-def get_client_ip(request: Request, trusted_proxies: Optional[List[str]] = None) -> str:
+def get_client_ip(request: Request, trusted_proxies: list[str] | None = None) -> str:
     """
     Получает реальный IP-адрес клиента, учитывая заголовки прокси.
 
@@ -87,7 +86,7 @@ def get_client_ip(request: Request, trusted_proxies: Optional[List[str]] = None)
 
 
 def get_scheme_and_host(
-    request: Request, trusted_proxies: Optional[List[str]] = None
+    request: Request, trusted_proxies: list[str] | None = None
 ) -> tuple[str, str]:
     trusted_proxies = trusted_proxies or []
 

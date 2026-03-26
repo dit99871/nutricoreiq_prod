@@ -1,6 +1,7 @@
 __all__ = (
     "broker",
     "db_helper",
+    "settings",
     "templates",
 )
 

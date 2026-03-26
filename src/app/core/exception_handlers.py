@@ -369,7 +369,7 @@ def rate_limit_exceeded_handler(
     context = LogContextService.get_safe_context(request)
 
     log.warning(
-        "Rate limit exceeded: %s | %s",
+        "Превышена частота запросов. %s | %s",
         LogContextService.format_context_string(context),
         exc.detail,
     )
