@@ -16,14 +16,16 @@ async def check_rabbitmq():
     try:
         await broker.startup()
     except Exception as e:
-        log.error(f"RabbitMQ not ready: {e}")
+        log.error(f"RabbitMQ не готов: {e}")
         raise
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    log.info("Запуск приложения... Инициализация redis...")
     await init_redis()
     if not broker.is_worker_process and settings.env.env == "prod":
+        log.info("Проверка готовности RabbitMQ...")
         await check_rabbitmq()
     try:
         yield

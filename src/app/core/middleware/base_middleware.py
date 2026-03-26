@@ -1,11 +1,12 @@
 from abc import ABC
-from typing import Optional
 
 from fastapi import Request, Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.types import ASGIApp
 
+from src.app.core import settings
+from src.app.core.exceptions import BaseApplicationError
 from src.app.core.logger import get_logger
 from src.app.core.services.log_context_service import LogContextService
 
@@ -25,7 +26,7 @@ class BaseMiddleware(BaseHTTPMiddleware, ABC):
     def __init__(
         self,
         app: ASGIApp,
-        trusted_proxies: Optional[list[str]] = None,
+        trusted_proxies: list[str] = settings.run.trusted_proxies,
     ) -> None:
         super().__init__(app)
         self.trusted_proxies = list(trusted_proxies or [])
@@ -57,10 +58,9 @@ class BaseMiddleware(BaseHTTPMiddleware, ABC):
             raise
 
         except Exception as e:
-            # проверяем, является ли исключение HTTPException от фастапи
-            # если да, пробрасываем его для корректной обработки
-            if hasattr(e, "status_code") and hasattr(e, "message"):
-                # прямая обработка BaseApplicationError в middleware
+            # Проверяем, является ли исключение BaseApplicationError
+            if isinstance(e, BaseApplicationError):
+                # прямая обработка BaseApplicationError
                 from src.app.core.exception_handlers import application_error_handler
 
                 response = await application_error_handler(request, e)
@@ -88,7 +88,8 @@ class BaseMiddleware(BaseHTTPMiddleware, ABC):
 
         return await call_next(request)
 
-    def _should_skip_path(self, request: Request, skip_paths: set[str]) -> bool:
+    @staticmethod
+    def _should_skip_path(request: Request, skip_paths: set[str]) -> bool:
         """Проверяет, нужно ли пропустить обработку для данного пути"""
 
         path = request.url.path
