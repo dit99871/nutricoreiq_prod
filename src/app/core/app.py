@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from src.app.core.exception_handlers import setup_exception_handlers
+from src.app.core.logger import setup_logging
 from src.app.core.middleware import setup_middleware
 from src.app.core.services.limiter import limiter
 from src.app.lifespan import lifespan
@@ -15,17 +16,19 @@ def create_app() -> FastAPI:
     """
     Создает FastAPI приложение.
 
-    1. Создает приложение FastAPI.
-    2. Настраивает Prometheus.
-    3. Монтирует статические файлы.
-    4. Настраивает middleware.
-    5. Настраивает обработчики исключений.
-    6. Подключает роутеры.
+    1. Настраивает логирование.
+    2. Создает приложение FastAPI.
+    3. Настраивает Prometheus.
+    4. Монтирует статические файлы.
+    5. Настраивает middleware.
+    6. Настраивает обработчики исключений.
+    7. Подключает роутеры.
 
     :return: FastAPI приложение.
     :rtype: FastAPI
     """
 
+    setup_logging()
     app = FastAPI(lifespan=lifespan)
 
     # настройка prometheus
