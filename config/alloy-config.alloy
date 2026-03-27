@@ -42,7 +42,6 @@ discovery.relabel "containers" {
     target_label  = "project"
   }
 
-  // Исключаем системные контейнеры
   rule {
     source_labels = ["__meta_docker_container_name"]
     regex         = "/(alloy|loki|taskiq_worker)"
@@ -50,11 +49,11 @@ discovery.relabel "containers" {
   }
 }
 
-// обработка логов fastapi - специальная обработка
-loki.process "fastapi" {
+// обработка логов контейнеров с условной обработкой для fastapi
+loki.process "containers" {
   forward_to = [loki.write.default.receiver]
   
-  // Применяем только к контейнерам с сервисом fastapi
+  // Специальная обработка только для fastapi
   stage.match {
     selector = "{service=\"fastapi\"}"
     
@@ -77,7 +76,6 @@ loki.process "fastapi" {
       template = "{{ .module }}:{{ .line }} {{ .level }} - {{ .message }}"
     }
 
-    // Создаем полезные labels для фильтрации
     stage.labels {
       values = {
         level = "",
@@ -87,24 +85,11 @@ loki.process "fastapi" {
   }
 }
 
-// обработка остальных логов - без изменений
-loki.process "others" {
-  forward_to = [loki.write.default.receiver]
-  
-  // Применяем ко всем КРОМЕ fastapi
-  stage.match {
-    selector = "{service!=\"fastapi\"}"
-    // Ничего не делаем - пропускаем логи как есть
-  }
-}
-
-// чтение логов контейнеров с маршрутизацией
+// чтение логов контейнеров
 loki.source.docker "containers" {
   host             = "unix:///var/run/docker.sock"
   targets          = discovery.relabel.containers.output
+  forward_to       = [loki.process.containers.receiver]
   relabel_rules    = discovery.relabel.containers.rules
   refresh_interval = "5s"
-  
-  // Маршрутизация: fastapi -> специальная обработка, остальные -> обычная
-  forward_to = [loki.process.fastapi.receiver, loki.process.others.receiver]
 }
