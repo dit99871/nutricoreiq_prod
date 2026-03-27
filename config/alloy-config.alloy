@@ -15,54 +15,6 @@ loki.write "default" {
   external_labels = {}
 }
 
-// обработка логов приложения из файлов
-loki.process "fastapi" {
-  forward_to = [loki.write.default.receiver]
-
-  stage.regex {
-    expression = "^\\[(?P<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3})\\]\\s+(?P<module>[\\w\\.]+)\\s*:\\s*(?P<line>\\d+)\\s+(?P<level>\\w+)\\s*-\\s*(?P<message>.*)"
-  }
-
-  stage.timestamp {
-    source = "timestamp"
-    format = "2006-01-02 15:04:05.000"
-    location = "UTC"  // добавляем timezone
-  }
-
-  stage.template {
-    source   = "level"
-    template = "{{ ToLower .Value }}"
-  }
-
-  stage.labels {
-    values = {
-      level = "",
-    }
-  }
-
-  stage.template {
-    source   = "message"
-    template = "{{ .module }}:{{ .line }} {{ ToUpper .level }} - {{ .message }}"
-  }
-
-  stage.output {
-    source = "message"  // изменено с grafana_message на message для совместимости с Grafana
-  }
-}
-
-// чтение логов приложения из файлов
-loki.source.file "fastapi" {
-  targets = [{
-    __address__ = "localhost",
-    __path__    = "/var/log/app/app.log",  // конкретный файл логов
-    job         = "fastapi",
-    service     = "web_app",
-  }]
-  forward_to = [loki.process.fastapi.receiver]
-
-  legacy_positions_file = "/var/log/positions.yaml"
-}
-
 // обнаружение docker контейнеров
 discovery.docker "containers" {
   host             = "unix:///var/run/docker.sock"
@@ -74,6 +26,29 @@ loki.process "containers" {
   forward_to = [loki.write.default.receiver]
 
   stage.docker { }
+  
+  // Дополнительная обработка для fastapi логов
+  stage.regex {
+    expression = "^\\[(?P<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3})\\]\\s+(?P<module>[\\w\\.]+)\\s*:\\s*(?P<line>\\d+)\\s+(?P<level>\\w+)\\s*-\\s*(?P<message>.*)"
+    source = "message"
+  }
+
+  stage.timestamp {
+    source = "timestamp"
+    format = "2006-01-02 15:04:05.000"
+    location = "UTC"
+  }
+
+  stage.template {
+    source   = "level"
+    template = "{{ ToUpper .Value }}"
+  }
+
+  stage.labels {
+    values = {
+      level = "",
+    }
+  }
 }
 
 // правила перебивки меток контейнеров
@@ -99,7 +74,7 @@ discovery.relabel "containers" {
 
   rule {
     source_labels = ["__meta_docker_container_name"]
-    regex         = "/(alloy|loki|taskiq_worker)"  // web_app
+    regex         = "/(alloy|loki|taskiq_worker)"
     action        = "drop"
   }
 }
