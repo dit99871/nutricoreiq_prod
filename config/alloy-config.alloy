@@ -38,20 +38,17 @@ loki.process "containers" {
     location = "UTC"
   }
 
+  // Формируем сообщение без временной метки
+  stage.template {
+    source = "message"
+    template = "{{ .module }}:{{ .line }} {{ .level }} - {{ .message }}"
+  }
+
   stage.labels {
     values = {
       level = "",
       module = "",
     }
-  }
-
-  stage.template {
-    source   = "message"
-    template = "{{ .module }}:{{ .line }} {{ ToUpper .level }} - {{ .message }}"
-  }
-
-  stage.output {
-    source = "message"
   }
 }
 
