@@ -76,6 +76,10 @@ loki.process "containers" {
       template = "{{ .module }}:{{ .line }} {{ .level }} - {{ .message }}"
     }
 
+    stage.output {
+      source = "message"
+    }
+
     stage.labels {
       values = {
         level = "",
