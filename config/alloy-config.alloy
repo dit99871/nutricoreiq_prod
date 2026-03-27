@@ -21,30 +21,6 @@ discovery.docker "containers" {
   refresh_interval = "5s"
 }
 
-// обработка логов контейнеров
-loki.process "containers" {
-  forward_to = [loki.write.default.receiver]
-  
-  // Парсинг логов fastapi с извлечением полей
-  stage.regex {
-    expression = "^\\[\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}\\]\\s+(?P<module>[\\w\\.]+)\\s*:\\s*(?P<line>\\d+)\\s+(?P<level>\\w+)\\s*-\\s+(?P<message>.*)"
-    source = "message"
-  }
-
-  // Формируем сообщение без временной метки
-  stage.template {
-    source = "message"
-    template = "{{ .module }}:{{ .line }} {{ .level }} - {{ .message }}"
-  }
-
-  stage.labels {
-    values = {
-      level = "",
-      module = "",
-    }
-  }
-}
-
 // правила перебивки меток контейнеров
 discovery.relabel "containers" {
   targets = discovery.docker.containers.targets
@@ -66,6 +42,7 @@ discovery.relabel "containers" {
     target_label  = "project"
   }
 
+  // Исключаем системные контейнеры
   rule {
     source_labels = ["__meta_docker_container_name"]
     regex         = "/(alloy|loki|taskiq_worker)"
@@ -73,11 +50,61 @@ discovery.relabel "containers" {
   }
 }
 
-// чтение логов контейнеров
+// обработка логов fastapi - специальная обработка
+loki.process "fastapi" {
+  forward_to = [loki.write.default.receiver]
+  
+  // Применяем только к контейнерам с сервисом fastapi
+  stage.match {
+    selector = "{service=\"fastapi\"}"
+    
+    // Парсинг логов fastapi с извлечением временной метки
+    stage.regex {
+      expression = "^\\[(?P<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3})\\]\\s+(?P<module>[\\w\\.]+)\\s*:\\s*(?P<line>\\d+)\\s+(?P<level>\\w+)\\s*-\\s+(?P<message>.*)"
+      source = "message"
+    }
+
+    // Устанавливаем точную временную метку из лога
+    stage.timestamp {
+      source = "timestamp"
+      format = "2006-01-02 15:04:05.000"
+      location = "UTC"
+    }
+
+    // Формируем чистое сообщение без временной метки
+    stage.template {
+      source = "message"
+      template = "{{ .module }}:{{ .line }} {{ .level }} - {{ .message }}"
+    }
+
+    // Создаем полезные labels для фильтрации
+    stage.labels {
+      values = {
+        level = "",
+        module = "",
+      }
+    }
+  }
+}
+
+// обработка остальных логов - без изменений
+loki.process "others" {
+  forward_to = [loki.write.default.receiver]
+  
+  // Применяем ко всем КРОМЕ fastapi
+  stage.match {
+    selector = "{service!=\"fastapi\"}"
+    // Ничего не делаем - пропускаем логи как есть
+  }
+}
+
+// чтение логов контейнеров с маршрутизацией
 loki.source.docker "containers" {
   host             = "unix:///var/run/docker.sock"
   targets          = discovery.relabel.containers.output
-  forward_to       = [loki.process.containers.receiver]
   relabel_rules    = discovery.relabel.containers.rules
   refresh_interval = "5s"
+  
+  // Маршрутизация: fastapi -> специальная обработка, остальные -> обычная
+  forward_to = [loki.process.fastapi.receiver, loki.process.others.receiver]
 }
