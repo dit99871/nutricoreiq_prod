@@ -45,5 +45,4 @@ exec runuser -u appuser -- gunicorn \
   --keep-alive 5 \
   --disable-redirect-access-to-syslog \
   --access-logfile /dev/null \
-  --log-level warning \
-  --capture-output
+  --log-level warning
