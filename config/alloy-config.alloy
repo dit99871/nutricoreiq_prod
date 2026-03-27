@@ -25,10 +25,23 @@ discovery.docker "containers" {
 loki.process "containers" {
   forward_to = [loki.write.default.receiver]
   
-  // Парсинг логов fastapi из текстового формата
+  // Парсинг логов fastapi с извлечением временной метки
   stage.regex {
-    expression = "^\\[\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}\\]\\s+(?P<logger>[\\w\\.]+)\\s*:\\s*(?P<line>\\d+)\\s+(?P<level>\\w+)\\s+-\\s+(?P<message>.*)"
+    expression = "^\\[(?P<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3})\\]\\s+(?P<logger>[\\w\\.]+)\\s*:\\s*(?P<line>\\d+)\\s+(?P<level>\\w+)\\s*-\\s+(?P<message>.*)"
     source = "message"
+  }
+
+  // Устанавливаем временную метку из лога
+  stage.timestamp {
+    source = "timestamp"
+    format = "2006-01-02 15:04:05.000"
+    location = "UTC"
+  }
+
+  // Формируем сообщение без временной метки
+  stage.template {
+    source = "message"
+    template = "{{.logger}}:{{.line}} {{.level}} - {{.message}}"
   }
 
   stage.labels {
