@@ -27,14 +27,14 @@ loki.process "containers" {
   
   // Парсинг логов fastapi из текстового формата
   stage.regex {
-    expression = "^\\[\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}\\]\\s+(?P<logger>[\\w\\.]+)\\s*:\\s*(?P<line>\\d+)\\s+(?P<level>\\w+)\\s*-\\s*(?P<message>.*)"
+    expression = "^\\[\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}\\]\\s+(?P<logger>[\\w\\.]+)\\s*:\\s*(?P<line>\\d+)\\s+(?P<level>\\w+)\\s+-\\s+(?P<message>.*)"
     source = "message"
   }
 
-  // Удаление временной метки из сообщения для избежания дублирования
-  stage.replace {
-    expression = "^\\[\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}\\]\\s+"
-    replace = ""
+  // Формируем новое сообщение без временной метки
+  stage.template {
+    source = ""
+    template = "{{.logger}}:{{.line}} {{.level}} - {{.message}}"
   }
 
   stage.labels {
