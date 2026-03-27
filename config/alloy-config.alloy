@@ -31,12 +31,6 @@ loki.process "containers" {
     source = "message"
   }
 
-  // Формируем новое сообщение без временной метки
-  stage.template {
-    source = ""
-    template = "{{.logger}}:{{.line}} {{.level}} - {{.message}}"
-  }
-
   stage.labels {
     values = {
       level = "",
