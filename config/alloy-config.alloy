@@ -72,7 +72,7 @@ loki.process "containers" {
     // Формируем чистое сообщение без временной метки
     stage.template {
       source = "message"
-      template = "{{ .module }}:{{ .line }} {{ .level }} - {{ .message }}"
+      template = "{{ printf \"%-20s\" .module }}:{{ printf \"%3s\" .line }} {{ printf \"%-7s\" .level }} - {{ .message }}"
     }
 
     stage.output {
