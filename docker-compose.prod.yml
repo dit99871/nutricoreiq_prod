@@ -110,7 +110,7 @@ services:
         labels: "service=rabbitmq"
 
   rabbitmq_exporter:
-    image: kbudde/rabbitmq-exporter:v1.0.0-RC21
+    image: kbudde/rabbitmq-exporter:v1.0.0
     container_name: rabbitmq_exporter
     environment:
       - RABBIT_URL=http://rabbitmq:15672
