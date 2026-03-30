@@ -107,6 +107,29 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+        labels: "service=rabbitmq"
+
+  rabbitmq_exporter:
+    image: kbudde/rabbitmq-exporter:v1.0.0-RC21
+    container_name: rabbitmq_exporter
+    environment:
+      - RABBIT_URL=http://rabbitmq:15672
+      - RABBIT_USER=${APP_CONFIG__RABBITMQ_DEFAULT_USER:-guest}
+      - RABBIT_PASSWORD=${APP_CONFIG__RABBITMQ_DEFAULT_PASS:-guest}
+      - PUBLISH_PORT=9419
+      - RABBIT_EXPORTERS=connections,channels,exchanges,queues,consumers
+    ports:
+      - "127.0.0.1:9419:9419"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - app-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   fastapi:
     image: ${DOCKER_IMAGE:-nutricoreiq-fastapi}
