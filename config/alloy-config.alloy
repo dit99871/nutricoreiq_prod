@@ -44,7 +44,7 @@ discovery.relabel "containers" {
 
   rule {
     source_labels = ["__meta_docker_container_name"]
-    regex         = "/(alloy|loki|taskiq_worker)"
+    regex         = "/(alloy|loki|taskiq_worker|rabbitmq_exporter)"
     action        = "drop"
   }
 }
