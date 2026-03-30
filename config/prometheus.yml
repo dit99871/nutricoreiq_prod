@@ -54,13 +54,10 @@ scrape_configs:
 
   - job_name: 'rabbitmq'
     static_configs:
-      - targets: ['rabbitmq:15672']
+      - targets: ['rabbitmq:15692']
     relabel_configs:
       - target_label: 'app'
         replacement: 'rabbitmq'
     scrape_interval: 30s
     metrics_path: /metrics
-    basic_auth:
-      username: guest
-      password: guest
 

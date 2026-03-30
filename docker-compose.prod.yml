@@ -89,9 +89,15 @@ services:
     image: rabbitmq:4-management-alpine
     hostname: rabbitmq
     container_name: rabbitmq
+    command: >
+      sh -c "
+      rabbitmq-plugins enable rabbitmq_prometheus &&
+      rabbitmq-server
+      "
     ports:
       - "127.0.0.1:${APP_CONFIG__RABBITMQ_PORT}:${APP_CONFIG__RABBITMQ_PORT}"
       - "127.0.0.1:${APP_CONFIG__RABBITMQ_MANAGEMENT_PORT}:${APP_CONFIG__RABBITMQ_MANAGEMENT_PORT}"
+      - "127.0.0.1:15692:15692"
     env_file:
       - .env
     volumes:
