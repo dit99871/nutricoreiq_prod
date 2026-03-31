@@ -38,10 +38,10 @@ def setup_middleware(app: FastAPI) -> None:
 
     app.add_middleware(CSPMiddleware)
     app.add_middleware(CSRFProtectionMiddleware)
-    app.add_middleware(SessionMiddleware, trusted_proxies=settings.run.trusted_proxies)
     app.add_middleware(
         PrivacyConsentMiddleware, trusted_proxies=settings.run.trusted_proxies
     )
+    app.add_middleware(SessionMiddleware, trusted_proxies=settings.run.trusted_proxies)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors.allow_origins,
