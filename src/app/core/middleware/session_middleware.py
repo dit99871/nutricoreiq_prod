@@ -1,6 +1,7 @@
 """
 Мидлвари для управления сессиями - разделенная ответственность
 """
+import uuid
 
 from fastapi import Request, Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -57,9 +58,7 @@ class SessionMiddleware(BaseMiddleware):
             session_id = cookie_session_id
         else:
             # создаем новую сессию только если нет cookie
-            session_id = session_service.create_new_session("generated")[
-                "redis_session_id"
-            ]
+            session_id = str(uuid.uuid4())
 
         try:
             # получаем сессию с кешированием и circuit breaker

@@ -1,5 +1,4 @@
 import json
-import time
 from datetime import datetime
 from typing import Optional
 
@@ -14,34 +13,16 @@ logger = get_logger("session_service")
 class SessionService:
     """Сервис для управления сессиями"""
 
-    def __init__(self):
-        self._session_cache: dict[str, dict] = {}
-        self._cache_ttl = 300  # 5 минут
-
     async def get_session(self, session_id: str) -> Optional[dict]:
-        """Получает сессию с кешированием"""
-
-        # проверяем кеш
-        if session_id in self._session_cache:
-            cached_data = self._session_cache[session_id]
-            if time.time() - cached_data["cached_at"] < self._cache_ttl:
-                return cached_data["session"]
+        """Получает сессию из Redis"""
 
         session_data = await redis_client.get(f"redis_session:{session_id}")
-
         if session_data:
-            session = json.loads(session_data)
-            # кешируем
-            self._session_cache[session_id] = {
-                "session": session,
-                "cached_at": time.time(),
-            }
-            return session
-
+            return json.loads(session_data)
         return None
 
     async def save_session(self, session_id: str, session: dict) -> bool:
-        """Сохраняет сессию в Redis и кеше с валидацией"""
+        """Сохраняет сессию в Redis"""
 
         try:
             await redis_client.set(
@@ -49,27 +30,11 @@ class SessionService:
                 json.dumps(session),
                 ex=settings.redis.session_ttl,
             )
-
-            # Валидация: проверяем что сессия действительно сохранилась
-            saved_data = await redis_client.get(f"redis_session:{session_id}")
-            if not saved_data:
-                logger.error(f"Не удалось сохранить сессию {session_id} в Redis")
-
-                return False
-
-            # Обновляем кеш только после успешного сохранения в Redis
-            self._session_cache[session_id] = {
-                "session": session,
-                "cached_at": time.time(),
-            }
-
-            logger.debug(f"Сессия {session_id} успешно сохранена в Redis")
-
+            logger.debug("Сессия %s успешно сохранена в Redis", session_id)
             return True
 
         except Exception as e:
-            logger.error(f"Ошибка при сохранении сессии {session_id} в Redis: {e}")
-
+            logger.error("Ошибка при сохранении сессии %s в Redis: %s", session_id, e)
             return False
 
     def create_new_session(self, session_id: str) -> dict:
@@ -85,7 +50,6 @@ class SessionService:
 
         csrf_token = session.get("csrf_token") or generate_csrf_token()
         session["csrf_token"] = csrf_token
-
         return csrf_token
 
 

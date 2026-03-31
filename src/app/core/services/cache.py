@@ -99,3 +99,46 @@ class CacheService:
                 "Ошибка при инвалидации кеша пользователя: %s",
                 e,
             )
+
+
+class ConsentCacheService:
+    """Кеш для согласий на обработку данных"""
+
+    CONSENT_TTL = 3600  # 1 час
+    KEY_PREFIX = "consent"
+
+    @classmethod
+    def _key(cls, user_id: int) -> str:
+        return f"{cls.KEY_PREFIX}:{user_id}"
+
+    @classmethod
+    async def get(cls, user_id: int) -> bool | None:
+        """None означает cache miss — нужно идти в БД"""
+        try:
+            async for redis in get_redis_service():
+                value = await redis.get(cls._key(user_id))
+                if value is not None:
+                    return value == b"1"
+        except Exception as e:
+            log.error("Ошибка чтения кеша согласия: %s", e)
+        return None
+
+    @classmethod
+    async def set(cls, user_id: int, has_consent: bool) -> None:
+        try:
+            async for redis in get_redis_service():
+                await redis.set(
+                    cls._key(user_id),
+                    "1" if has_consent else "0",
+                    ex=cls.CONSENT_TTL,
+                )
+        except Exception as e:
+            log.error("Ошибка записи кеша согласия: %s", e)
+
+    @classmethod
+    async def invalidate(cls, user_id: int) -> None:
+        try:
+            async for redis in get_redis_service():
+                await redis.delete(cls._key(user_id))
+        except Exception as e:
+            log.error("Ошибка инвалидации кеша согласия: %s", e)
