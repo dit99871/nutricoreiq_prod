@@ -1,64 +1,39 @@
-import json
-import time
-from datetime import datetime
-
-import requests
+import asyncio
 import sentry_sdk
 from sentry_sdk.integrations.starlette import StarletteIntegration
 
 from src.app.core.config import settings
 from src.app.core.logger import get_logger
+from src.app.core.tasks import send_event_to_loki
 
 log = get_logger("sentry_service")
 
 
 def sentry_to_loki(event, hint):
     """
-    Конвертирует Sentry событие в формат, подходящий для Loki, и отправляет его туда.
-
-    :param event: Sentry событие
-    :param hint: Подсказка Sentry события
-    :return: Исходное событие
+    Обработчик события, который отправляет его в Loki.
     """
-    loki_url = settings.loki.url
-    log_entry = {
-        "streams": [
-            {
-                "stream": {
-                    "source": "sentry",
-                    "level": event.get("level", "error"),
-                    "app": "fastapi",
-                },
-                "values": [
-                    [
-                        str(int(time.time() * 1e9)),
-                        json.dumps(
-                            {
-                                "time": datetime.now().strftime("%Y-%m-%dT%H:%M:%S.%f")[
-                                    :-3
-                                ],
-                                "message": event.get("message", "Sentry event"),
-                                "event_id": event.get("event_id"),
-                            }
-                        ),
-                    ]
-                ],
-            }
-        ]
-    }
+
     try:
-        response = requests.post(loki_url, json=log_entry)
-        response.raise_for_status()  # вызывает исключение при http-ошибке
-        log.info(
-            "Успешно отправлено в Loki: %s",
-            event.get("event_id"),
+        # записываем событие в очередь для отправки в Loki
+        asyncio.get_running_loop().create_task(
+            send_event_to_loki.kiq(
+                event_id=event.get("event_id"),
+                message=event.get("message", "Sentry event"),
+                level=event.get("level", "error"),
+            )
         )
+        log.info("Событие поставлено в очередь Loki: %s", event.get("event_id"))
+
+    except RuntimeError:
+        # на случай вызова вне асинк-контекста (например, в тестах)
+        log.warning(
+            "Event loop не запущен, событие Loki пропущено: %s", event.get("event_id")
+        )
+
     except Exception as e:
-        log.error(
-            "Ошибка при отправлении в Loki: %s, error: %s",
-            loki_url,
-            str(e),
-        )
+        log.error("Ошибка постановки в очередь Loki: %s", str(e))
+
     return event
 
 
