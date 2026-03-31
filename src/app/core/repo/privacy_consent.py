@@ -49,7 +49,6 @@ async def create_privacy_consent(
 
         session.add(consent)
         await session.flush()  # Получаем ID без коммита
-        await session.refresh(consent)
 
         log.info(
             "Создано согласие: user_id=%s, session_id=%s, type=%s, granted=%s",

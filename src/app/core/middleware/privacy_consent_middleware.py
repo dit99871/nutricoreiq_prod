@@ -12,6 +12,8 @@ from src.app.core import db_helper
 from src.app.core.exceptions import LegalRestrictionError
 from src.app.core.logger import get_logger
 from src.app.core.middleware.base_middleware import BaseMiddleware
+from src.app.core.repo.privacy_consent import has_user_consent
+from src.app.core.services.cache import ConsentCacheService
 from src.app.core.services.log_context_service import LogContextService
 
 log = get_logger("privacy_middleware")
@@ -51,73 +53,45 @@ class PrivacyConsentMiddleware(BaseMiddleware):
     async def handle_request(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response | None:
-        """Основная логика PrivacyConsent middleware"""
 
-        # пропускаем исключенные пути
         if self._should_skip_path(request, self.EXEMPT_PATHS):
-            try:
-                return await call_next(request)
-            except Exception:
-                raise
-
-        try:
-            # добавляем сессию бд в область видимости запроса
-            async for session in db_helper.session_getter():
-                # получаем пользователя из запроса
-                user = getattr(request.state, "user", None)
-
-                if user:
-                    from src.app.core.repo.privacy_consent import has_user_consent
-
-                    has_consent = await has_user_consent(session, user.id)
-                else:
-                    consent_header = request.headers.get("X-Privacy-Consent")
-                    has_consent = False
-                    if consent_header:
-                        try:
-                            consent_data = json.loads(consent_header)
-                            has_consent = bool(consent_data.get("personal_data", False))
-                        except json.JSONDecodeError:
-                            has_consent = False
-
-                    if not has_consent:
-                        consent_cookie = request.cookies.get("privacy_consent")
-                        if consent_cookie:
-                            try:
-                                consent_data = json.loads(consent_cookie)
-                                has_consent = bool(
-                                    consent_data.get("personal_data", False)
-                                )
-                            except json.JSONDecodeError:
-                                has_consent = False
-
-                if not has_consent:
-                    context = LogContextService.get_safe_context(request)
-                    log.warning(
-                        "Требуется согласие на обработку персональных данных: %s",
-                        LogContextService.format_context_string(context),
-                    )
-                    raise LegalRestrictionError(
-                        "Требуется согласие на обработку персональных данных"
-                    )
-
-                try:
-                    return await call_next(request)
-                except Exception:
-                    raise
-
-        except HTTPException:
-            # пробрасываем хттп исключения дальше
-            raise
-
-        except Exception as e:
-            context = LogContextService.get_safe_context(request)
-            log.error(
-                "Ошибка в PrivacyConsent мидлвари: %s",
-                str(e),
-                extra={
-                    "context_string": LogContextService.format_context_string(context),
-                },
-                exc_info=True,
-            )
             return await call_next(request)
+
+        user = getattr(request.state, "user", None)
+
+        if user:
+            # авторизованный — проверяем Redis-кеш, при промахе идём в БД
+            has_consent = await ConsentCacheService.get(user.id)
+
+            if has_consent is None:
+                async for session in db_helper.session_getter():
+                    has_consent = await has_user_consent(session, user.id)
+                await ConsentCacheService.set(user.id, has_consent)
+        else:
+            # анонимный — флаг живёт прямо в сессии, которую уже загрузил SessionMiddleware
+            redis_session = request.scope.get("redis_session", {})
+            has_consent = redis_session.get("privacy_consent", False)
+
+            if not has_consent:
+                # первый раз — проверяем cookie/заголовок и сохраняем в сессию
+                has_consent = self._check_consent_from_request(request)
+                if has_consent:
+                    redis_session["privacy_consent"] = True
+
+        if not has_consent:
+            raise LegalRestrictionError()
+
+        return await call_next(request)
+
+    def _check_consent_from_request(self, request: Request) -> bool:
+        """Проверяет согласие из заголовка или cookie"""
+        for source in [
+            request.headers.get("X-Privacy-Consent"),
+            request.cookies.get("privacy_consent"),
+        ]:
+            if source:
+                try:
+                    return bool(json.loads(source).get("personal_data", False))
+                except json.JSONDecodeError:
+                    pass
+        return False

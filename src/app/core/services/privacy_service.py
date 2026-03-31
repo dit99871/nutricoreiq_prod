@@ -16,6 +16,7 @@ from src.app.core.repo.privacy_consent import (
     has_session_consent,
 )
 from src.app.core.schemas.user import UserPublic
+from src.app.core.services.cache import ConsentCacheService
 from src.app.core.utils.network import get_client_ip
 
 log = get_logger("privacy_service")
@@ -71,10 +72,15 @@ class PrivacyService:
                 is_granted=True,
             )
 
+            # инвалидируем кеш согласия для авторизованного пользователя,
+            # чтобы middleware при следующем запросе перечитал актуальные данные из БД
+            if user_id:
+                await ConsentCacheService.invalidate(user_id)
+
         log.info(
             "Сохранено согласие на обработку данных: user_id=%s, session_id=%s, ip=%s",
             user_id,
-            session_id,
+            session_param,
             ip_address,
         )
 
