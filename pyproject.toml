@@ -35,7 +35,6 @@ tenacity = "^9.1.2"
 sentry-sdk = {extras = ["fastapi"], version = "^2.34.1"}
 requests = "^2.32.4"
 slowapi = "^0.1.9"
-flake8 = "^7.3.0"
 
 
 [tool.poetry.group.dev.dependencies]

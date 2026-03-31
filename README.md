@@ -59,7 +59,7 @@ NutriCoreIQ — это современное веб-приложение для
 - **Poetry** — управление зависимостями
 - **pytest + pytest-asyncio** — тестирование (16 тестовых файлов)
 - **pytest-cov** — покрытие кода
-- **black, ruff, mypy, pylint, flake8** — линтеры и форматтеры
+- **black, ruff, mypy, pylint** — линтеры и форматтеры
 - **pre-commit hooks** — контроль качества кода
 
 ## Установка
