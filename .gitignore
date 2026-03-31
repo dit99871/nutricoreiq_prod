@@ -83,7 +83,7 @@ ipython_config.py
 #uv.lock
 
 # poetry
-poetry.lock
+#poetry.lock
 
 # pdm
 #pdm.lock
