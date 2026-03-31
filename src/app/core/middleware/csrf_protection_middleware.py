@@ -2,6 +2,8 @@
 Мидлвари только для CSRF защиты - разделенная ответственность
 """
 
+import hmac
+
 from fastapi import Request, Response
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.types import ASGIApp
@@ -89,7 +91,9 @@ class CSRFProtectionMiddleware(BaseMiddleware):
                 csrf_token = request.cookies.get("csrf_token")
 
             session_csrf_token = session.get("csrf_token")
-            if not csrf_token or csrf_token != session_csrf_token:
+            if not csrf_token or not hmac.compare_digest(
+                csrf_token, session_csrf_token
+            ):
                 context = LogContextService.get_safe_context(request)
                 log.warning(
                     "Не найден csrf-токен. %s",
