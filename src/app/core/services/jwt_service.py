@@ -133,7 +133,7 @@ def decode_jwt(token: str) -> dict[str, Any] | None:
         decoded = jwt.decode(
             token,
             settings.auth.public_key_path.read_text(),
-            algorithms=settings.auth.algorithm,
+            algorithms=[settings.auth.algorithm],
         )
         return decoded
 
