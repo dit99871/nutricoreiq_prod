@@ -43,6 +43,6 @@ class CSPMiddleware(BaseMiddleware):
         response = await call_next(request)
 
         # формируем и добавляем csp политику
-        response.headers["Content-Security-Policy-Report-Only"] = csp_policy
+        response.headers["Content-Security-Policy"] = csp_policy
 
         return response
