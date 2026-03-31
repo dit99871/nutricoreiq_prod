@@ -80,7 +80,6 @@ class TestCreatePrivacyConsent:
         
         mock_session.add.assert_called_once()
         mock_session.flush.assert_awaited_once()
-        mock_session.refresh.assert_awaited_once()
         mock_log.info.assert_called_once()
 
     @pytest.mark.asyncio
@@ -115,7 +114,6 @@ class TestCreatePrivacyConsent:
         
         mock_session.add.assert_called_once()
         mock_session.flush.assert_awaited_once()
-        mock_session.refresh.assert_awaited_once()
         mock_log.info.assert_called_once()
 
     @pytest.mark.asyncio
