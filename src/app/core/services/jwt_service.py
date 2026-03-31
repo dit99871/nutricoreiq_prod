@@ -6,7 +6,8 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from fastapi import Request
-from jose import ExpiredSignatureError, JWTError, jwt
+import jwt
+from jwt import PyJWTError, ExpiredSignatureError
 
 from src.app.core.exceptions import (
     AuthenticationError,
@@ -147,7 +148,7 @@ def decode_jwt(token: str) -> dict[str, Any] | None:
         log.error("Токен истек: %s", e)
         raise ExpiredTokenException()
 
-    except JWTError as e:
+    except PyJWTError as e:
         log.error("Неверный токен: %s", e)
         raise AuthenticationError("Неверный токен. Пожалуйста, войдите заново.")
 
@@ -203,7 +204,7 @@ def encode_jwt(
         )
         return encoded
 
-    except JWTError as e:
+    except PyJWTError as e:
         log.error("JWT ошибка при кодировании токена: %s", e)
         raise ExternalServiceError(
             "Ошибка авторизации",
