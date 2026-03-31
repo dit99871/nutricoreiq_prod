@@ -1,6 +1,7 @@
 """
 Мидлвари для управления сессиями - разделенная ответственность
 """
+
 import uuid
 
 from fastapi import Request, Response
