@@ -36,8 +36,9 @@ class BaseMiddleware(BaseHTTPMiddleware, ABC):
     ) -> Response:
         """Основной метод dispatch с общей логикой"""
 
-        # устанавливаем общие атрибуты запроса через LogContextService
-        LogContextService.setup_request_context(request, self.trusted_proxies)
+        # устанавливаем контекст только один раз
+        if not hasattr(request.state, "request_id"):
+            LogContextService.setup_request_context(request, self.trusted_proxies)
 
         try:
             # вызываем конкретную реализацию в дочернем классе
