@@ -104,7 +104,7 @@ class CacheService:
 class ConsentCacheService:
     """Кеш для согласий на обработку данных"""
 
-    CONSENT_TTL = 3600  # 1 час
+    CONSENT_TTL = settings.cache.consent_ttl
     KEY_PREFIX = "consent"
 
     @classmethod
