@@ -4,7 +4,6 @@ from sentry_sdk.integrations.starlette import StarletteIntegration
 
 from src.app.core.config import settings
 from src.app.core.logger import get_logger
-from src.app.core.tasks import send_event_to_loki
 
 log = get_logger("sentry_service")
 
@@ -13,6 +12,8 @@ def sentry_to_loki(event, hint):
     """
     Обработчик события, который отправляет его в Loki.
     """
+
+    from src.app.core.tasks import send_event_to_loki
 
     try:
         # записываем событие в очередь для отправки в Loki

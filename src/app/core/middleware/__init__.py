@@ -20,8 +20,8 @@ def setup_middleware(app: FastAPI) -> None:
     Порядок выполнения запроса (outer -> inner):
     - HTTPMiddleware — outermost: логирование и unified tracing
     - CORSMiddleware — обработка CORS и preflight запросов
-    - PrivacyConsentMiddleware — проверка согласия на обработку данных
     - SessionMiddleware — управление сессиями
+    - PrivacyConsentMiddleware — проверка согласия на обработку данных
     - CSRFMiddleware — защита от CSRF атак
     - CSPMiddleware — innermost: заголовки Content Security Policy
 
