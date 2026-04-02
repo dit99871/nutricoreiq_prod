@@ -52,5 +52,5 @@ async def send_event_to_loki(
             response.raise_for_status()
         log.info("Успешно отправлено в Loki: %s", event_id)
     except Exception as e:
-        log.error("Ошибка при отправлении в Loki: %s, error: %s", loki_url, str(e))
+        log.error("Ошибка при отправлении в Loki: %s, error: %s", loki_url, e)
         raise  # raise нужен, чтобы taskiq мог сделать retry

@@ -138,7 +138,7 @@ def decode_jwt(token: str) -> dict[str, Any] | None:
         return decoded
 
     except FileNotFoundError as e:
-        log.error("Файл с публичным ключом не найден: %s", e)
+        log.error("Файл с публичным ключом не найден: %s", e, exc_info=True)
         raise ExternalServiceError(
             "Ошибка авторизации",
             service_name="JWT Service",

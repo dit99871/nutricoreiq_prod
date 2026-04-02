@@ -33,7 +33,7 @@ def sentry_to_loki(event, hint):
         )
 
     except Exception as e:
-        log.error("Ошибка постановки в очередь Loki: %s", str(e))
+        log.error("Ошибка постановки в очередь Loki: %s", e)
 
     return event
 

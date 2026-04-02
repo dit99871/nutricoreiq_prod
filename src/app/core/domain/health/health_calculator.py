@@ -98,7 +98,7 @@ class HealthCalculator:
             else:
                 kfa = float(user.kfa)  # fallback для исторических значений
         except Exception as e:
-            log.error("Ошибка значения kfa: %s", str(e))
+            log.error("Ошибка значения kfa: %s", e)
             raise ValueError(
                 f"Недопустимое значение kfa: {user.kfa}. "
                 "Должно быть число от 1.2 до 1.9."

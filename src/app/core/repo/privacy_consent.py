@@ -61,7 +61,7 @@ async def create_privacy_consent(
         return consent
 
     except SQLAlchemyError as e:
-        log.error("Ошибка при создании согласия: %s", str(e))
+        log.error("Ошибка при создании согласия: %s", e)
         await session.rollback()
         raise DatabaseError("Ошибка при сохранении согласия", original_error=e)
 
@@ -109,7 +109,7 @@ async def _has_consent(
         return consent is not None
 
     except SQLAlchemyError as e:
-        log.error("Ошибка при проверке согласия: %s", str(e))
+        log.error("Ошибка при проверке согласия: %s", e)
         return False
 
 
@@ -171,7 +171,7 @@ async def get_user_consents(
         return list(consents)
 
     except SQLAlchemyError as e:
-        log.error("Ошибка при получении согласий пользователя: %s", str(e))
+        log.error("Ошибка при получении согласий пользователя: %s", e)
         return []
 
 
@@ -199,5 +199,5 @@ async def get_session_consents(
         return list(consents)
 
     except SQLAlchemyError as e:
-        log.error("Ошибка при получении согласий сессии: %s", str(e))
+        log.error("Ошибка при получении согласий сессии: %s", e)
         return []

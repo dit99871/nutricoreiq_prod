@@ -41,13 +41,14 @@ async def csp_report(request: Request) -> CSPReportResponse:
 
         # логируем нарушение
         log.warning(
-            f"Обнаружено нарушение CSP: {effective_directive} "
-            f"с {doc_uri} - "
-            f"заблокировано: {blocked_uri}"
+            "Обнаружено нарушение CSP: %s с %s - заблокировано: %s",
+            effective_directive,
+            doc_uri,
+            blocked_uri,
         )
 
         return CSPReportResponse(status="received")
 
     except Exception as e:
-        log.error(f"Ошибка обработки CSP отчета: {str(e)}")
+        log.error("Ошибка обработки CSP отчета: %s", e)
         return CSPReportResponse(status="error", message=str(e))

@@ -74,7 +74,7 @@ class UserService:
 
         user = await get_user_by_name(session, username)
         if user is None:
-            log.error("Пользователя с таким именем не существует в БД")
+            log.warning("Пользователя с таким именем не существует в БД")
             raise AuthenticationError("Неверные учетные данные")
 
         if not verify_password(password, user.hashed_password):
@@ -324,7 +324,7 @@ class UserService:
 
         uid: str | None = payload.get("sub")
         if uid is None:
-            log.error("Ошибка получения uid из payload")
+            log.warning("Ошибка получения uid из payload")
             raise CREDENTIAL_EXCEPTION
 
         user = await get_user_by_uid(session, uid)
@@ -354,7 +354,7 @@ class UserService:
 
         refresh_jwt = await get_jwt_from_cookies(request, REFRESH_TOKEN_TYPE)
         if not refresh_jwt:
-            log.error("Refresh токен не найден в куках")
+            log.warning("Refresh токен не найден в куках")
             raise AuthenticationError(
                 "Ошибка аутентификации. Пожалуйста, войдите заново"
             )
@@ -363,11 +363,11 @@ class UserService:
 
         uid: str | None = payload.get("sub")
         if uid is None:
-            log.error("Uid пользователя не найден в refresh токене")
+            log.warning("Uid пользователя не найден в refresh токене")
             raise CREDENTIAL_EXCEPTION
 
         if not await validate_refresh_jwt(uid, refresh_jwt, redis_service):
-            log.error("Refresh токен невалиден или устарел")
+            log.warning("Refresh токен невалиден или устарел")
             raise CREDENTIAL_EXCEPTION
 
         user = await get_user_by_uid(session, uid)

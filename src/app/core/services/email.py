@@ -78,7 +78,7 @@ async def send_email(
         log.info("Успешная отправка письма: %s", mask_email(recipient))
 
     except SMTPException as e:
-        log.error("Ошибка при отправке письма %s: %s", mask_email(recipient), str(e))
+        log.error("Ошибка при отправке письма %s: %s", mask_email(recipient), e)
         raise Exception(
             f"Во время отправки письма {mask_email(recipient)} произошла ошибка: {str(e)}"
         )

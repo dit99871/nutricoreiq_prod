@@ -57,7 +57,7 @@ async def save_privacy_consent(
 
     except Exception as e:
         await session.rollback()
-        log.error("Ошибка при сохранении согласия: %s", str(e))
+        log.error("Ошибка при сохранении согласия: %s", e)
         raise
 
 
@@ -82,7 +82,7 @@ async def get_consent_status(
         return ConsentStatusResponse(**consent_data)
 
     except Exception as e:
-        log.error("Ошибка при получении статуса согласия: %s", str(e))
+        log.error("Ошибка при получении статуса согласия: %s", e)
         return ConsentStatusResponse(
             personal_data=False, cookies=False, marketing=False, has_consent=False
         )

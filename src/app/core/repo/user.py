@@ -240,6 +240,6 @@ async def update_user_password(
         await session.commit()
 
     except SQLAlchemyError as e:
-        log.error("Ошибка при обновлении пароля пользователя %s: %s", user_uid, str(e))
+        log.error("Ошибка при обновлении пароля пользователя %s: %s", user_uid, e)
         await session.rollback()
         raise DatabaseError("Ошибка при обновлении пароля", original_error=e)

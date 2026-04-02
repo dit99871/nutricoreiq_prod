@@ -16,7 +16,7 @@ async def check_rabbitmq():
     try:
         await broker.startup()
     except Exception as e:
-        log.error(f"RabbitMQ не готов: {e}")
+        log.error("RabbitMQ не готов: %s", e)
         raise
 
 

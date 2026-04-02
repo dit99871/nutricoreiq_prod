@@ -66,7 +66,7 @@ class CSPReportService:
         doc_uri = violation.get("document-uri") or violation.get("document_uri")
 
         if not doc_uri:
-            log.error(f"VIOLATION WITHOUT document_uri: {violation}")
+            log.error("VIOLATION WITHOUT document_uri: %s", violation)
             raise ValueError("Отсутствует document_uri в отчете о нарушении")
 
         return doc_uri
