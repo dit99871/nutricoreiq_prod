@@ -6,7 +6,6 @@ from src.app.core.constants import BASE_DIR
 
 
 class AuthConfig(BaseModel):
-    secret_key: str
     algorithm: str
     access_token_expires: int
     refresh_token_expires: int

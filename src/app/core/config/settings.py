@@ -14,7 +14,7 @@ from .rate_limit import RateLimitConfig
 from .redis import RedisConfig
 from .routers_prefixs import RouterPrefix
 from .run import RunConfig
-from .sentry import SentyConfig
+from .sentry import SentryConfig
 from .smtp import SMTPConfig
 from .taskiq import TaskiqConfig
 
@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     loki: LokiConfig = LokiConfig()
     rate_limit: RateLimitConfig = RateLimitConfig()
     router: RouterPrefix = RouterPrefix()
-    sentry: SentyConfig = SentyConfig()
+    sentry: SentryConfig = SentryConfig()
 
     @property
     def effective_db_url(self) -> PostgresDsn:

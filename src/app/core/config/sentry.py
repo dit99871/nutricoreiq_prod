@@ -1,5 +1,5 @@
 from pydantic import BaseModel
 
 
-class SentyConfig(BaseModel):
+class SentryConfig(BaseModel):
     dsn: str | None = None

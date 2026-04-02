@@ -10,7 +10,7 @@ class DatabaseConfig(BaseModel):
     test_url: Optional[PostgresDsn] = None
     test_echo: Optional[bool] = None
     echo_pool: bool = False
-    pool_size: int = 50
+    pool_size: int = 5
     max_overflow: int = 10
 
     naming_convention: dict[str, str] = {
