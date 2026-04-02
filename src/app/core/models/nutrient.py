@@ -1,11 +1,16 @@
 """Модель нутриента"""
 
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from enum import Enum
 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
 from .mixins.int_id_pk import IntIdPkMixin
+
+if TYPE_CHECKING:
+    from .product_nutrient import ProductNutrient
 
 
 class NutrientCategory(Enum):
@@ -33,6 +38,6 @@ class Nutrient(IntIdPkMixin, Base):
     unit: Mapped[str]
     category: Mapped[NutrientCategory] = mapped_column(default=NutrientCategory.OTHER)
 
-    product_associations: Mapped[list["ProductNutrient"]] = relationship(
+    product_associations: Mapped[list[ProductNutrient]] = relationship(
         back_populates="nutrients"
     )

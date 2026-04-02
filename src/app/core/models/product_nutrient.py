@@ -1,7 +1,14 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
+
+if TYPE_CHECKING:
+    from .product import Product
+    from .nutrient import Nutrient
 
 
 class ProductNutrient(Base):
@@ -16,5 +23,5 @@ class ProductNutrient(Base):
         primary_key=True,
     )
 
-    products: Mapped["Product"] = relationship(back_populates="nutrient_associations")
-    nutrients: Mapped["Nutrient"] = relationship(back_populates="product_associations")
+    products: Mapped[Product] = relationship(back_populates="nutrient_associations")
+    nutrients: Mapped[Nutrient] = relationship(back_populates="product_associations")

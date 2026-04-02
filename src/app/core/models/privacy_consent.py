@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 import datetime
 from enum import Enum
 
@@ -6,6 +8,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
 from .mixins.int_id_pk import IntIdPkMixin
+
+if TYPE_CHECKING:
+    from .user import User
 
 
 class ConsentType(Enum):
@@ -36,11 +41,11 @@ class PrivacyConsent(IntIdPkMixin, Base):
     is_granted: Mapped[bool] = mapped_column(nullable=False, default=True)
     # дата и время согласия
     granted_at: Mapped[datetime.datetime] = mapped_column(
-        default=datetime.datetime.utcnow, nullable=False
+        default=lambda: datetime.datetime.now(datetime.timezone.utc), nullable=False
     )
     # текст политики конфиденциальности на момент согласия
     policy_version: Mapped[str] = mapped_column(nullable=False, default="1.0")
 
-    user: Mapped["User"] = relationship(
+    user: Mapped[User] = relationship(
         "User", back_populates="privacy_consents", lazy="joined"
     )

@@ -1,9 +1,16 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from sqlalchemy import ForeignKey, Index
 from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
 from .mixins.int_id_pk import IntIdPkMixin
+
+if TYPE_CHECKING:
+    from .product_group import ProductGroup
+    from .product_nutrient import ProductNutrient
 
 
 class Product(IntIdPkMixin, Base):
@@ -12,10 +19,10 @@ class Product(IntIdPkMixin, Base):
 
     search_vector: Mapped[TSVECTOR] = mapped_column(TSVECTOR())
 
-    product_groups: Mapped["ProductGroup"] = relationship(
+    product_groups: Mapped[ProductGroup] = relationship(
         back_populates="products", lazy="joined"
     )
-    nutrient_associations: Mapped[list["ProductNutrient"]] = relationship(
+    nutrient_associations: Mapped[list[ProductNutrient]] = relationship(
         back_populates="products",
         lazy="selectin",
     )

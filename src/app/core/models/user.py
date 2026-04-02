@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import datetime
 from enum import Enum
-from typing import Literal
+from typing import Literal, TYPE_CHECKING
 from uuid import uuid4
 
 from sqlalchemy import CheckConstraint
@@ -8,6 +10,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
 from .mixins import IntIdPkMixin
+
+if TYPE_CHECKING:
+    from .privacy_consent import PrivacyConsent
 
 
 class UserRole(Enum):
@@ -80,6 +85,6 @@ class User(IntIdPkMixin, Base):
     )
 
     # связь с согласиями на обработку персональных данных
-    privacy_consents: Mapped[list["PrivacyConsent"]] = relationship(
+    privacy_consents: Mapped[list[PrivacyConsent]] = relationship(
         "PrivacyConsent", back_populates="user", cascade="all, delete-orphan"
     )
