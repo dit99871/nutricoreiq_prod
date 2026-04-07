@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import HTTPException, RequestValidationError
-from fastapi.responses import ORJSONResponse
+from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -96,7 +96,7 @@ def _is_bot_request(path: str, user_agent: str) -> tuple[bool, str]:
 def not_found_exception_handler(
     request: Request,
     exc: StarletteHTTPException,
-) -> ORJSONResponse:
+) -> JSONResponse:
     """
     Обработчик 404 ошибок с улучшенной детекцией ботов.
 
@@ -122,7 +122,7 @@ def not_found_exception_handler(
             status="error",
             error=ErrorDetail(message="Not found", details=None),
         )
-        return ORJSONResponse(status_code=404, content=error_response.model_dump())
+        return JSONResponse(status_code=404, content=error_response.model_dump())
 
     if is_bot:
         # для ботов логируем на дебаг уровне
@@ -140,7 +140,7 @@ def not_found_exception_handler(
                 status="error",
                 error=ErrorDetail(message="Not found", details=None),
             )
-            return ORJSONResponse(status_code=404, content=error_response.model_dump())
+            return JSONResponse(status_code=404, content=error_response.model_dump())
     else:
         # для легитимных запросов логируем на ворнинг уровне
         log.warning(
@@ -162,7 +162,7 @@ def not_found_exception_handler(
     )
     error_response = ErrorResponse(status="error", error=error_detail)
 
-    return ORJSONResponse(
+    return JSONResponse(
         status_code=404,
         content=error_response.model_dump(),
     )
@@ -171,7 +171,7 @@ def not_found_exception_handler(
 def expired_token_exception_handler(
     request: Request,
     exc: ExpiredTokenException,
-) -> ORJSONResponse:
+) -> JSONResponse:
     """
     Обработчик исключения истекшего токена доступа.
 
@@ -200,7 +200,7 @@ def expired_token_exception_handler(
         "X-Error-Type": "authentication_error",
         "Access-Control-Expose-Headers": "X-Error-Type",
     }
-    return ORJSONResponse(
+    return JSONResponse(
         status_code=exc.status_code,
         content=error_response.model_dump(),
         headers=headers,
@@ -210,7 +210,7 @@ def expired_token_exception_handler(
 def http_exception_handler(
     request: Request,
     exc: StarletteHTTPException,
-) -> ORJSONResponse:
+) -> JSONResponse:
     """
     Обработка http-exception, которые могут возникнуть
     при выполнении запросов к API.
@@ -243,7 +243,7 @@ def http_exception_handler(
         exc.status_code,
     )
 
-    return ORJSONResponse(
+    return JSONResponse(
         status_code=exc.status_code,
         content=error_response.model_dump(),
     )
@@ -296,7 +296,7 @@ def validation_exception_handler(
         errors,
     )
 
-    return ORJSONResponse(
+    return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content=error_response.model_dump(),
     )
@@ -340,7 +340,7 @@ def generic_exception_handler(
         },
     )
 
-    return ORJSONResponse(
+    return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content=error_response.model_dump(),
     )
@@ -349,7 +349,7 @@ def generic_exception_handler(
 def rate_limit_exceeded_handler(
     request: Request,
     exc: RateLimitExceeded,
-) -> ORJSONResponse:
+) -> JSONResponse:
     """
     Обработчик превышения лимита запросов.
 
@@ -373,7 +373,7 @@ def rate_limit_exceeded_handler(
         exc.detail,
     )
 
-    return ORJSONResponse(
+    return JSONResponse(
         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
         content=error_response.model_dump(),
     )
@@ -381,7 +381,7 @@ def rate_limit_exceeded_handler(
 
 async def application_error_handler(
     request: Request, exc: BaseApplicationError
-) -> ORJSONResponse:
+) -> JSONResponse:
     """Обработчик базовых ошибок приложения"""
 
     context = LogContextService.get_safe_context(request)
@@ -400,7 +400,7 @@ async def application_error_handler(
         ),
     )
 
-    return ORJSONResponse(
+    return JSONResponse(
         status_code=exc.status_code,
         content=error_response.model_dump(),
     )

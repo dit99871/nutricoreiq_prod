@@ -1,9 +1,11 @@
+import base64
 import bcrypt
 import pytest
 from datetime import datetime, timedelta, timezone
 from unittest.mock import patch, MagicMock
+import hashlib
 
-from fastapi.responses import ORJSONResponse
+from fastapi.responses import JSONResponse
 
 from src.app.core.utils import auth
 from src.app.core.schemas.user import UserPublic
@@ -105,12 +107,12 @@ def test_get_password_hash_various_inputs(password, expected_length):
     [
         (
             "password",
-            bcrypt.hashpw(b"password", bcrypt.gensalt()),
+            bcrypt.hashpw(base64.b64encode(hashlib.sha256(b"password").digest()), bcrypt.gensalt()),
             True,
         ),
         (
             "wrong",
-            bcrypt.hashpw(b"password", bcrypt.gensalt()),
+            bcrypt.hashpw(base64.b64encode(hashlib.sha256(b"password").digest()), bcrypt.gensalt()),
             False,
         ),
     ],
@@ -120,14 +122,10 @@ def test_verify_password_with_precomputed_hashes(password, hashed_password, expe
     Test verify_password with precomputed bcrypt hashes.
     Проверяем верификацию с заранее известными хешами.
     """
-    if expected:
-        # Для положительного теста проверяем, что хеш корректен
-        assert bcrypt.checkpw(password.encode(), hashed_password) == expected
-    else:
-        # Для отрицательного теста проверяем, что функция не падает
-        result = auth.verify_password(password, hashed_password)
-        assert isinstance(result, bool)
-        assert result is False
+    # Используем нашу функцию verify_password, которая применяет SHA256 + base64
+    result = auth.verify_password(password, hashed_password)
+    assert isinstance(result, bool)
+    assert result == expected
 
 
 @pytest.mark.asyncio
@@ -150,12 +148,12 @@ async def test_create_response_success(mock_refresh_jwt, mock_access_jwt):
     )
 
     # Создаем мок для объекта ответа
-    mock_response = MagicMock(spec=ORJSONResponse)
+    mock_response = MagicMock(spec=JSONResponse)
     mock_response.headers = {}
 
     # Заменяем ORJSONResponse на наш мок
     with patch(
-        "src.app.core.utils.auth.ORJSONResponse", return_value=mock_response
+        "src.app.core.utils.auth.JSONResponse", return_value=mock_response
     ) as mock_orjson:
         with patch("src.app.core.utils.auth.dt") as mock_dt:
             fixed_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
@@ -244,10 +242,10 @@ async def test_token_expiration(mock_refresh_jwt, mock_access_jwt):
     )
 
     # Создаем мок для объекта ответа
-    mock_response = MagicMock(spec=ORJSONResponse)
+    mock_response = MagicMock(spec=JSONResponse)
 
     # Заменяем ORJSONResponse на наш мок
-    with patch("src.app.core.utils.auth.ORJSONResponse", return_value=mock_response):
+    with patch("src.app.core.utils.auth.JSONResponse", return_value=mock_response):
         with patch("src.app.core.utils.auth.dt") as mock_dt:
             fixed_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
             mock_dt.datetime.now.return_value = fixed_now

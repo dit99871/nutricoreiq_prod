@@ -1,10 +1,12 @@
 """Утилиты для работы с аутентификацией"""
 
+import base64
 import datetime as dt
+import hashlib
 
 import bcrypt
 from fastapi import status
-from fastapi.responses import ORJSONResponse
+from fastapi.responses import JSONResponse
 
 from src.app.core.config import settings
 from src.app.core.constants import ACCESS_TOKEN_TYPE, REFRESH_TOKEN_TYPE
@@ -20,13 +22,15 @@ def get_password_hash(password: str) -> bytes:
     Возвращает хеш пароля в виде байтов.
 
     Хеширует переданный пароль со случайной солью и возвращает в виде байтов.
+    Использует SHA256 + base64 для обработки паролей любой длины, как рекомендует bcrypt.
 
     :param password: Пароль для хеширования.
     :return: Хешированный пароль в виде байтов.
     """
     salt = bcrypt.gensalt()
-
-    return bcrypt.hashpw(password.encode(), salt)
+    # Хешируем пароль с SHA256 и кодируем в base64 для bcrypt
+    password_hash = base64.b64encode(hashlib.sha256(password.encode()).digest())
+    return bcrypt.hashpw(password_hash, salt)
 
 
 def verify_password(
@@ -38,30 +42,32 @@ def verify_password(
 
     Сравнивает переданный пароль с хешированным паролем с помощью
     `bcrypt.checkpw` и возвращает `True`, если они совпадают, и `False` в противном случае.
+    Использует SHA256 + base64 для соответствия методу хеширования.
 
     :param password: Пароль для проверки.
     :param hashed_password: Хешированный пароль для сравнения.
     :return: `True`, если пароль совпадает, `False` в противном случае.
     """
-
+    # Хешируем пароль с SHA256 и кодируем в base64 для проверки
+    password_hash = base64.b64encode(hashlib.sha256(password.encode()).digest())
     return bcrypt.checkpw(
-        password=password.encode(),
+        password=password_hash,
         hashed_password=hashed_password,
     )
 
 
-async def create_response(user: UserPublic) -> ORJSONResponse:
+async def create_response(user: UserPublic) -> JSONResponse:
     """
-    Создает объект ORJSONResponse с токенами доступа пользователя.
+    Создает объект JSONResponse с токенами доступа пользователя.
 
     :param user: Объект пользователя, для которого создаются токены.
-    :return: Объект ORJSONResponse с токенами доступа.
+    :return: Объект JSONResponse с токенами доступа.
     """
 
     access_token = create_access_jwt(user)
     refresh_token = await create_refresh_jwt(user)
 
-    response = ORJSONResponse(
+    response = JSONResponse(
         status_code=status.HTTP_200_OK,
         headers={
             "Cache-Control": "no-store",
