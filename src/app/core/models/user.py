@@ -81,7 +81,8 @@ class User(IntIdPkMixin, Base):
     role: Mapped[UserRole] = mapped_column(default=UserRole.USER)
 
     created_at: Mapped[datetime.datetime] = mapped_column(
-        default=lambda: datetime.datetime.now(datetime.UTC), index=True
+        default=lambda: datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+        index=True,
     )
 
     # связь с согласиями на обработку персональных данных
