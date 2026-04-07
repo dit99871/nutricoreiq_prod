@@ -64,7 +64,7 @@ async def register_user(
     try:
         return await user_service.register_user(user_in=user_in, request=request)
 
-    except UserAlreadyExistsError as e:
+    except UserAlreadyExistsError:
         raise ConflictError(
             message="Пользователь с таким email уже существует",
             details={"email": mask_email(user_in.email)},

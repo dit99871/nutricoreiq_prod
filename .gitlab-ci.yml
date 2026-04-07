@@ -192,6 +192,7 @@ lint:code:
   stage: lint
   script:
     - uv run black --check src/
+    - uv run ruff check src/
   allow_failure: false
   only:
     - merge_requests

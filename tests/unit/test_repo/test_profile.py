@@ -236,7 +236,7 @@ async def test_update_user_profile_partial_update(mock_user, user_public):
     mock_session.commit = AsyncMock()
 
     # Act
-    with patch("src.app.core.repo.profile.log") as mock_log:
+    with patch("src.app.core.repo.profile.log"):
         result = await update_user_profile(
             data_in=update_data, current_user=user_public, session=mock_session
         )

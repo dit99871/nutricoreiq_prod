@@ -5,8 +5,16 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.core.exceptions import NotFoundError, DatabaseError
-
-# First, import the modules we need to patch
+from src.app.core.models import User
+from src.app.core.repo.user import (
+    get_user_by_uid,
+    get_user_by_email,
+    get_user_by_name,
+    create_user,
+    choose_subscribe_status,
+)
+from src.app.core.schemas.user import UserCreate, UserPublic
+from src.app.core.services.cache import CacheService
 import src.app.core.utils.validators
 
 
@@ -23,18 +31,6 @@ def mock_validate_password_strength(v):
 src.app.core.utils.validators.validate_password_strength = (
     mock_validate_password_strength
 )
-
-# Now import the rest of the modules
-from src.app.core.repo.user import (
-    get_user_by_uid,
-    get_user_by_email,
-    get_user_by_name,
-    create_user,
-    choose_subscribe_status,
-)
-from src.app.core.schemas.user import UserCreate, UserPublic
-from src.app.core.models import User
-from src.app.core.services.cache import CacheService
 
 
 # Fixtures

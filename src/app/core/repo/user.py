@@ -31,7 +31,7 @@ async def _get_user_by_filter(
     """
 
     try:
-        stmt = select(User).filter(filter_condition, User.is_active == True)
+        stmt = select(User).filter(filter_condition, User.is_active)
         result = await session.execute(stmt)
         user = result.scalar_one_or_none()
 
@@ -185,7 +185,7 @@ async def choose_subscribe_status(
     :raises DatabaseError: Если произошла ошибка при обновлении бд.
     """
 
-    stmt = select(User).filter(User.uid == user.uid, User.is_active == True)
+    stmt = select(User).filter(User.uid == user.uid, User.is_active)
     result = await session.execute(stmt)
     target_user = result.scalar_one_or_none()
 

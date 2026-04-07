@@ -86,7 +86,7 @@ async def _has_consent(
     try:
         filters = [
             PrivacyConsent.consent_type == consent_type,
-            PrivacyConsent.is_granted == True,
+            PrivacyConsent.is_granted,
         ]
 
         if user_id is not None:

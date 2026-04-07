@@ -238,10 +238,8 @@ class TestMiddlewareIntegration:
             assert avg_time < 1.0  # Среднее время меньше 1 секунды
 
             # Тест 2: Параллельные запросы
-            start_time = time.time()
             tasks = [httpx_client_e2e.get("/") for _ in range(20)]
             responses = await asyncio.gather(*tasks, return_exceptions=True)
-            end_time = time.time()
 
             successful = [r for r in responses if isinstance(r, httpx.Response)]
             assert len(successful) >= 15  # Большинство должно быть успешными

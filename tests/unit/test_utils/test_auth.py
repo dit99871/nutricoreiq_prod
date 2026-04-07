@@ -165,7 +165,7 @@ async def test_create_response_success(mock_refresh_jwt, mock_access_jwt):
                 mock_settings.auth.access_token_expires = 15
                 mock_settings.env.env = "test"
 
-                response = await auth.create_response(user)
+                await auth.create_response(user)
 
     # Проверяем, что JSONResponse был вызван с правильными параметрами
     mock_orjson.assert_called_once_with(
