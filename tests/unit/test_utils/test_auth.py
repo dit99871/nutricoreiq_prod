@@ -151,7 +151,7 @@ async def test_create_response_success(mock_refresh_jwt, mock_access_jwt):
     mock_response = MagicMock(spec=JSONResponse)
     mock_response.headers = {}
 
-    # Заменяем ORJSONResponse на наш мок
+    # Заменяем JSONResponse на наш мок
     with patch(
         "src.app.core.utils.auth.JSONResponse", return_value=mock_response
     ) as mock_orjson:
@@ -167,7 +167,7 @@ async def test_create_response_success(mock_refresh_jwt, mock_access_jwt):
 
                 response = await auth.create_response(user)
 
-    # Проверяем, что ORJSONResponse был вызван с правильными параметрами
+    # Проверяем, что JSONResponse был вызван с правильными параметрами
     mock_orjson.assert_called_once_with(
         status_code=200,
         headers={
@@ -244,7 +244,7 @@ async def test_token_expiration(mock_refresh_jwt, mock_access_jwt):
     # Создаем мок для объекта ответа
     mock_response = MagicMock(spec=JSONResponse)
 
-    # Заменяем ORJSONResponse на наш мок
+    # Заменяем JSONResponse на наш мок
     with patch("src.app.core.utils.auth.JSONResponse", return_value=mock_response):
         with patch("src.app.core.utils.auth.dt") as mock_dt:
             fixed_now = datetime(2023, 1, 1, 12, 0, 0, tzinfo=timezone.utc)

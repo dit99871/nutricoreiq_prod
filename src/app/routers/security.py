@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from fastapi.requests import Request
-from fastapi.responses import ORJSONResponse
+from fastapi.responses import JSONResponse
 
 from src.app.core.logger import get_logger
 from src.app.core.schemas.security import CSPReportResponse
@@ -8,7 +8,7 @@ from src.app.core.services.csp_service import CSPReportService
 
 router = APIRouter(
     tags=["Security"],
-    default_response_class=ORJSONResponse,
+    default_response_class=JSONResponse,
 )
 
 log = get_logger("security_router")

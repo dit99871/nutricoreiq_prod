@@ -217,7 +217,7 @@ def http_exception_handler(
 
     :param request: Объект Request, содержащий информацию о запросе
     :param exc: объект HTTPException, содержащий информацию о возникшей ошибке
-    :return: объект ORJSONResponse, содержащий структурированную информацию об ошибке
+    :return: объект JSONResponse, содержащий структурированную информацию об ошибке
     """
 
     if isinstance(exc.detail, dict):
@@ -259,7 +259,7 @@ def validation_exception_handler(
 
     :param request: Объект Request, содержащий информацию о запросе
     :param exc: объект RequestValidationError, содержащий информацию о возникшей ошибке
-    :return: объект ORJSONResponse, содержащий структурированную информацию об ошибке
+    :return: объект JSONResponse, содержащий структурированную информацию об ошибке
     """
 
     errors = []
@@ -311,7 +311,7 @@ def generic_exception_handler(
 
     :param request: Объект Request, содержащий информацию о запросе
     :param exc: объект Exception, содержащий информацию об возникшей ошибке
-    :return: объект ORJSONResponse, содержащий структурированную информацию об ошибке
+    :return: объект JSONResponse, содержащий структурированную информацию об ошибке
     """
 
     # используем X-Forwarded-Proto для определения схемы

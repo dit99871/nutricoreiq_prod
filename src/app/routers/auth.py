@@ -8,7 +8,7 @@ from fastapi import (
     Request,
     status,
 )
-from fastapi.responses import ORJSONResponse
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
 from src.app.core.config import settings
@@ -32,7 +32,7 @@ log = get_logger("auth_router")
 
 router = APIRouter(
     tags=["Authentication"],
-    default_response_class=ORJSONResponse,
+    default_response_class=JSONResponse,
 )
 
 
@@ -78,7 +78,7 @@ async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     session: db_session_dep,
     user_service: user_service_dep,
-) -> ORJSONResponse:
+) -> JSONResponse:
     """
     Аутентифицирует пользователя и возвращает response с access и refresh токенами.
 
@@ -110,7 +110,7 @@ async def logout(
     user: current_user_dep,
     redis_service: redis_service_dep,
     user_service: user_service_dep,
-) -> ORJSONResponse:
+) -> JSONResponse:
     """
     Выход пользователя из системы и инвалидация refresh токена.
 
@@ -133,7 +133,7 @@ async def refresh_token(
     session: db_session_dep,
     redis_service: redis_service_dep,
     user_service: user_service_dep,
-) -> ORJSONResponse:
+) -> JSONResponse:
     """
     Обновляет access и refresh токены пользователя.
 
@@ -165,7 +165,7 @@ async def change_password(
     user: current_user_dep,
     session: db_session_dep,
     user_service: user_service_dep,
-) -> ORJSONResponse:
+) -> JSONResponse:
     """
     Изменяет пароль аутентифицированного пользователя.
 

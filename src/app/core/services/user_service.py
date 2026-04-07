@@ -3,7 +3,7 @@
 from typing import Annotated, Any
 
 from fastapi import Depends, Request, status
-from fastapi.responses import ORJSONResponse
+from fastapi.responses import JSONResponse
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -156,7 +156,7 @@ class UserService:
         session: AsyncSession,
         username: str,
         password: str,
-    ) -> ORJSONResponse:
+    ) -> JSONResponse:
         """
         Осуществляет вход пользователя по имени и паролю.
 
@@ -164,7 +164,7 @@ class UserService:
         :param session: Асинхронная сессия базы данных.
         :param username: Имя пользователя для входа.
         :param password: Пароль пользователя.
-        :return: ORJSONResponse для залогиненного пользователя.
+        :return: JSONResponse для залогиненного пользователя.
         """
 
         client_ip = (request.client.host if request.client else None) or "неизвестен"
@@ -187,7 +187,7 @@ class UserService:
         request: Request,
         redis: Redis,
         user: UserPublic,
-    ) -> ORJSONResponse:
+    ) -> JSONResponse:
         """
         Выход пользователя из системы и инвалидация refresh токена.
 
@@ -212,7 +212,7 @@ class UserService:
         if session_id:
             await redis.delete(f"redis_session:{session_id}")
 
-        response = ORJSONResponse(
+        response = JSONResponse(
             status_code=status.HTTP_200_OK,
             content={"message": "Successfully logged out"},
         )
@@ -256,7 +256,7 @@ class UserService:
         session: AsyncSession,
         user: UserPublic,
         password_data: PasswordChange,
-    ) -> ORJSONResponse:
+    ) -> JSONResponse:
         """
         Изменяет пароль пользователя.
 
@@ -336,7 +336,7 @@ class UserService:
         request: Request,
         session: AsyncSession,
         redis_service: Redis,
-    ) -> ORJSONResponse:
+    ) -> JSONResponse:
         """
         Получает текущего аутентифицированного пользователя для обновления токенов.
 
@@ -346,7 +346,7 @@ class UserService:
         :param request: Объект текущего запроса
         :param session: Асинхронная сессия базы данных.
         :param redis_service: Клиент Redis для проверки валидности токена.
-        :return: Объект ORJSONResponse, если пользователь аутентифицирован.
+        :return: Объект JSONResponse, если пользователь аутентифицирован.
         :raises AuthenticationError:
             - Если токен недействителен, истек или пользователь не найден.
             - Если пользователь с указанным идентификатором не существует.

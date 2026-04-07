@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from fastapi import APIRouter, Request, Response
-from fastapi.responses import HTMLResponse, ORJSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from starlette.responses import RedirectResponse
 
 from src.app.core.dependencies import (
@@ -19,7 +19,7 @@ from src.app.core.schemas.user import UserProfileUpdate
 
 router = APIRouter(
     tags=["User"],
-    default_response_class=ORJSONResponse,
+    default_response_class=JSONResponse,
 )
 
 log = get_logger("user_router")

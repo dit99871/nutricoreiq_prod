@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query, Request
-from fastapi.responses import HTMLResponse, ORJSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 
 from src.app.core.dependencies import db_session_dep, current_user_dep
 from src.app.core.logger import get_logger
@@ -15,7 +15,7 @@ log = get_logger("product_router")
 
 router = APIRouter(
     tags=["Product"],
-    default_response_class=ORJSONResponse,
+    default_response_class=JSONResponse,
 )
 
 
