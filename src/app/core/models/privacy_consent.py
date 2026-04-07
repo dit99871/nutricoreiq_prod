@@ -41,7 +41,9 @@ class PrivacyConsent(IntIdPkMixin, Base):
     is_granted: Mapped[bool] = mapped_column(nullable=False, default=True)
     # дата и время согласия
     granted_at: Mapped[datetime.datetime] = mapped_column(
-        default=lambda: datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
+        default=lambda: datetime.datetime.now(datetime.timezone.utc).replace(
+            tzinfo=None
+        ),
         nullable=False,
     )
     # текст политики конфиденциальности на момент согласия
