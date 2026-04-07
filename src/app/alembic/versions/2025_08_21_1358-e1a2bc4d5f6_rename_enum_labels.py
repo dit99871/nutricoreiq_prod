@@ -18,8 +18,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     # userrole: 'user','admin','moderator' -> 'USER','ADMIN','MODERATOR'
-    op.execute(
-        """
+    op.execute("""
         DO $$
         BEGIN
             IF EXISTS (
@@ -43,13 +42,11 @@ def upgrade() -> None:
                ALTER TYPE userrole RENAME VALUE 'moderator' TO 'MODERATOR';
             END IF;
         END $$;
-        """
-    )
+        """)
 
     # goaltype: русские строки -> имена Enum
     # 'Снижение веса' -> 'LOSE_WEIGHT', 'Увеличение веса' -> 'GAIN_WEIGHT', 'Поддержание веса' -> 'MAINTAIN_WEIGHT'
-    op.execute(
-        """
+    op.execute("""
         DO $$
         BEGIN
             IF EXISTS (
@@ -73,12 +70,10 @@ def upgrade() -> None:
                ALTER TYPE goaltype RENAME VALUE 'Поддержание веса' TO 'MAINTAIN_WEIGHT';
             END IF;
         END $$;
-        """
-    )
+        """)
 
     # kfalevel: '1'..'5' -> 'VERY_LOW','LOW','MEDIUM','HIGH','VERY_HIGH'
-    op.execute(
-        """
+    op.execute("""
         DO $$
         BEGIN
             IF EXISTS (
@@ -116,14 +111,12 @@ def upgrade() -> None:
                ALTER TYPE kfalevel RENAME VALUE '5' TO 'VERY_HIGH';
             END IF;
         END $$;
-        """
-    )
+        """)
 
 
 def downgrade() -> None:
     # Обратные переименования (имена Enum -> исходные значения)
-    op.execute(
-        """
+    op.execute("""
         DO $$
         BEGIN
             IF EXISTS (
@@ -147,11 +140,9 @@ def downgrade() -> None:
                ALTER TYPE userrole RENAME VALUE 'MODERATOR' TO 'moderator';
             END IF;
         END $$;
-        """
-    )
+        """)
 
-    op.execute(
-        """
+    op.execute("""
         DO $$
         BEGIN
             IF EXISTS (
@@ -175,11 +166,9 @@ def downgrade() -> None:
                ALTER TYPE goaltype RENAME VALUE 'MAINTAIN_WEIGHT' TO 'Поддержание веса';
             END IF;
         END $$;
-        """
-    )
+        """)
 
-    op.execute(
-        """
+    op.execute("""
         DO $$
         BEGIN
             IF EXISTS (
@@ -217,5 +206,4 @@ def downgrade() -> None:
                ALTER TYPE kfalevel RENAME VALUE 'VERY_HIGH' TO '5';
             END IF;
         END $$;
-        """
-    )
+        """)

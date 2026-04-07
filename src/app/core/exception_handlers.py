@@ -24,7 +24,6 @@ from src.app.core.exceptions import (
 from src.app.core.services.log_context_service import LogContextService
 from src.app.core.schemas.responses import ErrorDetail, ErrorResponse
 
-
 log = get_logger("exception_handlers")
 
 
