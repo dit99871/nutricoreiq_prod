@@ -124,7 +124,7 @@ class TestMiddlewareIntegration:
         try:
             # Тест 1: Проверяем CSP заголовки
             response = await httpx_client_e2e.get("/")
-            csp_header = response.headers.get("Content-Security-Policy-Report-Only")
+            csp_header = response.headers.get("Content-Security-Policy")
             assert csp_header is not None
             assert "default-src 'self'" in csp_header
             assert "script-src 'self'" in csp_header
