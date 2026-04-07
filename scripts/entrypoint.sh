@@ -34,7 +34,7 @@ echo "Запуск Gunicorn..."
 WORKERS=$((2 * $(nproc) + 1))
 echo "Используется $WORKERS воркеров"
 PYTHON_BIN="/nutricoreiq/.venv/bin/python"
-exec runuser -u appuser --preserve-environment -- "$PYTHON_BIN" -m gunicorn \
+exec runuser -u appuser --preserve-environment -- env HOME="/home/appuser" USER="appuser" "$PYTHON_BIN" -m gunicorn \
   -w $WORKERS \
   -k uvicorn.workers.UvicornWorker \
   src.app.main:app \
