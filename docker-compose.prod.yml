@@ -163,7 +163,7 @@ services:
       dockerfile: Dockerfile
     container_name: taskiq_worker
     command: >
-      bash -c "sleep 30 && taskiq worker src.app.core.services.taskiq_broker:broker
+      bash -c "sleep 30 && /nutricoreiq/.venv/bin/python -m taskiq worker src.app.core.services.taskiq_broker:broker
       --workers 1
       --fs-discover
       --tasks-pattern '**/tasks'
