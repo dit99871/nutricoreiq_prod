@@ -1,21 +1,26 @@
 # этап сборки
 FROM python:3.13-slim AS builder
-RUN pip install --no-cache-dir poetry==1.8.3
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
 WORKDIR /nutricoreiq
-COPY pyproject.toml poetry.lock ./
-RUN poetry export -f requirements.txt --output requirements.txt --without-hashes
+COPY pyproject.toml uv.lock ./
+
+# устанавливаем только prod-зависимости в /nutricoreiq/.venv
+RUN uv sync --frozen --no-dev --no-install-project
 
 # финальный образ
 FROM python:3.13-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /nutricoreiq
-COPY --from=builder /nutricoreiq/requirements.txt .
-RUN pip install --no-cache-dir --root-user-action=ignore -r requirements.txt gunicorn
+
+# копируем готовый venv из builder
+COPY --from=builder /nutricoreiq/.venv .venv
+
 COPY . .
 
-# создаем пользователя, директории logs и certs с правильными правами
 RUN useradd -m appuser && \
     mkdir -p /nutricoreiq/src/app/logs && \
     chown appuser:appuser /nutricoreiq/src/app/logs && \
@@ -25,7 +30,7 @@ RUN useradd -m appuser && \
 COPY scripts/entrypoint.sh .
 RUN chmod +x entrypoint.sh
 
-# настройка PYTHONPATH
 ENV PYTHONPATH=/nutricoreiq
+ENV PATH="/nutricoreiq/.venv/bin:$PATH"
 
 CMD ["./entrypoint.sh"]

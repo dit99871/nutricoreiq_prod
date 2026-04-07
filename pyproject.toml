@@ -1,51 +1,48 @@
-[tool.poetry]
+[project]
 name = "nutricoreiq"
 version = "0.1.0"
 description = ""
-authors = ["di <dit99871@gmail.com>"]
-readme = "README.md"
-package-mode = false
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi[all]>=0.115.11",
+    "prometheus-fastapi-instrumentator>=7.0.0",
+    "uvicorn>=0.34.3",
+    "gunicorn>=23.0.0",
+    "pydantic-settings>=2.8.1",
+    "sqlalchemy>=2.0.41",
+    "alembic>=1.15.1",
+    "asyncpg>=0.30.0",
+    "pyjwt[crypto]>=2.10.1",
+    "bcrypt>=4.3.0",
+    "python-multipart>=0.0.20",
+    "redis>=6.2.0",
+    "httpx>=0.28.1",
+    "aiosmtplib>=4.0.1",
+    "taskiq>=0.11.18",
+    "taskiq-aio-pika>=0.4.3",
+    "taskiq-fastapi>=0.3.5",
+    "jinja2>=3.1.6",
+    "tenacity>=9.1.2",
+    "sentry-sdk[fastapi]>=2.34.1",
+    "slowapi>=0.1.9",
+]
 
-[tool.poetry.dependencies]
-python = "^3.12"
-fastapi = {extras = ["all"], version = "^0.115.11"}
-prometheus-fastapi-instrumentator = "^7.0.0"
-uvicorn = "^0.34.3"
-gunicorn = "^23.0.0"
-pydantic-settings = "^2.8.1"
-sqlalchemy = "^2.0.41"
-alembic = "^1.15.1"
-asyncpg = "^0.30.0"
-pyjwt = {extras = ["crypto"], version = "^2.10.1"}
-bcrypt = "^4.3.0"
-python-multipart = "^0.0.20"
-redis = "^6.2.0"
-httpx = "^0.28.1"
-aiosmtplib = "^4.0.1"
-taskiq = "^0.11.18"
-taskiq-aio-pika = "^0.4.3"
-taskiq-fastapi = "^0.3.5"
-jinja2 = "^3.1.6"
-tenacity = "^9.1.2"
-sentry-sdk = {extras = ["fastapi"], version = "^2.34.1"}
-slowapi = "^0.1.9"
+[dependency-groups]
+dev = [
+    "pytest>=8.3.5",
+    "black>=25.1.0",
+    "pytest-asyncio>=0.25.3",
+    "pytest-mock>=3.14.0",
+    "pylint>=3.3.5",
+    "ruff>=0.11.0",
+    "pytest-cov>=5.0.0",
+    "mypy>=1.13.0",
+    "httpx>=0.28.1",
+    "bcrypt>=4.2.0",
+]
 
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.3.5"
-black = "^25.1.0"
-pytest-asyncio = "^0.25.3"
-pytest-mock = "^3.14.0"
-pylint = "^3.3.5"
-ruff = "^0.11.0"
-pytest-cov = "^5.0.0"
-bcrypt = "^4.2.0"
-mypy = "^1.13.0"
-httpx = "^0.28.1"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[tool.uv]
+package = false
 
 [tool.mypy]
 python_version = "3.13"

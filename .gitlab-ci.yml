@@ -4,14 +4,14 @@ services:
   - postgres:17
   - redis:alpine
 
-# oбщие переменные
+# общие переменные
 variables:
     # настройки окружения
     APP_CONFIG__ENV__ENV: "test"
-    
+
     # версия python
     PYTHON_VERSION: "3.13"
-    
+
     # настройки кеширования
     CACHE_VERSION: "v1"
 
@@ -19,7 +19,7 @@ variables:
     POSTGRES_DB: test_db
     POSTGRES_USER: postgres
     POSTGRES_PASSWORD: postgres
-    POSTGRES_HOST: localhost
+    POSTGRES_HOST: postgres
     POSTGRES_PORT: 5432
     POSTGRES_SSL_MODE: disable
 
@@ -28,15 +28,12 @@ variables:
     APP_CONFIG__DB__ECHO: "false"
 
     # настройки jwt
-    APP_CONFIG__AUTH__SECRET_KEY: test-secret-key-for-ci-123
     APP_CONFIG__AUTH__ALGORITHM: HS256
     APP_CONFIG__AUTH__ACCESS_TOKEN_EXPIRES: "7"
     APP_CONFIG__AUTH__REFRESH_TOKEN_EXPIRES: "7"
 
     # настройки redis
-    REDIS_PORT: 6379
-    REDIS_ADDR: localhost
-    APP_CONFIG__REDIS__URL: "redis://localhost:6379/0"
+    APP_CONFIG__REDIS__URL: "redis://redis:6379/0"
     APP_CONFIG__REDIS__SALT: test-salt
     APP_CONFIG__REDIS__PASSWORD: test-password
     APP_CONFIG__REDIS__SESSION_TTL: "3600"
@@ -85,14 +82,13 @@ variables:
 
 # кэширование зависимостей
 cache:
-  key: 
+  key:
     files:
-      - poetry.lock
+      - uv.lock
       - pyproject.toml
   paths:
     - .venv/
-    - .cache/pip/
-    - .cache/poetry/
+    - .cache/uv/
   policy: pull-push
 
 stages:
@@ -103,14 +99,13 @@ stages:
 
 before_script:
   # установка системных зависимостей для slim образа
-  - apt-get update && apt-get install -y --no-install-recommends libpq-dev curl && rm -rf /var/lib/apt/lists/*
+  - apt-get update && apt-get install -y --no-install-recommends libpq-dev curl redis-tools && rm -rf /var/lib/apt/lists/*
+  # установка uv
+  - curl -LsSf https://astral.sh/uv/install.sh | sh
+  - export PATH="$HOME/.local/bin:$PATH"
   # установка зависимостей
-  - python -m pip install --upgrade pip
-  - pip install poetry
-  - poetry config virtualenvs.create true
-  - poetry config virtualenvs.in-project true
-  - poetry install --no-interaction --no-root
-  # ожидание готовности постгре
+  - uv sync --frozen --group dev
+  # ожидание готовности postgres
   - |
     echo "Waiting for PostgreSQL to be ready..."
     for i in {1..30}; do
@@ -120,53 +115,22 @@ before_script:
       fi
       sleep 1
     done
-  # ожидание готовности редиса
+  # ожидание готовности redis
   - |
     echo "Waiting for Redis to be ready..."
     for i in {1..30}; do
-      if redis-cli -h localhost -p 6379 ping; then
+      if redis-cli -h redis -p 6379 ping; then
         echo "Redis is ready"
         break
       fi
       sleep 1
     done
-  # создание тестовой бд
-  - psql -h $POSTGRES_HOST -U $POSTGRES_USER -c "CREATE DATABASE $POSTGRES_DB;" || true
 
-.test:template: &test_template
+test:unit:
   stage: test
   script:
-    - echo "🚀 Запуск приложения для интеграционных тестов..."
-    - poetry run uvicorn src.app.main:app --host 0.0.0.0 --port 8080 &
-    - APP_PID=$!
-    - echo "⏳ Ожидание запуска приложения..."
-    - sleep 10
-    
-    # проверка того, что приложение запущено
-    - |
-      for i in {1..30}; do
-        if curl -s http://localhost:8080/ > /dev/null 2>&1; then
-          echo "✅ Приложение запущено на http://localhost:8080"
-          break
-        else
-          echo "⏳ Ожидание приложения... ($i/30)"
-          sleep 2
-        fi
-      done
-    
-    # запуск юнит-тестов
-    - echo "Running unit tests..."
-    - poetry run pytest tests/unit/ --asyncio-mode=auto --cov=src --cov-report=xml --cov-report=html --disable-warnings -v
-    
-    # запуск интеграционных тестов (без покрытия)
-    - echo "Running integration tests..."
-    - poetry run pytest tests/integration/ --asyncio-mode=auto --disable-warnings -v
-    
-    # остановка приложения
-    - echo "🛑 Остановка приложения..."
-    - kill $APP_PID || true
-    
-    - echo "All tests completed successfully!"
+    - echo "Running tests (excluding e2e)..."
+    - uv run pytest -m "not e2e" --asyncio-mode=auto --cov=src --cov-report=xml --cov-report=html --disable-warnings -v
   coverage: '/^TOTAL.+\s+(\d+%)$/'
   artifacts:
     reports:
@@ -177,36 +141,39 @@ before_script:
       - htmlcov/
     when: always
     expire_in: 1 week
+  only:
+    - merge_requests
+    - main
+    - develop
+  timeout: 10m
   retry:
     max: 2
     when:
       - runner_system_failure
       - stuck_or_timeout_failure
 
-test:unit:
-  <<: *test_template
-  script:
-    - echo "Running tests (excluding e2e)..."
-    - poetry run pytest -m "not e2e" --asyncio-mode=auto --cov=src --cov-report=xml --cov-report=html --disable-warnings -v
-  coverage: '/^TOTAL.+\s+(\d+%)$/'
-  artifacts:
-    reports:
-      coverage_report:
-        coverage_format: cobertura
-        path: coverage.xml
-    paths:
-      - htmlcov/
-  only:
-    - merge_requests
-    - main
-    - develop
-  timeout: 10m
-
 test:integration:
-  <<: *test_template
+  stage: test
   script:
-    - echo "Running e2e tests only..."
-    - poetry run pytest -m e2e --asyncio-mode=auto --disable-warnings -v
+    # запуск приложения для интеграционных тестов
+    - echo "Starting app for e2e tests..."
+    - uv run uvicorn src.app.main:app --host 0.0.0.0 --port 8080 &
+    - APP_PID=$!
+    # ожидание готовности приложения
+    - |
+      for i in {1..30}; do
+        if curl -s http://localhost:8080/ > /dev/null 2>&1; then
+          echo "App is ready on http://localhost:8080"
+          break
+        else
+          echo "Waiting for app... ($i/30)"
+          sleep 2
+        fi
+      done
+    - echo "Running e2e tests..."
+    - uv run pytest -m e2e --asyncio-mode=auto --disable-warnings -v
+    # остановка приложения
+    - kill $APP_PID || true
   only:
     - merge_requests
     - main
@@ -214,24 +181,26 @@ test:integration:
   timeout: 15m
   dependencies:
     - test:unit
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
 
 # линтеры
-.lint:template: &lint_template
+lint:code:
   stage: lint
   script:
-    - poetry run black --check src/
+    - uv run black --check src/
   allow_failure: false
-  retry:
-    max: 1
-    when: runner_system_failure
-
-lint:code:
-  <<: *lint_template
   only:
     - merge_requests
     - main
     - develop
   timeout: 5m
+  retry:
+    max: 1
+    when: runner_system_failure
 
 # сборка докер-образа
 build:image:
@@ -248,7 +217,6 @@ build:image:
     # используем литерал "gitlab-ci-token" вместо переменной
     - echo "Logging into GitLab Container Registry..."
     - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token --password-stdin $CI_REGISTRY
-
     # определяем тег
     - |
       if [ "$CI_COMMIT_REF_NAME" = "main" ]; then
@@ -259,13 +227,10 @@ build:image:
         TAG="$CI_COMMIT_REF_SLUG"
       fi
       echo "Building image with tag: $TAG"
-
     # собираем образ
     - docker build -t "$CI_REGISTRY_IMAGE:$TAG" .
-
     # пушим образ
     - docker push "$CI_REGISTRY_IMAGE:$TAG"
-
     # если это main и тег не latest - создаем дополнительно latest
     - |
       if [ "$CI_COMMIT_REF_NAME" = "main" ] && [ "$TAG" != "latest" ]; then
@@ -288,10 +253,8 @@ deploy:prod:
   tags:
     - production
     - deploy
-  
   before_script: []
   cache: {}
-  
   variables:
     SSH_PRIVATE_KEY: $SSH_PRIVATE_KEY
     SSH_HOST: $SSH_HOST
@@ -302,7 +265,6 @@ deploy:prod:
     DEPLOY_PATH: $DEPLOY_PATH
     # альтернатива: использовать CI_JOB_TOKEN вместо Deploy Token
     CI_JOB_TOKEN: $CI_JOB_TOKEN
-  
   script:
     # настройка SSH
     - command -v ssh || (echo "Ошибка - ssh не установлен" && exit 1)
@@ -319,15 +281,12 @@ deploy:prod:
       fi
     - ssh-keyscan -p $SSH_PORT -H $SSH_HOST >> ~/.ssh/known_hosts 2>/dev/null
     - chmod 644 ~/.ssh/known_hosts
-
     # тестовое подключение
     - echo "=== Проверка SSH подключения ==="
     - ssh -p $SSH_PORT $SSH_USER@$SSH_HOST "echo 'SSH connected successfully'"
-
     # копируем скрипт деплоя на удалённый сервер
     - scp -P $SSH_PORT scripts/deploy.sh $SSH_USER@$SSH_HOST:/tmp/deploy_script.sh
     - ssh -p $SSH_PORT $SSH_USER@$SSH_HOST "chmod +x /tmp/deploy_script.sh"
-
     # запускаем скрипт деплоя
     - |
       ssh -p $SSH_PORT $SSH_USER@$SSH_HOST "export DEPLOY_PATH='$DEPLOY_PATH' && \
@@ -336,7 +295,6 @@ deploy:prod:
         export CI_JOB_TOKEN='$CI_JOB_TOKEN' && \
         bash /tmp/deploy_script.sh && \
         rm -f /tmp/deploy_script.sh"
-
   after_script:
     - |
       if [ "$CI_JOB_STATUS" != "success" ]; then
@@ -346,7 +304,6 @@ deploy:prod:
       fi
     # очистка SSH ключей
     - rm -rf ~/.ssh
-
   only:
     - main
   when: manual
