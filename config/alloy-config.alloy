@@ -88,25 +88,28 @@ loki.process "containers" {
   }
 
   stage.match {
-  selector = "{service=\"taskiq_worker\"}"
+    selector = "{service=\"taskiq_worker\"}"
 
-  stage.regex {
-    expression = "^\\[(?P<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3})\\]\\s+\\[(?P<process>[\\w]+)\\]\\s+(?P<module>[\\w\\.]+):(?P<line>\\d+)\\s+(?P<level>\\w+)\\s*-\\s+(?P<message>.*)"
-  }
+    stage.regex {
+      expression = "^\\[(?P<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3})\\]\\s+\\[(?P<process>[\\w]+)\\]\\s+(?P<module>[\\w\\.]+):(?P<line>\\d+)\\s+(?P<level>\\w+)\\s*-\\s+(?P<message>.*)"
+    }
 
-  stage.timestamp {
-    source   = "timestamp"
-    format   = "2006-01-02 15:04:05.000"
-    location = "UTC"
-  }
+    stage.timestamp {
+      source   = "timestamp"
+      format   = "2006-01-02 15:04:05.000"
+      location = "UTC"
+    }
 
-  stage.labels {
-    values = {
-      level   = "",
-      module  = "",
-      process = "",
+    stage.labels {
+      values = {
+        level   = "",
+        module  = "",
+        process = "",
+      }
     }
   }
+}
+
 }
 
 // чтение логов контейнеров
