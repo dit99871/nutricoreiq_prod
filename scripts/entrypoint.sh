@@ -33,8 +33,8 @@ echo "Запуск Gunicorn..."
 # автоматическое определение количества воркеров: 2 * цпу ядра + 1
 WORKERS=$((2 * $(nproc) + 1))
 echo "Используется $WORKERS воркеров"
-GUNICORN_BIN="/nutricoreiq/.venv/bin/gunicorn"
-exec runuser -u appuser --preserve-environment -- "$GUNICORN_BIN" \
+PYTHON_BIN="/nutricoreiq/.venv/bin/python"
+exec runuser -u appuser --preserve-environment -- "$PYTHON_BIN" -m gunicorn \
   -w $WORKERS \
   -k uvicorn.workers.UvicornWorker \
   src.app.main:app \
