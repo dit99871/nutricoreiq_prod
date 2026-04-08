@@ -185,7 +185,7 @@ async def choose_subscribe_status(
     :raises DatabaseError: Если произошла ошибка при обновлении бд.
     """
 
-    stmt = select(User).filter(User.uid == user.uid, User.is_active)
+    stmt = select(User).filter(User.uid == user.uid, User.is_active.is_(True))
     result = await session.execute(stmt)
     target_user = result.scalar_one_or_none()
 

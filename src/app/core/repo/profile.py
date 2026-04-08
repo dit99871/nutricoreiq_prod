@@ -25,7 +25,7 @@ async def get_user_profile(
 
     stmt = select(User).filter(
         User.id == user_id,
-        User.is_active,
+        User.is_active.is_(True),
     )
     try:
         result = await session.execute(stmt)
