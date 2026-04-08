@@ -49,12 +49,14 @@ class BaseMiddleware(BaseHTTPMiddleware, ABC):
             # хттп исключения логируем тихо, без полного трейсбека
             context = LogContextService.get_safe_context(request)
             logger.warning(
-                "HTTP исключение в %s: %s [status=%s] %s",
+                "HTTP исключение в %s: %s [status=%s] %s | %s",
                 self.__class__.__name__,
                 e.detail,
                 e.status_code,
+                LogContextService.format_request_line(request),
                 LogContextService.format_context_string(context),
             )
+
             # пробрасываем хттп исключения для обработки в фастапи
             raise
 

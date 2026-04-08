@@ -77,7 +77,8 @@ class PrivacyConsentMiddleware(BaseMiddleware):
         if not has_consent:
             context = LogContextService.get_safe_context(request)
             log.warning(
-                "Требуется согласие на обработку персональных данных: %s",
+                "Требуется согласие на обработку персональных данных: %s | %s",
+                LogContextService.format_request_line(request),
                 LogContextService.format_context_string(context),
             )
             raise LegalRestrictionError()

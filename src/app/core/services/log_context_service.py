@@ -32,9 +32,12 @@ class LogContextService:
         """
         Форматирует контекст запроса в унифицированную строку.
 
+        Используется совместно с format_request_line — метод и путь
+        добавляются отдельно перед контекстом.
+
         :param context: Словарь с контекстом запроса
         :return: Отформатированная строка контекста в формате:
-                "request_id=xxx | method=POST | url=http://example.com | ..."
+                "client_ip=... | user_agent=... | request_id=... | trace_id=..."
         """
 
         context_parts = []
@@ -104,13 +107,10 @@ class LogContextService:
         # обязательные поля с fallback значениями
         required_fields = {
             "client_ip": "unknown",
-            "method": "unknown",
-            "url": "unknown",
             "user_agent": "unknown",
             "process_time_ms": None,
             "request_id": "unknown",
             "trace_id": "unknown",
-            # "status_code": None,
         }
 
         for field, fallback in required_fields.items():

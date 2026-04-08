@@ -69,9 +69,10 @@ class CSRFProtectionMiddleware(BaseMiddleware):
                 ):
                     context = LogContextService.get_safe_context(request)
                     log.warning(
-                        "Не валидный origin: %s | allowed: %s | %s",
+                        "Не валидный origin: %s | allowed: %s | %s | %s",
                         origin,
                         settings.cors.allow_origins,
+                        LogContextService.format_request_line(request),
                         LogContextService.format_context_string(context),
                     )
                     raise CSRFDomainError()
@@ -81,7 +82,8 @@ class CSRFProtectionMiddleware(BaseMiddleware):
             if not session:
                 context = LogContextService.get_safe_context(request)
                 log.warning(
-                    "Не найдена redis-сессия для валидации CSRF: %s",
+                    "Не найдена redis-сессия для валидации CSRF: %s | %s",
+                    LogContextService.format_request_line(request),
                     LogContextService.format_context_string(context),
                 )
                 raise CSRFSessionExpiredError()
@@ -96,7 +98,8 @@ class CSRFProtectionMiddleware(BaseMiddleware):
             ):
                 context = LogContextService.get_safe_context(request)
                 log.warning(
-                    "Не найден csrf-токен. %s",
+                    "Не найден csrf-токен. %s | %s",
+                    LogContextService.format_request_line(request),
                     LogContextService.format_context_string(context),
                 )
                 raise CSRFTokenError()

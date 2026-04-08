@@ -296,9 +296,9 @@ def validation_exception_handler(
     context = LogContextService.get_safe_context(request)
 
     log.error(
-        "Ошибка валидации: %s | ошибки: %s",
+        "Ошибка валидации: %s | %s | ошибки: %s",
+        LogContextService.format_request_line(request),
         LogContextService.format_context_string(context),
-        errors,
     )
 
     return JSONResponse(
@@ -338,11 +338,13 @@ def generic_exception_handler(
     context["url"] = request_url  # Добавляем корректный URL
 
     log.error(
-        f"Непредвиденная ошибка по адресу {request_url}: {str(exc)}",
+        "Непредвиденная ошибка: %s | %s",
+        LogContextService.format_request_line(request),
+        LogContextService.format_context_string(context),
         extra={
-            **context,
             "context_string": LogContextService.format_context_string(context),
         },
+        exc_info=True,
     )
 
     return JSONResponse(

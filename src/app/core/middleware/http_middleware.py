@@ -81,7 +81,8 @@ class HTTPMiddleware(BaseMiddleware):
             # логируем ошибки перед пробросом
             context = LogContextService.get_safe_context(request)
             logger.warning(
-                "Request error in HTTPMiddleware: %s",
+                "Ошибка запроса в HTTPMiddleware: %s | %s",
+                LogContextService.format_request_line(request),
                 LogContextService.format_context_string(context),
             )
             raise

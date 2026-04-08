@@ -83,7 +83,8 @@ class SessionMiddleware(BaseMiddleware):
             if not saved_successfully:
                 context = LogContextService.get_safe_context(request)
                 log.error(
-                    "Не удалось сохранить сессию в Redis: %s",
+                    "Не удалось сохранить сессию в Redis: %s | %s",
+                    LogContextService.format_request_line(request),
                     LogContextService.format_context_string(context),
                 )
 
@@ -95,11 +96,12 @@ class SessionMiddleware(BaseMiddleware):
             # пробрасываем хттп исключения для обработки в фастапи
             raise
 
-        except Exception as e:
+        except Exception:
             context = LogContextService.get_safe_context(request)
             log.error(
-                "Ошибка в Session мидлвари: %s",
-                str(e),
+                "Ошибка в Session мидлвари: %s %s",
+                LogContextService.format_request_line(request),
+                LogContextService.format_context_string(context),
                 extra={
                     "context_string": LogContextService.format_context_string(context),
                 },
