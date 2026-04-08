@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 import datetime
 from enum import Enum
 
-from sqlalchemy import ForeignKey, Index
+from sqlalchemy import ForeignKey, Index, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base
@@ -41,9 +41,8 @@ class PrivacyConsent(IntIdPkMixin, Base):
     is_granted: Mapped[bool] = mapped_column(nullable=False, default=True)
     # дата и время согласия
     granted_at: Mapped[datetime.datetime] = mapped_column(
-        default=lambda: datetime.datetime.now(datetime.timezone.utc).replace(
-            tzinfo=None
-        ),
+        DateTime(timezone=True),
+        default=lambda: datetime.datetime.now(datetime.timezone.utc),
         nullable=False,
     )
     # текст политики конфиденциальности на момент согласия
