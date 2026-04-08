@@ -127,11 +127,10 @@ def not_found_exception_handler(
     if is_bot:
         # для ботов логируем на дебаг уровне
         log.debug(
-            "404 для бот-запроса: %s %s | %s | Тип: %s",
-            method,
-            path,
-            LogContextService.format_context_string(context),
+            "404 бот-запрос [%s]: %s | %s",
             bot_type,
+            LogContextService.format_request_line(request),
+            LogContextService.format_context_string(context),
         )
 
         # для некоторых типов ботов можно возвращать упрощенный ответ
@@ -144,9 +143,8 @@ def not_found_exception_handler(
     else:
         # для легитимных запросов логируем на ворнинг уровне
         log.warning(
-            "404 ошибка: %s %s | %s | Referrer: %s",
-            method,
-            path,
+            "404 ошибка: %s | %s | Referrer: %s",
+            LogContextService.format_request_line(request),
             LogContextService.format_context_string(context),
             request.headers.get("referer", "none")[:200],
         )
@@ -190,10 +188,9 @@ def expired_token_exception_handler(
     context = LogContextService.get_safe_context(request)
 
     log.warning(
-        "Ошибка валидации токена: %s | сообщение=%s, статус=%s",
+        "Ошибка валидации токена: %s | %s",
+        LogContextService.format_request_line(request),
         LogContextService.format_context_string(context),
-        exc.detail,
-        exc.status_code,
     )
 
     headers = {
@@ -236,12 +233,20 @@ def http_exception_handler(
     # получаем контекст через LogContextService
     context = LogContextService.get_safe_context(request)
 
-    log.error(
-        "HTTP-ошибка: %s | сообщение=%s, статус=%s",
-        LogContextService.format_context_string(context),
-        message,
-        exc.status_code,
-    )
+    if exc.status_code >= 500:
+        log.error(
+            "HTTP-ошибка %s: %s | %s",
+            exc.status_code,
+            LogContextService.format_request_line(request),
+            LogContextService.format_context_string(context),
+        )
+    else:
+        log.warning(
+            "HTTP-ошибка %s: %s | %s",
+            exc.status_code,
+            LogContextService.format_request_line(request),
+            LogContextService.format_context_string(context),
+        )
 
     return JSONResponse(
         status_code=exc.status_code,

@@ -20,8 +20,6 @@ class LogContextService:
     # стандартизированный порядок полей для логов
     CONTEXT_FIELDS_ORDER = [
         "client_ip",
-        "method",
-        "url",
         "user_agent",
         # "status_code",
         "process_time_ms",
@@ -120,6 +118,11 @@ class LogContextService:
                 ensured_context[field] = fallback
 
         return ensured_context
+
+    @classmethod
+    def format_request_line(cls, request: Request) -> str:
+        """Возвращает строку вида 'GET /path'"""
+        return f"{request.method} {request.url.path}"
 
     @classmethod
     def validate_context(cls, context: dict[str, Any]) -> dict[str, Any]:

@@ -70,7 +70,8 @@ class HTTPMiddleware(BaseMiddleware):
             # логируем завершение запроса
             context = LogContextService.get_safe_context(request)
             logger.info(
-                "Запрос завершен: %s",
+                "Запрос завершен: %s | %s",
+                LogContextService.format_request_line(request),
                 LogContextService.format_context_string(context),
             )
 
