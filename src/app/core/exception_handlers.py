@@ -27,46 +27,58 @@ from src.app.core.schemas.responses import ErrorDetail, ErrorResponse
 log = get_logger("exception_handlers")
 
 
+# легитимные пути, которые могут запрашивать любые боты и люди без вреда
+LEGITIMATE_BOT_PATHS = [
+    "/.well-known/",  # Let's Encrypt, security.txt, мобильные ассеты
+    "/robots.txt",  # Директива для всех краулеров
+    "/sitemap.xml",  # Карта сайта для поисковиков
+    "/feed/",  # RSS-лента
+    "/rss/",  # Альтернативный RSS
+    "/track/",  # Пиксели отслеживания email/аналитики
+    "/ping/",  # Пингбэки, health checks
+    "/api/",  # Публичное API фронтенда/партнёров
+    "/graphql/",  # GraphQL эндпоинт
+    "/webhook/",  # Внешние интеграции
+]
+
+# пути, характерные для сканеров уязвимостей, брутфорса или ошибочных переходов
+SUSPICIOUS_PATHS = [
+    "/xmlrpc.php",  # WordPress RPC (часто атакуется)
+    "/wp-login.php",  # Вход в админку WP
+    "/wp-admin/",  # Админ-панель WP
+    "/wp-content/",  # Контент WP (может использоваться для определения версий)
+    "/wp-includes/",  # Ядро WP (определение версий)
+    "/wp-json/",  # REST API WP (иногда легитимно, но часто сканируется)
+    "/phpmyadmin/",  # Администрирование БД
+    "/admin.php",  # Универсальная админка
+    "/administrator/",  # Joomla/другие CMS
+    "/config/",  # Конфигурационные файлы
+    "/test/",  # Тестовые страницы разработчиков
+    "/debug/",  # Отладочные эндпоинты
+]
+
+
 def _is_bot_request(path: str, user_agent: str) -> tuple[bool, str]:
     """
-    Определяет, является ли запрос от бота.
+    Определяет, является ли запрос ботом, и возвращает категорию.
 
-    :param path: Путь запроса
-    :param user_agent: User-Agent строка
-    :return: (is_bot, bot_type)
+    :return: (is_bot, bot_category)
+        bot_category может быть:
+        - "legitimate_path"   - путь из белого списка (API, robots.txt и т.п.)
+        - "suspicious_path"   - путь, типичный для сканеров уязвимостей
+        - "ua_based"          - бот определён по User-Agent
+        - "human"             - не бот
     """
-    # Расширенный список бот-путей
-    bot_paths = [
-        "/xmlrpc.php",
-        "/wp-login.php",
-        "/wp-admin/",
-        "/wp-content/",
-        "/wp-includes/",
-        "/wp-json/",
-        "/.well-known/",
-        "/robots.txt",
-        "/sitemap.xml",
-        "/feed/",
-        "/rss/",
-        "/track/",
-        "/ping/",
-        "/phpmyadmin/",
-        "/admin.php",
-        "/administrator/",
-        "/config/",
-        "/test/",
-        "/debug/",
-        "/api/",
-        "/graphql/",
-        "/webhook/",
-    ]
+    # 1. проверка путей (более приоритетна, чем UA)
+    for legit_path in LEGITIMATE_BOT_PATHS:
+        if path.startswith(legit_path):
+            return True, "legitimate_path"
 
-    # проверка путей
-    for bot_path in bot_paths:
-        if path.startswith(bot_path):
-            return True, "path_based"
+    for susp_path in SUSPICIOUS_PATHS:
+        if path.startswith(susp_path):
+            return True, "suspicious_path"
 
-    # проверка User-Agent на известных ботов
+    # 2. проверка User-Agent на признаки бота
     bot_patterns = [
         "bot",
         "crawler",
@@ -84,7 +96,6 @@ def _is_bot_request(path: str, user_agent: str) -> tuple[bool, str]:
         "duckduckbot",
         "baiduspider",
     ]
-
     user_agent_lower = user_agent.lower()
     for pattern in bot_patterns:
         if pattern in user_agent_lower:
@@ -97,59 +108,56 @@ def not_found_exception_handler(
     request: Request,
     exc: StarletteHTTPException,
 ) -> JSONResponse:
-    """
-    Обработчик 404 ошибок с улучшенной детекцией ботов.
-
-    :param request: Входящий HTTP-запрос
-    :param exc: Объект StarletteHTTPException
-    :return: JSON-ответ с информацией об ошибке
-    """
-
+    """Обработчик 404 ошибок с разделением по категориям."""
     path = str(request.url.path)
     method = request.method
     user_agent = request.headers.get("user-agent", "unknown")
-
-    # получаем контекст через LogContextService
     context = LogContextService.get_safe_context(request)
 
-    # определяем тип запроса
-    is_bot, bot_type = _is_bot_request(path, user_agent)
+    is_bot, bot_category = _is_bot_request(path, user_agent)
 
-    # пропускаем логирование для Grafana API путей
+    # исключение для внутреннего мониторинга Grafana
     if "features.grafana.app" in path or "apis/" in path:
-        # возвращаем стандартный 404 ответ без логирования
         error_response = ErrorResponse(
             status="error",
             error=ErrorDetail(message="Not found", details=None),
         )
         return JSONResponse(status_code=404, content=error_response.model_dump())
 
+    # логирование в зависимости от категории
     if is_bot:
-        # для ботов логируем на дебаг уровне
-        log.debug(
-            "404 бот-запрос [%s]: %s | %s",
-            bot_type,
-            LogContextService.format_request_line(request),
-            LogContextService.format_context_string(context),
-        )
-
-        # для некоторых типов ботов можно возвращать упрощенный ответ
-        if bot_type in ["path_based"]:
-            error_response = ErrorResponse(
-                status="error",
-                error=ErrorDetail(message="Not found", details=None),
+        if bot_category == "legitimate_path":
+            # полезные боты или публичные эндпоинты
+            log.info(
+                "404 на легитимном пути [%s]: %s | %s",
+                bot_category,
+                LogContextService.format_request_line(request),
+                LogContextService.format_context_string(context),
             )
-            return JSONResponse(status_code=404, content=error_response.model_dump())
+        elif bot_category == "suspicious_path":
+            log.info(
+                "404 на подозрительном пути [%s]: %s | %s",
+                bot_category,
+                LogContextService.format_request_line(request),
+                LogContextService.format_context_string(context),
+            )
+        else:  # "ua_based"
+            log.info(
+                "404 от бота по UA [%s]: %s | %s",
+                bot_category,
+                LogContextService.format_request_line(request),
+                LogContextService.format_context_string(context),
+            )
     else:
-        # для легитимных запросов логируем на ворнинг уровне
+        # человек или неизвестный UA – предупреждение для fail2ban
         log.warning(
-            "404 ошибка: %s | %s | Referrer: %s",
+            "404 ошибка (человек?): %s | %s | Referrer: %s",
             LogContextService.format_request_line(request),
             LogContextService.format_context_string(context),
             request.headers.get("referer", "none")[:200],
         )
 
-    # стандартный ответ
+    # формируем ответ
     error_detail = ErrorDetail(
         message="Ресурс не найден",
         details={
@@ -159,11 +167,7 @@ def not_found_exception_handler(
         },
     )
     error_response = ErrorResponse(status="error", error=error_detail)
-
-    return JSONResponse(
-        status_code=404,
-        content=error_response.model_dump(),
-    )
+    return JSONResponse(status_code=404, content=error_response.model_dump())
 
 
 def expired_token_exception_handler(
