@@ -125,33 +125,16 @@ def not_found_exception_handler(
         return JSONResponse(status_code=404, content=error_response.model_dump())
 
     # логирование в зависимости от категории
-    if is_bot:
-        if bot_category == "legitimate_path":
-            # полезные боты или публичные эндпоинты
-            log.info(
-                "404 на легитимном пути [%s]: %s | %s",
-                bot_category,
-                LogContextService.format_request_line(request),
-                LogContextService.format_context_string(context),
-            )
-        elif bot_category == "suspicious_path":
-            log.info(
-                "404 на подозрительном пути [%s]: %s | %s",
-                bot_category,
-                LogContextService.format_request_line(request),
-                LogContextService.format_context_string(context),
-            )
-        else:  # "ua_based"
-            log.info(
-                "404 от бота по UA [%s]: %s | %s",
-                bot_category,
-                LogContextService.format_request_line(request),
-                LogContextService.format_context_string(context),
-            )
+    if is_bot and bot_category == "legitimate_path":
+        log.info(
+            "404-я, легитимный бот: %s | %s",
+            LogContextService.format_request_line(request),
+            LogContextService.format_context_string(context),
+        )
     else:
-        # человек или неизвестный UA – предупреждение для fail2ban
+        # сканеры, боты с подозрительными UA, люди — все на WARNING
         log.warning(
-            "404 ошибка (человек?): %s | %s | Referrer: %s",
+            "404-я ошибка: %s | %s | Referrer: %s",
             LogContextService.format_request_line(request),
             LogContextService.format_context_string(context),
             request.headers.get("referer", "none")[:200],
@@ -303,6 +286,7 @@ def validation_exception_handler(
         "Ошибка валидации: %s | %s | ошибки: %s",
         LogContextService.format_request_line(request),
         LogContextService.format_context_string(context),
+        errors,
     )
 
     return JSONResponse(
@@ -379,7 +363,8 @@ def rate_limit_exceeded_handler(
     context = LogContextService.get_safe_context(request)
 
     log.warning(
-        "Превышена частота запросов. %s | %s",
+        "Превышена частота запросов. %s | %s | детали: %s",
+        LogContextService.format_request_line(request),
         LogContextService.format_context_string(context),
         exc.detail,
     )
@@ -397,10 +382,9 @@ async def application_error_handler(
 
     context = LogContextService.get_safe_context(request)
     log.error(
-        str(exc),
-        extra={
-            "context_string": LogContextService.format_context_string(context),
-        },
+        "Ошибка в логике приложения. %s | %s",
+        LogContextService.format_request_line(request),
+        LogContextService.format_context_string(context),
     )
 
     error_response = ErrorResponse(
