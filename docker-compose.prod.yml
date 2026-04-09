@@ -238,6 +238,7 @@ services:
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt:ro
       - /var/www/certbot:/var/www/certbot
+      - /home/deployer/nutricoreiq/logs/nginx:/var/log/nginx
     depends_on:
       - fastapi
       - prometheus
