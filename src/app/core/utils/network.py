@@ -34,8 +34,13 @@ def get_client_ip(request: Request, trusted_proxies: list[str] | None = None) ->
     """
     Получает реальный IP-адрес клиента, учитывая заголовки прокси.
 
+    Защита от X-Forwarded-For injection:
+    если сканер передаёт "X-Forwarded-For: 127.0.0.1", nginx добавляет реальный IP
+    следом ("127.0.0.1, 185.177.72.29"). Берём последний не-доверенный IP из списка,
+    а не первый — это исключает подделку.
+
     :param request: FastAPI Request объект
-    :param trusted_proxies: Список доверенных прокси
+    :param trusted_proxies: Список доверенных прокси (IP или CIDR-подсети)
     :return: Реальный IP-адрес клиента или "unknown"
     """
     trusted_proxies = trusted_proxies or []
@@ -45,38 +50,45 @@ def get_client_ip(request: Request, trusted_proxies: list[str] | None = None) ->
         peer_ip = request.client.host
 
     # без явного списка доверенных прокси не доверяем заголовкам X-Forwarded-*.
-    # это защищает от подделки X-Forwarded-For при прямом доступе к приложению.
+    # это защищает от подделки при прямом доступе к приложению.
     if not trusted_proxies:
         request.state.client_ip = peer_ip or "unknown"
         return request.state.client_ip
 
-    # если peer не является доверенным прокси, не используем X-Forwarded-*.
+    # если tcp-peer не является доверенным прокси — не доверяем заголовкам.
     if peer_ip and not _is_trusted_proxy(peer_ip, trusted_proxies):
         request.state.client_ip = peer_ip
         return peer_ip
 
-    # список заголовков, в которых может быть реальный ip
-    headers_to_check = [
-        "X-Forwarded-For",
-        "X-Real-IP",
-        "X-Client-IP",
-        "HTTP_X_FORWARDED_FOR",
-        "HTTP_X_REAL_IP",
-    ]
-
-    for header in headers_to_check:
-        if header in request.headers:
-            # берем первый ip из списка, если их несколько
-            ip = request.headers[header].split(",")[0].strip()
+    # X-Forwarded-For: идём с конца списка, пропуская trusted ip.
+    # первый недоверенный ip справа — реальный клиент.
+    # защита от injection: "X-Forwarded-For: 127.0.0.1, <real_ip>"
+    x_forwarded_for = request.headers.get("X-Forwarded-For")
+    if x_forwarded_for:
+        ips = [ip.strip() for ip in x_forwarded_for.split(",")]
+        for ip in reversed(ips):
             try:
-                # валидируем, что это корректный ip-адрес
-                ip_address(ip)
-                request.state.client_ip = ip
-                return ip
+                ip_address(ip)  # валидируем формат
+                if not _is_trusted_proxy(ip, trusted_proxies):
+                    request.state.client_ip = ip
+                    return ip
             except ValueError:
                 continue
 
-    # eсли заголовков нет, используем стандартный способ
+    # X-Real-IP — nginx ставит $remote_addr (не append-ит),
+    # поэтому не подвержен injection как X-Forwarded-For.
+    # возвращаем только если это не trusted proxy (не docker ip nginx).
+    x_real_ip = request.headers.get("X-Real-IP")
+    if x_real_ip:
+        try:
+            ip_address(x_real_ip)
+            if not _is_trusted_proxy(x_real_ip, trusted_proxies):
+                request.state.client_ip = x_real_ip
+                return x_real_ip
+        except ValueError:
+            pass
+
+    # fallback на tcp peer (ip самого прокси, если всё остальное не дало результата)
     if peer_ip:
         request.state.client_ip = peer_ip
         return peer_ip
