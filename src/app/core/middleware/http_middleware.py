@@ -69,20 +69,29 @@ class HTTPMiddleware(BaseMiddleware):
 
             # логируем завершение запроса
             context = LogContextService.get_safe_context(request)
-            logger.info(
-                "Запрос завершен: %s | %s",
-                LogContextService.format_request_line(request),
-                LogContextService.format_context_string(context),
-            )
+            request_line = LogContextService.format_request_line(request)
+            context_str = LogContextService.format_context_string(context)
+
+            if response.status_code >= 500:
+                logger.error(
+                    "Запрос завершен: %s | %s",
+                    request_line,
+                    context_str,
+                )
+            elif response.status_code >= 400:
+                logger.warning(
+                    "Запрос завершен: %s | %s",
+                    request_line,
+                    context_str,
+                )
+            else:
+                logger.info(
+                    "Запрос завершен: %s | %s",
+                    request_line,
+                    context_str,
+                )
 
             return response
 
         except (StarletteHTTPException, RequestValidationError):
-            # логируем ошибки перед пробросом
-            context = LogContextService.get_safe_context(request)
-            logger.warning(
-                "Ошибка запроса в HTTPMiddleware: %s | %s",
-                LogContextService.format_request_line(request),
-                LogContextService.format_context_string(context),
-            )
             raise
