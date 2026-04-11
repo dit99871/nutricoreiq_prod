@@ -19,10 +19,10 @@ class LogContextService:
 
     # стандартизированный порядок полей для логов
     CONTEXT_FIELDS_ORDER = [
-        "status_code",
-        "client_ip",
-        "user_agent",
-        "process_time_ms",
+        "status",
+        "ip",
+        "ua",
+        "ms",
         "request_id",
         "trace_id",
     ]
@@ -37,7 +37,7 @@ class LogContextService:
 
         :param context: Словарь с контекстом запроса
         :return: Отформатированная строка контекста в формате:
-                "client_ip=... | user_agent=... | request_id=... | trace_id=..."
+                "status=200 | ip=1.2.3.4 | ua=Chrome/120 | ms=4.67 | request_id=... | trace_id=..."
         """
 
         context_parts = []
@@ -106,10 +106,10 @@ class LogContextService:
 
         # обязательные поля с fallback значениями
         required_fields = {
-            "status_code": "unknown",
-            "client_ip": "unknown",
-            "user_agent": "unknown",
-            "process_time_ms": None,
+            "status": "unknown",
+            "ip": "unknown",
+            "ua": "unknown",
+            "ms": None,
             "request_id": "unknown",
             "trace_id": "unknown",
         }
@@ -175,28 +175,34 @@ class LogContextService:
         context = {}
 
         # извлекаем атрибуты из request.state
-        state_fields = ["client_ip", "effective_url", "trace_id", "request_id"]
-        for field in state_fields:
-            value = getattr(request.state, field, None)
+        state_fields = {
+            "client_ip": "ip",
+            "effective_url": "url",
+            "trace_id": "trace_id",
+            "request_id": "request_id",
+        }
+        for state_key, context_key in state_fields.items():
+            value = getattr(request.state, state_key, None)
             if value:
-                context[field] = value
+                context[context_key] = value
 
         # извлекаем данные из request
         if hasattr(request, "method"):
             context["method"] = request.method
 
         if hasattr(request, "url"):
-            url = getattr(request.state, "effective_url", None) or str(request.url)
-            context["url"] = url
+            context["url"] = getattr(request.state, "effective_url", None) or str(
+                request.url
+            )
 
         if hasattr(request, "headers"):
-            context["user_agent"] = request.headers.get("user-agent", "unknown")
+            context["ua"] = request.headers.get("user-agent", "unknown")
 
         # добавляем status_code и process_time_ms если доступны
         if hasattr(request.state, "status_code"):
-            context["status_code"] = request.state.status_code
+            context["status"] = request.state.status_code
 
         if hasattr(request.state, "process_time_ms"):
-            context["process_time_ms"] = request.state.process_time_ms
+            context["ms"] = request.state.process_time_ms
 
         return context

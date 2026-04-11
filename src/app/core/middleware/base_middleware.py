@@ -1,3 +1,7 @@
+"""
+Базовый middleware для обработки запросов и ошибок.
+"""
+
 from abc import ABC
 
 from fastapi import Request, Response
