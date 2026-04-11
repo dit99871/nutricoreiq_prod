@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 
 from src.app.core.dependencies import current_user_dep
 from src.app.core import templates
@@ -84,6 +84,7 @@ def start_page(
     :param user: Аутентифицированный объект пользователя, полученный из зависимости.
     :return: Отрендеренный HTML-шаблон для домашней страницы.
     """
+
     return templates.TemplateResponse(
         request=request,
         name="index.html",
@@ -93,3 +94,10 @@ def start_page(
             "csp_nonce": request.state.csp_nonce,
         },
     )
+
+
+@router.head("/")
+def start_page_head() -> Response:
+    """HEAD для аптайм-мониторинга (Sentry и др.) — возвращает только заголовки."""
+
+    return Response()
