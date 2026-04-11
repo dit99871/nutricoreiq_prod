@@ -1,9 +1,8 @@
 """
-HTTP middleware
+HTTP мидлварь
 """
 
 import time
-from typing import Optional
 
 from fastapi import Request, Response
 from fastapi.exceptions import RequestValidationError
@@ -26,7 +25,7 @@ class HTTPMiddleware(BaseMiddleware):
     def __init__(
         self,
         app: ASGIApp,
-        trusted_proxies: Optional[list[str]] = None,
+        trusted_proxies: list[str],
     ) -> None:
         super().__init__(app, trusted_proxies)
 
@@ -69,27 +68,12 @@ class HTTPMiddleware(BaseMiddleware):
 
             # логируем завершение запроса
             context = LogContextService.get_safe_context(request)
-            request_line = LogContextService.format_request_line(request)
-            context_str = LogContextService.format_context_string(context)
 
-            if response.status_code >= 500:
-                logger.error(
-                    "Запрос завершен: %s | %s",
-                    request_line,
-                    context_str,
-                )
-            elif response.status_code >= 400:
-                logger.warning(
-                    "Запрос завершен: %s | %s",
-                    request_line,
-                    context_str,
-                )
-            else:
-                logger.info(
-                    "Запрос завершен: %s | %s",
-                    request_line,
-                    context_str,
-                )
+            logger.info(
+                "Запрос завершен: %s | %s",
+                LogContextService.format_request_line(request),
+                LogContextService.format_context_string(context),
+            )
 
             return response
 
