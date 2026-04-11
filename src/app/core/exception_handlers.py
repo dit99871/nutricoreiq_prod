@@ -378,26 +378,51 @@ def rate_limit_exceeded_handler(
 async def application_error_handler(
     request: Request, exc: BaseApplicationError
 ) -> JSONResponse:
-    """Обработчик базовых ошибок приложения"""
+    """
+    Обработчик базовых ошибок приложения.
+
+    Разделяет логирование по смыслу исключения:
+    - DatabaseError, ExternalServiceError — реальные сбои сервера, уровень ERROR
+    - остальные BaseApplicationError (CSRF, Auth, NotFound и др.) — штатные отказы,
+      приложение сработало корректно, уровень WARNING
+
+    :param request: Входящий HTTP-запрос
+    :param exc: Исключение унаследованное от BaseApplicationError
+    :return: JSON-ответ с информацией об ошибке
+    """
 
     context = LogContextService.get_safe_context(request)
-    log.error(
-        "Ошибка в логике приложения. %s | %s",
-        LogContextService.format_request_line(request),
-        LogContextService.format_context_string(context),
-    )
+    context_str = LogContextService.format_context_string(context)
+    request_line = LogContextService.format_request_line(request)
 
-    error_response = ErrorResponse(
-        status="error",
-        error=ErrorDetail(
-            message=exc.message,
-            details=exc.details or None,
-        ),
-    )
+    # реальные ошибки сервера — логируем как error
+    server_errors = (DatabaseError, ExternalServiceError)
+
+    if isinstance(exc, server_errors):
+        log.error(
+            "Ошибка сервера %s: %s | %s",
+            exc.status_code,
+            request_line,
+            context_str,
+        )
+    else:
+        # штатные отказы (csrf, auth, notfound, legalrestriction и т.д.) — warning
+        log.warning(
+            "Отказ %s: %s | %s",
+            exc.status_code,
+            request_line,
+            context_str,
+        )
 
     return JSONResponse(
         status_code=exc.status_code,
-        content=error_response.model_dump(),
+        content=ErrorResponse(
+            status="error",
+            error=ErrorDetail(
+                message=exc.message,
+                details=exc.details or None,
+            ),
+        ).model_dump(),
     )
 
 
