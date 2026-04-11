@@ -19,9 +19,9 @@ class LogContextService:
 
     # стандартизированный порядок полей для логов
     CONTEXT_FIELDS_ORDER = [
+        "status_code",
         "client_ip",
         "user_agent",
-        # "status_code",
         "process_time_ms",
         "request_id",
         "trace_id",
@@ -106,6 +106,7 @@ class LogContextService:
 
         # обязательные поля с fallback значениями
         required_fields = {
+            "status_code": "unknown",
             "client_ip": "unknown",
             "user_agent": "unknown",
             "process_time_ms": None,
