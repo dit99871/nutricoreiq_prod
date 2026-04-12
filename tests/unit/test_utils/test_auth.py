@@ -63,24 +63,21 @@ def test_verify_password_invalid_hashed_password():
     """
     Test verify_password with invalid hashed password.
     """
-    with pytest.raises(ValueError, match="Invalid salt"):
-        auth.verify_password("test_password", b"invalid_hash")
+    assert auth.verify_password("test_password", b"invalid_hash") is False
 
 
 def test_verify_password_empty_hashed_password():
     """
     Test verify_password with empty hashed password.
     """
-    with pytest.raises(ValueError, match="Invalid salt"):
-        auth.verify_password("test_password", b"")
+    assert auth.verify_password("test_password", b"") is False
 
 
 def test_verify_password_none_hashed_password():
     """
     Test verify_password with None as hashed password.
     """
-    with pytest.raises(TypeError):
-        auth.verify_password("test_password", None)
+    assert auth.verify_password("test_password", None) is False
 
 
 @pytest.mark.parametrize(

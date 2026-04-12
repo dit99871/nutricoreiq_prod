@@ -27,32 +27,48 @@ def get_password_hash(password: str) -> bytes:
     :param password: Пароль для хеширования.
     :return: Хешированный пароль в виде байтов.
     """
+
     salt = bcrypt.gensalt()
-    # Хешируем пароль с SHA256 и кодируем в base64 для bcrypt
+    # хешируем пароль с SHA256 и кодируем в base64 для bcrypt
     password_hash = base64.b64encode(hashlib.sha256(password.encode()).digest())
     return bcrypt.hashpw(password_hash, salt)
 
 
-def verify_password(
-    password: str,
-    hashed_password: bytes,
-) -> bool:
+def _verify_password_legacy(password: str, hashed_password: bytes) -> bool:
     """
-    Проверяет, соответствует ли пароль хешированному паролю.
-
-    Сравнивает переданный пароль с хешированным паролем с помощью
-    `bcrypt.checkpw` и возвращает `True`, если они совпадают, и `False` в противном случае.
-    Использует SHA256 + base64 для соответствия методу хеширования.
-
-    :param password: Пароль для проверки.
-    :param hashed_password: Хешированный пароль для сравнения.
-    :return: `True`, если пароль совпадает, `False` в противном случае.
+    Проверяет пароль старым методом (без SHA256+base64).
+    Используется только для миграции существующих хешей.
     """
-    # Хешируем пароль с SHA256 и кодируем в base64 для проверки
+
+    try:
+        return bcrypt.checkpw(
+            password=password.encode(),
+            hashed_password=hashed_password,
+        )
+    except Exception:
+        return False
+
+
+def verify_password(password: str, hashed_password: bytes) -> bool:
+    """
+    Проверяет пароль новым методом (SHA256 + base64 перед bcrypt).
+    """
+
     password_hash = base64.b64encode(hashlib.sha256(password.encode()).digest())
-    return bcrypt.checkpw(
-        password=password_hash,
-        hashed_password=hashed_password,
+    try:
+        return bcrypt.checkpw(password=password_hash, hashed_password=hashed_password)
+    except Exception:
+        return False
+
+
+def needs_rehash(password: str, hashed_password: bytes) -> bool:
+    """
+    Определяет нужно ли пересохранить хеш.
+    Возвращает True если пароль верный по старому методу, но не по новому.
+    """
+
+    return _verify_password_legacy(password, hashed_password) and not verify_password(
+        password, hashed_password
     )
 
 

@@ -25,7 +25,7 @@ from src.app.core.services.redis import (
     revoke_refresh_token,
     validate_refresh_jwt,
 )
-from src.app.core.utils.auth import create_response, verify_password
+from src.app.core.utils.auth import create_response, verify_password, needs_rehash
 from src.app.core.utils.security import mask_email
 from src.app.core.repo.user import (
     create_user,
@@ -77,14 +77,18 @@ class UserService:
             log.warning("Пользователя с таким именем не существует в БД")
             raise AuthenticationError("Неверные учетные данные")
 
-        if not verify_password(password, user.hashed_password):
-            log.error(
-                "Неверный пароль для пользователя: %s",
-                username,
-            )
-            raise AuthenticationError("Введён неверный пароль")
+        # сначала пробуем новый метод
+        if verify_password(password, user.hashed_password):
+            return UserPublic.model_validate(user)
 
-        return UserPublic.model_validate(user)
+        # если не прошёл — пробуем старый (для хешей до миграции)
+        if needs_rehash(password, user.hashed_password):
+            log.info("Миграция хеша пароля для пользователя: %s", username)
+            await update_user_password(session, user.uid, password)
+            return UserPublic.model_validate(user)
+
+        log.warning("Неверный пароль для пользователя: %s", username)
+        raise AuthenticationError("Введён неверный пароль")
 
     async def register_user(
         self,
