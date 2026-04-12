@@ -90,17 +90,17 @@ class UserProfileUpdate(FormSchema):
     goal: Annotated[Optional[GoalType], BeforeValidator(coerce_goal)] = None
 
     @model_validator(mode="after")
-    def check_consistency(cls, values):
+    def check_consistency(self) -> "UserProfileUpdate":
         # кросс-валидация (например, если age указан, проверить weight)
-        updated_fields = values.model_fields_set
+        updated_fields = self.model_fields_set
 
         age_is_updated = "age" in updated_fields
         weight_is_updated = "weight" in updated_fields
 
         if age_is_updated and weight_is_updated:
-            if values.age is not None and values.weight is None:
+            if self.age is not None and self.weight is None:
                 raise ValueError("Если указан возраст, укажите вес для полноты профиля")
-        return values
+        return self
 
 
 class PasswordChange(FormSchema):

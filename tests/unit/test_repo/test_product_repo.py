@@ -17,6 +17,9 @@ class FakeResult:
     def scalar_one_or_none(self):
         return self._scalar
 
+    def scalar_one(self):
+        return self._scalar
+
     def scalars(self):
         class _ScalarResult:
             def __init__(self, data):
