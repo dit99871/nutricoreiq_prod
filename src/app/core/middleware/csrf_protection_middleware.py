@@ -38,7 +38,7 @@ class CSRFProtectionMiddleware(BaseMiddleware):
     def __init__(
         self,
         app: ASGIApp,
-        trusted_proxies: list[str] | None = None,
+        trusted_proxies: list[str],
     ) -> None:
         super().__init__(app, trusted_proxies)
 

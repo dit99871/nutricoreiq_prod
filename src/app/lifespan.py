@@ -13,6 +13,8 @@ log = get_logger("lifespan")
 
 @retry(stop=stop_after_attempt(4), wait=wait_fixed(15))
 async def check_rabbitmq():
+    """Проверка готовности RabbitMQ"""
+
     try:
         await broker.startup()
     except Exception as e:

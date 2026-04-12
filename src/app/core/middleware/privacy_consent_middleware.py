@@ -56,9 +56,9 @@ class PrivacyConsentMiddleware(BaseMiddleware):
     def __init__(
         self,
         app: ASGIApp,
-        trusted_proxies: list[str] | None = None,
+        trusted_proxies: list[str],
     ) -> None:
-        super().__init__(app, trusted_proxies or [])
+        super().__init__(app, trusted_proxies)
 
     async def handle_request(
         self, request: Request, call_next: RequestResponseEndpoint

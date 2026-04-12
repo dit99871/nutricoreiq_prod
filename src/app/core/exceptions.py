@@ -1,5 +1,6 @@
-from fastapi import HTTPException, status
 from typing import Any, Optional
+
+from fastapi import HTTPException, status
 
 
 class ExpiredTokenException(HTTPException):

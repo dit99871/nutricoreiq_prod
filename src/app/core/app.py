@@ -35,10 +35,10 @@ def create_app() -> FastAPI:
     Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
     # монтирование статических файлов
-    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    static_dir = os.path.join(base_dir, "app", "static")
+    base_dir = os.path.dirname(os.path.dirname(str(os.path.dirname(__file__))))
+    static_dir = os.path.join(str(base_dir), "app", "static")
     if os.path.exists(static_dir) and os.path.isdir(static_dir):
-        app.mount("/static/", StaticFiles(directory=static_dir), name="static")
+        app.mount("/static/", StaticFiles(directory=str(static_dir)), name="static")
 
     # настройка обработчиков исключений
     setup_exception_handlers(app)

@@ -1,8 +1,8 @@
-from src.app.core.exceptions import NotFoundError
 from sqlalchemy import select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
 
+from src.app.core.exceptions import NotFoundError
 from src.app.core.logger import get_logger
 from src.app.core.models import Product, ProductNutrient
 from src.app.core.services.product_service import ProductService
@@ -146,7 +146,7 @@ async def handle_product_details(
         )
         .where(Product.id == product_id)
     )
-    product = product.unique().scalar_one_or_none()
+    product = product.unique().scalar_one()
 
     if not product:
         log.error(
