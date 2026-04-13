@@ -34,6 +34,7 @@ async def lifespan(app: FastAPI):
     # Инициализация Sentry в production режиме
     if settings.env.env == "prod":
         from src.app.core.services.sentry import init_sentry
+
         log.info("Инициализация Sentry...")
         init_sentry()
     if not broker.is_worker_process and settings.env.env == "prod":

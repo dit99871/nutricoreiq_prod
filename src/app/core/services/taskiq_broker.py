@@ -27,7 +27,9 @@ if settings.env.env == "prod":
         """Логирует факт успешного старта воркера Taskiq."""
 
         log.info("Запуск worker завершен. Состояние: %s", state)
+
 else:
     # В development режиме используем dummy broker
     from src.app.core.services.dummy_broker import DummyBroker
+
     broker = DummyBroker()
