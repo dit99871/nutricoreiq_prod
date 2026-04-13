@@ -1,3 +1,5 @@
+"""Регистрация и агрегация API-роутеров приложения."""
+
 from fastapi import APIRouter
 
 from src.app.core.config import settings

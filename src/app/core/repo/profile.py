@@ -1,3 +1,5 @@
+"""Функции доступа к данным профиля пользователя (репозиторий)."""
+
 from sqlalchemy import select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession

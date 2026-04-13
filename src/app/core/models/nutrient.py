@@ -34,6 +34,8 @@ class NutrientCategory(Enum):
 
 
 class Nutrient(IntIdPkMixin, Base):
+    """Модель нутриента."""
+
     name: Mapped[str] = mapped_column(unique=True)
     unit: Mapped[str]
     category: Mapped[NutrientCategory] = mapped_column(default=NutrientCategory.OTHER)

@@ -1,3 +1,5 @@
+"""Пакет ORM-моделей приложения."""
+
 from .base import Base
 from .nutrient import Nutrient, NutrientCategory
 from .pending_product import PendingProduct

@@ -1,3 +1,5 @@
+"""Репозиторий для работы с согласиями на обработку персональных данных."""
+
 from typing import Optional
 
 from sqlalchemy.exc import SQLAlchemyError

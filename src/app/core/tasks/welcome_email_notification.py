@@ -1,3 +1,5 @@
+"""Задача отправки приветственного письма пользователю."""
+
 from typing import Annotated
 
 from pydantic import EmailStr
@@ -21,6 +23,8 @@ async def send_welcome_email(
     user_email: EmailStr,
     session: Annotated[AsyncSession, TaskiqDepends(db_helper.session_getter)],
 ) -> None:
+    """Отправляет приветственное письмо пользователю по email."""
+
     user = await get_user_by_email(session, user_email)
     if user is None:
         log.error("Пользователь с email %s не найден", mask_email(user_email))

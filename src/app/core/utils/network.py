@@ -1,3 +1,5 @@
+"""Сетевые утилиты (IP клиента, схема и хост) с учетом доверенных прокси."""
+
 from ipaddress import ip_address, ip_network
 
 from fastapi import Request
@@ -100,6 +102,8 @@ def get_client_ip(request: Request, trusted_proxies: list[str] | None = None) ->
 def get_scheme_and_host(
     request: Request, trusted_proxies: list[str] | None = None
 ) -> tuple[str, str]:
+    """Получает схему и хост запроса с учетом заголовков прокси."""
+
     trusted_proxies = trusted_proxies or []
 
     scheme = request.url.scheme

@@ -1,3 +1,5 @@
+"""Эндпоинты для работы с пользователями."""
+
 from datetime import datetime
 
 from fastapi import APIRouter, Request, Response

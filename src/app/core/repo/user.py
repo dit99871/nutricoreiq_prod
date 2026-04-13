@@ -1,3 +1,5 @@
+"""Функции доступа к данным пользователей (репозиторий)."""
+
 from pydantic import EmailStr
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession

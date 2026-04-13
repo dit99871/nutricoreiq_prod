@@ -1,3 +1,5 @@
+"""Модуль, содержащий заглушку брокера для dev-среды."""
+
 from typing import Any, Awaitable, Callable, TypeVar
 
 F = TypeVar("F", bound=Callable[..., Awaitable[Any]])
@@ -16,9 +18,13 @@ class DummyBroker:
     is_worker_process: bool = False
 
     async def startup(self) -> None:  # совместимость с жизненным циклом
+        """No-op: совместимость со стартом broker в проде."""
+
         return None
 
     async def shutdown(self) -> None:  # совместимость с жизненным циклом
+        """No-op: совместимость с остановкой broker в проде."""
+
         return None
 
     def task(self, *dargs: Any, **dkwargs: Any) -> Callable[[F], F]:

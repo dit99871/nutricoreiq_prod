@@ -1,3 +1,5 @@
+"""Базовые схемы (Pydantic) и общие настройки сериализации."""
+
 from datetime import datetime
 from typing import Any
 

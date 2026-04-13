@@ -1,3 +1,5 @@
+"""ORM-модель продукта, ожидающего добавления в базу."""
+
 import datetime as dt
 
 from sqlalchemy import String
@@ -8,6 +10,8 @@ from .mixins.int_id_pk import IntIdPkMixin
 
 
 class PendingProduct(Base, IntIdPkMixin):
+    """Модель продукта, ожидающего очереди на добавление в БД."""
+
     name: Mapped[str] = mapped_column(String(40), nullable=False)
     created_at: Mapped[str] = mapped_column(
         default=dt.datetime.now(dt.UTC).strftime("%Y-%m-%d %H:%M:%S")

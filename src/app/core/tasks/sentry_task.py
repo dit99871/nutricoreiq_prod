@@ -1,3 +1,5 @@
+"""Taskiq-задачи для отправки событий Sentry в Loki."""
+
 import json
 import time
 from datetime import datetime
@@ -20,6 +22,7 @@ async def send_event_to_loki(
     message: str,
     level: str,
 ) -> None:
+    """Отправляет событие Sentry в Loki (с ретраями на стороне Taskiq)."""
     loki_url = settings.loki.url
     log_entry = {
         "streams": [

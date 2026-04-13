@@ -1,3 +1,5 @@
+"""Инициализация и зависимости Redis для приложения."""
+
 from typing import Any, AsyncGenerator
 
 from redis.asyncio import Redis
@@ -20,9 +22,7 @@ redis_client = Redis.from_url(
 
 
 async def get_redis_service() -> AsyncGenerator[Any, Redis]:
-    """
-    Предоставляет объект подключения Redis для внедрения зависимостей.
-    """
+    """Предоставляет объект подключения Redis для внедрения зависимостей."""
 
     async with redis_client.client() as redis:
         try:
@@ -32,16 +32,12 @@ async def get_redis_service() -> AsyncGenerator[Any, Redis]:
 
 
 async def init_redis():
-    """
-    Инициализирует подключение Redis при запуске приложения.
-    """
+    """Инициализирует подключение Redis при запуске приложения."""
 
     await redis_client.ping()
 
 
 async def close_redis():
-    """
-    Закрывает подключение Redis при остановке приложения.
-    """
+    """Закрывает подключение Redis при остановке приложения."""
 
     await redis_client.aclose()

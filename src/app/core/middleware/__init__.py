@@ -1,3 +1,5 @@
+"""Регистрация middleware приложения."""
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware

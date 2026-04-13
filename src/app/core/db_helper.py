@@ -1,3 +1,5 @@
+"""Вспомогательный модуль для работы с SQLAlchemy (engine/sessions)."""
+
 from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import (
@@ -11,6 +13,8 @@ from src.app.core.config.settings import settings
 
 
 class DatabaseHelper:
+    """Хелпер для создания engine и выдачи сессий SQLAlchemy."""
+
     def __init__(
         self,
         url: str,
@@ -35,9 +39,13 @@ class DatabaseHelper:
         )
 
     async def dispose(self) -> None:
+        """Освобождает ресурсы engine (закрыть пул соединений)."""
+
         await self.engine.dispose()
 
     async def session_getter(self) -> AsyncGenerator[AsyncSession, None]:
+        """Dependency-генератор: выдаёт `AsyncSession` и гарантирует закрытие."""
+
         async with self.session_factory() as session:
             yield session
 

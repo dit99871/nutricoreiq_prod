@@ -1,3 +1,5 @@
+"""Сервис для работы с Redis."""
+
 import datetime as dt
 import time
 

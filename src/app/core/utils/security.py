@@ -1,3 +1,5 @@
+"""Утилиты безопасности (CSRF/nonce/хеширование/маскирование)."""
+
 import hashlib
 from secrets import token_hex, token_urlsafe
 
@@ -25,6 +27,8 @@ def generate_redis_session_id() -> str:
 
 
 def mask_email(email: str | None) -> str:
+    """Маскирует email для безопасного логирования."""
+
     if not email:
         return "<empty>"
 

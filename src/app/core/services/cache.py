@@ -1,3 +1,5 @@
+"""Сервисы кеширования на базе Redis, используемые в приложении."""
+
 import json
 from typing import Optional
 
@@ -13,14 +15,14 @@ class CacheService:
 
     @staticmethod
     def _get_user_cache_key(uid: str) -> str:
-        """Сгенерировать ключ кеша для данных пользователя."""
+        """Генерирует ключ кеша для данных пользователя."""
 
         return f"user:{uid}"
 
     @classmethod
     async def get_user(cls, uid: str) -> Optional[dict]:
         """
-        Получить данные пользователя из кеша.
+        Получает данные пользователя из кеша.
 
         :param uid: ID пользователя
         :return: Данные пользователя если найдены, иначе None
@@ -109,6 +111,7 @@ class ConsentCacheService:
 
     @classmethod
     def _key(cls, user_id: int) -> str:
+        """Формирует ключ Redis для признака согласия пользователя."""
         return f"{cls.KEY_PREFIX}:{user_id}"
 
     @classmethod
@@ -125,6 +128,7 @@ class ConsentCacheService:
 
     @classmethod
     async def set(cls, user_id: int, has_consent: bool) -> None:
+        """Сохраняет признак согласия пользователя в Redis."""
         try:
             async for redis in get_redis_service():
                 await redis.set(
@@ -137,6 +141,7 @@ class ConsentCacheService:
 
     @classmethod
     async def invalidate(cls, user_id: int) -> None:
+        """Удаляет признак согласия пользователя из Redis."""
         try:
             async for redis in get_redis_service():
                 await redis.delete(cls._key(user_id))

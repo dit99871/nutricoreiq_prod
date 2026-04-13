@@ -1,12 +1,12 @@
+"""Доменные исключения приложения."""
+
 from typing import Any, Optional
 
 from fastapi import HTTPException, status
 
 
 class ExpiredTokenException(HTTPException):
-    """
-    Исключение для случаев, когда токен истек
-    """
+    """Исключение для случаев, когда токен истек"""
 
     def __init__(
         self,

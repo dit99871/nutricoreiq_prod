@@ -1,3 +1,5 @@
+"""ORM-модель продукта."""
+
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
@@ -14,6 +16,8 @@ if TYPE_CHECKING:
 
 
 class Product(IntIdPkMixin, Base):
+    """Модель продукта."""
+
     title: Mapped[str] = mapped_column(nullable=False)
     group_id: Mapped[int] = mapped_column(ForeignKey("product_groups.id"))
 

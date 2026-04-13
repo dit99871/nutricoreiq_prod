@@ -1,3 +1,5 @@
+"""Константы приложения (пороги, токены, базовые пути)."""
+
 from __future__ import annotations
 
 from pathlib import Path

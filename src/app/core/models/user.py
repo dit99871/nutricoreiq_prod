@@ -1,3 +1,5 @@
+"""ORM-модель пользователя и связанные перечисления (роль, цель, KFA)."""
+
 from __future__ import annotations
 
 import datetime
@@ -16,6 +18,8 @@ if TYPE_CHECKING:
 
 
 class UserRole(Enum):
+    """Роль пользователя в системе."""
+
     USER = "user"
     ADMIN = "admin"
     MODERATOR = "moderator"
@@ -42,12 +46,16 @@ class KFALevel(Enum):
 
 
 class GoalType(Enum):
+    """Цель пользователя (похудение/набор/поддержание)."""
+
     LOSE_WEIGHT = "Снижение веса"
     GAIN_WEIGHT = "Увеличение веса"
     MAINTAIN_WEIGHT = "Поддержание веса"
 
 
 class User(IntIdPkMixin, Base):
+    """Модель пользователя приложения."""
+
     __table_args__ = (
         CheckConstraint(
             "age IS NULL OR (age >= 10 AND age <= 120)", name="ck_users_age_range"

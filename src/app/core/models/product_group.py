@@ -1,3 +1,5 @@
+"""ORM-модель группы продуктов."""
+
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
@@ -11,6 +13,8 @@ if TYPE_CHECKING:
 
 
 class ProductGroup(IntIdPkMixin, Base):
+    """Модель группы продуктов."""
+
     name: Mapped[str] = mapped_column(nullable=False)
 
     products: Mapped[list[Product]] = relationship(back_populates="product_groups")

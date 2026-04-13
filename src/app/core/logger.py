@@ -1,3 +1,5 @@
+"""Настройка логирования и получение логгеров приложения."""
+
 import logging
 from logging import (
     Formatter,

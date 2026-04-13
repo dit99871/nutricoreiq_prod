@@ -1,3 +1,5 @@
+"""Сервис для инициализации Sentry SDK."""
+
 import asyncio
 import sentry_sdk
 from sentry_sdk.integrations.starlette import StarletteIntegration
@@ -12,10 +14,10 @@ def sentry_to_loki(event, hint):
     """
     Обработчик события, который отправляет его в Loki.
     """
-
-    from src.app.core.tasks import send_event_to_loki
-
     try:
+        # импортируем локально, чтобы избежать циклических импортов
+        from src.app.core.tasks import send_event_to_loki
+
         # записываем событие в очередь для отправки в Loki
         asyncio.get_running_loop().create_task(
             send_event_to_loki.kiq(

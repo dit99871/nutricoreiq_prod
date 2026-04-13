@@ -1,3 +1,5 @@
+"""Обработчики исключений приложения и унифицированные ответы об ошибках."""
+
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import HTTPException, RequestValidationError
 from fastapi.responses import JSONResponse
@@ -69,6 +71,7 @@ def _is_bot_request(path: str, user_agent: str) -> tuple[bool, str]:
         - "ua_based"          - бот определён по User-Agent
         - "human"             - не бот
     """
+
     # 1. проверка путей (более приоритетна, чем UA)
     for legit_path in LEGITIMATE_BOT_PATHS:
         if path.startswith(legit_path):
@@ -109,6 +112,7 @@ def not_found_exception_handler(
     exc: StarletteHTTPException,
 ) -> JSONResponse:
     """Обработчик 404 ошибок с разделением по категориям."""
+
     path = str(request.url.path)
     method = request.method
     user_agent = request.headers.get("user-agent", "unknown")

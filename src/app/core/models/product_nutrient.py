@@ -1,3 +1,5 @@
+"""ORM-модель связи продукта и нутриента (таблица-ассоциация)."""
+
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
@@ -12,6 +14,7 @@ if TYPE_CHECKING:
 
 
 class ProductNutrient(Base):
+    """Модель с количеством нутриента в продукте."""
 
     amount: Mapped[float] = mapped_column(default=0.0)
     product_id: Mapped[int] = mapped_column(

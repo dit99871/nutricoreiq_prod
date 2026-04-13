@@ -1,3 +1,5 @@
+"""Модуль сервиса для работы с продуктами"""
+
 from src.app.core.logger import get_logger
 from src.app.core.models import NutrientCategory, Product
 from src.app.core.schemas.product import NutrientBase, ProductDetailResponse
@@ -6,6 +8,8 @@ log = get_logger("product_service")
 
 
 class ProductService:
+    """Сервис для работы с продуктами."""
+
     @staticmethod
     def map_to_schema(product: Product) -> ProductDetailResponse:
         """

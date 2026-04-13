@@ -1,3 +1,5 @@
+"""Настройки логирования приложения."""
+
 import logging
 from typing import Literal
 
@@ -8,6 +10,8 @@ from src.app.core.constants import BASE_DIR
 
 
 class LoggingConfig(BaseSettings):
+    """Конфигурация логирования, читаемая из переменных окружения."""
+
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",
         case_sensitive=False,
@@ -58,4 +62,6 @@ class LoggingConfig(BaseSettings):
 
     @property
     def log_level_value(self) -> int:
+        """Возвращает числовое значение уровня логирования."""
+
         return logging.getLevelNamesMapping()[self.log_level.upper()]

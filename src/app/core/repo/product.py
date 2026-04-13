@@ -1,3 +1,5 @@
+"""Функции доступа к данным продуктов (репозиторий)."""
+
 from sqlalchemy import select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload

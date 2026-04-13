@@ -1,3 +1,5 @@
+"""Настройки аутентификации и JWT."""
+
 from pathlib import Path
 
 from pydantic import BaseModel
@@ -6,6 +8,8 @@ from src.app.core.constants import BASE_DIR
 
 
 class AuthConfig(BaseModel):
+    """Настройки JWT-токенов и путей к ключам подписи."""
+
     algorithm: str
     access_token_expires: int
     refresh_token_expires: int

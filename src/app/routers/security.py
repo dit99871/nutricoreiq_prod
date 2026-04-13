@@ -1,3 +1,5 @@
+"""Эндпоинты для работы с безопасностью (CSRF/nonce/хеширование/маскирование)."""
+
 from fastapi import APIRouter
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse

@@ -1,3 +1,5 @@
+"""ORM-модели согласий на обработку персональных данных."""
+
 from __future__ import annotations
 from typing import TYPE_CHECKING
 import datetime

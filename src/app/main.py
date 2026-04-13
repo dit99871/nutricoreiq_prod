@@ -1,3 +1,5 @@
+"""Точка входа ASGI-приложения."""
+
 from fastapi import FastAPI
 
 from src.app.core.app import create_app

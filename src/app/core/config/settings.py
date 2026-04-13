@@ -1,3 +1,5 @@
+"""Настройки приложения, загружаемые из переменных окружения."""
+
 from pydantic import PostgresDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -20,6 +22,8 @@ from .taskiq import TaskiqConfig
 
 
 class Settings(BaseSettings):
+    """Контейнер настроек приложения на базе Pydantic."""
+
     DEBUG: bool = False
 
     model_config = SettingsConfigDict(
@@ -48,6 +52,7 @@ class Settings(BaseSettings):
 
     @property
     def effective_db_url(self) -> PostgresDsn:
+        """Возвращает URL БД, который следует использовать в текущем окружении."""
         if self.env.env == "test" and self.db.test_url:
             return self.db.test_url
         if self.db.url:

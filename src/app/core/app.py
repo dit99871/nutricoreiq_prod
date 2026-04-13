@@ -1,3 +1,5 @@
+"""Фабрика FastAPI приложения."""
+
 import os
 
 from fastapi import FastAPI

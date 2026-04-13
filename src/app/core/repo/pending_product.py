@@ -1,3 +1,5 @@
+"""Репозиторий для очереди ожидающих добавления продуктов."""
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 

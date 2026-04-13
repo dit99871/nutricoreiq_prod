@@ -1,9 +1,13 @@
+"""Настройки подключения к базе данных."""
+
 from typing import Optional
 
 from pydantic import BaseModel, PostgresDsn
 
 
 class DatabaseConfig(BaseModel):
+    """Конфигурация подключения SQLAlchemy к PostgreSQL."""
+
     url: Optional[PostgresDsn] = None
     echo: bool = False
     is_test: bool = False

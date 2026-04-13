@@ -1,3 +1,5 @@
+"""Схемы (Pydantic) для пользователей и профиля."""
+
 from datetime import datetime
 from typing import Annotated, Literal, Optional
 
@@ -29,12 +31,16 @@ from .base import BaseSchema, FormSchema
 
 # базовая для input (create/update)
 class UserBaseIn(FormSchema):
+    """Базовая схема пользователя для input (создание/обновление)."""
+
     username: Annotated[str, Field(min_length=3, max_length=20)]
     email: EmailStr
 
 
 # базовая для output (read): сериализация, exclude sensitive
 class UserBaseOut(BaseSchema):
+    """Базовая схема пользователя для output (чтение)."""
+
     username: Annotated[str, Field(min_length=3, max_length=20)]
     email: EmailStr
     id: int
@@ -42,9 +48,7 @@ class UserBaseOut(BaseSchema):
 
 
 class UserCreate(UserBaseIn):
-    """
-    Схема для создания пользователя.
-    """
+    """Схема для создания пользователя."""
 
     password: Annotated[
         str,
@@ -54,18 +58,14 @@ class UserCreate(UserBaseIn):
 
 
 class UserPublic(UserBaseOut):
-    """
-    Публичная схема пользователя (output).
-    """
+    """Публичная схема пользователя (output)."""
 
     # исключаем из сериализации
     hashed_password: Annotated[bytes | None, Field(exclude=True)] = None
 
 
 class UserProfile(UserBaseOut):
-    """
-    Профиль пользователя (output, для чтения).
-    """
+    """Профиль пользователя (output, для чтения)."""
 
     gender: Literal["female", "male"] | None = None
     age: Annotated[int | None, Field(ge=MIN_AGE, le=MAX_AGE)] = None
@@ -78,9 +78,7 @@ class UserProfile(UserBaseOut):
 
 
 class UserProfileUpdate(FormSchema):
-    """
-    Схема для обновления профиля (input).
-    """
+    """Схема для обновления профиля (input)."""
 
     gender: Optional[Literal["female", "male"]] = None
     age: Annotated[int | None, Field(ge=MIN_AGE, le=MAX_AGE)] = None
@@ -91,6 +89,7 @@ class UserProfileUpdate(FormSchema):
 
     @model_validator(mode="after")
     def check_consistency(self) -> "UserProfileUpdate":
+        """Выполняет кросс-валидацию полей профиля."""
         # кросс-валидация (например, если age указан, проверить weight)
         updated_fields = self.model_fields_set
 
@@ -104,9 +103,7 @@ class UserProfileUpdate(FormSchema):
 
 
 class PasswordChange(FormSchema):
-    """
-    Схема для смены пароля.
-    """
+    """Схема для смены пароля."""
 
     current_password: Annotated[str, Field(min_length=8)]
     new_password: Annotated[
@@ -117,6 +114,8 @@ class PasswordChange(FormSchema):
 
     @model_validator(mode="after")
     def passwords_match(self) -> "PasswordChange":
+        """Проверяет валидность и различие текущего и нового паролей."""
+
         # Получаем строковое представление паролей
         current = self.current_password
         new = (

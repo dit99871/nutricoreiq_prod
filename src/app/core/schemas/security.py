@@ -1,3 +1,5 @@
+"""Схемы, связанные с безопасностью (например, CSP-отчёты)."""
+
 from pydantic import BaseModel, Field
 
 
