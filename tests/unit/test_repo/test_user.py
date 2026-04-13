@@ -18,7 +18,6 @@ from src.app.core.services.cache import CacheService
 import src.app.core.utils.validators
 
 
-# Create a proper mock validator function
 def mock_validate_password_strength(v):
     if hasattr(v, "get_secret_value"):
         v = v.get_secret_value()
@@ -27,13 +26,11 @@ def mock_validate_password_strength(v):
     return v
 
 
-# Patch the validator at the module level
 src.app.core.utils.validators.validate_password_strength = (
     mock_validate_password_strength
 )
 
 
-# Fixtures
 @pytest.fixture
 def mock_user():
     return User(
@@ -199,13 +196,10 @@ async def test_create_user_database_error(user_create_data):
                 user_create = UserCreate(**user_create_data)
                 await create_user(mock_session, user_create)
 
-            # Verify the exception
             assert exc_info.value.message == "Ошибка при создании пользователя"
 
-            # Verify rollback was called
             mock_session.rollback.assert_called_once()
 
-            # Verify error was logged
             mock_logger.error.assert_called()
 
 
@@ -255,7 +249,7 @@ async def test_update_user_password_success():
     mock_session = AsyncMock(spec=AsyncSession)
     mock_session.commit = AsyncMock()
 
-    # Создаём mock пользователя
+    # cоздаём mock пользователя
     mock_user = User(
         id=1,
         uid="test-uid-123",
@@ -274,7 +268,7 @@ async def test_update_user_password_success():
     ):
         await update_user_password(mock_session, "test-uid-123", "NewPassword123!")
 
-    # Проверяем, что пароль был обновлён
+    # проверяем, что пароль был обновлён
     assert mock_user.hashed_password == b"new_hashed_password"
     mock_session.commit.assert_called_once()
 
@@ -373,10 +367,10 @@ async def test_update_user_password_hash_verification():
     ) as mock_hash:
         await update_user_password(mock_session, "test-uid-123", "NewPassword123!")
 
-        # Проверяем, что get_password_hash был вызван с правильным паролем
+        # проверяем, что get_password_hash был вызван с правильным паролем
         mock_hash.assert_called_once_with("NewPassword123!")
 
-        # Проверяем, что хеш изменился
+        # проверяем, что хеш изменился
         assert mock_user.hashed_password == new_hash
         assert mock_user.hashed_password != old_hash
 
@@ -402,7 +396,7 @@ async def test_update_user_password_with_empty_password():
     mock_result.scalar_one_or_none.return_value = mock_user
     mock_session.execute.return_value = mock_result
 
-    # Пустой пароль должен быть обработан (хотя валидация должна быть на уровне схемы)
+    # пустой пароль должен быть обработан (хотя валидация должна быть на уровне схемы)
     with patch(
         "src.app.core.repo.user.get_password_hash", return_value=b"empty_hash"
     ) as mock_hash:

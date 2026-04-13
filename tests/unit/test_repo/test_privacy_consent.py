@@ -38,7 +38,7 @@ def sample_privacy_consent():
         consent_type=ConsentType.PERSONAL_DATA,
         is_granted=True,
         policy_version="1.0",
-        granted_at=datetime.datetime.utcnow(),
+        granted_at=datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
     )
 
 
@@ -48,15 +48,14 @@ class TestCreatePrivacyConsent:
     @pytest.mark.asyncio
     async def test_create_privacy_consent_success_user(self, mock_session):
         """Тест успешного создания согласия для авторизованного пользователя."""
-        # Arrange
+
         def mock_add(consent):
             consent.id = 1
             return consent
-        
+
         mock_session.add.side_effect = mock_add
-        
-        # Act
-        with patch('src.app.core.repo.privacy_consent.log') as mock_log:
+
+        with patch("src.app.core.repo.privacy_consent.log") as mock_log:
             result = await create_privacy_consent(
                 session=mock_session,
                 user_id=123,
@@ -67,8 +66,7 @@ class TestCreatePrivacyConsent:
                 is_granted=True,
                 policy_version="1.0",
             )
-        
-        # Assert
+
         assert isinstance(result, PrivacyConsent)
         assert result.user_id == 123
         assert result.session_id is None
@@ -77,7 +75,7 @@ class TestCreatePrivacyConsent:
         assert result.consent_type == ConsentType.PERSONAL_DATA
         assert result.is_granted is True
         assert result.policy_version == "1.0"
-        
+
         mock_session.add.assert_called_once()
         mock_session.flush.assert_awaited_once()
         mock_log.info.assert_called_once()
@@ -85,15 +83,14 @@ class TestCreatePrivacyConsent:
     @pytest.mark.asyncio
     async def test_create_privacy_consent_success_session(self, mock_session):
         """Тест успешного создания согласия для сессии."""
-        # Arrange
+
         def mock_add(consent):
             consent.id = 2
             return consent
-        
+
         mock_session.add.side_effect = mock_add
-        
-        # Act
-        with patch('src.app.core.repo.privacy_consent.log') as mock_log:
+
+        with patch("src.app.core.repo.privacy_consent.log") as mock_log:
             result = await create_privacy_consent(
                 session=mock_session,
                 user_id=None,
@@ -103,15 +100,14 @@ class TestCreatePrivacyConsent:
                 consent_type=ConsentType.COOKIES,
                 is_granted=False,
             )
-        
-        # Assert
+
         assert isinstance(result, PrivacyConsent)
         assert result.user_id is None
         assert result.session_id == "session_123"
         assert result.consent_type == ConsentType.COOKIES
         assert result.is_granted is False
         assert result.policy_version == "1.0"  # значение по умолчанию
-        
+
         mock_session.add.assert_called_once()
         mock_session.flush.assert_awaited_once()
         mock_log.info.assert_called_once()
@@ -119,11 +115,9 @@ class TestCreatePrivacyConsent:
     @pytest.mark.asyncio
     async def test_create_privacy_consent_database_error(self, mock_session):
         """Тест обработки ошибки базы данных."""
-        # Arrange
         mock_session.flush.side_effect = SQLAlchemyError("Database error")
-        
-        # Act & Assert
-        with patch('src.app.core.repo.privacy_consent.log') as mock_log:
+
+        with patch("src.app.core.repo.privacy_consent.log") as mock_log:
             with pytest.raises(DatabaseError) as exc_info:
                 await create_privacy_consent(
                     session=mock_session,
@@ -134,7 +128,7 @@ class TestCreatePrivacyConsent:
                     consent_type=ConsentType.PERSONAL_DATA,
                     is_granted=True,
                 )
-        
+
         assert exc_info.value.message == "Ошибка при сохранении согласия"
         mock_session.rollback.assert_awaited_once()
         mock_log.error.assert_called_once()
@@ -150,66 +144,59 @@ class TestHasUserConsent:
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = sample_privacy_consent
         mock_session.execute.return_value = mock_result
-        
-        # Act
+
         result = await has_user_consent(
             session=mock_session,
             user_id=123,
             consent_type=ConsentType.PERSONAL_DATA,
         )
-        
-        # Assert
+
         assert result is True
         mock_session.execute.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_has_user_consent_false(self, mock_session):
         """Тест: у пользователя нет согласия."""
-        # Arrange
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = None
         mock_session.execute.return_value = mock_result
-        
-        # Act
+
         result = await has_user_consent(
             session=mock_session,
             user_id=123,
             consent_type=ConsentType.PERSONAL_DATA,
         )
-        
-        # Assert
+
         assert result is False
         mock_session.execute.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_has_user_consent_default_type(self, mock_session, sample_privacy_consent):
+    async def test_has_user_consent_default_type(
+        self, mock_session, sample_privacy_consent
+    ):
         """Тест: используется тип согласия по умолчанию."""
-        # Arrange
+
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = sample_privacy_consent
         mock_session.execute.return_value = mock_result
-        
-        # Act
+
         result = await has_user_consent(session=mock_session, user_id=123)
-        
-        # Assert
+
         assert result is True
 
     @pytest.mark.asyncio
     async def test_has_user_consent_database_error(self, mock_session):
         """Тест обработки ошибки базы данных."""
-        # Arrange
+
         mock_session.execute.side_effect = SQLAlchemyError("Database error")
-        
-        # Act
-        with patch('src.app.core.repo.privacy_consent.log') as mock_log:
+
+        with patch("src.app.core.repo.privacy_consent.log") as mock_log:
             result = await has_user_consent(
                 session=mock_session,
                 user_id=123,
                 consent_type=ConsentType.PERSONAL_DATA,
             )
-        
-        # Assert
+
         assert result is False
         mock_log.error.assert_called_once()
 
@@ -220,70 +207,66 @@ class TestHasSessionConsent:
     @pytest.mark.asyncio
     async def test_has_session_consent_true(self, mock_session, sample_privacy_consent):
         """Тест: у сессии есть согласие."""
-        # Arrange
+
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = sample_privacy_consent
         mock_session.execute.return_value = mock_result
-        
-        # Act
+
         result = await has_session_consent(
             session=mock_session,
             session_id="session_123",
             consent_type=ConsentType.COOKIES,
         )
-        
-        # Assert
+
         assert result is True
         mock_session.execute.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_has_session_consent_false(self, mock_session):
         """Тест: у сессии нет согласия."""
-        # Arrange
+
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = None
         mock_session.execute.return_value = mock_result
-        
-        # Act
+
         result = await has_session_consent(
             session=mock_session,
             session_id="session_123",
             consent_type=ConsentType.COOKIES,
         )
-        
-        # Assert
+
         assert result is False
         mock_session.execute.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_has_session_consent_default_type(self, mock_session, sample_privacy_consent):
+    async def test_has_session_consent_default_type(
+        self, mock_session, sample_privacy_consent
+    ):
         """Тест: используется тип согласия по умолчанию."""
-        # Arrange
+
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = sample_privacy_consent
         mock_session.execute.return_value = mock_result
-        
-        # Act
-        result = await has_session_consent(session=mock_session, session_id="session_123")
-        
-        # Assert
+
+        result = await has_session_consent(
+            session=mock_session, session_id="session_123"
+        )
+
         assert result is True
 
     @pytest.mark.asyncio
     async def test_has_session_consent_database_error(self, mock_session):
         """Тест обработки ошибки базы данных."""
-        # Arrange
+
         mock_session.execute.side_effect = SQLAlchemyError("Database error")
-        
-        # Act
-        with patch('src.app.core.repo.privacy_consent.log') as mock_log:
+
+        with patch("src.app.core.repo.privacy_consent.log") as mock_log:
             result = await has_session_consent(
                 session=mock_session,
                 session_id="session_123",
                 consent_type=ConsentType.COOKIES,
             )
-        
-        # Assert
+
         assert result is False
         mock_log.error.assert_called_once()
 
@@ -294,18 +277,18 @@ class TestGetUserConsents:
     @pytest.mark.asyncio
     async def test_get_user_consents_success(self, mock_session):
         """Тест успешного получения согласий пользователя."""
-        # Arrange
-        consent1 = PrivacyConsent(id=1, user_id=123, consent_type=ConsentType.PERSONAL_DATA)
+
+        consent1 = PrivacyConsent(
+            id=1, user_id=123, consent_type=ConsentType.PERSONAL_DATA
+        )
         consent2 = PrivacyConsent(id=2, user_id=123, consent_type=ConsentType.COOKIES)
-        
+
         mock_result = MagicMock()
         mock_result.scalars.return_value.all.return_value = [consent1, consent2]
         mock_session.execute.return_value = mock_result
-        
-        # Act
+
         result = await get_user_consents(session=mock_session, user_id=123)
-        
-        # Assert
+
         assert len(result) == 2
         assert result[0].user_id == 123
         assert result[1].user_id == 123
@@ -314,29 +297,25 @@ class TestGetUserConsents:
     @pytest.mark.asyncio
     async def test_get_user_consents_empty(self, mock_session):
         """Тест: у пользователя нет согласий."""
-        # Arrange
+
         mock_result = MagicMock()
         mock_result.scalars.return_value.all.return_value = []
         mock_session.execute.return_value = mock_result
-        
-        # Act
+
         result = await get_user_consents(session=mock_session, user_id=123)
-        
-        # Assert
+
         assert len(result) == 0
         mock_session.execute.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_get_user_consents_database_error(self, mock_session):
         """Тест обработки ошибки базы данных."""
-        # Arrange
+
         mock_session.execute.side_effect = SQLAlchemyError("Database error")
-        
-        # Act
-        with patch('src.app.core.repo.privacy_consent.log') as mock_log:
+
+        with patch("src.app.core.repo.privacy_consent.log") as mock_log:
             result = await get_user_consents(session=mock_session, user_id=123)
-        
-        # Assert
+
         assert result == []
         mock_log.error.assert_called_once()
 
@@ -347,18 +326,22 @@ class TestGetSessionConsents:
     @pytest.mark.asyncio
     async def test_get_session_consents_success(self, mock_session):
         """Тест успешного получения согласий сессии."""
-        # Arrange
-        consent1 = PrivacyConsent(id=1, session_id="session_123", consent_type=ConsentType.PERSONAL_DATA)
-        consent2 = PrivacyConsent(id=2, session_id="session_123", consent_type=ConsentType.COOKIES)
-        
+
+        consent1 = PrivacyConsent(
+            id=1, session_id="session_123", consent_type=ConsentType.PERSONAL_DATA
+        )
+        consent2 = PrivacyConsent(
+            id=2, session_id="session_123", consent_type=ConsentType.COOKIES
+        )
+
         mock_result = MagicMock()
         mock_result.scalars.return_value.all.return_value = [consent1, consent2]
         mock_session.execute.return_value = mock_result
-        
-        # Act
-        result = await get_session_consents(session=mock_session, session_id="session_123")
-        
-        # Assert
+
+        result = await get_session_consents(
+            session=mock_session, session_id="session_123"
+        )
+
         assert len(result) == 2
         assert result[0].session_id == "session_123"
         assert result[1].session_id == "session_123"
@@ -367,29 +350,29 @@ class TestGetSessionConsents:
     @pytest.mark.asyncio
     async def test_get_session_consents_empty(self, mock_session):
         """Тест: у сессии нет согласий."""
-        # Arrange
+
         mock_result = MagicMock()
         mock_result.scalars.return_value.all.return_value = []
         mock_session.execute.return_value = mock_result
-        
-        # Act
-        result = await get_session_consents(session=mock_session, session_id="session_123")
-        
-        # Assert
+
+        result = await get_session_consents(
+            session=mock_session, session_id="session_123"
+        )
+
         assert len(result) == 0
         mock_session.execute.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_get_session_consents_database_error(self, mock_session):
         """Тест обработки ошибки базы данных."""
-        # Arrange
+
         mock_session.execute.side_effect = SQLAlchemyError("Database error")
-        
-        # Act
-        with patch('src.app.core.repo.privacy_consent.log') as mock_log:
-            result = await get_session_consents(session=mock_session, session_id="session_123")
-        
-        # Assert
+
+        with patch("src.app.core.repo.privacy_consent.log") as mock_log:
+            result = await get_session_consents(
+                session=mock_session, session_id="session_123"
+            )
+
         assert result == []
         mock_log.error.assert_called_once()
 
