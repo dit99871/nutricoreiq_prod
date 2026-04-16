@@ -2,9 +2,9 @@
 
 from typing import Optional
 
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 
 from src.app.core.exceptions import DatabaseError
 from src.app.core.logger import get_logger

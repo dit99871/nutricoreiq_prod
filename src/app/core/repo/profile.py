@@ -4,7 +4,7 @@ from sqlalchemy import select, update
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.app.core.exceptions import NotFoundError, DatabaseError
+from src.app.core.exceptions import DatabaseError, NotFoundError
 from src.app.core.logger import get_logger
 from src.app.core.models import User
 from src.app.core.schemas.user import UserProfile, UserProfileUpdate, UserPublic

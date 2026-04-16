@@ -26,12 +26,12 @@ async def get_user_from_request(
     """
 
     try:
+        from src.app.core.constants import ACCESS_TOKEN_TYPE, TOKEN_TYPE_FIELD
+        from src.app.core.repo.user import get_user_by_uid
         from src.app.core.services.jwt_service import (
             get_jwt_from_cookies,
             get_jwt_payload,
         )
-        from src.app.core.constants import TOKEN_TYPE_FIELD, ACCESS_TOKEN_TYPE
-        from src.app.core.repo.user import get_user_by_uid
 
         # получаем токен из кук
         token = await get_jwt_from_cookies(request)

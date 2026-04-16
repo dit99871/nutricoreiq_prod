@@ -1,14 +1,15 @@
-import pytest
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.app.core.exceptions import NotFoundError, DatabaseError
-from src.app.core.repo.profile import get_user_profile, update_user_profile
+from src.app.core.exceptions import DatabaseError, NotFoundError
 from src.app.core.models import User
+from src.app.core.models.user import GoalType, KFALevel, UserRole
+from src.app.core.repo.profile import get_user_profile, update_user_profile
 from src.app.core.schemas.user import UserProfileUpdate, UserPublic
-from src.app.core.models.user import KFALevel, GoalType, UserRole
 
 
 def create_test_user(**kwargs):

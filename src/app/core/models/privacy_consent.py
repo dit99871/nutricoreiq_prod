@@ -1,11 +1,12 @@
 """ORM-модели согласий на обработку персональных данных."""
 
 from __future__ import annotations
-from typing import TYPE_CHECKING
+
 import datetime
 from enum import Enum
+from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, Index, DateTime
+from sqlalchemy import DateTime, ForeignKey, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base

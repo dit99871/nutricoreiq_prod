@@ -3,7 +3,7 @@
 from .base import Base
 from .nutrient import Nutrient, NutrientCategory
 from .pending_product import PendingProduct
-from .privacy_consent import PrivacyConsent, ConsentType
+from .privacy_consent import ConsentType, PrivacyConsent
 from .product import Product
 from .product_group import ProductGroup
 from .product_nutrient import ProductNutrient

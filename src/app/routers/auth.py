@@ -13,10 +13,10 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from src.app.core.config import settings
 from src.app.core.dependencies import (
+    current_user_dep,
     db_session_dep,
     redis_service_dep,
     user_service_dep,
-    current_user_dep,
 )
 from src.app.core.exceptions import (
     ConflictError,
@@ -24,8 +24,8 @@ from src.app.core.exceptions import (
     UserAlreadyExistsError,
 )
 from src.app.core.logger import get_logger
-from src.app.core.services.limiter import limiter
 from src.app.core.schemas.user import PasswordChange, UserCreate, UserPublic
+from src.app.core.services.limiter import limiter
 from src.app.core.utils.security import mask_email
 
 log = get_logger("auth_router")

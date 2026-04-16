@@ -1,7 +1,8 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from src.app.core.exceptions import ValidationError, ConflictError
+import pytest
+
+from src.app.core.exceptions import ConflictError, ValidationError
 from src.app.core.repo.pending_product import (
     create_pending_product,
     pending_product_exists,
@@ -53,12 +54,13 @@ async def test_create_pending_product_success():
     session = AsyncMock()
     session.add = MagicMock()
 
-    with patch(
-        "src.app.core.repo.pending_product.pending_product_exists",
-        new_callable=AsyncMock,
-    ) as mock_exists, patch(
-        "src.app.core.repo.pending_product.PendingProduct"
-    ) as mock_model:
+    with (
+        patch(
+            "src.app.core.repo.pending_product.pending_product_exists",
+            new_callable=AsyncMock,
+        ) as mock_exists,
+        patch("src.app.core.repo.pending_product.PendingProduct") as mock_model,
+    ):
         mock_exists.return_value = False
         new_pending_instance = MagicMock()
         mock_model.return_value = new_pending_instance

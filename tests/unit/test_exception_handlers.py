@@ -35,36 +35,46 @@ def make_request(
 
 # --- _is_bot_request ---
 
-@pytest.mark.parametrize("path, expected_category", [
-    ("/robots.txt", "legitimate_path"),
-    ("/.well-known/acme-challenge/token", "legitimate_path"),
-    ("/sitemap.xml", "legitimate_path"),
-])
+
+@pytest.mark.parametrize(
+    "path, expected_category",
+    [
+        ("/robots.txt", "legitimate_path"),
+        ("/.well-known/acme-challenge/token", "legitimate_path"),
+        ("/sitemap.xml", "legitimate_path"),
+    ],
+)
 def test_is_bot_legitimate_paths(path, expected_category):
     is_bot, category = _is_bot_request(path, "SomeBot/1.0")
     assert is_bot is True
     assert category == expected_category
 
 
-@pytest.mark.parametrize("path", [
-    "/wp-login.php",
-    "/wp-admin/",
-    "/phpmyadmin/",
-    "/xmlrpc.php",
-    "/administrator/",
-])
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/wp-login.php",
+        "/wp-admin/",
+        "/phpmyadmin/",
+        "/xmlrpc.php",
+        "/administrator/",
+    ],
+)
 def test_is_bot_suspicious_paths(path):
     is_bot, category = _is_bot_request(path, "Mozilla/5.0")
     assert is_bot is True
     assert category == "suspicious_path"
 
 
-@pytest.mark.parametrize("user_agent", [
-    "curl/8.7.1",
-    "python-requests/2.31",
-    "Googlebot/2.1",
-    "wget/1.21",
-])
+@pytest.mark.parametrize(
+    "user_agent",
+    [
+        "curl/8.7.1",
+        "python-requests/2.31",
+        "Googlebot/2.1",
+        "wget/1.21",
+    ],
+)
 def test_is_bot_ua_based(user_agent):
     is_bot, category = _is_bot_request("/some/path", user_agent)
     assert is_bot is True
@@ -82,8 +92,10 @@ def test_is_bot_human():
 
 # --- not_found_exception_handler ---
 
+
 def _make_404_exc():
     from starlette.exceptions import HTTPException
+
     return HTTPException(status_code=404)
 
 
@@ -173,6 +185,7 @@ def test_not_found_returns_404():
 
 # --- application_error_handler ---
 
+
 @pytest.mark.asyncio
 async def test_application_error_handler_database_error_logs_error():
     """DatabaseError — реальный сбой сервера, должен логироваться как ERROR."""
@@ -254,6 +267,7 @@ async def test_application_error_handler_response_has_message():
         response = await application_error_handler(request, exc)
 
     import json
+
     body = json.loads(response.body)
     # ErrorDetail применяет to_upper=True к message
     assert body["error"]["message"] == "НЕВЕРНЫЕ УЧЕТНЫЕ ДАННЫЕ"

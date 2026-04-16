@@ -1,16 +1,16 @@
 """Функции доступа к данным пользователей (репозиторий)."""
 
 from pydantic import EmailStr
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 
 from src.app.core.exceptions import DatabaseError, NotFoundError
 from src.app.core.logger import get_logger
-from src.app.core.services.cache import CacheService
-from src.app.core.utils.auth import get_password_hash
 from src.app.core.models import User
 from src.app.core.schemas.user import UserCreate, UserPublic
+from src.app.core.services.cache import CacheService
+from src.app.core.utils.auth import get_password_hash
 
 log = get_logger("user_repo")
 

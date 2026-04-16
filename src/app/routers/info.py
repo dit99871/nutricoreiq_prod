@@ -5,8 +5,8 @@ from datetime import datetime
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, Response
 
-from src.app.core.dependencies import current_user_dep
 from src.app.core import templates
+from src.app.core.dependencies import current_user_dep
 
 router = APIRouter(
     tags=["Info"],

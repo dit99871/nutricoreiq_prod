@@ -5,8 +5,8 @@
 from fastapi import Request, Response
 from starlette.middleware.base import RequestResponseEndpoint
 
-from src.app.core.middleware.base_middleware import BaseMiddleware
 from src.app.core.config import settings
+from src.app.core.middleware.base_middleware import BaseMiddleware
 from src.app.core.utils.security import generate_csp_nonce
 
 

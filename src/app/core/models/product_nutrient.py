@@ -1,6 +1,7 @@
 """ORM-модель связи продукта и нутриента (таблица-ассоциация)."""
 
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey
@@ -9,8 +10,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import Base
 
 if TYPE_CHECKING:
-    from .product import Product
     from .nutrient import Nutrient
+    from .product import Product
 
 
 class ProductNutrient(Base):

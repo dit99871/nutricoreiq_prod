@@ -26,6 +26,7 @@ DOCKER_SUBNET = ["172.20.0.0/16"]
 
 # ─── no trusted proxies ───────────────────────────────────────────────────────
 
+
 def test_no_trusted_proxies_returns_peer_ip():
     """Без trusted_proxies возвращает прямой IP."""
     request = make_request(
@@ -48,6 +49,7 @@ def test_no_trusted_proxies_ignores_xff():
 
 # ─── peer not trusted ─────────────────────────────────────────────────────────
 
+
 def test_peer_not_trusted_returns_peer_ip():
     """Если peer не в trusted_proxies — игнорируем заголовки."""
     request = make_request(
@@ -59,6 +61,7 @@ def test_peer_not_trusted_returns_peer_ip():
 
 
 # ─── X-Forwarded-For injection protection ────────────────────────────────────
+
 
 def test_xff_injection_takes_last_non_trusted():
     """Сканер подделывает первый IP — берём последний не-trusted."""
@@ -112,6 +115,7 @@ def test_xff_invalid_ip_skipped():
 
 # ─── X-Real-IP ────────────────────────────────────────────────────────────────
 
+
 def test_x_real_ip_used_when_no_xff():
     """X-Real-IP используется если нет XFF."""
     request = make_request(
@@ -145,6 +149,7 @@ def test_x_real_ip_invalid_skipped():
 
 # ─── fallback ─────────────────────────────────────────────────────────────────
 
+
 def test_no_client_returns_unknown():
     """Нет client — возвращает 'unknown'."""
     request = MagicMock()
@@ -156,6 +161,7 @@ def test_no_client_returns_unknown():
 
 
 # ─── get_scheme_and_host ──────────────────────────────────────────────────────
+
 
 def test_scheme_from_x_forwarded_proto_when_trusted():
     """X-Forwarded-Proto учитывается если peer trusted."""

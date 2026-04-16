@@ -6,14 +6,14 @@ from fastapi import APIRouter, Depends, Request
 
 from src.app.core.dependencies import db_session_dep
 from src.app.core.logger import get_logger
-from src.app.core.schemas.user import UserPublic
-from src.app.core.utils.user import optional_current_user
 from src.app.core.schemas.privacy import (
     ConsentStatusResponse,
     PrivacyConsentRequest,
     PrivacyConsentResponse,
 )
+from src.app.core.schemas.user import UserPublic
 from src.app.core.services.privacy_service import PrivacyService, get_privacy_service
+from src.app.core.utils.user import optional_current_user
 
 log = get_logger("privacy_router")
 

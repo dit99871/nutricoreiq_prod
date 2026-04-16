@@ -1,6 +1,6 @@
 """Схемы для работы с ответами."""
 
-from typing import Any, Literal, Annotated
+from typing import Annotated, Any, Literal
 
 from pydantic import Field, StringConstraints
 

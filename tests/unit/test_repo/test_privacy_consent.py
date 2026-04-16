@@ -1,5 +1,6 @@
 import datetime
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -7,10 +8,10 @@ from src.app.core.exceptions import DatabaseError
 from src.app.core.models.privacy_consent import ConsentType, PrivacyConsent
 from src.app.core.repo.privacy_consent import (
     create_privacy_consent,
-    has_user_consent,
-    has_session_consent,
-    get_user_consents,
     get_session_consents,
+    get_user_consents,
+    has_session_consent,
+    has_user_consent,
 )
 
 

@@ -3,7 +3,7 @@
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.app.core.exceptions import ValidationError, ConflictError
+from src.app.core.exceptions import ConflictError, ValidationError
 from src.app.core.models import PendingProduct
 
 

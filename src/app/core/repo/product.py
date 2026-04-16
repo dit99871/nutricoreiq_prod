@@ -1,19 +1,19 @@
 """Функции доступа к данным продуктов (репозиторий)."""
 
-from sqlalchemy import select, func, or_
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload, joinedload
+from sqlalchemy.orm import joinedload, selectinload
 
 from src.app.core.exceptions import NotFoundError
 from src.app.core.logger import get_logger
 from src.app.core.models import Product, ProductNutrient
-from src.app.core.services.product_service import ProductService
+from src.app.core.repo.pending_product import create_pending_product
 from src.app.core.schemas.product import (
     ProductDetailResponse,
     ProductSuggestion,
     UnifiedProductResponse,
 )
-from src.app.core.repo.pending_product import create_pending_product
+from src.app.core.services.product_service import ProductService
 
 log = get_logger("product_repo")
 

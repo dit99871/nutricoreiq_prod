@@ -1,21 +1,22 @@
 import uuid
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.app.core.exceptions import NotFoundError, DatabaseError
+import src.app.core.utils.validators
+from src.app.core.exceptions import DatabaseError, NotFoundError
 from src.app.core.models import User
 from src.app.core.repo.user import (
-    get_user_by_uid,
+    choose_subscribe_status,
+    create_user,
     get_user_by_email,
     get_user_by_name,
-    create_user,
-    choose_subscribe_status,
+    get_user_by_uid,
 )
 from src.app.core.schemas.user import UserCreate, UserPublic
 from src.app.core.services.cache import CacheService
-import src.app.core.utils.validators
 
 
 def mock_validate_password_strength(v):

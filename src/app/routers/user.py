@@ -7,17 +7,17 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from starlette.responses import RedirectResponse
 
 from src.app.core.dependencies import (
+    current_user_dep,
     db_session_dep,
     user_service_dep,
-    current_user_dep,
 )
-from src.app.core.exceptions import ValidationError, ExpiredTokenException
+from src.app.core.exceptions import ExpiredTokenException, ValidationError
 from src.app.core.logger import get_logger
-from src.app.core.utils import templates
+from src.app.core.models.user import KFALevel
 from src.app.core.repo.profile import get_user_profile, update_user_profile
 from src.app.core.repo.user import choose_subscribe_status
-from src.app.core.models.user import KFALevel
 from src.app.core.schemas.user import UserProfileUpdate
+from src.app.core.utils import templates
 
 router = APIRouter(
     tags=["User"],

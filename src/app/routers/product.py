@@ -5,13 +5,13 @@ from datetime import datetime
 from fastapi import APIRouter, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
-from src.app.core.dependencies import db_session_dep, current_user_dep
+from src.app.core.dependencies import current_user_dep, db_session_dep
 from src.app.core.logger import get_logger
-from src.app.core.repo.product import handle_product_search, handle_product_details
 from src.app.core.repo.pending_product import create_pending_product
+from src.app.core.repo.product import handle_product_details, handle_product_search
+from src.app.core.schemas.product import PendingProductCreate, UnifiedProductResponse
 from src.app.core.services.redis import get_redis_session_from_request
 from src.app.core.utils import templates
-from src.app.core.schemas.product import PendingProductCreate, UnifiedProductResponse
 
 log = get_logger("product_router")
 

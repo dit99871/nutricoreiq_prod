@@ -20,8 +20,8 @@ from src.app.core.exceptions import (
 )
 from src.app.core.logger import get_logger
 from src.app.core.middleware.base_middleware import BaseMiddleware
-from src.app.core.repo.user import get_user_by_uid
 from src.app.core.repo.privacy_consent import has_user_consent
+from src.app.core.repo.user import get_user_by_uid
 from src.app.core.services.cache import ConsentCacheService
 from src.app.core.services.jwt_service import decode_jwt
 from src.app.core.services.log_context_service import LogContextService

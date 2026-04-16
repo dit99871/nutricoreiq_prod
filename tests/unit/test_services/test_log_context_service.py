@@ -29,6 +29,7 @@ def make_request(
 
 # --- format_request_line ---
 
+
 def test_format_request_line_get():
     request = make_request("GET", "/users")
     assert LogContextService.format_request_line(request) == "GET /users"
@@ -45,6 +46,7 @@ def test_format_request_line_root():
 
 
 # --- format_context_string ---
+
 
 def test_format_context_string_new_field_names():
     context = {
@@ -94,10 +96,16 @@ def test_format_context_string_empty():
 def test_format_context_string_order():
     context = {"trace_id": "t", "request_id": "r", "ip": "1.2.3.4", "status": 404}
     result = LogContextService.format_context_string(context)
-    assert result.index("status=") < result.index("ip=") < result.index("request_id=") < result.index("trace_id=")
+    assert (
+        result.index("status=")
+        < result.index("ip=")
+        < result.index("request_id=")
+        < result.index("trace_id=")
+    )
 
 
 # --- extract_context_from_request ---
+
 
 def test_extract_context_renames_client_ip_to_ip():
     request = make_request(state_attrs={"client_ip": "9.8.7.6"})
@@ -127,6 +135,7 @@ def test_extract_context_ms_from_state():
 
 # --- ensure_context_fields ---
 
+
 def test_ensure_context_fields_adds_missing():
     result = LogContextService.ensure_context_fields({})
     assert result["ip"] == "unknown"
@@ -150,6 +159,7 @@ def test_ensure_context_fields_preserves_existing():
 
 
 # --- validate_context ---
+
 
 def test_validate_context_generates_request_id_if_unknown():
     context = {"request_id": "unknown"}

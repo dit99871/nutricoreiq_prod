@@ -1,6 +1,7 @@
 """Сервис для инициализации Sentry SDK."""
 
 import asyncio
+
 import sentry_sdk
 from sentry_sdk.integrations.starlette import StarletteIntegration
 

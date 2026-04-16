@@ -33,12 +33,15 @@ def test_get_password_hash_empty_password():
     assert auth.verify_password("", hashed)
 
 
-@pytest.mark.parametrize("password, min_length", [
-    ("short", 60),
-    ("a" * 100, 60),
-    ("!@#$%^&*()_+", 60),
-    ("1234567890", 60),
-])
+@pytest.mark.parametrize(
+    "password, min_length",
+    [
+        ("short", 60),
+        ("a" * 100, 60),
+        ("!@#$%^&*()_+", 60),
+        ("1234567890", 60),
+    ],
+)
 def test_get_password_hash_various_inputs(password, min_length):
     hashed = auth.get_password_hash(password)
     assert isinstance(hashed, bytes)
@@ -64,24 +67,27 @@ def test_verify_password_empty_hash():
     assert auth.verify_password("test_password", b"") is False
 
 
-@pytest.mark.parametrize("password, hashed_password, expected", [
-    (
-        "password",
-        bcrypt.hashpw(
-            base64.b64encode(hashlib.sha256(b"password").digest()),
-            bcrypt.gensalt(),
+@pytest.mark.parametrize(
+    "password, hashed_password, expected",
+    [
+        (
+            "password",
+            bcrypt.hashpw(
+                base64.b64encode(hashlib.sha256(b"password").digest()),
+                bcrypt.gensalt(),
+            ),
+            True,
         ),
-        True,
-    ),
-    (
-        "wrong",
-        bcrypt.hashpw(
-            base64.b64encode(hashlib.sha256(b"password").digest()),
-            bcrypt.gensalt(),
+        (
+            "wrong",
+            bcrypt.hashpw(
+                base64.b64encode(hashlib.sha256(b"password").digest()),
+                bcrypt.gensalt(),
+            ),
+            False,
         ),
-        False,
-    ),
-])
+    ],
+)
 def test_verify_password_with_precomputed_hashes(password, hashed_password, expected):
     assert auth.verify_password(password, hashed_password) == expected
 
@@ -272,8 +278,12 @@ async def test_create_response_token_expiry(
     access_call = next(c for c in calls if c[1]["key"] == "access_token")
     refresh_call = next(c for c in calls if c[1]["key"] == "refresh_token")
 
-    assert access_call[1]["expires"] == datetime(2024, 1, 1, 12, 15, 0, tzinfo=timezone.utc)
-    assert refresh_call[1]["expires"] == datetime(2024, 1, 31, 12, 0, 0, tzinfo=timezone.utc)
+    assert access_call[1]["expires"] == datetime(
+        2024, 1, 1, 12, 15, 0, tzinfo=timezone.utc
+    )
+    assert refresh_call[1]["expires"] == datetime(
+        2024, 1, 31, 12, 0, 0, tzinfo=timezone.utc
+    )
 
 
 @pytest.mark.asyncio

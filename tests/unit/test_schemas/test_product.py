@@ -1,16 +1,17 @@
 import pytest
 from pydantic import ValidationError
+
 from src.app.core.schemas.product import (
-    NutrientBase,
     AminoAcids,
-    PolyunsaturatedFats,
-    FatsDetail,
-    ProteinsSchema,
-    FatsSchema,
     CarbsSchema,
+    FatsDetail,
+    FatsSchema,
+    NutrientBase,
+    PendingProductCreate,
+    PolyunsaturatedFats,
     ProductDetailResponse,
     ProductSuggestion,
-    PendingProductCreate,
+    ProteinsSchema,
     UnifiedProductResponse,
 )
 
@@ -88,9 +89,7 @@ def test_product_suggestion_validation():
 
 def test_product_suggestion_long_title():
     long_title = "Шампиньон двуспоровый (белый), приготовленный в микроволновке"
-    suggestion = ProductSuggestion(
-        id=1, title=long_title, group_name="Test Group"
-    )
+    suggestion = ProductSuggestion(id=1, title=long_title, group_name="Test Group")
     assert suggestion.title == long_title
 
 

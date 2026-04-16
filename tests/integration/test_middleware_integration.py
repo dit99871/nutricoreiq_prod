@@ -16,19 +16,19 @@ from src.app.core.exception_handlers import setup_exception_handlers
 
 class TestMiddlewareIntegration:
     """Интеграционные тесты мидлвари"""
-    
+
     @pytest.fixture
     def app(self):
         """Фикстура для создания приложения с новой архитектурой"""
         app = FastAPI()
         setup_exception_handlers(app)
         return app
-    
+
     @pytest.fixture
     def test_client(self, app):
         """Фикстура для TestClient"""
         return TestClient(app)
-    
+
     @pytest.fixture
     async def httpx_client_e2e(self):
         """Фикстура для httpx клиента (к живому серверу)"""
@@ -39,7 +39,7 @@ class TestMiddlewareIntegration:
         )
         yield client
         await client.aclose()
-    
+
     @pytest.mark.integration
     def test_error_pipeline_inprocess(self, test_client):
         response = test_client.get("/nonexistent-endpoint-12345")
@@ -48,7 +48,6 @@ class TestMiddlewareIntegration:
         assert data["status"] == "error"
         assert "error" in data
         assert data["error"]["message"]
-
 
     @pytest.mark.e2e
     @pytest.mark.asyncio
@@ -140,7 +139,9 @@ class TestMiddlewareIntegration:
             )
 
             # CORS заголовки должны присутствовать
-            cors_headers = [k for k in response.headers.keys() if "access-control" in k.lower()]
+            cors_headers = [
+                k for k in response.headers.keys() if "access-control" in k.lower()
+            ]
             _ = cors_headers
 
             # Тест 3: Проверяем CSRF защиту

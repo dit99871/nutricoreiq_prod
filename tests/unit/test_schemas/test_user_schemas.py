@@ -2,26 +2,27 @@
 Тесты для схем пользователя.
 """
 
-import pytest
 from datetime import datetime
+
+import pytest
 from pydantic import ValidationError
 
+from src.app.core.constants import (
+    MAX_AGE,
+    MAX_HEIGHT_CM,
+    MAX_WEIGHT_KG,
+    MIN_AGE,
+    MIN_HEIGHT_CM,
+    MIN_WEIGHT_KG,
+)
+from src.app.core.models.user import GoalType, KFALevel
 from src.app.core.schemas.user import (
+    PasswordChange,
     UserBaseIn,
     UserCreate,
-    UserPublic,
     UserProfile,
     UserProfileUpdate,
-    PasswordChange,
-)
-from src.app.core.models.user import KFALevel, GoalType
-from src.app.core.constants import (
-    MIN_AGE,
-    MAX_AGE,
-    MIN_HEIGHT_CM,
-    MAX_HEIGHT_CM,
-    MIN_WEIGHT_KG,
-    MAX_WEIGHT_KG,
+    UserPublic,
 )
 
 

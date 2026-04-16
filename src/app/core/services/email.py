@@ -10,8 +10,8 @@ from jinja2 import Environment, FileSystemLoader
 from src.app.core.config import settings
 from src.app.core.constants import BASE_DIR
 from src.app.core.logger import get_logger
-from src.app.core.utils.security import mask_email
 from src.app.core.schemas.user import UserPublic
+from src.app.core.utils.security import mask_email
 
 log = get_logger("email_service")
 

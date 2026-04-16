@@ -20,12 +20,13 @@ from src.app.core.constants import (
     MIN_HEIGHT_CM,
     MIN_WEIGHT_KG,
 )
+from src.app.core.models.user import GoalType, KFALevel
 from src.app.core.utils.validators import (
     coerce_goal,
     coerce_kfa,
     validate_password_strength,
 )
-from src.app.core.models.user import GoalType, KFALevel
+
 from .base import BaseSchema, FormSchema
 
 

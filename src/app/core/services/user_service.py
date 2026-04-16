@@ -8,25 +8,21 @@ from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.core import db_helper
-from src.app.core.exceptions import AuthenticationError, DatabaseError
 from src.app.core.config import settings
 from src.app.core.constants import (
     ACCESS_TOKEN_TYPE,
     CREDENTIAL_EXCEPTION,
-    TOKEN_TYPE_FIELD,
     REFRESH_TOKEN_TYPE,
+    TOKEN_TYPE_FIELD,
 )
-from src.app.core.exceptions import UserAlreadyExistsError, ExpiredTokenException
+from src.app.core.domain.health.health_calculator import HealthCalculator
+from src.app.core.exceptions import (
+    AuthenticationError,
+    DatabaseError,
+    ExpiredTokenException,
+    UserAlreadyExistsError,
+)
 from src.app.core.logger import get_logger
-from src.app.core.services.jwt_service import get_jwt_from_cookies, get_jwt_payload
-from src.app.core.services.email import send_welcome_email as send_welcome
-from src.app.core.services.redis import (
-    revoke_all_refresh_tokens,
-    revoke_refresh_token,
-    validate_refresh_jwt,
-)
-from src.app.core.utils.auth import create_response, verify_password, needs_rehash
-from src.app.core.utils.security import mask_email
 from src.app.core.repo.user import (
     create_user,
     get_user_by_email,
@@ -35,13 +31,21 @@ from src.app.core.repo.user import (
     update_user_password,
 )
 from src.app.core.schemas.user import (
-    UserCreate,
-    UserPublic,
     PasswordChange,
+    UserCreate,
     UserProfile,
+    UserPublic,
+)
+from src.app.core.services.email import send_welcome_email as send_welcome
+from src.app.core.services.jwt_service import get_jwt_from_cookies, get_jwt_payload
+from src.app.core.services.redis import (
+    revoke_all_refresh_tokens,
+    revoke_refresh_token,
+    validate_refresh_jwt,
 )
 from src.app.core.tasks import send_welcome_email
-from src.app.core.domain.health.health_calculator import HealthCalculator
+from src.app.core.utils.auth import create_response, needs_rehash, verify_password
+from src.app.core.utils.security import mask_email
 
 log = get_logger("user_service")
 

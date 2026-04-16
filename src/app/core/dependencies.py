@@ -8,8 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.app.core import db_helper
 from src.app.core.redis import get_redis_service
-from src.app.core.services.user_service import UserService, get_user_service
 from src.app.core.schemas.user import UserPublic
+from src.app.core.services.user_service import UserService, get_user_service
 
 # общие зависимости
 db_session_dep = Annotated[AsyncSession, Depends(db_helper.session_getter)]

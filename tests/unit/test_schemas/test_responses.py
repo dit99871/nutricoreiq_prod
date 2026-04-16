@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from src.app.core.schemas.responses import SuccessResponse, ErrorDetail, ErrorResponse
+from src.app.core.schemas.responses import ErrorDetail, ErrorResponse, SuccessResponse
 
 
 def test_success_response_validation():

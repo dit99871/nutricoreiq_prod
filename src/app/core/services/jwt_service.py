@@ -5,14 +5,9 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any
 
-from fastapi import Request
 import jwt
-from jwt import PyJWTError, ExpiredSignatureError
-
-from src.app.core.exceptions import (
-    AuthenticationError,
-    ExternalServiceError,
-)
+from fastapi import Request
+from jwt import ExpiredSignatureError, PyJWTError
 
 from src.app.core.config import settings
 from src.app.core.constants import (
@@ -21,10 +16,14 @@ from src.app.core.constants import (
     REFRESH_TOKEN_TYPE,
     TOKEN_TYPE_FIELD,
 )
-from src.app.core.exceptions import ExpiredTokenException
+from src.app.core.exceptions import (
+    AuthenticationError,
+    ExpiredTokenException,
+    ExternalServiceError,
+)
 from src.app.core.logger import get_logger
-from src.app.core.services.redis import add_refresh_jwt_to_redis
 from src.app.core.schemas.user import UserPublic
+from src.app.core.services.redis import add_refresh_jwt_to_redis
 
 log = get_logger("jwt_service")
 

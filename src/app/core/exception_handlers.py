@@ -7,24 +7,24 @@ from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from src.app.core.config import settings
-from src.app.core.logger import get_logger
 from src.app.core.exceptions import (
-    BaseApplicationError,
-    CSRFSessionExpiredError,
-    CSRFDomainError,
-    CSRFTokenError,
-    ValidationError,
     AuthenticationError,
     AuthorizationError,
-    NotFoundError,
+    BaseApplicationError,
     ConflictError,
+    CSRFDomainError,
+    CSRFSessionExpiredError,
+    CSRFTokenError,
     DatabaseError,
+    ExpiredTokenException,
     ExternalServiceError,
     LegalRestrictionError,
-    ExpiredTokenException,
+    NotFoundError,
+    ValidationError,
 )
-from src.app.core.services.log_context_service import LogContextService
+from src.app.core.logger import get_logger
 from src.app.core.schemas.responses import ErrorDetail, ErrorResponse
+from src.app.core.services.log_context_service import LogContextService
 
 log = get_logger("exception_handlers")
 

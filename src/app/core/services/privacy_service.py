@@ -10,10 +10,10 @@ from src.app.core.logger import get_logger
 from src.app.core.models.privacy_consent import ConsentType
 from src.app.core.repo.privacy_consent import (
     create_privacy_consent,
-    get_user_consents,
     get_session_consents,
-    has_user_consent,
+    get_user_consents,
     has_session_consent,
+    has_user_consent,
 )
 from src.app.core.schemas.user import UserPublic
 from src.app.core.services.cache import ConsentCacheService
