@@ -30,6 +30,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest>=8.3.5",
+    "pre-commit>=4.0.1",
     "black>=25.1.0",
     "pytest-asyncio>=0.25.3",
     "pytest-mock>=3.14.0",
@@ -53,6 +54,27 @@ check_untyped_defs = true
 disallow_any_unimported = true
 disallow_incomplete_defs = true
 disallow_untyped_decorators = true
+
+[tool.black]
+line-length = 88
+target-version = ["py313"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+[tool.ruff.lint]
+extend-select = ["I"]
+
+[tool.pylint.main]
+py-version = "3.13"
+
+[tool.pylint.messages_control]
+disable = [
+    "missing-module-docstring",
+    "missing-class-docstring",
+    "missing-function-docstring",
+]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
