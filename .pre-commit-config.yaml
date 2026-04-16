@@ -11,3 +11,4 @@ repos:
     hooks:
       - id: black
         files: ^src/
+        exclude: ^src/app/alembic/versions/
