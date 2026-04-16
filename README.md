@@ -174,6 +174,7 @@ docker-compose -f docker-compose.prod.yml up -d
 - `GET /` — главная страница
 - `GET /info/health` — проверка здоровья приложения (TODO)
 - `GET /metrics` — Prometheus метрики
+- `HEAD /` — для мониторинга (Sentry и пр.)
 
 ### Пример запроса
 
@@ -209,8 +210,11 @@ nutricoreiq_prod/
 │   │   │   ├── loki.py        # Loki настройки
 │   │   │   ├── rate_limit.py  # Rate limiting
 │   │   │   ├── redis.py       # Redis настройки
+│   │   │   ├── routers_prefixs.py  # Префиксы роутеров
+│   │   │   ├── run.py         # Настройки запуска
 │   │   │   ├── sentry.py      # Sentry настройки
 │   │   │   ├── settings.py    # Главный Settings
+│   │   │   ├── smtp.py        # SMTP настройки
 │   │   │   └── taskiq.py      # Taskiq настройки
 │   │   ├── domain/            # Доменная логика
 │   │   │   └── health/        # Расчёты здоровья
@@ -223,26 +227,68 @@ nutricoreiq_prod/
 │   │   │   ├── privacy_consent_middleware.py  # GDPR проверка
 │   │   │   └── session_middleware.py      # Управление сессиями Redis
 │   │   ├── models/            # SQLAlchemy модели базы данных
-│   │   │   ├── user.py        # Модель пользователя
+│   │   │   ├── base.py        # Базовая модель
+│   │   │   ├── deleted_user.py  # Модель удалённых пользователей
+│   │   │   ├── mixins/        # Миксины для моделей
+│   │   │   ├── nutrient.py    # Модель нутриентов
+│   │   │   ├── pending_product.py  # Модель ожидающих продуктов
+│   │   │   ├── privacy_consent.py  # Модель согласий
 │   │   │   ├── product.py     # Модель продуктов
-│   │   │   └── privacy_consent.py  # Модель согласий
+│   │   │   ├── product_group.py  # Модель групп продуктов
+│   │   │   ├── product_nutrient.py  # Связь продуктов и нутриентов
+│   │   │   └── user.py        # Модель пользователя
 │   │   ├── repo/              # Репозитории (работа с БД)
+│   │   │   ├── pending_product.py  # Репозиторий ожидающих продуктов
+│   │   │   ├── privacy_consent.py  # Репозиторий согласий
+│   │   │   ├── product.py     # Репозиторий продуктов
+│   │   │   ├── profile.py     # Репозиторий профилей
+│   │   │   └── user.py        # Репозиторий пользователей
 │   │   ├── schemas/           # Pydantic схемы для валидации
+│   │   │   ├── base.py        # Базовые схемы
+│   │   │   ├── privacy.py     # Схемы согласий
+│   │   │   ├── product.py     # Схемы продуктов
+│   │   │   ├── responses.py   # Схемы ответов
+│   │   │   ├── security.py    # Схемы безопасности
+│   │   │   └── user.py        # Схемы пользователей
 │   │   ├── services/          # Бизнес-логика приложения
-│   │   │   ├── user_service.py        # Сервис пользователей
-│   │   │   ├── jwt_service.py         # JWT сервис
 │   │   │   ├── cache.py               # Кэширование
+│   │   │   ├── csp_service.py         # CSP сервис
+│   │   │   ├── dummy_broker.py        # Тестовый брокер
 │   │   │   ├── email.py               # Email уведомления
+│   │   │   ├── jwt_service.py         # JWT сервис
 │   │   │   ├── limiter.py             # Rate limiting
 │   │   │   ├── log_context_service.py # Контекст логов
 │   │   │   ├── privacy_service.py     # GDPR сервис
+│   │   │   ├── product_service.py     # Сервис продуктов
 │   │   │   ├── redis.py               # Redis операции
+│   │   │   ├── sentry.py              # Sentry сервис
 │   │   │   ├── session_service.py     # Сессии
-│   │   │   └── taskiq_broker.py       # Брокер задач
+│   │   │   ├── taskiq_broker.py       # Брокер задач
+│   │   │   └── user_service.py        # Сервис пользователей
 │   │   ├── tasks/             # Асинхронные задачи (Taskiq)
 │   │   │   ├── sentry_task.py         # Отправка событий в Loki
 │   │   │   └── welcome_email_notification.py
-│   │   └── utils/             # Вспомогательные утилиты
+│   │   ├── utils/             # Вспомогательные утилиты
+│   │   │   ├── auth.py        # Утилиты аутентификации
+│   │   │   ├── case_converter.py  # Конвертер кейсов
+│   │   │   ├── network.py     # Сетевые утилиты
+│   │   │   ├── security.py    # Утилиты безопасности
+│   │   │   ├── templates.py   # Утилиты шаблонов
+│   │   │   ├── user.py        # Утилиты пользователей
+│   │   │   └── validators.py  # Валидаторы
+│   │   ├── app.py             # Конфигурация приложения
+│   │   ├── constants.py       # Константы
+│   │   ├── db_helper.py       # Помощник базы данных
+│   │   ├── dependencies.py    # Зависимости FastAPI
+│   │   ├── exception_handlers.py  # Обработчики исключений
+│   │   ├── exceptions.py      # Кастомные исключения
+│   │   ├── logger.py          # Логгер
+│   │   └── redis.py           # Redis клиент
+│   ├── alembic/               # Миграции базы данных
+│   │   ├── versions/         # Версии миграций
+│   │   ├── env.py            # Окружение Alembic
+│   │   └── script.py.mako    # Шаблон миграций
+│   ├── logs/                  # Логи приложения
 │   ├── routers/               # API роутеры
 │   │   ├── auth.py            # Аутентификация
 │   │   ├── user.py            # Пользователи и профиль
@@ -250,35 +296,46 @@ nutricoreiq_prod/
 │   │   ├── privacy.py         # GDPR и согласие
 │   │   ├── security.py        # CSP репорт
 │   │   └── info.py            # Главная, о проекте, политика
-│   ├── static/                # Статические файлы (CSS, JS, изображения)
-│   ├── templates/             # HTML-шаблоны (Jinja2)
+│   ├── docker-compose.dev.yml # Development Docker Compose
 │   ├── main.py                # Точка входа приложения
 │   └── lifespan.py            # Lifespan события
-├── tests/                     # Тесты (16 модулей)
+├── tests/                     # Тесты
 │   ├── unit/                  # Юнит-тесты
 │   │   ├── test_domain/       # Тесты доменной логики
+│   │   ├── test_exception_handlers.py
+│   │   ├── test_middleware/   # Тесты middleware
 │   │   ├── test_middleware_services.py
 │   │   ├── test_repo/         # Тесты репозиториев
+│   │   ├── test_routers/      # Тесты роутеров
 │   │   ├── test_schemas/      # Тесты схем
+│   │   ├── test_services/     # Тесты сервисов
 │   │   └── test_utils/        # Тесты утилит
 │   ├── integration/           # Интеграционные тесты
 │   │   └── test_middleware_integration.py
 │   └── conftest.py            # Конфигурация pytest
-├── alembic/                   # Миграции базы данных
 ├── config/                    # Конфигурационные файлы
+│   ├── fail2ban/              # Настройки Fail2ban
+│   ├── logrotate.d/           # Настройки логов
+│   ├── nginx/                 # Настройки Nginx
 │   ├── prometheus.yml         # Конфигурация Prometheus
 │   ├── loki-config.yaml       # Конфигурация Loki
 │   └── alloy-config.alloy     # Конфигурация Alloy
 ├── scripts/                   # Скрипты
 │   ├── deploy.sh              # Скрипт деплоя
 │   └── entrypoint.sh          # Entrypoint для Docker
+├── .github/                   # GitHub workflows
+│   └── workflows/
+│       └── ci.yml             # CI/CD пайплайн
 ├── docker-compose.prod.yml    # Production Docker Compose
-├── docker-compose.dev.yml     # Development Docker Compose
 ├── Dockerfile                 # Основной Dockerfile
 ├── Dockerfile.nginx           # Nginx Dockerfile
 ├── pyproject.toml             # Зависимости и конфигурация проекта
 ├── uv.lock                    # Зафиксированные версии зависимостей
-└── alembic.ini                # Конфигурация Alembic
+├── alembic.ini                # Конфигурация Alembic
+├── .gitlab-ci.yml             # GitLab CI/CD конфигурация
+├── .pre-commit-config.yaml   # Pre-commit hooks
+├── .env.example               # Пример переменных окружения
+└── README.md                  # Документация
 ```
 
 ### Архитектура приложения
