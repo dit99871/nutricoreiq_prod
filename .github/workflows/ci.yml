@@ -135,8 +135,15 @@ jobs:
 
       run: |
         echo "Running tests (excluding e2e)..."
-        uv run pytest -m "not e2e" --asyncio-mode=auto --disable-warnings -v
+        uv run pytest -m "not e2e" --asyncio-mode=auto --disable-warnings -v \
+        --cov=src --cov-report=xml --cov-report=term-missing
         echo "All tests completed successfully!"
+        
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        files: ./coverage.xml
+        fail_ci_if_error: false
 
     - name: Run e2e tests (optional)
       if: ${{ vars.RUN_E2E == 'true' }}

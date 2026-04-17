@@ -1,5 +1,10 @@
 # NutriCoreIQ
 
+[![CI](https://github.com/dit99871/nutricoreiq_prod/actions/workflows/ci.yml/badge.svg)](https://github.com/dit99871/nutricoreiq_prod/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/dit99871/nutricoreiq_prod/branch/main/graph/badge.svg)](https://codecov.io/gh/dit99871/nutricoreiq_prod)
+[![Python](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688.svg)](https://fastapi.tiangolo.com)
+
 ## Описание
 
 NutriCoreIQ — это современное веб-приложение для расчёта нутриентов и калорий на основе физических параметров и целей пользователя. Приложение помогает пользователям составлять персонализированные планы питания для поддержания веса, набора массы или снижения веса.
@@ -171,10 +176,11 @@ docker-compose -f docker-compose.prod.yml up -d
 
 #### Информация и статус
 
-- `GET /` — главная страница
-- `GET /info/health` — проверка здоровья приложения (TODO)
-- `GET /metrics` — Prometheus метрики
-- `HEAD /` — для мониторинга (Sentry и пр.)
+- `GET /` - главная страница
+- `GET /privacy` - информация о политике конфиденциальности
+- `GET /about` - информация о проекте
+- `GET /metrics` - Prometheus метрики
+- `HEAD /` - для мониторинга (Sentry и пр.)
 
 ### Пример запроса
 
