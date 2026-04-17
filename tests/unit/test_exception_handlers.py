@@ -2,34 +2,49 @@
 Тесты для exception_handlers.
 """
 
+import json
 from unittest.mock import MagicMock, patch
 
 import pytest
-from fastapi import Request
+from fastapi import Request, status
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from src.app.core.exception_handlers import (
-    _is_bot_request,
-    application_error_handler,
-    not_found_exception_handler,
+    expired_token_exception_handler,
+    generic_exception_handler,
+    http_exception_handler,
+    rate_limit_exceeded_handler,
+    setup_exception_handlers,
+    validation_exception_handler, _is_bot_request, not_found_exception_handler, application_error_handler,
 )
-from src.app.core.exceptions import (
-    AuthenticationError,
-    CSRFTokenError,
-    DatabaseError,
-    ExternalServiceError,
-)
+from src.app.core.exceptions import ExpiredTokenException, DatabaseError, ExternalServiceError, CSRFTokenError, \
+    AuthenticationError
 
 
 def make_request(
-    path: str = "/test",
-    method: str = "GET",
-    user_agent: str = "TestBrowser/1.0",
+        path: str = "/test",
+        method: str = "GET",
+        user_agent: str = "Mozilla/5.0",
+        headers: dict | None = None,
+        scheme: str = "http",
 ) -> MagicMock:
+    """Создаёт мок FastAPI Request с настроенным state."""
     request = MagicMock(spec=Request)
     request.url.path = path
     request.method = method
-    request.headers = {"user-agent": user_agent}
-    request.state = MagicMock(spec=[])
+    request.headers = headers or {"user-agent": user_agent}
+    request.scope = {"scheme": scheme}
+
+    # настраиваем state для LogContextService
+    state = MagicMock(spec=[])
+    state.request_id = "test-req-id"
+    state.trace_id = "test-trace-id"
+    state.client_ip = "127.0.0.1"
+    state.process_time_ms = None
+    state.status_code = None
+    state.effective_url = None
+    request.state = state
     return request
 
 
@@ -271,3 +286,568 @@ async def test_application_error_handler_response_has_message():
     body = json.loads(response.body)
     # ErrorDetail применяет to_upper=True к message
     assert body["error"]["message"] == "НЕВЕРНЫЕ УЧЕТНЫЕ ДАННЫЕ"
+
+
+# ─── http_exception_handler ──────────────────────────────────────────────────
+
+
+class TestHttpExceptionHandler:
+    """Тесты для http_exception_handler."""
+
+    def test_http_exception_string_detail(self):
+        """Строковый detail корректно переносится в message."""
+        request = make_request()
+        exc = StarletteHTTPException(status_code=403, detail="Forbidden")
+
+        with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+            mock_lcs.get_safe_context.return_value = {}
+            mock_lcs.format_request_line.return_value = "GET /test"
+            mock_lcs.format_context_string.return_value = ""
+            response = http_exception_handler(request, exc)
+
+        assert response.status_code == 403
+        body = json.loads(response.body)
+        assert body["status"] == "error"
+        assert "FORBIDDEN" in body["error"]["message"]
+
+    def test_http_exception_dict_detail_with_message(self):
+        """Dict detail с ключом message — извлекает message и details."""
+        request = make_request()
+        exc = StarletteHTTPException(
+            status_code=400,
+            detail={"message": "Bad data", "details": {"field": "email"}},
+        )
+
+        with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+            mock_lcs.get_safe_context.return_value = {}
+            mock_lcs.format_request_line.return_value = "POST /test"
+            mock_lcs.format_context_string.return_value = ""
+            response = http_exception_handler(request, exc)
+
+        assert response.status_code == 400
+        body = json.loads(response.body)
+        assert "BAD DATA" in body["error"]["message"]
+        assert body["error"]["details"] == {"field": "email"}
+
+    def test_http_exception_dict_detail_no_message_key(self):
+        """Dict detail без ключа message использует дефолтное сообщение."""
+        request = make_request()
+        exc = StarletteHTTPException(status_code=500, detail={"code": "ERR_500"})
+
+        with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+            mock_lcs.get_safe_context.return_value = {}
+            mock_lcs.format_request_line.return_value = "GET /test"
+            mock_lcs.format_context_string.return_value = ""
+            response = http_exception_handler(request, exc)
+
+        assert response.status_code == 500
+        body = json.loads(response.body)
+        assert "ПРОИЗОШЛА ОШИБКА" in body["error"]["message"]
+
+    def test_http_exception_none_detail(self):
+        """None detail использует дефолтное сообщение."""
+        request = make_request()
+        exc = StarletteHTTPException(status_code=404, detail=None)
+
+        with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+            mock_lcs.get_safe_context.return_value = {}
+            mock_lcs.format_request_line.return_value = "GET /test"
+            mock_lcs.format_context_string.return_value = ""
+            response = http_exception_handler(request, exc)
+
+        assert response.status_code == 404
+
+    def test_http_exception_5xx_logs_error(self):
+        """Коды >=500 логируются как error."""
+        request = make_request()
+        exc = StarletteHTTPException(status_code=503, detail="Service Unavailable")
+
+        with patch("src.app.core.exception_handlers.log") as mock_log:
+            with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+                mock_lcs.get_safe_context.return_value = {}
+                mock_lcs.format_request_line.return_value = "GET /test"
+                mock_lcs.format_context_string.return_value = ""
+                http_exception_handler(request, exc)
+
+        mock_log.error.assert_called_once()
+        mock_log.warning.assert_not_called()
+
+    def test_http_exception_4xx_logs_warning(self):
+        """Коды <500 логируются как warning."""
+        request = make_request()
+        exc = StarletteHTTPException(status_code=401, detail="Unauthorized")
+
+        with patch("src.app.core.exception_handlers.log") as mock_log:
+            with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+                mock_lcs.get_safe_context.return_value = {}
+                mock_lcs.format_request_line.return_value = "GET /test"
+                mock_lcs.format_context_string.return_value = ""
+                http_exception_handler(request, exc)
+
+        mock_log.warning.assert_called_once()
+        mock_log.error.assert_not_called()
+
+    def test_http_exception_response_structure(self):
+        """Проверяет структуру ответа."""
+        request = make_request()
+        exc = StarletteHTTPException(status_code=422, detail="Validation error")
+
+        with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+            mock_lcs.get_safe_context.return_value = {}
+            mock_lcs.format_request_line.return_value = "POST /test"
+            mock_lcs.format_context_string.return_value = ""
+            response = http_exception_handler(request, exc)
+
+        body = json.loads(response.body)
+        assert "status" in body
+        assert "error" in body
+        assert "message" in body["error"]
+
+
+# ─── validation_exception_handler ────────────────────────────────────────────
+
+
+class TestValidationExceptionHandler:
+    """Тесты для validation_exception_handler."""
+
+    def _make_validation_error(self, errors: list[dict]):
+        """Создаёт RequestValidationError из списка ошибок."""
+        exc = MagicMock(spec=RequestValidationError)
+        exc.errors.return_value = errors
+        return exc
+
+    def test_single_validation_error(self):
+        """Одна ошибка — message берется из неё напрямую."""
+        request = make_request()
+        exc = self._make_validation_error([
+            {"loc": ("body", "email"), "msg": "Invalid email", "type": "value_error.email"},
+        ])
+
+        with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+            mock_lcs.get_safe_context.return_value = {}
+            mock_lcs.format_request_line.return_value = "POST /test"
+            mock_lcs.format_context_string.return_value = ""
+            response = validation_exception_handler(request, exc)
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        body = json.loads(response.body)
+        assert body["status"] == "error"
+        assert "INVALID EMAIL" in body["error"]["message"]
+
+    def test_multiple_validation_errors(self):
+        """Несколько ошибок — общий message 'Некорректные входные данные', details с полями."""
+        request = make_request()
+        exc = self._make_validation_error([
+            {"loc": ("body", "email"), "msg": "Invalid email", "type": "string_type"},
+            {"loc": ("body", "password"), "msg": "Too short", "type": "string_too_short"},
+        ])
+
+        with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+            mock_lcs.get_safe_context.return_value = {}
+            mock_lcs.format_request_line.return_value = "POST /auth"
+            mock_lcs.format_context_string.return_value = ""
+            response = validation_exception_handler(request, exc)
+
+        body = json.loads(response.body)
+        assert "НЕКОРРЕКТНЫЕ" in body["error"]["message"]
+        assert body["error"]["details"] is not None
+        assert "fields" in body["error"]["details"]
+        assert len(body["error"]["details"]["fields"]) == 2
+
+    def test_value_error_prefix_stripped(self):
+        """Префикс 'Value error, ' удаляется из сообщения."""
+        request = make_request()
+        exc = self._make_validation_error([
+            {
+                "loc": ("body", "password"),
+                "msg": "Value error, Пароль слишком простой",
+                "type": "value_error",
+            }
+        ])
+
+        with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+            mock_lcs.get_safe_context.return_value = {}
+            mock_lcs.format_request_line.return_value = "POST /register"
+            mock_lcs.format_context_string.return_value = ""
+            response = validation_exception_handler(request, exc)
+
+        body = json.loads(response.body)
+        # "Value error, " должен быть удален
+        assert "VALUE ERROR" not in body["error"]["message"]
+        assert "ПАРОЛЬ СЛИШКОМ ПРОСТОЙ" in body["error"]["message"]
+
+    def test_validation_error_logs_error(self):
+        """Ошибки валидации логируются как error."""
+        request = make_request()
+        exc = self._make_validation_error([
+            {"loc": ("body", "age"), "msg": "Must be >= 10", "type": "greater_than_equal"},
+        ])
+
+        with patch("src.app.core.exception_handlers.log") as mock_log:
+            with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+                mock_lcs.get_safe_context.return_value = {}
+                mock_lcs.format_request_line.return_value = "PUT /profile"
+                mock_lcs.format_context_string.return_value = ""
+                validation_exception_handler(request, exc)
+
+        mock_log.error.assert_called_once()
+
+    def test_nested_loc_joined_with_dot(self):
+        """Вложенный loc соединяется точкой в поле field."""
+        request = make_request()
+        exc = self._make_validation_error([
+            {
+                "loc": ("body", "profile", "age"),
+                "msg": "Invalid value",
+                "type": "int_type",
+            }
+        ])
+
+        with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+            mock_lcs.get_safe_context.return_value = {}
+            mock_lcs.format_request_line.return_value = "PUT /test"
+            mock_lcs.format_context_string.return_value = ""
+            response = validation_exception_handler(request, exc)
+
+        # response 422 всегда
+        assert response.status_code == 422
+
+
+# ─── generic_exception_handler ───────────────────────────────────────────────
+
+
+class TestGenericExceptionHandler:
+    """Тесты для generic_exception_handler."""
+
+    def test_generic_exception_returns_500(self):
+        request = make_request()
+        exc = RuntimeError("Something went wrong")
+
+        with patch("src.app.core.exception_handlers.settings") as mock_settings:
+            mock_settings.DEBUG = False
+            with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+                mock_lcs.extract_context_from_request.return_value = {}
+                mock_lcs.format_request_line.return_value = "GET /test"
+                mock_lcs.format_context_string.return_value = ""
+                response = generic_exception_handler(request, exc)
+
+        assert response.status_code == 500
+
+    def test_generic_exception_debug_false_no_details(self):
+        """В DEBUG=False details не включаются в ответ."""
+        request = make_request()
+        exc = ValueError("Internal error detail")
+
+        with patch("src.app.core.exception_handlers.settings") as mock_settings:
+            mock_settings.DEBUG = False
+            with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+                mock_lcs.extract_context_from_request.return_value = {}
+                mock_lcs.format_request_line.return_value = "GET /test"
+                mock_lcs.format_context_string.return_value = ""
+                response = generic_exception_handler(request, exc)
+
+        body = json.loads(response.body)
+        assert body["error"]["details"] is None
+
+    def test_generic_exception_debug_true_includes_details(self):
+        """В DEBUG=True details включаются в ответ."""
+        request = make_request()
+        exc = RuntimeError("Detailed error message")
+
+        with patch("src.app.core.exception_handlers.settings") as mock_settings:
+            mock_settings.DEBUG = True
+            with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+                mock_lcs.extract_context_from_request.return_value = {}
+                mock_lcs.format_request_line.return_value = "GET /test"
+                mock_lcs.format_context_string.return_value = ""
+                response = generic_exception_handler(request, exc)
+
+        body = json.loads(response.body)
+        assert body["error"]["details"] is not None
+        assert "Detailed error message" in body["error"]["details"]["message"]
+
+    def test_generic_exception_logs_error(self):
+        """Непредвиденные ошибки логируются как error."""
+        request = make_request()
+        exc = Exception("Boom")
+
+        with patch("src.app.core.exception_handlers.log") as mock_log:
+            with patch("src.app.core.exception_handlers.settings") as mock_settings:
+                mock_settings.DEBUG = False
+                with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+                    mock_lcs.extract_context_from_request.return_value = {}
+                    mock_lcs.format_request_line.return_value = "GET /test"
+                    mock_lcs.format_context_string.return_value = ""
+                    generic_exception_handler(request, exc)
+
+        mock_log.error.assert_called_once()
+
+    def test_generic_exception_uses_forwarded_proto(self):
+        """X-Forwarded-Proto используется для формирования URL."""
+        request = make_request(headers={"X-Forwarded-Proto": "https", "user-agent": "test"})
+
+        with patch("src.app.core.exception_handlers.settings") as mock_settings:
+            mock_settings.DEBUG = False
+            with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+                mock_lcs.extract_context_from_request.return_value = {}
+                mock_lcs.format_request_line.return_value = "GET /test"
+                mock_lcs.format_context_string.return_value = ""
+                response = generic_exception_handler(request, Exception("err"))
+
+        assert response.status_code == 500
+
+    def test_generic_exception_message_is_internal_server_error(self):
+        """Сообщение всегда 'Внутренняя ошибка сервера'."""
+        request = make_request()
+        exc = Exception("anything")
+
+        with patch("src.app.core.exception_handlers.settings") as mock_settings:
+            mock_settings.DEBUG = False
+            with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+                mock_lcs.extract_context_from_request.return_value = {}
+                mock_lcs.format_request_line.return_value = "GET /test"
+                mock_lcs.format_context_string.return_value = ""
+                response = generic_exception_handler(request, exc)
+
+        body = json.loads(response.body)
+        assert "ВНУТРЕННЯЯ ОШИБКА СЕРВЕРА" in body["error"]["message"]
+
+
+# ─── rate_limit_exceeded_handler ─────────────────────────────────────────────
+
+
+class TestRateLimitExceededHandler:
+    """Тесты для rate_limit_exceeded_handler."""
+
+    def _make_rate_limit_exc(self, detail: str = "5 per minute"):
+        from slowapi.errors import RateLimitExceeded
+        exc = MagicMock(spec=RateLimitExceeded)
+        exc.detail = detail
+        return exc
+
+    def test_rate_limit_returns_429(self):
+        request = make_request()
+        exc = self._make_rate_limit_exc()
+
+        with patch("src.app.core.exception_handlers.settings") as mock_settings:
+            mock_settings.DEBUG = False
+            with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+                mock_lcs.get_safe_context.return_value = {}
+                mock_lcs.format_request_line.return_value = "GET /test"
+                mock_lcs.format_context_string.return_value = ""
+                response = rate_limit_exceeded_handler(request, exc)
+
+        assert response.status_code == 429
+
+    def test_rate_limit_message(self):
+        request = make_request()
+        exc = self._make_rate_limit_exc()
+
+        with patch("src.app.core.exception_handlers.settings") as mock_settings:
+            mock_settings.DEBUG = False
+            with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+                mock_lcs.get_safe_context.return_value = {}
+                mock_lcs.format_request_line.return_value = "GET /test"
+                mock_lcs.format_context_string.return_value = ""
+                response = rate_limit_exceeded_handler(request, exc)
+
+        body = json.loads(response.body)
+        assert "СЛИШКОМ МНОГО ЗАПРОСОВ" in body["error"]["message"]
+
+    def test_rate_limit_debug_false_no_retry_after(self):
+        """В DEBUG=False details не включаются."""
+        request = make_request()
+        exc = self._make_rate_limit_exc("10 per second")
+
+        with patch("src.app.core.exception_handlers.settings") as mock_settings:
+            mock_settings.DEBUG = False
+            with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+                mock_lcs.get_safe_context.return_value = {}
+                mock_lcs.format_request_line.return_value = "GET /test"
+                mock_lcs.format_context_string.return_value = ""
+                response = rate_limit_exceeded_handler(request, exc)
+
+        body = json.loads(response.body)
+        assert body["error"]["details"] is None
+
+    def test_rate_limit_debug_true_includes_retry_after(self):
+        """В DEBUG=True details содержит retry_after."""
+        request = make_request()
+        exc = self._make_rate_limit_exc("10 per second")
+
+        with patch("src.app.core.exception_handlers.settings") as mock_settings:
+            mock_settings.DEBUG = True
+            with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+                mock_lcs.get_safe_context.return_value = {}
+                mock_lcs.format_request_line.return_value = "GET /test"
+                mock_lcs.format_context_string.return_value = ""
+                response = rate_limit_exceeded_handler(request, exc)
+
+        body = json.loads(response.body)
+        assert body["error"]["details"] is not None
+        assert body["error"]["details"]["retry_after"] == "10 per second"
+
+    def test_rate_limit_logs_warning(self):
+        request = make_request()
+        exc = self._make_rate_limit_exc()
+
+        with patch("src.app.core.exception_handlers.log") as mock_log:
+            with patch("src.app.core.exception_handlers.settings") as mock_settings:
+                mock_settings.DEBUG = False
+                with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+                    mock_lcs.get_safe_context.return_value = {}
+                    mock_lcs.format_request_line.return_value = "GET /test"
+                    mock_lcs.format_context_string.return_value = ""
+                    rate_limit_exceeded_handler(request, exc)
+
+        mock_log.warning.assert_called_once()
+
+    def test_rate_limit_response_structure(self):
+        request = make_request()
+        exc = self._make_rate_limit_exc()
+
+        with patch("src.app.core.exception_handlers.settings") as mock_settings:
+            mock_settings.DEBUG = False
+            with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+                mock_lcs.get_safe_context.return_value = {}
+                mock_lcs.format_request_line.return_value = "GET /test"
+                mock_lcs.format_context_string.return_value = ""
+                response = rate_limit_exceeded_handler(request, exc)
+
+        body = json.loads(response.body)
+        assert body["status"] == "error"
+        assert "error" in body
+
+
+# ─── expired_token_exception_handler ─────────────────────────────────────────
+
+
+class TestExpiredTokenExceptionHandler:
+    """Тесты для expired_token_exception_handler."""
+
+    def test_expired_token_returns_401(self):
+        request = make_request()
+        exc = ExpiredTokenException()
+
+        with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+            mock_lcs.get_safe_context.return_value = {}
+            mock_lcs.format_request_line.return_value = "GET /protected"
+            mock_lcs.format_context_string.return_value = ""
+            response = expired_token_exception_handler(request, exc)
+
+        assert response.status_code == 401
+
+    def test_expired_token_default_message(self):
+        request = make_request()
+        exc = ExpiredTokenException()
+
+        with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+            mock_lcs.get_safe_context.return_value = {}
+            mock_lcs.format_request_line.return_value = "GET /protected"
+            mock_lcs.format_context_string.return_value = ""
+            response = expired_token_exception_handler(request, exc)
+
+        body = json.loads(response.body)
+        # detail из исключения попадает в message (to_upper)
+        assert "СРОК" in body["error"]["message"] or "ТОКЕН" in body["error"]["message"]
+
+    def test_expired_token_custom_message(self):
+        request = make_request()
+        exc = ExpiredTokenException(detail="Токен просрочен")
+
+        with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+            mock_lcs.get_safe_context.return_value = {}
+            mock_lcs.format_request_line.return_value = "GET /protected"
+            mock_lcs.format_context_string.return_value = ""
+            response = expired_token_exception_handler(request, exc)
+
+        body = json.loads(response.body)
+        assert "ТОКЕН ПРОСРОЧЕН" in body["error"]["message"]
+
+    def test_expired_token_has_error_type_header(self):
+        request = make_request()
+        exc = ExpiredTokenException()
+
+        with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+            mock_lcs.get_safe_context.return_value = {}
+            mock_lcs.format_request_line.return_value = "GET /protected"
+            mock_lcs.format_context_string.return_value = ""
+            response = expired_token_exception_handler(request, exc)
+
+        assert response.headers.get("x-error-type") == "authentication_error"
+
+    def test_expired_token_logs_warning(self):
+        request = make_request()
+        exc = ExpiredTokenException()
+
+        with patch("src.app.core.exception_handlers.log") as mock_log:
+            with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+                mock_lcs.get_safe_context.return_value = {}
+                mock_lcs.format_request_line.return_value = "GET /protected"
+                mock_lcs.format_context_string.return_value = ""
+                expired_token_exception_handler(request, exc)
+
+        mock_log.warning.assert_called_once()
+
+    def test_expired_token_details_is_none(self):
+        request = make_request()
+        exc = ExpiredTokenException()
+
+        with patch("src.app.core.exception_handlers.LogContextService") as mock_lcs:
+            mock_lcs.get_safe_context.return_value = {}
+            mock_lcs.format_request_line.return_value = "GET /protected"
+            mock_lcs.format_context_string.return_value = ""
+            response = expired_token_exception_handler(request, exc)
+
+        body = json.loads(response.body)
+        assert body["error"]["details"] is None
+
+
+# ─── setup_exception_handlers ────────────────────────────────────────────────
+
+
+class TestSetupExceptionHandlers:
+    """Тесты для функции setup_exception_handlers."""
+
+    def test_setup_registers_handlers(self):
+        """Проверяет, что setup_exception_handlers регистрирует обработчики."""
+        from fastapi import FastAPI
+
+        app = FastAPI()
+        # До setup обработчики не зарегистрированы
+        initial_handlers = len(app.exception_handlers)
+
+        setup_exception_handlers(app)
+
+        # После setup — больше обработчиков
+        assert len(app.exception_handlers) > initial_handlers
+
+    def test_setup_registers_404_handler(self):
+        """Проверяет регистрацию обработчика 404."""
+        from fastapi import FastAPI
+
+        app = FastAPI()
+        setup_exception_handlers(app)
+
+        # 404 должен быть в обработчиках
+        assert 404 in app.exception_handlers
+
+    def test_setup_registers_application_errors(self):
+        """Все кастомные исключения зарегистрированы."""
+        from fastapi import FastAPI
+
+        from src.app.core.exceptions import (
+            AuthenticationError,
+            BaseApplicationError,
+            CSRFTokenError,
+            DatabaseError,
+        )
+
+        app = FastAPI()
+        setup_exception_handlers(app)
+
+        handlers = app.exception_handlers
+        assert CSRFTokenError in handlers
+        assert DatabaseError in handlers
+        assert AuthenticationError in handlers
+        assert BaseApplicationError in handlers
