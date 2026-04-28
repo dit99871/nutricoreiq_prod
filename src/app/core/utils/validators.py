@@ -17,10 +17,16 @@ def validate_password_strength(v: str) -> str:
     has_upper = any(c.isupper() for c in v)
     has_digit = any(c.isdigit() for c in v)
     has_special = any(not c.isalnum() for c in v)
-    if not (has_lower and has_upper and has_digit and has_special):
-        raise ValueError(
-            "Пароль должен содержать строчные и прописные буквы, цифры и спецсимволы"
-        )
+
+    if not has_lower:
+        raise ValueError("Пароль должен содержать строчные буквы")
+    if not has_upper:
+        raise ValueError("Пароль должен содержать прописные буквы")
+    if not has_digit:
+        raise ValueError("Пароль должен содержать цифры")
+    if not has_special:
+        raise ValueError("Пароль должен содержать спецсимволы")
+
     return v
 
 
