@@ -187,7 +187,7 @@ class TestUserProfileUpdate:
 # Тесты для PasswordChange
 class TestPasswordChange:
     def test_password_must_be_different(self):
-        """Тест что новый пароль должен отличаться от текущего"""
+        """Тест на то, что новый пароль должен отличаться от текущего"""
         with pytest.raises(ValidationError) as exc_info:
             PasswordChange(
                 current_password="SamePass123!",
@@ -207,7 +207,7 @@ class TestPasswordChange:
         # Проверяем что есть хоть одно из требований
         assert any(
             msg in error_msg
-            for msg in ["uppercase", "digit", "заглавн", "цифр", "спецсимвол"]
+            for msg in ["прописные", "цифры", "спецсимволы"]
         )
 
     def test_successful_password_change(self):
@@ -223,7 +223,7 @@ class TestPasswordChange:
 # Тесты для сериализации
 class TestSerialization:
     def test_public_user_serialization(self):
-        """Тест что hashed_password исключается из сериализации"""
+        """Тест на то, что hashed_password исключается из сериализации"""
         user = UserPublic(
             id=1,
             uid="abc123",
