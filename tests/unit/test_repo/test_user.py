@@ -5,7 +5,6 @@ import pytest
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-import src.app.core.utils.validators
 from src.app.core.exceptions import DatabaseError, NotFoundError
 from src.app.core.models import User
 from src.app.core.repo.user import (
@@ -25,11 +24,6 @@ def mock_validate_password_strength(v):
     if not isinstance(v, str):
         raise ValueError("Password must be a string")
     return v
-
-
-src.app.core.utils.validators.validate_password_strength = (
-    mock_validate_password_strength
-)
 
 
 @pytest.fixture
@@ -170,6 +164,9 @@ async def test_create_user_success(user_create_data):
 
     with patch(
         "src.app.core.repo.user.get_password_hash", return_value=b"hashed_password"
+    ), patch(
+        "src.app.core.utils.validators.validate_password_strength",
+        side_effect=mock_validate_password_strength
     ):
         user_create = UserCreate(**user_create_data)
         result = await create_user(mock_session, user_create)
@@ -191,6 +188,9 @@ async def test_create_user_database_error(user_create_data):
 
     with patch(
         "src.app.core.repo.user.get_password_hash", return_value=b"hashed_password"
+    ), patch(
+        "src.app.core.utils.validators.validate_password_strength",
+        side_effect=mock_validate_password_strength
     ):
         with patch("src.app.core.repo.user.log") as mock_logger:
             with pytest.raises(DatabaseError) as exc_info:
@@ -250,7 +250,7 @@ async def test_update_user_password_success():
     mock_session = AsyncMock(spec=AsyncSession)
     mock_session.commit = AsyncMock()
 
-    # cоздаём mock пользователя
+    # создаём mock пользователя
     mock_user = User(
         id=1,
         uid="test-uid-123",
