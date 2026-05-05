@@ -55,7 +55,7 @@ async def read_current_user(
 @router.head("/profile/data")
 async def get_profile(
     request: Request,
-    user: current_user_dep,
+    current_user: current_user_dep,
     db_session: db_session_dep,
     user_service: user_service_dep,
 ) -> Response:
@@ -66,18 +66,18 @@ async def get_profile(
     Если пользователь не аутентифицирован, вызывает ExpiredTokenException с кодом 401.
 
     :param request: Входящий объект запроса.
-    :param user: Аутентифицированный объект пользователя, полученный из зависимости.
+    :param current_user: Аутентифицированный объект пользователя, полученный из зависимости.
     :param db_session: Текущая сессия базы данных.
     :param user_service: Экземпляр сервиса пользователя.
     :return: Отрендеренный HTML-шаблон с информацией о профиле пользователя.
     :raises ExpiredTokenException: Если пользователь не аутентифицирован.
     """
 
-    if user is None:
+    if current_user is None:
         log.warning("Пользователь не авторизован")
         raise ExpiredTokenException()
 
-    user = await get_user_profile(db_session, user.id)
+    user = await get_user_profile(db_session, current_user.id)
 
     # расчет нутриентов через сервисный слой
     nutrition_data = user_service.calculate_user_nutrients(user)

@@ -176,4 +176,4 @@ class TestPrivacyConsentInfo:
             ip_address="10.0.0.1",
             user_agent="Chrome/120",
         )
-        assert info.is_granted is Falseё
+        assert info.is_granted is False
