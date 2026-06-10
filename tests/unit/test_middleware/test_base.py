@@ -19,6 +19,7 @@ def make_request(path: str = "/test", method: str = "GET", state_attrs: dict | N
     request.headers = {"user-agent": "TestBrowser/1.0"}
     request.client = MagicMock()
     request.client.host = "127.0.0.1"
+    request.scope = {"path": path}
 
     state = MagicMock(spec=[])
     if state_attrs:

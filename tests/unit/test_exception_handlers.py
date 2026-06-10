@@ -34,7 +34,7 @@ def make_request(
     request.url.path = path
     request.method = method
     request.headers = headers or {"user-agent": user_agent}
-    request.scope = {"scheme": scheme}
+    request.scope = {"scheme": scheme, "path": path}
 
     # настраиваем state для LogContextService
     state = MagicMock(spec=[])
