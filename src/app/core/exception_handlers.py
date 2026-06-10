@@ -113,7 +113,7 @@ def not_found_exception_handler(
 ) -> JSONResponse:
     """Обработчик 404 ошибок с разделением по категориям."""
 
-    path = str(request.url.path)
+    path = str(request.scope["path"])
     method = request.method
     user_agent = request.headers.get("user-agent", "unknown")
     context = LogContextService.get_safe_context(request)

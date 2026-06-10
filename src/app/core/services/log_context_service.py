@@ -123,7 +123,7 @@ class LogContextService:
     @classmethod
     def format_request_line(cls, request: Request) -> str:
         """Возвращает строку вида 'GET /path'"""
-        return f"{request.method} {request.url.path}"
+        return f"{request.method} {request.scope['path']}"
 
     @classmethod
     def validate_context(cls, context: dict[str, Any]) -> dict[str, Any]:

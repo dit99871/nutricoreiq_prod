@@ -31,7 +31,7 @@ def create_app() -> FastAPI:
     """
 
     setup_logging()
-    app = FastAPI(lifespan=lifespan)
+    app = FastAPI(lifespan=lifespan, strict_content_type=False)
 
     # настройка prometheus
     Instrumentator().instrument(app).expose(app, endpoint="/metrics")

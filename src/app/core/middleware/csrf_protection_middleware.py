@@ -48,9 +48,9 @@ class CSRFProtectionMiddleware(BaseMiddleware):
         """Основная логика CSRF middleware"""
 
         # пропуск публичных маршрутов
-        if self._should_skip_path(
-            request, set(self.EXEMPT_PATHS)
-        ) or request.url.path.endswith("/login"):
+        if self._should_skip_path(request, set(self.EXEMPT_PATHS)) or request.scope[
+            "path"
+        ].endswith("/login"):
             try:
                 return await call_next(request)
             except Exception:

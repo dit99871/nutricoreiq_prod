@@ -99,5 +99,5 @@ class BaseMiddleware(BaseHTTPMiddleware, ABC):
     def _should_skip_path(request: Request, skip_paths: set[str]) -> bool:
         """Проверяет, нужно ли пропустить обработку для данного пути"""
 
-        path = request.url.path
+        path = request.scope["path"]
         return any(path.startswith(skip_path) for skip_path in skip_paths)

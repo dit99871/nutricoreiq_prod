@@ -55,7 +55,7 @@ class HTTPMiddleware(BaseMiddleware):
             )
 
             # отключаем кеширование для api ответов (без статических файлов)
-            if not request.url.path.startswith("/static/"):
+            if not request.scope["path"].startswith("/static/"):
                 response.headers["Cache-Control"] = (
                     "no-store, no-cache, must-revalidate, max-age=0"
                 )
